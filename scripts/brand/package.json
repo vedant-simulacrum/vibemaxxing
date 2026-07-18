@@ -1,0 +1,12 @@
+{
+  "name": "@vibemaxxing/brand-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "node render-brand-assets.mjs && python3 build-favicon.py && node write-manifest.mjs"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "2.6.2",
+    "sharp": "0.34.4"
+  }
+}

@@ -1,0 +1,366 @@
+{
+  "schemaVersion": 1,
+  "identity": "vibemaxxing",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 2830,
+      "sha256": "61d355f3294f3926e656714c8520dc308285880185c1d10ff661947d61a464fb"
+    },
+    {
+      "path": "exports/app-icons/android-chrome-192.png",
+      "bytes": 3734,
+      "sha256": "e8a2bdaec74966ba6c25f1b2da55c65abc0c598e44da1fad7beec995a94b76ef"
+    },
+    {
+      "path": "exports/app-icons/android-chrome-512.png",
+      "bytes": 10734,
+      "sha256": "afff375817ef4792cd55d7a9149f3b56425733c52353587dfa29d556c51ef3de"
+    },
+    {
+      "path": "exports/app-icons/app-icon-1024.png",
+      "bytes": 26259,
+      "sha256": "ed6dc3e08e3824a4125ba76f4a04509bf4c1ed3725f44a55e616f9e79fe66675"
+    },
+    {
+      "path": "exports/app-icons/app-icon-120.png",
+      "bytes": 2366,
+      "sha256": "1625ef6449471f3bc238698468aa11adf9b0b1c0800d4778c71efc1d878ecb5f"
+    },
+    {
+      "path": "exports/app-icons/app-icon-128.png",
+      "bytes": 2490,
+      "sha256": "8a1085c386382731121f14308bc383bb437e47bdef108c7aa284eae434c6ef14"
+    },
+    {
+      "path": "exports/app-icons/app-icon-144.png",
+      "bytes": 2859,
+      "sha256": "bc4aacfcaa8031bc02679b4859699b81bc8115d3773516410a6df6220c40f075"
+    },
+    {
+      "path": "exports/app-icons/app-icon-150.png",
+      "bytes": 2929,
+      "sha256": "10743571fb34048676ab989c37112573e674fa22934afd0033234e3c8a26e5ac"
+    },
+    {
+      "path": "exports/app-icons/app-icon-152.png",
+      "bytes": 2978,
+      "sha256": "e68be05cf7626047fda2478e75730b3e1f4e0bb6fe37776bada91900fd901935"
+    },
+    {
+      "path": "exports/app-icons/app-icon-16.png",
+      "bytes": 408,
+      "sha256": "16fa5ae7fd61e02ea2668ff46716fba46f63f0849d6722df67423e94223da118"
+    },
+    {
+      "path": "exports/app-icons/app-icon-167.png",
+      "bytes": 3173,
+      "sha256": "9d63ab753a1a8c95eb6d84a62b1839577108a127f0f57d918955316a86a623ae"
+    },
+    {
+      "path": "exports/app-icons/app-icon-180.png",
+      "bytes": 3502,
+      "sha256": "a4209c98c626a57baec2804a053f34b8ef4bc0d3841a971dcec779fe0556d872"
+    },
+    {
+      "path": "exports/app-icons/app-icon-192.png",
+      "bytes": 3734,
+      "sha256": "e8a2bdaec74966ba6c25f1b2da55c65abc0c598e44da1fad7beec995a94b76ef"
+    },
+    {
+      "path": "exports/app-icons/app-icon-20.png",
+      "bytes": 482,
+      "sha256": "13bc81cbb3284566585d4aa992d9d0b1d043e943146e6ef261e0e2d6c5e50c57"
+    },
+    {
+      "path": "exports/app-icons/app-icon-24.png",
+      "bytes": 612,
+      "sha256": "1a2fdd61485bc2cea350e92bb12eea1c8b63cdb9d3ddfc0d82255345d689f7b0"
+    },
+    {
+      "path": "exports/app-icons/app-icon-256.png",
+      "bytes": 4957,
+      "sha256": "ad7594f72083a493f916599351e840d1275abc5c837e250ec496cd72b77f8c82"
+    },
+    {
+      "path": "exports/app-icons/app-icon-310.png",
+      "bytes": 6407,
+      "sha256": "8e5815b37995c10d4f8825eceb75f68ac0912014b26159d0fe73f7c3a6b23754"
+    },
+    {
+      "path": "exports/app-icons/app-icon-32.png",
+      "bytes": 750,
+      "sha256": "5bdee672a8bdf2532a867e62453ff2c9843fa2b95ed85ad70a9e17a375ec3739"
+    },
+    {
+      "path": "exports/app-icons/app-icon-384.png",
+      "bytes": 7552,
+      "sha256": "eaacd226dcc1e37168e617274d8a507d8614d33252bd6e8b5f217e1a6199b6b4"
+    },
+    {
+      "path": "exports/app-icons/app-icon-40.png",
+      "bytes": 842,
+      "sha256": "20edf778af32ae6944872d24b81bfcd0100133192eb22e83aee5c545b36bb637"
+    },
+    {
+      "path": "exports/app-icons/app-icon-48.png",
+      "bytes": 1046,
+      "sha256": "e5ce46ea66975b88677b5df3f5e9cb991370d1e3da795c16aa53adf0d848621f"
+    },
+    {
+      "path": "exports/app-icons/app-icon-512.png",
+      "bytes": 10734,
+      "sha256": "afff375817ef4792cd55d7a9149f3b56425733c52353587dfa29d556c51ef3de"
+    },
+    {
+      "path": "exports/app-icons/app-icon-512.webp",
+      "bytes": 4878,
+      "sha256": "9801bdedb5deb52f6d9c02a9cf8f17a345aac1ffd16cc8040e5cc072737bd0a7"
+    },
+    {
+      "path": "exports/app-icons/app-icon-64.png",
+      "bytes": 1312,
+      "sha256": "6d816e2d7790f00859a23c1670c128fcfb987f5111ec1ea33a2e6527b997a1a5"
+    },
+    {
+      "path": "exports/app-icons/app-icon-76.png",
+      "bytes": 1613,
+      "sha256": "7c20d0ad901da865e7310183bf3874e8daf6bf971712b508830327617c4f6723"
+    },
+    {
+      "path": "exports/app-icons/app-icon-96.png",
+      "bytes": 1947,
+      "sha256": "f8ccd4600df9aa4cdebb74cccf33bc5ac769587130048f04cb7026b68819117a"
+    },
+    {
+      "path": "exports/app-icons/apple-touch-icon.png",
+      "bytes": 3502,
+      "sha256": "a4209c98c626a57baec2804a053f34b8ef4bc0d3841a971dcec779fe0556d872"
+    },
+    {
+      "path": "exports/app-icons/browserconfig.xml",
+      "bytes": 235,
+      "sha256": "a25f11c25ea1a93ee1c82fb9e620fee37da2c875d5e86dc0e2aa435f9ca6a9e7"
+    },
+    {
+      "path": "exports/app-icons/maskable-icon-192.png",
+      "bytes": 2313,
+      "sha256": "0547e935bff94d80f907ca02375f4d81df8119c1a75bb6258df0274972dd684a"
+    },
+    {
+      "path": "exports/app-icons/maskable-icon-512.png",
+      "bytes": 6930,
+      "sha256": "51ac33e7569885d20b3a31f6ce2225863b98beb36e2de83edf9760939be12fbf"
+    },
+    {
+      "path": "exports/app-icons/mstile-150x150.png",
+      "bytes": 2929,
+      "sha256": "10743571fb34048676ab989c37112573e674fa22934afd0033234e3c8a26e5ac"
+    },
+    {
+      "path": "exports/app-icons/mstile-310x310.png",
+      "bytes": 6407,
+      "sha256": "8e5815b37995c10d4f8825eceb75f68ac0912014b26159d0fe73f7c3a6b23754"
+    },
+    {
+      "path": "exports/app-icons/site.webmanifest",
+      "bytes": 684,
+      "sha256": "1e9c7aec1d7219c1c9a6d3b63480822b74581baab80c8872fb6f73debb6c32bd"
+    },
+    {
+      "path": "exports/brand-sheet.png",
+      "bytes": 50328,
+      "sha256": "1fc64fda6fb3261d45d21baa700c12fc21172f05cdf8970f0769de1b5412d6d7"
+    },
+    {
+      "path": "exports/favicon/favicon-16.png",
+      "bytes": 374,
+      "sha256": "84a1463092d71dfab854f3c5d409fcec681c51050227085ec094c9dbb9fe34c6"
+    },
+    {
+      "path": "exports/favicon/favicon-32.png",
+      "bytes": 677,
+      "sha256": "35c5254c509cc309c8c7c38deabf614508840f136280c93980d1bd11517d9bfa"
+    },
+    {
+      "path": "exports/favicon/favicon-32.webp",
+      "bytes": 448,
+      "sha256": "c857e0942ea98ce50919dad33b93b41500378acd63f31b2166192b2bc499fe5d"
+    },
+    {
+      "path": "exports/favicon/favicon-48.png",
+      "bytes": 1035,
+      "sha256": "312489d8dca6383da75ff765a762ec7508b28c4719d6a5da86bb751d741d0b34"
+    },
+    {
+      "path": "exports/favicon/favicon-64.png",
+      "bytes": 1311,
+      "sha256": "1c95c98b51a7fbef3ac42fc50377d14a8af67b2e7d515ee54fa3f46e94badae8"
+    },
+    {
+      "path": "exports/favicon/favicon.ico",
+      "bytes": 2085,
+      "sha256": "d10416c543c19342f7c4e6ed7a9ac6bd3ba9820d6f074e915ff5f054b2b9547f"
+    },
+    {
+      "path": "exports/favicon/favicon.svg",
+      "bytes": 867,
+      "sha256": "447ddb20750e82c75afeaefa16635c8b9ca30b690816a63289fa8bcfd3030d18"
+    },
+    {
+      "path": "exports/favicon/safari-pinned-tab.svg",
+      "bytes": 868,
+      "sha256": "248f967245596a819b2d382440a76b59cbc47730e783abf90b1f746186b97e79"
+    },
+    {
+      "path": "exports/social/github-social-1280x640.png",
+      "bytes": 33042,
+      "sha256": "9bffe0a0494db3689c13d9d2cb3e54a8996adcf56dea4b656461d9145da9bd38"
+    },
+    {
+      "path": "exports/social/social-card-1200x630.png",
+      "bytes": 32703,
+      "sha256": "1136ab00f058b7da2705af30877fb1eb98034d0bee86d707a50bc9b7221e41e7"
+    },
+    {
+      "path": "exports/social/social-card-1200x630.webp",
+      "bytes": 17774,
+      "sha256": "7132ea578d01c6da78db266e531a1c54deabb091fcb06dfe93993208623c8b8c"
+    },
+    {
+      "path": "exports/social/social-card-1200x675.png",
+      "bytes": 33194,
+      "sha256": "2021778e1f239801ec8310f3b7eb411d897f4122ce646f802fb938437f0ca2a3"
+    },
+    {
+      "path": "exports/social/social-card-dark-1200x630.png",
+      "bytes": 29737,
+      "sha256": "681f856bb127bb0db5eee9251aac56f5e32321ab150561260808d166c6b99222"
+    },
+    {
+      "path": "exports/wordmarks/wordmark-no-rule-1024.png",
+      "bytes": 21398,
+      "sha256": "222cd1584073df503bc93d774eae53b913d8b15bd6d3c7ad743e060dc9c4c092"
+    },
+    {
+      "path": "exports/wordmarks/wordmark-no-rule-2048.png",
+      "bytes": 47785,
+      "sha256": "f80dd1c296a91195c97ef62a7545604e1021f2052c6fc01b654e866b3d5fa55f"
+    },
+    {
+      "path": "exports/wordmarks/wordmark-no-rule-512.png",
+      "bytes": 9831,
+      "sha256": "bd428b37f352b3197889cb429a8fa0ef7c8b449491c7b4712db2da099ab66313"
+    },
+    {
+      "path": "exports/wordmarks/wordmark-primary-1024.png",
+      "bytes": 21992,
+      "sha256": "d4d2c8e8406f43fc768042cc4970b7b7ef546493cdd3296ebae2f9d7125314b2"
+    },
+    {
+      "path": "exports/wordmarks/wordmark-primary-2048.png",
+      "bytes": 49426,
+      "sha256": "bc7ee5eb8f43c1b6b2a517635d6487f94ba60435c6ee05df943d9a1df591fed2"
+    },
+    {
+      "path": "exports/wordmarks/wordmark-primary-512.png",
+      "bytes": 10380,
+      "sha256": "981483cb8d9710b15514e6e63723755fee7292cc8759362d6e9cd2b75f9ab393"
+    },
+    {
+      "path": "exports/wordmarks/wordmark-reverse-1024.png",
+      "bytes": 20966,
+      "sha256": "9a94c763bf9e27e98047d9e3578cb9d333e317717258b2e486340941fddaa919"
+    },
+    {
+      "path": "exports/wordmarks/wordmark-reverse-2048.png",
+      "bytes": 46745,
+      "sha256": "78a7b9faf21efe5fc759e68704e6d5a4686834731c078bdd527b36b4c47907cb"
+    },
+    {
+      "path": "exports/wordmarks/wordmark-reverse-512.png",
+      "bytes": 10002,
+      "sha256": "b2425a8b538f3ad275b382ec09402e6bc1c2d2110c7e7380ea26685ae07ec1c6"
+    },
+    {
+      "path": "source/brand-sheet.svg",
+      "bytes": 19946,
+      "sha256": "97e6a829ba216cd4aab96f59485e1a8ab5191c6fdc0f70b86e0fd9f8558cdff1"
+    },
+    {
+      "path": "source/favicon.svg",
+      "bytes": 867,
+      "sha256": "447ddb20750e82c75afeaefa16635c8b9ca30b690816a63289fa8bcfd3030d18"
+    },
+    {
+      "path": "source/github-social-1280x640.svg",
+      "bytes": 18820,
+      "sha256": "3e1ef9bbb6b07758f213e8dc131b4f25b045e6f18869481af2cda7fcb3a792a2"
+    },
+    {
+      "path": "source/mark-indigo.svg",
+      "bytes": 939,
+      "sha256": "dd424a451cde15cad2ecd2213343a89b3bb5e6c1ccacd6555b43f2aa6127c19b"
+    },
+    {
+      "path": "source/mark-light.svg",
+      "bytes": 973,
+      "sha256": "213cba00dc52dfa8e0e505c236b2577dee464c5388b06b444a4547af7dc99099"
+    },
+    {
+      "path": "source/mark-maskable.svg",
+      "bytes": 928,
+      "sha256": "7d77d34417ab09317320294dc3efbee1669a6d0e9119eca1f537279b5f74743f"
+    },
+    {
+      "path": "source/mark-one-color.svg",
+      "bytes": 868,
+      "sha256": "248f967245596a819b2d382440a76b59cbc47730e783abf90b1f746186b97e79"
+    },
+    {
+      "path": "source/mark-primary.svg",
+      "bytes": 939,
+      "sha256": "85c13b311253e09ac1994159635b28db1c4705d2cacb593891623e2f2cb1f0b3"
+    },
+    {
+      "path": "source/social-card-1200x630.svg",
+      "bytes": 18819,
+      "sha256": "d0bafe8f0b7a69cb8f9af3725e90ee1dd6dcbb8f2fc5d4be607f967deb08f401"
+    },
+    {
+      "path": "source/social-card-1200x675.svg",
+      "bytes": 18819,
+      "sha256": "13210217114b01876463e262210439d92dc46323d79d7183b89ac496a0c06485"
+    },
+    {
+      "path": "source/social-card-dark-1200x630.svg",
+      "bytes": 18713,
+      "sha256": "3e31c85115e785e491c167b930bb75996d8d6e1afce7a28b390f65e35c024061"
+    },
+    {
+      "path": "source/wordmark-indigo.svg",
+      "bytes": 3383,
+      "sha256": "d0ab4c6529525b9e12349c33e73883c774b190f4d04269558baedcc983725608"
+    },
+    {
+      "path": "source/wordmark-monochrome.svg",
+      "bytes": 3383,
+      "sha256": "a44ca384854355b28e54868658f7e53cbff7d8829360c2dd7b45a7a6f84a8a2d"
+    },
+    {
+      "path": "source/wordmark-no-rule.svg",
+      "bytes": 3227,
+      "sha256": "599d4216cb3658cba4fd91986654e0e0c10b0c2859dec4714875dd50e01ca0d9"
+    },
+    {
+      "path": "source/wordmark-primary.svg",
+      "bytes": 3383,
+      "sha256": "9119c27dd388e6fc9e49bf7b992fdb2a283651f05e9cd7c19953b4a03d39c4fd"
+    },
+    {
+      "path": "source/wordmark-reverse.svg",
+      "bytes": 3383,
+      "sha256": "40d439d4c496f3e94c60a2454845b487bb590e0fc5dcd21a75f72ef2708587e9"
+    }
+  ]
+}
