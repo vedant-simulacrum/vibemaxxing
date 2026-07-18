@@ -1,44 +1,25 @@
-# Final Planning Exit Audit
+# Historical Planning Exit Audit
 
-Status: final planning evidence
-Updated: 2026-07-19
+Status: **superseded by D-042 and the planning-hardening audit of 2026-07-19**
 
-## Result
+This document previously concluded that planning completeness passed. A later full repository audit found material defects:
 
-Planning completeness: **PASS**.
-Implementation authorization: **NOT GRANTED**.
-Implementation evidence: **NOT YET AVAILABLE**.
-Public launch: **NO-GO** until implemented evidence passes.
+- required machine-readable schemas were absent;
+- canonical registry references and vocabularies were inconsistent;
+- licensing and governance files contradicted accepted direction;
+- future repository paths were presented as current paths;
+- protocol batch and sequence-recovery behavior required invention;
+- repository checks could pass despite broken authority and semantic registry errors.
 
-## Exit criteria
+The former PASS must not be used as current readiness evidence.
 
-| Criterion | Result | Evidence |
-|---|---|---|
-| Authority and phase consistent | pass | root context, instructions, status, prompts |
-| Complete launch scope frozen | pass | product scope and product contract |
-| Requirements traceable | pass | traceability and dry-run audit |
-| Normative subsystem contracts | pass | accounting, adapter/VibeProof, native, server, social/integrity/UX, operations contracts |
-| Schema/interface ownership defined | pass | schema and interface inventory |
-| State, failure and recovery behavior defined | pass | subsystem contracts and table-tops |
-| Privacy boundary and allowlists defined | pass | privacy contract and protocol/runtime contracts |
-| Threats map to controls and appeals | pass | attack catalog, adversarial registry, table-tops |
-| Benchmark procedures and thresholds defined | pass | benchmark and evidence protocols |
-| Provisional choices have defaults | pass | provisional defaults and reversal thresholds |
-| Independent review lenses completed | pass | independent architecture reviews |
-| PR-sized dependency order exists | pass | implementation handoff and work breakdown |
-| Context-free handoff succeeds | pass | mock implementation handoff review |
-| No unresolved P0/P1 contradiction | pass | planning audit and live reconciliation |
-| User explicitly authorizes implementation | pending | must be a later explicit instruction |
-| Executable schemas/code/tests pass | pending implementation | cannot be proven by planning documents |
+## Current authority
 
-## Residual uncertainty
+Use:
 
-The following are intentionally implementation-evidence questions rather than planning gaps: exact Rust library winner, measured platform hardening strength, exercised adapter compatibility by version, calibrated detector thresholds, optional SLM acceptance, provider/region performance, real RPO/RTO, and operational vendor selection. Defaults and reversal conditions are committed.
+- `docs/project/STATUS.md` for current phase and readiness;
+- `docs/planning/TASK_CATALOG.md` for P-1120 through P-1128;
+- `docs/planning/DECISION_REGISTER.md` for D-042 through D-044;
+- `scripts/repository/doctor.py` for clean-checkout planning validation.
 
-## No-fake-evidence rule
-
-Planning completion does not imply code, schemas, migrations, binaries, adapters, cryptographic vectors, CI checks, benchmarks, audits, deployments or launch readiness have executed successfully. Those must be produced and validated during implementation.
-
-## Final gate
-
-The repository is ready for an explicit implementation phase change whenever the user chooses. Until then, allowed work is further research, review, specification refinement, issue creation and implementation sequencing; product code and deployment remain prohibited.
+A new planning-exit result may be issued only after the hardening tasks pass and an independent re-audit finds no unresolved P0/P1 planning defect. Implementation remains unauthorized regardless of any planning audit until the user explicitly opens P-1104.
