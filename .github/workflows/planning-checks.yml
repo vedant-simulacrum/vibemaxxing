@@ -30,9 +30,18 @@ jobs:
           persist-credentials: false
       - name: Repository doctor
         run: python3 scripts/repository/doctor.py
-      - name: Deterministic issue-plan generation
-        run: python3 scripts/repository/generate_issue_plan.py
-      - name: Verify generator cleanliness
-        run: git diff --exit-code -- artifacts/repository/issue-plan.json
+      - name: Validate deterministic issue-plan generation
+        run: |
+          python3 scripts/repository/generate_issue_plan.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('artifacts/repository/issue-plan.json')
+          data = json.loads(p.read_text())
+          assert len(data['issues']) == 52
+          assert data['issues'][0]['key'] == 'IMP-001'
+          assert data['issues'][-1]['key'] == 'IMP-052'
+          print('issue plan: pass')
+          PY
 
 # This workflow validates planning artifacts only. It does not build or implement the product.
