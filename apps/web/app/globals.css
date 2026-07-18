@@ -30,10 +30,6 @@ a { color: inherit; text-decoration: none; }
 .topbar { height: 68px; background: rgba(255,255,255,.93); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; backdrop-filter: blur(16px); }
 .topbar-inner { max-width: 1460px; height: 100%; margin: 0 auto; padding: 0 32px; display: flex; align-items: center; gap: 48px; }
 .wordmark { font-size: 20px; line-height: 1; letter-spacing: -.75px; font-weight: 680; display: inline-flex; align-items: center; white-space: nowrap; }
-.brand-x { width: 12px; height: 16px; position: relative; display: inline-block; margin: 0 1px; }
-.brand-x i, .brand-x b { position: absolute; left: 5px; top: -1px; width: 2px; height: 18px; border-radius: 2px; transform-origin: center; }
-.brand-x i { background: var(--indigo); transform: rotate(39deg); }
-.brand-x b { background: var(--ink); transform: rotate(-39deg); }
 nav { display: flex; gap: 28px; align-items: stretch; align-self: stretch; }
 nav a { font-size: 13px; font-weight: 550; color: var(--muted); display: flex; align-items: center; position: relative; }
 nav a:hover, nav a.active { color: var(--ink); }

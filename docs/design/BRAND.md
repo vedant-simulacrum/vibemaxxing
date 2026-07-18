@@ -1,6 +1,6 @@
 # Brand Guidelines
 
-Status: active design system, validation phase  
+Status: UI design system active; visual identity assets pending approval  
 Design thesis: **The Competitive Ledger**
 
 ## Canonical name
@@ -30,20 +30,9 @@ The leaderboard is the hero object. The interface should feel like a public reco
 
 ## Identity system
 
-The primary identity is the lowercase wordmark `vibemaxxing`. Its custom crossed `x` depicts two competitors exchanging position. One crossing path is near-black; the overtaking path is indigo. The standalone mark uses the same geometry, but the wordmark remains primary.
+The canonical name remains `vibemaxxing`, presented in lowercase. No symbol, custom letterform, app mark, favicon, or social asset is currently approved.
 
-Asset sources:
-
-- `apps/web/public/brand/wordmark.svg`
-- `apps/web/public/brand/wordmark-reverse.svg`
-- `apps/web/public/brand/mark.svg`
-- `apps/web/public/brand/mark-light.svg`
-- `apps/web/public/brand/favicon.svg`
-- `apps/web/public/brand/social-card.svg`
-
-Use the primary wordmark on warm-neutral or white surfaces and the reverse wordmark on near-black. Clear space is at least one lowercase `v` height. Never stretch, rotate, add a container around the full wordmark, apply gradients, or recolor arbitrary letters.
-
-The current wordmark is a validation asset and retains live SVG text. Convert it to outlined paths after the letter spacing and custom `x` pass usability and trademark review.
+Future identity directions must be rendered and shown to the user before being added to GitHub. Repository inclusion requires explicit user approval. Until then, product surfaces use a neutral lowercase text treatment.
 
 ## Color
 
@@ -106,7 +95,7 @@ Solid near-black pills choose the broad scope. Pale-indigo selections choose per
 
 ## Wordmark and imagery
 
-Begin with the refined wordmark rather than forcing a symbol. The crossed `x` and overtaking path are the canonical motif.
+Begin future exploration with a refined lowercase wordmark rather than forcing a symbol. No motif is canonical until visually reviewed and approved.
 
 Avoid:
 
