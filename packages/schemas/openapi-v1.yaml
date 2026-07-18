@@ -1,0 +1,167 @@
+openapi: 3.1.0
+info:
+  title: VibeMaxxing Public API
+  version: 1.0.0-planning
+  description: Planning-grade interface contract. It is not an implemented service.
+servers:
+  - url: https://api.vibemaxxing.dev/v1
+security:
+  - bearerAuth: []
+paths:
+  /claim-challenges:
+    post:
+      operationId: createClaimChallenge
+      responses:
+        '201':
+          description: Account and device bound batch challenge
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClaimChallenge' }
+        default: { $ref: '#/components/responses/Error' }
+  /claim-batches:
+    post:
+      operationId: submitClaimBatch
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/cbor:
+            schema: { type: string, contentEncoding: base64 }
+      responses:
+        '200':
+          description: Atomic batch verification result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BatchResult' }
+        default: { $ref: '#/components/responses/Error' }
+  /leaderboards/{scope}/{period}:
+    get:
+      operationId: getLeaderboard
+      security: []
+      parameters:
+        - { name: scope, in: path, required: true, schema: { type: string } }
+        - { name: period, in: path, required: true, schema: { enum: [daily, weekly, monthly, seasonal, yearly, lifetime] } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 2048 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: Snapshot-consistent leaderboard page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LeaderboardPage' }
+        default: { $ref: '#/components/responses/Error' }
+  /rank/me:
+    get:
+      operationId: getCurrentRank
+      responses:
+        '200':
+          description: Current-user rank from requested snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RankEntry' }
+        default: { $ref: '#/components/responses/Error' }
+  /deletion-requests:
+    post:
+      operationId: requestDeletion
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [scope]
+              properties:
+                scope: { enum: [server, local, everything] }
+      responses:
+        '202':
+          description: Deletion job accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Operation' }
+        default: { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 128 }
+  responses:
+    Error:
+      description: Stable safe error envelope
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    ClaimChallenge:
+      type: object
+      additionalProperties: false
+      required: [challenge_id, nonce, expires_at, max_claims, device_id]
+      properties:
+        challenge_id: { type: string, maxLength: 80 }
+        nonce: { type: string, contentEncoding: base64 }
+        expires_at: { type: string, format: date-time }
+        max_claims: { type: integer, minimum: 1, maximum: 500 }
+        device_id: { type: string, format: uuid }
+    BatchResult:
+      type: object
+      additionalProperties: false
+      required: [request_id, batch_id, atomic, outcome, claims]
+      properties:
+        request_id: { type: string, format: uuid }
+        batch_id: { type: string, format: uuid }
+        atomic: { const: true }
+        outcome: { enum: [accepted, accepted_idempotent, rejected, retryable] }
+        claims:
+          type: array
+          maxItems: 500
+          items:
+            type: object
+            additionalProperties: false
+            required: [claim_id, outcome]
+            properties:
+              claim_id: { type: string, format: uuid }
+              outcome: { enum: [accepted, accepted_idempotent, rejected_invalid, rejected_replay, rejected_privacy, rejected_unsupported, downgraded, quarantined, retryable] }
+              reason_code: { type: [string, 'null'] }
+    RankEntry:
+      type: object
+      additionalProperties: false
+      required: [account_id, rank, score, evidence_state]
+      properties:
+        account_id: { type: string, format: uuid }
+        rank: { type: integer, minimum: 1 }
+        score: { type: integer, minimum: 0 }
+        evidence_state: { enum: [standard, hardened] }
+    LeaderboardPage:
+      type: object
+      additionalProperties: false
+      required: [request_id, snapshot_generation, entries]
+      properties:
+        request_id: { type: string, format: uuid }
+        snapshot_generation: { type: string }
+        next_cursor: { type: [string, 'null'] }
+        entries: { type: array, items: { $ref: '#/components/schemas/RankEntry' } }
+    Operation:
+      type: object
+      additionalProperties: false
+      required: [request_id, operation_id, state]
+      properties:
+        request_id: { type: string, format: uuid }
+        operation_id: { type: string, format: uuid }
+        state: { enum: [accepted, running, completed, failed] }
+    Error:
+      type: object
+      additionalProperties: false
+      required: [request_id, code, message, retryable]
+      properties:
+        request_id: { type: string, format: uuid }
+        code: { type: string, pattern: '^[A-Z][A-Z0-9_]{2,79}$' }
+        message: { type: string, maxLength: 300 }
+        retryable: { type: boolean }
+        details: { type: object, additionalProperties: true }
