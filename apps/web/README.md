@@ -11,4 +11,4 @@ npm run dev
 
 The current screen is a responsive, accessible product prototype with interactive scope, period, and metric controls. Data is intentionally local fixture data; no backend integration is implied.
 
-Brand assets live in `public/brand`. Canonical visual rules and token definitions live in `docs/design/BRAND.md` at the repository root.
+Canonical visual rules and token definitions live in `docs/design/BRAND.md` at the repository root. Final brand assets are pending visual review and explicit approval before they are added to the repository.

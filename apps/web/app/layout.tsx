@@ -5,11 +5,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://vibemaxxing.dev"),
   title: "vibemaxxing — the competitive ledger",
   description: "Public competition. Private transcripts. Compare AI-agent activity without exposing your work.",
-  icons: { icon: "/brand/favicon.svg" },
   openGraph: {
     title: "vibemaxxing — the competitive ledger",
     description: "Burn more. Rank higher.",
-    images: ["/brand/social-card.svg"],
   },
 };
 

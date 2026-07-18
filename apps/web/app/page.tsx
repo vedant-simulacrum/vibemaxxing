@@ -45,7 +45,7 @@ function Icon({ name, size = 18 }: { name: "bell" | "search" | "chevron" | "arro
 }
 
 function Wordmark() {
-  return <a className="wordmark" href="#" aria-label="vibemaxxing home"><span>vibema</span><span className="brand-x" aria-hidden="true"><i/><b/></span><span>xing</span></a>;
+  return <a className="wordmark" href="#" aria-label="vibemaxxing home">vibemaxxing</a>;
 }
 
 function Movement({ value }: { value: number }) {
