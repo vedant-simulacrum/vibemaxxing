@@ -2,73 +2,53 @@
 
 VibeMaxxing is a privacy-preserving competitive leaderboard and Steam-like social layer for AI-agent activity, built on the local-first VibeProof accounting and integrity protocol.
 
-## Current phase
+## Status
 
-The project is in **planning and decision-closing mode**. Internal work may be staged, but product implementation starts only after the planning exit gate and explicit user approval. Public launch targets the complete initial product, not a narrow MVP.
+Technical planning and implementation contracts are complete. Product code has not begun. Implementation starts only after explicit user approval of P-1104.
 
 ## Start here
 
 1. `PROJECT_CONTEXT.md`
 2. `PROJECT_INSTRUCTIONS.md`
 3. `CURRENT_STATUS.md`
-4. `MODEL_OPERATING_MANUAL.md`
-5. `IMPLEMENTATION_ROADMAP.md`
-6. `docs/planning/DECISION_REGISTER.md`
-7. `docs/planning/DEPENDENCY_MAP.md`
-8. `docs/planning/TASK_CATALOG.md`
-9. `docs/planning/SPECIFICATION_INDEX.md`
-10. Relevant ADRs and specifications
-11. `START_HERE_PROMPT.md`
+4. `docs/planning/DECISION_REGISTER.md`
+5. `docs/planning/TASK_CATALOG.md`
+6. `docs/planning/SPECIFICATION_INDEX.md`
+7. `docs/implementation/IMPLEMENTATION_HANDOFF.md`
 
-## Current product direction
+## Product principles
 
-- Complete public-launch scope: every leaderboard scope/period, profiles, friends, rivals, overtakes, movement, streaks, seasons, presence, notifications, private boards, organizations, hacker houses, communities, countries, moderation, appeals, export, and deletion.
-- Local experience: background daemon installed and controlled through CLI, macOS menu-bar, Windows/Linux tray, local privacy/audit controls, and hosted web dashboard.
-- Universal compatibility: tiered adapter system covering all major agent families and honest generic/unsupported states.
-- Authentication: GitHub and X/Twitter OAuth; optional passkeys or hardware credentials for stronger protection.
-- Repository: private during planning, public open source before public launch.
-
-## Non-negotiable principles
-
-- No prompts, responses, transcripts, code, diffs, filenames, paths, project/repository names, tool contents, credentials, embeddings, summaries, classifications, or personal insights are sent to VibeMaxxing servers.
-- Competitive rankings use live qualifying claims rather than editable historical imports.
-- Token Burn is the default ranking metric.
+- No prompts, responses, transcripts, code, diffs, filenames, paths, project/repository names, tool contents, credentials, embeddings, summaries, classifications or personal insights are sent to VibeMaxxing servers.
+- Token Burn is the default raw usage-volume metric.
 - Cash Burn is always explicitly estimated.
-- Genuine but intentionally pointless use counts.
-- Historical imports are private analytics only.
-- Weak evidence never masquerades as strong evidence.
-- Public evidence language is `Standard`, `Hardened`, and `Imported`.
-- Deterministic controls own totals, signatures, replay, duplicates, and eligibility; SLMs are optional residual-risk signals only.
-- Development is local-first; cancelled remote-control-plane plans must not be revived.
+- Historical imports remain private analytics and never enter active rankings.
+- Genuine but intentionally wasteful activity counts when authentic and non-duplicated.
+- Evidence states are Standard, Hardened and Imported.
+- GitHub App and X OAuth 2.0 PKCE are primary identity paths; passkeys are optional stronger factors.
+- Agent support is universal and tiered, with public claims generated from exact conformance evidence.
+- Local UX includes collector, sync, daemon, CLI, macOS menu bar, Windows/Linux tray, local privacy controls and hosted web.
+- Public launch targets the complete product; staged internal delivery does not reduce scope.
 
-## Accepted stack
+## Technical direction
 
-- Rust 2024: native VibeProof/collector/adapter/privacy core.
-- Go: server APIs, ingestion, aggregation, ranking, presence, and operations.
-- Next.js and strict TypeScript: hosted web.
-- PostgreSQL with pgx and explicit SQL.
-- Protobuf/Buf internally; canonical CBOR/CDDL/COSE for signed claims.
+- Rust 2024: VibeProof, adapters, native runtime, privacy boundaries and canonical accounting/claims.
+- Go: OAuth, APIs, ingestion, verification, workers, ranking, presence and operations.
+- Next.js/strict TypeScript: web product.
+- PostgreSQL/pgx and explicit SQL: server source of truth.
+- Protobuf/Buf internally; deterministic CBOR/CDDL/COSE for signed public claims.
 
 ## Repository map
 
-- `docs/product/`: product behavior, accounting, pricing, social, and onboarding.
-- `docs/privacy/`: privacy contract.
-- `docs/security/`: threats, integrity, anti-cheat, isolation, IPC, authentication, and abuse.
-- `docs/architecture/`: system, ranking, and native-client architecture.
-- `docs/integrations/`: adapter certification and universal compatibility.
-- `docs/decisions/`: ADRs.
-- `docs/planning/`: decisions, dependencies, tasks, audits, and specification index.
-- `docs/research/`: historical evidence; lower authority than accepted decisions/specifications.
-- `docs/engineering/`, `docs/evals/`, `docs/qa/`, `docs/operations/`: evidence and operations requirements.
-- `conformance/`, `benchmarks/`, `evals/`, `artifacts/`: future executable evidence and current seed material.
-- `apps/`, `crates/`, `packages/`: implementation areas; most are currently scaffolds/specifications.
-
-## Automation and metadata
-
-CI, security, release, dependency, and eval automation are manual-only or disabled during planning. They must be restored and validated before launch.
-
-`FILE_INDEX.md`, `MANIFEST_FILES.txt`, and `SHA256SUMS` are generated by `scripts/repository/generate_repository_metadata.py`; do not maintain them manually.
+- `docs/implementation/IMPLEMENTATION_HANDOFF.md`: complete build order and no-invention rules.
+- `docs/product/`: scope, accounting, social, integrity and UX contracts.
+- `docs/architecture/`: protocol, native runtime, API/data/ranking contracts.
+- `docs/security/`: privacy, threats, authentication and anti-cheat.
+- `docs/operations/`: packaging, deployment, reliability, open-source and launch gates.
+- `conformance/`: machine-readable agent and adversarial registries plus future executable fixtures.
+- `apps/`, `crates/`, `packages/`: implementation areas.
 
 ## Readiness
 
-Planning may continue. Product implementation, competitive beta, and public release are currently no-go pending the complete planning program in `docs/planning/TASK_CATALOG.md`.
+- Technical planning: complete.
+- Implementation: awaiting explicit approval.
+- Competitive beta and public launch: no-go until executable evidence passes the complete gates.
