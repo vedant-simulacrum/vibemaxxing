@@ -2,8 +2,6 @@
 
 ## Authority
 
-Use this precedence when materials disagree:
-
 1. User's latest explicit instruction.
 2. `PROJECT_CONTEXT.md`.
 3. This file.
@@ -12,77 +10,47 @@ Use this precedence when materials disagree:
 6. `IMPLEMENTATION_ROADMAP.md`.
 7. `RESEARCH_AND_EVIDENCE_BACKLOG.md`.
 8. Nearest `AGENTS.md`.
-9. Accepted ADRs and current specifications.
-10. Historical research documents.
+9. Accepted ADRs and current normative specifications.
+10. Historical research.
 
-Never silently choose between contradictory sources. Record and resolve contradictions through the planning audit and decision register.
+Never silently choose between contradictory sources. Record material changes in the decision register and ADRs.
 
 ## Current phase
 
-The project is in planning and decision-closing mode. Do not implement the product, deploy infrastructure, build production adapters, or generate placeholder scaffolding until the user explicitly opens implementation.
+Technical planning is complete. Do not implement the product, deploy, enable production automation, or claim executable evidence until the user explicitly approves entry into implementation. Once approved, start from `docs/implementation/IMPLEMENTATION_HANDOFF.md`.
 
-Allowed work includes audits, research, ADRs, specifications, schemas, APIs, state machines, threat/control mappings, benchmark plans, fixtures, test plans, task decomposition, dependency analysis, acceptance gates, and repository operations needed to validate planning.
-
-## Product scope
-
-Internal development may be staged. Public launch targets the complete initial product and may not be silently narrowed to a minimal public MVP.
-
-The complete target includes all leaderboard scopes and periods, profiles, friends, rivals, overtakes, rank movement, presence, notifications, boards, organizations, hacker houses, communities, country boards, moderation, appeals, export, deletion, native local UX, and broad agent compatibility.
-
-## Local-first constraint
-
-Do not propose or configure a remote development control plane, autonomous cloud bootstrap, persistent remote agent service, remote model router, or remote private-context store.
-
-## Non-negotiable privacy and integrity rules
+## Non-negotiable product and privacy rules
 
 - Servers never receive prompts, responses, transcripts, code, diffs, filenames, paths, project/repository names, tool contents, credentials, embeddings, summaries, classifications, or personal insights.
-- Only fixed-schema safe claims may cross the device boundary.
-- Token Burn is the default ranking metric.
-- Cash Burn is always explicitly estimated.
+- Only fixed-schema safe claims cross the device boundary.
+- Token Burn is the default raw ranking metric; Cash Burn is always explicitly estimated.
 - Historical imports never enter active competition.
-- Genuine but intentionally pointless usage counts.
-- Weak evidence never masquerades as strong evidence.
-- Public evidence language is Standard, Hardened, and Imported.
-- Models and heuristics are secondary signals; deterministic controls own totals and hard protocol decisions.
-
-## Authentication direction
-
-Primary account access uses GitHub and X/Twitter OAuth. Passkeys or hardware-backed credentials are optional stronger factors. Specifications must cover account linking, provider compromise, provider loss, recovery, session revocation, and high-risk actions.
-
-## Agent compatibility direction
-
-Do not define support as a fixed handwritten list. Use a living, versioned adapter registry and tiered states: Hardened-certified, Competitive-certified, Community-certified, Generic live, Imported, and Unsupported. Public claims must be generated from exercised evidence.
-
-## Local product direction
-
-The local product includes a background daemon installed and controlled through CLI, a macOS menu-bar experience, Windows/Linux tray experiences, local audit/control UX, a separate sync boundary, and a hosted web dashboard. Platform-specific differences must be explicit.
+- Weak evidence never masquerades as strong evidence; public states are Standard, Hardened and Imported.
+- Public launch is comprehensive; staging does not reduce scope.
+- GitHub App and X PKCE are primary identity paths; passkeys are optional stronger factors.
+- Agent support is tiered and generated from exercised conformance evidence.
+- Local product includes collector, sync, daemon, CLI, menu-bar/tray, local audit UX and hosted web.
 
 ## Accepted technology direction
 
-- Rust 2024 for VibeProof, adapters, collector, native core, privacy boundaries, canonical encoding/signing, replay, and protocol reference logic.
-- Go for server APIs, ingestion, verification orchestration, aggregation workers, ranking, presence, migrations, and operational tooling.
-- Next.js App Router and strict TypeScript for the hosted web product.
-- PostgreSQL with pgx and explicit SQL as the server source of truth.
-- Protobuf + Buf for internal contracts; canonical CBOR + CDDL + COSE for signed public claims.
+- Rust 2024 for VibeProof, adapters, native collection/runtime, privacy boundaries, canonical accounting/encoding/signing.
+- Go for OAuth, APIs, ingestion, verification, aggregation, ranking, presence, notifications, migrations and operations.
+- Next.js App Router and strict TypeScript for web.
+- PostgreSQL/pgx and explicit SQL as server source of truth.
+- Protobuf/Buf internally; deterministic CBOR/CDDL/COSE for signed claims.
 
-Do not add Kubernetes, Kafka, GraphQL, service mesh, workflow engine, vector database, or ORM-heavy persistence without an evidence-backed ADR.
+Do not add Kubernetes, Kafka, GraphQL, service mesh, workflow engine, vector database or ORM-heavy persistence without evidence-backed ADR.
 
-## Security and operations direction
+## Implementation rules after approval
 
-- Use tiered OS-native hardening; never claim equal enforcement across platforms.
-- Use append-only accepted claims, transactional outbox, idempotent aggregation, and deterministic rebuild.
-- Freeze canonical encoding and require cross-language, malformed-vector, fuzz, resource, and differential tests.
-- Require consumer-side release verification and TUF conformance before updater acceptance.
-- Use telemetry allowlists and seeded canaries; content-bearing GenAI telemetry fields are forbidden.
-- Keep active abuse thresholds, exploit signatures, unpublished incidents, and private business material outside public Git.
-- CI, eval, dependency, security, and release workflows remain manual-only during planning and must be restored and validated before launch.
+- Follow the normative contract set and build sequence in the implementation handoff.
+- Select libraries only within frozen behavior; material semantic changes require ADRs.
+- Define/generated schemas before business logic.
+- Preserve transcript/network process separation.
+- Treat database constraints, migrations, rollback, deletion and rebuild as correctness.
+- Every PR identifies task/decision IDs, contract sections, privacy/security impact, compatibility, tests, benchmarks and rollback.
+- Do not claim completion from mocks, placeholders, skipped tests or unexecuted fixtures.
 
-## Working style and completion
+## Evidence boundary
 
-- Audit assumptions instead of agreeing automatically.
-- Verify unstable platform, library, provider, pricing, and standards facts with primary sources.
-- Use implementation-grade planning: interfaces, schemas, invariants, limits, failures, migrations, recovery, privacy, security, observability, compatibility, and tests.
-- Do not claim completion from prose, empty fixtures, skipped tests, or placeholders.
-- Keep the repository independently understandable without chat history.
-- Update the decision register, dependency map, task catalog, and affected specifications when closing decisions.
-- A planning task is complete only when a later implementation model can build it without inventing critical behavior.
+Planning contracts are complete. CI, conformance, attacks, benchmarks, accessibility, packaging, security review, recovery drills and launch readiness remain executable evidence that must be produced during implementation.
