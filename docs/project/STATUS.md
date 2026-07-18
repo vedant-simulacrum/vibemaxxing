@@ -4,20 +4,23 @@ Updated: 2026-07-19
 
 ## Phase
 
-The repository remains in **planning mode**. Technical planning, normative implementation contracts, traceability, dry runs, adversarial table-tops, benchmark protocols, independent review lenses, implementation decomposition, provisional defaults, the final planning-exit audit, and repository consolidation are complete.
+The repository remains in **planning mode**. Product implementation has not begun and is not authorized.
 
-Product implementation has not begun and is not authorized.
+The behavioral architecture and major subsystem contracts are substantially planned. The repository is now in a **planning-hardening phase**: draft machine-readable schemas, protocol edge semantics, policy registries, repository validation, governance, and execution-thread preparation must be completed and validated before technical planning can be called complete.
 
 ## Readiness
 
-- Product and architecture planning: complete.
-- Technical implementation contracts: complete.
-- Traceability and context-free handoff: complete.
-- Cross-document contradiction review: complete.
-- Documentation and initialization consolidation: complete.
+- Product direction and launch scope: complete at planning level.
+- Major architecture and subsystem behavior: substantially specified.
+- Machine-readable schema/interface drafts: in progress.
+- Protocol edge semantics and centralized policy defaults: in progress.
+- Repository initialization and consistency validation: in progress.
+- Governance and license consistency: in progress.
 - Implementation: not started; explicit user approval required.
 - Competitive beta: no-go until executable evidence passes.
 - Public launch: no-go until the comprehensive launch gate passes.
+
+Planning artifacts must never be represented as working code, passing conformance, tested cryptography, certified adapters, validated performance, deployed infrastructure, or launch readiness.
 
 ## Canonical repository entrypoints
 
@@ -25,22 +28,10 @@ Product implementation has not begun and is not authorized.
 - `docs/project/PROJECT.md` owns project authority.
 - `docs/project/STATUS.md` owns current phase and readiness.
 - `docs/project/DOCUMENTATION.md` is the sole documentation map.
-- `docs/implementation/IMPLEMENTATION_HANDOFF.md` is the single implementation build-order contract.
-- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` is the only granular implementation decomposition.
-- `docs/research/README.md` is the only research index.
-
-Removed root context, status, model prompt, start prompt, roadmap, research backlog, upload/package audit, manifest/index placeholders, duplicate build plan, duplicate technology stack, duplicate planning index, dependency map, and superseded planning audit must not be recreated.
+- `docs/implementation/IMPLEMENTATION_HANDOFF.md` owns implementation order.
+- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` owns granular work decomposition.
+- `docs/research/README.md` is the sole research index.
 
 ## Automation
 
-During planning, CI, security, release, dependency, and eval workflows remain manual-only or disabled. Dependabot is removed. Restoring and proving tuned automation is an implementation task and cannot be satisfied by documentation.
-
-## Repository state
-
-The repository contains normative contracts, decision records, machine-readable planning registries, evidence protocols, classified historical research, and small seed executable material. It does not contain a production product.
-
-Generated repository metadata is owned by `scripts/repository/generate_repository_metadata.py` and is written under `artifacts/repository/`. Hand-maintained inventories and checksums are non-authoritative.
-
-## Current gate
-
-The current gate is P-1104: explicit user approval to enter implementation. Until approval, allowed work is targeted research, external review, contract refinement, repository organization, issue decomposition, and evidence-plan improvement. Product code, deployment, and claims of executable evidence remain prohibited.
+During planning, product build, security, release, dependency, and evaluation
