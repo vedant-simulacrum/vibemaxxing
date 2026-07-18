@@ -5,64 +5,79 @@ Updated: 2026-07-19
 ## Critical path
 
 ```text
-P-000 repository truth and planning gate
-  -> P-100 product glossary and accounting semantics
-  -> P-200 adapter contract and certification
+P-000 repository truth and governance
+  -> P-050 complete product scope, glossary, journeys, and launch gates
+  -> P-100 accounting, pricing, comparability, and time semantics
+  -> P-200 universal agent compatibility and adapter contracts
   -> P-300 VibeProof protocol contract
-  -> P-400 collector, IPC, storage, and device identity contract
-  -> P-500 ingestion API, ledger, outbox, aggregates, and ranking contract
-  -> P-600 web leaderboard and privacy-verification contract
-  -> P-700 authentication, social graph, boards, abuse, and moderation contract
-  -> P-800 packaging, updater, observability, deployment, recovery, and release contract
-  -> P-900 final implementation-readiness review
+  -> P-400 native daemon, collector, storage, IPC, and device identity
+  -> P-500 account identity, OAuth, sessions, recovery, and authorization
+  -> P-600 server APIs, PostgreSQL, ingestion, aggregation, and ranking
+  -> P-700 social graph, boards, countries, presence, notifications, moderation, and lifecycle
+  -> P-800 anti-cheat control mapping, attack lab, detector decision, and red-team operations
+  -> P-900 web/native UX, privacy verification, design, and accessibility
+  -> P-1000 packaging, production operations, and open-source launch
+  -> P-1100 final planning, implementation, and public-launch reviews
 ```
 
-## Why this order exists
+## Dependency rules
 
-- Adapter work depends on frozen accounting categories and privacy rules.
-- Signed claims depend on normalized events and accounting semantics.
-- Collector boundaries depend on the claim schema, key lifecycle, and deduplication model.
-- Server ingestion depends on the signed claim and identity contracts.
-- Ranking depends on accepted-claim semantics, time policy, late-event policy, and rebuild rules.
-- Web and social contracts depend on ranking, evidence labels, privacy states, and authentication.
-- Packaging and operations depend on all supported binaries, services, schemas, and recovery paths.
+- Product scope and glossary precede domain schemas and user-facing terminology.
+- Accounting semantics precede normalized agent events, claims, ranking, and pricing.
+- Adapter contracts precede VibeProof claim semantics because claims preserve source/evidence provenance.
+- VibeProof fields, errors, and sequences precede local storage, IPC, device, and ingestion contracts.
+- Device identity and native authorization precede server account/device binding.
+- OAuth/account/session state precedes social permissions, boards, moderation, export, and deletion.
+- Claim acceptance transactions precede aggregation, ranking, overtakes, streaks, seasons, and notifications.
+- Social and account state precede complete anti-abuse policy and appeals.
+- Complete product/domain contracts precede routes, UI states, accessibility, and privacy-verification UX.
+- Packaging and operations depend on all shipping binaries, services, schemas, data lifecycles, and recovery paths.
+- Public launch depends on restored automated evidence, open-source governance, complete agent-family coverage, and explicit approval.
 
 ## Parallel planning tracks
 
-These may proceed concurrently after P-000:
+After P-000 and P-050, these can proceed concurrently where dependencies are met:
 
-- product glossary, onboarding language, and design information architecture;
-- provider pricing dataset format and provenance operations;
-- platform capability matrix for macOS, Windows, Linux, WSL, and containers;
-- abuse taxonomy, moderation workflow, appeal states, and retention rules;
-- observability event allowlist and canary plan;
-- deployment environments, configuration, secrets, release promotion, and rollback model.
+- pricing data/provenance and cross-provider comparability;
+- agent census and community adapter governance;
+- platform capability/hardening research;
+- GitHub/X authentication research;
+- abuse taxonomy, moderator/appeal states, and insider controls;
+- observability allowlist and privacy canaries;
+- deployment/provider/region/cost research;
+- license, DCO/CLA, trademark, maintainer, and release governance;
+- route/information architecture based on frozen product scope.
 
-## Cross-cutting dependencies
+## Cross-cutting requirements
 
 Every domain task must reference:
 
+- `PROJECT_CONTEXT.md` and current decision IDs;
 - `docs/privacy/PRIVACY_CONTRACT.md`;
 - `docs/security/THREAT_MODEL.md`;
 - `docs/security/INTEGRITY_MODEL.md`;
+- `docs/security/ANTI_CHEAT_ATTACK_CATALOG.md` where relevant;
 - `docs/engineering/PERFORMANCE_BUDGETS.md`;
 - `docs/qa/ACCEPTANCE_GATES.md`;
-- `docs/evals/EVAL_SYSTEM.md`;
-- applicable ADRs and decision IDs.
+- `docs/evals/EVAL_SYSTEM.md` as future evidence, not current automatic execution;
+- relevant platform, lifecycle, accessibility, and operations contracts.
 
 ## Planning blockers
 
-A task is blocked when any of these is missing:
+A task is blocked when any required upstream item lacks:
 
-- upstream schema or invariant;
-- platform capability assumption;
-- privacy allowlist;
-- threat/control mapping;
-- error and degradation behavior;
-- storage or transaction semantics;
-- deterministic acceptance evidence;
-- owner for an unresolved external fact.
+- canonical schema, field semantics, or invariant;
+- source/evidence or platform capability assumption;
+- privacy classification and outbound allowlist;
+- authentication/authorization or threat/control mapping;
+- error, limit, timeout, retry, degradation, and recovery behavior;
+- storage, transaction, ordering, idempotency, migration, or deletion semantics;
+- compatibility/versioning/deprecation policy;
+- measurable positive, negative, adversarial, performance, or accessibility evidence plan;
+- owner and closure condition for unresolved external facts.
 
-## Phase change dependency
+## Phase changes
 
-No implementation task may start until P-900 passes and the user explicitly changes the phase from planning to implementation.
+- No implementation task starts until P-1104 passes and the user explicitly opens implementation.
+- Restoring automated implementation/launch checks occurs only in the implementation phase under P-1007.
+- Public launch requires P-1105 and explicit user approval; passing an internal vertical slice or competitive beta is insufficient.
