@@ -1,0 +1,70 @@
+; VibeProof claim v1 planning-grade structural schema.
+; Semantic invariants remain normative in ADAPTER_AND_VIBEPROOF_CONTRACT.md.
+
+vibeproof-claim-v1 = {
+  1: 1,                         ; protocol_version
+  2: bstr .size 16,             ; claim_id UUID bytes
+  3: bstr .size 32,             ; account_pseudonym
+  4: tstr .size (1..80),        ; device_key_id
+  5: uint .gt 0,                ; device_sequence
+  6: bstr .size 32 / null,      ; previous_claim_hash
+  7: tstr .size (1..80),        ; challenge_id
+  8: bstr .size 32,             ; challenge_nonce
+  9: uint,                      ; challenge_expires_at epoch seconds
+  10: uint,                     ; source_event_start epoch seconds
+  11: uint,                     ; source_event_end epoch seconds
+  12: uint,                     ; monotonic_duration_ns
+  13: tstr .size (1..80),       ; adapter_id
+  14: tstr .size (1..40),       ; adapter_version
+  15: tstr .size (1..80),       ; source_id
+  16: tstr .size (1..80),       ; source_version
+  17: tstr .size (1..80),       ; provider_id
+  18: tstr .size (1..160),      ; model_id
+  19: token-categories,
+  20: count-quality,
+  21: tstr .size (1..80) / null,; pricing_dataset_id
+  22: evidence-state,
+  23: tstr .size (1..80),       ; platform_capability_code
+  24: tstr .size (1..40),       ; privacy_scan_version
+  25: 0,                        ; privacy_scan_result: pass only
+  26: uint,                     ; issued_at
+  27: uint,                     ; expires_at
+  ? 28: batch-context,
+  ? 29: correction-context,
+  ? 30: gap-declaration,
+  ? 1000: { * uint => bstr .size (0..1024) }
+}
+
+token-categories = {
+  ? 1: uint, ? 2: uint, ? 3: uint, ? 4: uint,
+  ? 5: uint, ? 6: uint, ? 7: uint
+}
+
+count-quality = 0 / 1 / 2 / 3
+; 0 provider-reported, 1 source-reported, 2 reconstructed, 3 estimated
+
+evidence-state = 0 / 1
+; 0 Standard, 1 Hardened. Imported records are not competitive claims.
+
+batch-context = {
+  1: bstr .size 16,             ; batch_id
+  2: uint,                      ; index, zero based
+  3: uint .gt 0,                ; count
+  4: bstr .size 32              ; batch_challenge_nonce
+}
+
+correction-context = {
+  1: bstr .size 16,             ; superseded_claim_id
+  2: tstr .size (1..80)         ; registered reason code
+}
+
+gap-declaration = {
+  1: uint .gt 0,                ; first_missing_sequence
+  2: uint .gt 0,                ; last_missing_sequence
+  3: gap-reason,
+  4: bstr .size 32,             ; local audit commitment
+  5: uint                       ; declared_at
+}
+
+gap-reason = 0 / 1 / 2 / 3
+; 0 local-corruption, 1 acknowledged-state-loss, 2 interrupted-migration, 3 key-recovery
