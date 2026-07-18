@@ -34,7 +34,7 @@ Read only this bounded initialization set first:
 7. `docs/implementation/IMPLEMENTATION_HANDOFF.md` and `PR_SIZED_WORK_BREAKDOWN.md` only when implementation has been explicitly authorized
 8. the nearest nested `AGENTS.md`, if one exists for the files being changed
 
-Do not preload every research file. Use `docs/research/RESEARCH_PROVENANCE_INDEX.md` to locate only the evidence relevant to the active decision or task.
+Do not preload every research file. Use `docs/research/README.md` to locate only the evidence relevant to the active decision or task.
 
 ## 3. Phase gate
 
@@ -120,7 +120,7 @@ Never create:
 
 When information belongs in an existing contract, update that contract and link to it. When a document becomes redundant, merge unique content, update references, and delete it.
 
-Historical research remains under `docs/research/` and is classified by the provenance index. Historical research does not override accepted ADRs or normative contracts.
+Historical research remains under `docs/research/` and is classified by `docs/research/README.md`. Historical research does not override accepted ADRs or normative contracts.
 
 ## 9. Required quality standard
 
