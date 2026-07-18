@@ -28,9 +28,9 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-020 | Country boards use user assertions, change cooldowns, optional stronger evidence and minimum-cohort privacy thresholds | accepted | privacy or abuse evidence requires revision |
 | D-021 | Anti-abuse is progressive, appealable and does not require government ID by default | accepted | severe integrity evidence |
 | D-022 | Public support claims are generated from an exercised adapter registry | accepted | none |
-| D-023 | Gemini CLI, Claude Code, and Codex are the complete launch adapter scope | superseded | replaced by D-030 |
+| D-023 | Three named CLI adapters are the complete launch scope | superseded | replaced by D-030 |
 | D-024 | Secure updater uses TUF and must pass conformance and malicious-metadata tests | accepted | updater ADR |
-| D-025 | GenAI telemetry is allowlisted and content-bearing fields are forbidden | accepted | never silently reopen |
+| D-025 | Telemetry is allowlisted and content-bearing fields are forbidden | accepted | never silently reopen |
 | D-026 | Kubernetes, Kafka, GraphQL, service mesh, vector DB, workflow engine and ORM-heavy persistence are excluded absent ADR evidence | accepted | evidence-backed ADR |
 | D-027 | Product implementation requires explicit user phase approval | accepted | explicit user phase change |
 | D-028 | Primary account access is OAuth-based; passkeys/hardware credentials are optional stronger factors | accepted | provider or security research failure |
@@ -39,20 +39,23 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-031 | Local UX includes daemon, private collector, network-safe sync, CLI, macOS menu bar, Windows/Linux tray, local controls and hosted web | accepted | platform feasibility evidence |
 | D-032 | Genuine but intentionally wasteful usage counts when authentic and non-duplicated | accepted | explicit product-policy change |
 | D-033 | Repository is private during planning and becomes public open source before public launch | accepted | explicit user change |
-| D-034 | Automated CI, eval, dependency, security and release workflows remain manual-only during planning | accepted | implementation phase begins |
+| D-034 | Product CI, eval, dependency, security and release automation remains manual-only during planning; read-only planning validation is allowed | accepted | implementation phase begins |
 | D-035 | An SLM is conditional residual-risk detection and may not rewrite totals or permanently ban users | accepted | measured detector bakeoff |
 | D-036 | GitHub uses a GitHub App with web/device authorization; X uses OAuth 2.0 Authorization Code with PKCE | accepted | provider capability or security changes |
 | D-037 | Raw Token Burn remains unnormalized across model capability; filters and disclosures provide context | accepted | explicit new metric ADR |
-| D-038 | Technical planning contracts are complete; implementation evidence remains separate | accepted | a contradiction or missing critical contract is demonstrated |
-| D-039 | Initial production architecture is cloud-portable managed containers, PostgreSQL, optional Redis and object storage; provider/region are deployment configuration | accepted | provider ADR during implementation |
-| D-040 | Original code targets Apache-2.0, docs/specs CC BY 4.0 where suitable, and DCO without CLA initially, subject to final legal/dependency review | provisional | legal and dependency review before public release |
+| D-038 | Technical planning contracts were previously declared complete | superseded | replaced by D-042 after audit found missing schemas and contradictions |
+| D-039 | Initial production architecture is cloud-portable managed containers, PostgreSQL, optional Redis and object storage | accepted | provider ADR during implementation |
+| D-040 | Apache-2.0 for original code, CC BY 4.0 for docs/specs, DCO without CLA initially | accepted | ADR-009; final dependency/counsel review remains release evidence |
 | D-041 | `AGENTS.md` is the sole initialization manual; `docs/project/` owns project authority/status/navigation; implementation planning is limited to one handoff plus one PR work breakdown; research is indexed only through `docs/research/README.md` | accepted | explicit repository-governance change |
+| D-042 | Repository is in planning-hardening until draft schemas, validation, governance, and protocol edge semantics pass | accepted | P-1120 through P-1128 pass |
+| D-043 | Protocol v1 uses one challenge per atomic batch; partial acceptance is prohibited; bounded signed gap declarations downgrade continuity | accepted | ADR-007 or protocol-major revision |
+| D-044 | Handle normalization uses Unicode 16.0 NFKC/full case fold/confusable skeleton rules; configurable defaults live in a versioned policy registry | accepted | ADR-008 or proven internationalization failure |
 
 ## Register rules
 
 - Every material commitment receives a stable ID.
 - Only allowed status values may be used.
 - `provisional` and `research-required` items cannot be presented as production-proven.
-- A planning decision may be complete while its implementation evidence remains pending.
+- A planning decision may be complete while implementation evidence remains pending.
 - `superseded` decisions remain for history and identify their replacement.
 - Reopening an accepted decision requires the stated condition, an ADR where material, and updates to dependent specifications and tasks.
