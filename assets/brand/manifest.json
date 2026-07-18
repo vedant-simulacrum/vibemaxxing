@@ -3,9 +3,14 @@
   "identity": "vibemaxxing",
   "files": [
     {
+      "path": "FONT_PROVENANCE.md",
+      "bytes": 2335,
+      "sha256": "b9513fb49752b8f4bd4d6d4d25f90ee107514df362aa82032a2394086ddc4158"
+    },
+    {
       "path": "README.md",
-      "bytes": 2830,
-      "sha256": "61d355f3294f3926e656714c8520dc308285880185c1d10ff661947d61a464fb"
+      "bytes": 3265,
+      "sha256": "a0a6ca1881eb60f60a1fdcd3b524a0480ffd0a3ec5e0906c1b46e36086b10b82"
     },
     {
       "path": "exports/app-icons/android-chrome-192.png",

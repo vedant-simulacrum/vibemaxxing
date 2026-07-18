@@ -56,6 +56,8 @@ npm run render
 
 The generator converts the approved wordmark to outlined paths. Final SVGs contain no live text and do not require the development font at runtime. Do not manually edit generated exports; update the generator and regenerate the package.
 
+The exact generation font is **Nimbus Sans Bold, Version 1.00, PostScript name `NimbusSans-Bold`**, pinned by SHA-256 in the generator. Maintainers obtain it from the official [Artifex URW Base 35 repository](https://github.com/ArtifexSoftware/urw-base35-fonts). It is not the product UI font and is not required by asset consumers. Read [`FONT_PROVENANCE.md`](FONT_PROVENANCE.md) before regenerating or redistributing font software.
+
 ## Governance
 
 The identity shown here was explicitly approved by the project owner. Any change to the wordmark, `vm` geometry, ledger rule, palette, asset naming, or export matrix must be visually shown to the owner before it is committed.
