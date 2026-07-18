@@ -1,0 +1,115 @@
+version: 1
+suites:
+- id: protocol-conformance
+  owner: vibeproof
+  blocking_from_milestone: vertical-slice
+- id: privacy-boundary
+  owner: security
+  blocking_from_milestone: vertical-slice
+- id: ranking-accounting
+  owner: backend
+  blocking_from_milestone: vertical-slice
+- id: sandbox-enforcement
+  owner: security
+  blocking_from_milestone: collector-alpha
+- id: authentication-recovery
+  owner: identity
+  blocking_from_milestone: accounts-alpha
+- id: release-verification
+  owner: release
+  blocking_from_milestone: first-binary-release
+- id: observability-privacy
+  owner: platform
+  blocking_from_milestone: service-alpha
+- id: adversarial-integrity
+  owner: security
+  blocking_from_milestone: competitive-beta
+- id: frontend-quality
+  owner: frontend
+  blocking_from_milestone: ui-shell
+- id: resilience
+  owner: platform
+  blocking_from_milestone: beta
+- id: performance-efficiency
+  owner: performance
+  blocking_from_milestone: beta
+- id: local-ipc-identity
+  description: Cross-platform peer authentication, ACL, freshness, replay, and message-boundary
+    tests
+  status: not_applicable
+  reason: Executable platform IPC fixtures are not implemented yet
+- id: pricing-provenance
+  description: Immutable pricing datasets, source digests, effective dates, category
+    mapping, and historical reproducibility
+  status: not_applicable
+  reason: Versioned pricing ledger and fixtures are not implemented yet
+- id: abuse-country-privacy
+  description: Rate limits, Sybil controls, country correction, cohort suppression,
+    and privacy negative tests
+  status: not_applicable
+  reason: Abuse and country systems are not implemented yet
+- id: webauthn-conformance
+  description: Registration, authentication, origin/RP validation, recovery gates,
+    multiple credentials, and browser interoperability
+  status: not_applicable
+  reason: WebAuthn implementation and conformance fixtures are not implemented yet
+- id: agent-integration-feasibility
+  description: Versioned adapter probes, token reconciliation, privacy negatives,
+    and upgrade compatibility
+  status: not_applicable
+  reason: Three exercised production adapters and result artifacts do not exist yet
+- id: protocol-library-bakeoff
+  description: Rust CBOR/COSE malformed vectors, fuzzing, differential decoding, memory
+    and throughput evidence
+  status: not_applicable
+  reason: Executable library comparison result artifact does not exist yet
+- id: database-ranking-benchmark
+  description: PostgreSQL score-table scale, top-N, user rank, duplicate storm, rollover,
+    and rebuild benchmarks
+  status: not_applicable
+  reason: Ephemeral database benchmark results do not exist yet
+- id: updater-conformance
+  description: TUF root, expiry, rollback, freeze, threshold, interruption, and atomic-install
+    conformance
+  status: not_applicable
+  reason: Updater client and upstream conformance results do not exist yet
+- id: telemetry-canary-leakage
+  description: Seeded sensitive canaries absent from all telemetry, logs, profiles,
+    and crash artifacts
+  status: not_applicable
+  reason: Instrumented service export artifacts do not exist yet
+- id: competitive-beta-go-no-go
+  description: Aggregates all mandatory viability evidence for competitive beta
+  status: not_applicable
+  reason: Mandatory adapter, protocol, ranking, isolation, adversarial, and release
+    evidence is incomplete
+- id: token-accounting-conformance
+  description: Cross-provider category relationships, source precedence, retries,
+    caching, reasoning, tools, multimodal, and deduplication semantics
+  status: not_applicable
+  reason: Provider fixtures and normalized accounting implementation are not complete
+- id: collector-power-performance
+  description: CPU, memory, wakeups, disk, latency, throughput, battery and energy
+    benchmarks across macOS, Windows and Linux
+  status: not_applicable
+  reason: Cross-platform benchmark artifacts do not exist yet
+- id: onboarding-trust
+  description: Five-minute first-claim flow, privacy comprehension, Cash Burn comprehension,
+    accessibility, uninstall and deletion confidence
+  status: not_applicable
+  reason: User-study result artifact does not exist yet
+- id: social-ranking-simulation
+  description: Tie policy, rollovers, late claims, notification hysteresis, presence
+    expiry, private boards and country cohorts
+  status: not_applicable
+  reason: Executable social and ranking simulation results do not exist yet
+- id: data-lifecycle-recovery
+  description: Deletion, backup expiry, restore, ledger rebuild, migration rollback,
+    key rotation and corruption recovery
+  status: not_applicable
+  reason: Deletion and recovery exercise artifacts do not exist yet
+- id: moderation-operations
+  description: Quarantine, appeals, device revocation, spam, board moderation and
+    audited enforcement tabletop
+  status: not_applicable
+  reason: Moderation tabletop and operational tooling evidence do not exist yet

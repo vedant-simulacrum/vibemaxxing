@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 scripts/ci/repository_policy.py
+      - name: Validate YAML and JSON
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path('.').rglob('*.json'): json.loads(p.read_text())
+          PY
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: '**/*.md'
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --offline '**/*.md'
+          fail: true
+
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - name: Rust checks when workspace exists
+        shell: bash
+        run: |
+          if test -f Cargo.toml; then cargo fmt --all --check; cargo clippy --workspace --all-targets --all-features -- -D warnings; cargo test --workspace --all-features; fi
+      - name: Node checks when workspace exists
+        shell: bash
+        run: |
+          if test -f package-lock.json; then npm ci; npm run lint --if-present; npm run typecheck --if-present; npm test --if-present; npm run build --if-present; fi
+
+  evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [protocol-conformance, privacy-boundary, ranking-accounting, frontend-quality, resilience]
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 scripts/ci/run_evals.py --suite '${{ matrix.suite }}'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-${{ matrix.suite }}
+          path: artifacts/evals/${{ matrix.suite }}.json
+          if-no-files-found: error

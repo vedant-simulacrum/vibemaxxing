@@ -1,0 +1,17 @@
+node_modules/
+target/
+.next/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+coverage/
+playwright-report/
+test-results/
+*.sqlite
+*.db
+*.key
+*.pem
+models/downloaded/

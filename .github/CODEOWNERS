@@ -1,0 +1,6 @@
+# Replace with real GitHub handles
+/docs/security/ @security-owner
+/docs/privacy/ @security-owner
+/packages/protocol/ @protocol-owner
+/crates/vibeproof-* @protocol-owner
+/infrastructure/ @infra-owner

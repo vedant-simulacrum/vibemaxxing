@@ -1,0 +1,10 @@
+{
+  "suite": "performance-efficiency",
+  "version": "1",
+  "commit": "local",
+  "status": "not_applicable",
+  "cases": [],
+  "started_at": "2026-07-18T18:25:05.534852+00:00",
+  "finished_at": "2026-07-18T18:25:05.565667+00:00",
+  "reason": "Owning implementation/fixtures have not yet been introduced."
+}

@@ -1,0 +1,32 @@
+name: Release Evidence
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: false}
+      - name: Require release checklist
+        run: test -f docs/operations/PRODUCTION_READINESS.md && test -f CHANGELOG.md
+      - name: Generate source SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: sbom.cdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence
+          path: sbom.cdx.json

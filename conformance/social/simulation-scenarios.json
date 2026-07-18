@@ -1,0 +1,15 @@
+{
+  "schema_version": "1",
+  "scenarios": [
+    "equal-score-competition-rank",
+    "stable-display-order-does-not-change-rank",
+    "utc-period-rollover",
+    "late-claim-policy",
+    "quarantined-claim-removal",
+    "overtake-notification-hysteresis",
+    "presence-expiry",
+    "country-minimum-cohort",
+    "deleted-account-rank-rebuild",
+    "private-board-visibility"
+  ]
+}

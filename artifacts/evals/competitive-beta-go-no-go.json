@@ -1,0 +1,98 @@
+{
+  "schema_version": "1",
+  "status": "fail",
+  "generated_at": "2026-07-18T19:46:29.665008+00:00",
+  "checks": [
+    {
+      "name": "adapter-gemini",
+      "path": "artifacts/evidence/adapter-gemini.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "adapter-claude-code",
+      "path": "artifacts/evidence/adapter-claude-code.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "adapter-codex",
+      "path": "artifacts/evidence/adapter-codex.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "accounting-conformance",
+      "path": "artifacts/evidence/accounting-conformance.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "privacy-canaries",
+      "path": "artifacts/evals/telemetry-canary-leakage.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "adversarial-integrity",
+      "path": "artifacts/evidence/adversarial-integrity.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "collector-macos",
+      "path": "artifacts/benchmarks/collector-macos.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "collector-windows",
+      "path": "artifacts/benchmarks/collector-windows.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "collector-linux",
+      "path": "artifacts/benchmarks/collector-linux.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "postgres-ranking",
+      "path": "artifacts/benchmarks/postgres-ranking.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "onboarding-study",
+      "path": "artifacts/evidence/onboarding-study.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "pricing-provenance",
+      "path": "artifacts/evidence/pricing-provenance.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "release-verification",
+      "path": "artifacts/evidence/release-consumer-verification.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "deletion-restore",
+      "path": "artifacts/evidence/deletion-restore.json",
+      "status": "missing",
+      "detail": null
+    },
+    {
+      "name": "moderation-tabletop",
+      "path": "artifacts/evidence/moderation-tabletop.json",
+      "status": "missing",
+      "detail": null
+    }
+  ],
+  "reason": "One or more mandatory competitive-beta evidence artifacts are missing, invalid, or failing."
+}

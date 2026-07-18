@@ -1,0 +1,27 @@
+{
+  "schema_version": "1",
+  "required_categories": [
+    "input_tokens_total",
+    "output_tokens_total",
+    "cache_read_input_tokens",
+    "cache_write_input_tokens",
+    "reasoning_output_tokens",
+    "tool_tokens",
+    "other_billable_tokens",
+    "billable_tokens_total"
+  ],
+  "relationships": [
+    "exclusive",
+    "included_in_input",
+    "included_in_output",
+    "included_in_total",
+    "informational_only"
+  ],
+  "source_precedence": [
+    "provider_authoritative",
+    "agent_structured",
+    "trusted_proxy",
+    "offline_estimate",
+    "unknown"
+  ]
+}

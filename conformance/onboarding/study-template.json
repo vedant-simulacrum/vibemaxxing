@@ -1,0 +1,13 @@
+{
+  "schema_version": "1",
+  "status": "not_run",
+  "participants": 0,
+  "supported_agent": null,
+  "median_time_to_first_claim_seconds": null,
+  "p90_time_to_first_claim_seconds": null,
+  "cash_burn_correct_interpretation_rate": null,
+  "transcripts_local_comprehension_rate": null,
+  "claim_inspection_discovery_rate": null,
+  "critical_accessibility_failures": null,
+  "notes": []
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "canaries": [
+    "VMX_CANARY_PROMPT_7d8241",
+    "VMX_CANARY_SECRET_sk-test-never-real",
+    "/Users/vmx/private/project-alpha/source.rs",
+    "repo-private-vmx-canary",
+    "TRANSCRIPT_CANARY_DO_NOT_EXPORT"
+  ]
+}

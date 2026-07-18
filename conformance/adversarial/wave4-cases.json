@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {"id":"duplicate-map-key","expected":"reject"},
+    {"id":"non-minimal-integer","expected":"reject"},
+    {"id":"indefinite-length-map","expected":"reject"},
+    {"id":"altered-protected-header","expected":"reject"},
+    {"id":"algorithm-confusion","expected":"reject"},
+    {"id":"sequence-rollback","expected":"reject"},
+    {"id":"concurrent-duplicate-race","expected":"one-accept-rest-idempotent"},
+    {"id":"state-clone-second-device","expected":"quarantine-or-reject"},
+    {"id":"clock-rollback","expected":"server-time-policy"},
+    {"id":"pricing-dataset-substitution","expected":"reject-unapproved-version"}
+  ]
+}

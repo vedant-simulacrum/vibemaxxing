@@ -1,0 +1,10 @@
+{
+  "suite": "protocol-conformance",
+  "version": "1",
+  "commit": "local",
+  "status": "not_applicable",
+  "cases": [],
+  "started_at": "2026-07-18T17:55:19.824297+00:00",
+  "finished_at": "2026-07-18T17:55:19.861618+00:00",
+  "reason": "Owning implementation/fixtures have not yet been introduced."
+}
