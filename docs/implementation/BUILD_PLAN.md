@@ -1,96 +1,103 @@
 # Build Plan
 
-## Phase 0 — repository, contracts, and measurable budgets
+Updated: 2026-07-19
+Status: future implementation plan; implementation not yet authorized
 
-- Establish monorepo
-- Configure CI, formatting, linting, testing
-- Add ADR process
-- Freeze privacy contract
-- Freeze initial claim schema
-- Define adapter capability manifest
-- Create realistic fixture dataset
-- Pin Rust 2024, Go 1.26, Node, and package-manager versions
-- Add Protobuf + Buf internal contract workspace
-- Establish performance budgets and benchmark baselines
-- Add cross-language golden claim fixtures
+This plan begins only after planning task P-1104. Internal stages may be narrow, but public launch must satisfy the complete scope freeze and launch gate.
 
-## Phase 1 — complete UI shell
+## Stage 0 — Approved contracts and repository integrity
 
-- Brand tokens and wordmark
-- Global leaderboard
-- Friends and presence
-- Public profile
-- Private boards
-- Settings/privacy/deletion
-- Mobile compositions
-- Complete state coverage
+- Planning exit report approved.
+- Toolchains and lockfiles pinned.
+- Complete privacy, accounting, adapter, protocol, native, API, database, ranking, identity, social, anti-cheat, operations, and launch contracts frozen.
+- Deterministic repository metadata regenerated.
+- Required implementation-phase CI restored without placeholder passes.
 
-Use typed mock services first, then replace with production APIs.
+## Stage 1 — Synthetic secure vertical slice
 
-## Phase 2 — Go server vertical slice
+- Synthetic source and normalized event.
+- Deterministic Token Burn accounting.
+- Signed fixed-schema VibeProof claim.
+- Isolated collector/sync boundary.
+- Go verification/ingestion.
+- Replay, invalid-signature, and duplicate rejection.
+- Append-only PostgreSQL persistence and deterministic aggregation.
+- One leaderboard API and polished row.
 
-- Authentication: GitHub OAuth + passkeys
-- User/profile/social graph
-- Board membership and privacy
-- Go claim ingestion and verification orchestration
-- PostgreSQL append-only accepted-claim ledger and transactional outbox
-- Go ranking materialization worker
-- Minute-scale updates
-- SSE presence and overtakes; introduce WebSockets only if bidirectional semantics are proven
+This is internal architecture evidence only.
 
-## Phase 3 — portable VibeProof prototype
+## Stage 2 — Native foundation
 
-- npm bootstrapper
-- Native Rust collector
-- Device registration
-- ACP/OTel/PTY adapters
-- Claude Code and Codex reference adapters
-- Fixed outbound schema
-- Local audit ledger
-- Signed claims and server receipts
+- Daemon, collector, sync, CLI, local storage, device identity, IPC, local audit UX.
+- macOS menu-bar and Windows/Linux tray shells.
+- Headless WSL/container/CI operation.
+- Crash, offline, sleep/resume, disk-full, corruption, update, rollback, uninstall, export, and deletion behavior.
 
-## Phase 4 — privacy and SLM
+## Stage 3 — VibeProof conformance
 
-- Networkless transcript analyzer
-- Secret redaction
-- Micro verifier
-- Challenge verifier
-- Structured risk result
-- Prompt-injection corpus
-- Packet-capture privacy tests
+- Frozen CBOR/CDDL/COSE profile.
+- Rust reference codec and independent verifier.
+- Golden/malformed vectors, fuzzing, resource limits, differential tests.
+- Challenge, sequence, replay, duplicate, clock, fork, batching, acknowledgement, and compatibility state machines.
 
-## Phase 5 — broad platform/agent support
+## Stage 4 — Universal adapter framework
 
-- Cursor
-- Droid
-- Copilot
-- OpenCode
-- Gemini/Antigravity
-- Cline
-- Aider
-- Goose
-- OpenHands
-- Kimi
-- Qwen
-- Kiro
-- Roo
-- Mistral Vibe
-- OpenClaw
-- WSL/containers/Codespaces/CI
+- Machine-readable agent census.
+- Adapter manifest and normalized event schemas.
+- Source reconciliation and double-count prevention.
+- Support tiers, certification, community governance, emergency disable, and generated compatibility claims.
+- Representative adapters across materially different agent families before broad expansion.
 
-## Phase 6 — hardening
+## Stage 5 — Account and server core
 
-- macOS Endpoint Security
-- Windows process/file/network evidence
-- Linux fanotify/eBPF/IMA
-- Optional device attestation
-- External security review
-- Reproducible builds and signed releases
+- GitHub and X/Twitter OAuth.
+- Linked providers, sessions, native authorization, optional stronger factors, recovery, and provider-loss handling.
+- Go APIs, PostgreSQL schema, ingestion transaction, outbox, workers, ranking, corrections, rebuild, pagination, and benchmarks.
 
-## Phase 7 — public protocol
+## Stage 6 — Competitive Ledger web and local continuity
 
-- Publish VibeProof specification
-- Publish adapter SDK
-- Publish conformance suite
-- Publish threat model
-- Publish compatibility registry
+- Complete route/state shell.
+- Global and period leaderboards, profiles, evidence explanations, Token Burn, Estimated Cash Burn, movement, privacy verification.
+- Local daemon/device/adapter controls connected safely to hosted UX.
+- Accessibility, browser, responsive, visual, and performance evidence.
+
+## Stage 7 — Complete social and group product
+
+- Friends, blocks, rivals, overtakes, streaks, seasons.
+- Presence and notifications.
+- Private boards, organizations, hacker houses, communities, and countries.
+- Ownership, administration, permissions, privacy, lifecycle, and abuse behavior.
+
+## Stage 8 — Anti-cheat, moderation, and appeals
+
+- Execute deterministic attack campaigns.
+- Populate reason-code and evidence qualification registries.
+- Statistical and graph baselines.
+- Detector bakeoff; SLM only if measured lift justifies it.
+- Quarantine, restrictions, moderator audit, appeals, restoration, and insider controls.
+
+## Stage 9 — Packaging and operations
+
+- Signed/notarized platform packages.
+- TUF updater and malicious-metadata tests.
+- SBOM, provenance, consumer verification, dependency/security automation.
+- Deployment, configuration, secrets, SLOs, observability, backup/restore, DR, incidents, rollback, and key compromise.
+
+## Stage 10 — Open-source release candidate and public launch
+
+- Final license, DCO/CLA, trademark, contributor, maintainer, adapter, security-advisory, and release governance.
+- Secret/private-threshold/exploit-material review before repository publication.
+- Clean checkout and reproducible release evidence.
+- Complete agent-family coverage matrix.
+- Full product, privacy, integrity, accessibility, performance, operations, moderation, legal/privacy, and launch review.
+- Explicit user approval.
+
+## Prohibited shortcuts
+
+- No public launch with only three adapters or a narrow social subset.
+- No mandatory passkey requirement for ordinary users.
+- No SLM-owned token accounting or permanent-ban authority.
+- No retrospective imported data in competitive rankings.
+- No hidden content-bearing telemetry.
+- No handwritten support claims without exercised registry evidence.
+- No placeholder, skipped, or `not_applicable` evidence used as a launch pass.
