@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package vibemaxxing.events.v1;
+
+message EventEnvelope {
+  string event_id = 1;
+  uint64 occurred_at_unix_ms = 2;
+  string policy_version = 3;
+  string idempotency_key = 4;
+  oneof body {
+    NotificationEvent notification = 20;
+    ModerationEvent moderation = 21;
+    AppealEvent appeal = 22;
+  }
+}
+
+message NotificationEvent {
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    FRIEND_REQUEST = 1;
+    FRIEND_ACCEPTED = 2;
+    RIVAL_SUGGESTION = 3;
+    OVERTAKE = 4;
+    RANK_MOVEMENT = 5;
+    BOARD_INVITE = 6;
+    BOARD_ADMINISTRATION = 7;
+    DEVICE_SECURITY = 8;
+    QUARANTINE = 9;
+    APPEAL_UPDATE = 10;
+    COMPATIBILITY_CHANGE = 11;
+    RELEASE_SECURITY_NOTICE = 12;
+  }
+  Type type = 1;
+  string recipient_account_id = 2;
+  string actor_account_id = 3;
+  string scope_type = 4;
+  string scope_id = 5;
+  string grouping_key = 6;
+  string reason_code = 7;
+  bool security_critical = 8;
+}
+
+message ModerationEvent {
+  enum Action {
+    ACTION_UNSPECIFIED = 0;
+    OPEN_CASE = 1;
+    DOWNGRADE_STANDARD = 2;
+    EXCLUDE_CLAIM = 3;
+    QUARANTINE_SESSION = 4;
+    QUARANTINE_SCORE = 5;
+    REQUIRE_STRONGER_EVIDENCE = 6;
+    RESTRICT_RANKING = 7;
+    REVOKE_DEVICE = 8;
+    SUSPEND_ACCOUNT = 9;
+    RESTORE = 10;
+    CLOSE_CASE = 11;
+  }
+  string case_id = 1;
+  Action action = 2;
+  string target_account_id = 3;
+  string target_device_id = 4;
+  string target_claim_id = 5;
+  string actor_type = 6;
+  string actor_id = 7;
+  string reason_code = 8;
+  uint64 review_at_unix_ms = 9;
+  bool appeal_eligible = 10;
+  bytes evidence_commitment = 11;
+}
+
+message AppealEvent {
+  enum State {
+    STATE_UNSPECIFIED = 0;
+    SUBMITTED = 1;
+    NEEDS_INFORMATION = 2;
+    UNDER_REVIEW = 3;
+    UPHELD = 4;
+    PARTIALLY_UPHELD = 5;
+    REVERSED = 6;
+    EXPIRED = 7;
+  }
+  string appeal_id = 1;
+  string case_id = 2;
+  State state = 3;
+  string actor_type = 4;
+  string actor_id = 5;
+  string reason_code = 6;
+  bytes evidence_commitment = 7;
+}
