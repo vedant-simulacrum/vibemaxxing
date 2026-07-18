@@ -1,32 +1,20 @@
-name: Release Evidence
+name: Release evidence (manual during planning)
 
 on:
-  push:
-    tags: ['v*']
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  id-token: write
-  attestations: write
+  contents: read
 
 jobs:
-  evidence:
+  planning-notice:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: {fetch-depth: 0, persist-credentials: false}
-      - name: Require release checklist
-        run: test -f docs/operations/PRODUCTION_READINESS.md && test -f CHANGELOG.md
-      - name: Generate source SBOM
-        uses: anchore/sbom-action@v0
         with:
-          path: .
-          format: cyclonedx-json
-          output-file: sbom.cdx.json
-      - uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: sbom.cdx.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release-evidence
-          path: sbom.cdx.json
+          persist-credentials: false
+      - run: |
+          echo 'Release automation is disabled during planning.'
+          echo 'Restore SBOM, provenance, signing, attestation, packaging, and consumer verification before release preparation.'
+
+# No tag-triggered release work runs during the planning phase.
