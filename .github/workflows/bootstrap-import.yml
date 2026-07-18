@@ -4,9 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'bootstrap-import/part-00.b64'
-      - 'bootstrap-import/part-01.b64'
-      - 'bootstrap-import/part-02.b64'
+      - 'bootstrap-import/clean-part-*.b64'
       - '.github/workflows/bootstrap-import.yml'
 
 permissions:
@@ -20,22 +18,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Reconstruct and validate original authoritative archive
+      - name: Reconstruct and validate deterministic authoritative archive
         shell: bash
         run: |
           set -euo pipefail
-          test -f bootstrap-import/part-00.b64
-          test -f bootstrap-import/part-01.b64
-          test -f bootstrap-import/part-02.b64
+          expected_sha='e6c53b379db243f31eef0ac218b1655b220d29e12d1342fc6d3bc3813f212df2'
+          count=$(find bootstrap-import -maxdepth 1 -name 'clean-part-*.b64' | wc -l | tr -d ' ')
+          test "$count" = '10'
+          test -f bootstrap-import/clean-part-00.b64
+          test -f bootstrap-import/clean-part-09.b64
 
-          cat \
-            bootstrap-import/part-00.b64 \
-            bootstrap-import/part-01.b64 \
-            bootstrap-import/part-02.b64 \
+          cat bootstrap-import/clean-part-*.b64 \
             | tr -d '\n' \
             | base64 --decode \
             > /tmp/vibemaxxing-source.tar.gz
 
+          actual_sha=$(sha256sum /tmp/vibemaxxing-source.tar.gz | awk '{print $1}')
+          test "$actual_sha" = "$expected_sha"
           gzip -t /tmp/vibemaxxing-source.tar.gz
           mkdir -p /tmp/vibemaxxing-source
           tar -xzf /tmp/vibemaxxing-source.tar.gz -C /tmp/vibemaxxing-source
