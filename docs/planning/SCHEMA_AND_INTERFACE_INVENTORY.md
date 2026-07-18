@@ -1,42 +1,45 @@
 # Schema and Interface Inventory
 
-Status: normative planning evidence
+Status: active planning-hardening inventory
 Updated: 2026-07-19
 
-## Normative artifacts required before implementation completion
+## Authoritative draft artifacts
 
-| Artifact | Format | Authority | Compatibility rule |
-|---|---|---|---|
-| Adapter manifest | JSON Schema | adapter contract | additive fields only within major version |
-| Normalized agent event | JSON Schema + Rust type | accounting/VibeProof contract | unknown fields rejected at trust boundary |
-| VibeProof claim | CDDL + canonical CBOR | VibeProof contract | exact major-version negotiation |
-| COSE signing profile | prose + vectors | VibeProof contract | protected algorithm and key-id required |
-| Local IPC | Protobuf | native runtime contract | negotiated major/minor; bounded messages |
-| Public HTTP API | OpenAPI 3.1 | server contract | versioned `/v1`; additive compatible changes |
-| Internal service messages | Protobuf/Buf | server contract | Buf breaking-change checks |
-| PostgreSQL model | SQL migrations | server contract | expand/migrate/contract |
-| Reason codes | JSON registry | integrity contract | stable identifiers never reused |
-| Evidence qualification | JSON rules | integrity contract | policy version recorded on claim decision |
-| Notification events | Protobuf/JSON schema | social contract | idempotent event IDs |
-| Moderation/appeal events | Protobuf/JSON schema | integrity contract | append-only audit chain |
-| Observability allowlist | YAML/JSON schema | operations contract | deny by default |
+| Interface | Format | Path | Planning status | Implementation conversion |
+|---|---|---|---|---|
+| Adapter manifest | JSON Schema 2020-12 | `packages/schemas/adapter-manifest.schema.json` | draft present | generate Rust/types and validation |
+| Normalized event | JSON Schema 2020-12 | `packages/schemas/normalized-event.schema.json` | draft present | generate/reference Rust type and fixtures |
+| VibeProof claim | CDDL | `packages/schemas/vibeproof-claim-v1.cddl` | draft present | compile with selected CDDL/CBOR toolchain |
+| COSE profile | ADR/protocol prose + future vectors | VibeProof contract and ADR-007 | specified | exact-byte vectors and independent verifiers |
+| Local IPC | Protobuf | `packages/schemas/local-control-v1.proto` | draft present | Buf module and generated clients |
+| Notification/moderation/appeal events | Protobuf | `packages/schemas/social-integrity-events-v1.proto` | draft present | Buf module, generated clients and idempotency tests |
+| Public API | OpenAPI 3.1 | `packages/schemas/openapi-v1.yaml` | partial draft present | expand endpoint families before dependent feature work |
+| PostgreSQL model | SQL planning DDL | `packages/schemas/planning-schema.sql` | partial draft present | ordered executable migration history |
+| Reason codes | JSON registry | `packages/schemas/reason-codes-v1.json` | draft present | expand alongside endpoints and conformance failures |
+| Configurable defaults | JSON registry | `packages/schemas/policy-defaults-v1.json` | draft present | typed loader, version persistence and controls |
+| Observability | YAML allowlist | `packages/schemas/observability-allowlist-v1.yaml` | draft present | schema validation and canary enforcement |
+| Agent support | JSON registry + schema | `conformance/adapters/agent-registry-v1.*` | planning registry present | populate exact certifications only after exercised tests |
+| Adversarial cases | JSON registry + schema | `conformance/adversarial/anti-cheat-registry-v1.*` | planning registry present | implement fixture corpus and runners later |
 
-## Required VibeProof fields
+## Compatibility
 
-Protocol version, claim ID, account pseudonym, device key ID, adapter ID/version, source family/version, session ID, sequence, previous-claim hash, challenge ID, observed-at bucket, token categories, accounting-policy version, evidence state, platform-capability code, local claim commitment, issued-at, expiry, and protected signature metadata.
+- JSON Schema trust boundaries reject unknown fields unless an explicit extension point exists.
+- VibeProof uses protocol-major negotiation and ADR-007 atomic batch semantics.
+- Protobuf follows additive evolution within a major version and future Buf breaking checks.
+- OpenAPI `/v1` changes are additive unless a new API major is introduced.
+- Planning SQL is not a migration history; implementation uses expand/migrate/contract.
+- Stable reason codes are never reused.
+- Policies and certification decisions persist their version with resulting records.
 
-Forbidden fields include prompts, responses, code, diffs, paths, repository/project names, tool payloads, credentials, free text, embeddings, summaries, classifications, and personal insights.
+## Remaining planning validation
 
-## Public API groups
+P-1120 remains open until:
 
-`/auth`, `/sessions`, `/identities`, `/devices`, `/claims`, `/leaderboards`, `/profiles`, `/friends`, `/blocks`, `/rivals`, `/boards`, `/organizations`, `/communities`, `/countries`, `/presence`, `/notifications`, `/moderation`, `/appeals`, `/exports`, and `/deletions`.
+1. all draft files parse with selected validators;
+2. representative examples validate;
+3. the OpenAPI and SQL drafts cover every launch-critical family at sufficient planning depth;
+4. canonical references resolve;
+5. the repository doctor passes from a clean checkout;
+6. an independent reviewer finds no critical behavior still requiring invention.
 
-Every mutating endpoint requires authentication, authorization, request ID, idempotency behavior, rate limit, privacy class, stable error code, audit behavior, and deletion/retention ownership.
-
-## PostgreSQL entity groups
-
-Accounts, linked identities, sessions, stronger factors, devices, device keys, adapter installations, challenges, accepted claims, rejected-claim summaries, sequence heads, claim corrections, outbox, worker checkpoints, minute scores, period scores, pricing datasets, profiles, friendships, blocks, rivals, boards, memberships, presence leases, notifications, moderation cases, actions, appeals, exports, deletion jobs, and privacy-safe audit events.
-
-## Validation rules
-
-All schemas must parse in CI once implementation mode opens. Examples must validate against their schema. Generated clients and types must be reproducible. Breaking changes require a major protocol/API version and migration plan. No prose-only interface may be treated as sufficient once its implementation begins.
+These drafts do not prove cross-language correctness, cryptographic conformance, migration safety, performance or production compatibility.
