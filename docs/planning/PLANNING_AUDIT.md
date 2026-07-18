@@ -4,89 +4,114 @@ Updated: 2026-07-19
 
 ## Conclusion
 
-The repository is a strong research and specification baseline, but it is not yet fully planning-ready for autonomous implementation. The remaining risk is ambiguity between specification layers, incomplete task decomposition, missing interface-level contracts, and unclear evidence ownership.
+The repository is now internally aligned on authority, phase, complete public-launch scope, staged internal delivery, OAuth-first identity with optional stronger factors, tiered universal agent compatibility, native daemon/menu-bar/tray topology, Rust/Go/TypeScript ownership, manual-only planning automation, and the anti-cheat control hierarchy.
 
-The project remains in planning and decision-closing mode. Product implementation must not begin until the planning exit gate is satisfied or the user explicitly changes the phase.
+The remaining work is no longer primarily contradiction repair. It is genuine specification, research, validation, and implementation-readiness work tracked in `docs/planning/TASK_CATALOG.md`.
 
-## Strengths
+The project remains in planning and decision-closing mode. Product implementation must not begin until P-1104 passes and the user explicitly changes the phase.
 
-- Stable product thesis, privacy boundary, metrics, evidence language, social direction, and local-first architecture.
-- Five ADRs and five research waves covering protocol, platform security, authentication, ranking, pricing, abuse, updater, observability, and operations.
-- Honest separation between specifications, prototypes, and unproven production capability.
-- Initial conformance fixtures, eval registry, benchmark seed, capability probe, telemetry scanner, and Go health endpoint.
+## Closed P0 discrepancies
 
-## Priority findings
+- Authority order is consistent across root control files.
+- Planning-only phase is enforced in root prompts and roadmaps.
+- `PROJECT_CONTEXT.md` now uses the accepted Rust native/protocol + Go server + TypeScript web stack.
+- Mandatory passkeys were superseded by GitHub/X OAuth with optional stronger factors.
+- Public launch scope is explicitly comprehensive; staged delivery no longer implies a narrow launch MVP.
+- Agent support is a tiered living compatibility system rather than a fixed three-agent target.
+- Native daemon, CLI, menu-bar/tray, local audit, and hosted-web responsibilities are represented.
+- Decision-register status values are normalized and superseded decisions are retained explicitly.
+- The old task catalog and dependency map were rebuilt around the full product.
+- Stale hand-maintained manifest/checksum outputs were removed from authority and a deterministic generator was added.
+- The truncated product-scope file was repaired.
+- The anti-cheat catalog is now a populated control matrix with a machine-readable adversarial registry.
+- README, start prompt, project prompt, ADR-003, build plan, tech stack, product spec, current status, specification index, and roadmap were reconciled.
 
-### P0 — Instruction precedence was inconsistent
+## Remaining implementation-grade planning work
 
-`PROJECT_INSTRUCTIONS.md` and `CURRENT_STATUS.md` used different authority orders. `MODEL_OPERATING_MANUAL.md` now defines the canonical order. Root control files must align with it.
+### Product and launch
 
-### P0 — Planning stage was not enforced everywhere
+- Complete feature matrix, glossary, user journeys, and milestone/launch gates.
+- Exact profiles, usernames, friends, rivals, blocks, boards, organizations, communities, countries, seasons, notifications, moderation, appeals, export, and deletion behavior.
 
-Some prompts instructed agents to begin implementation immediately. Root prompts must now prohibit product implementation until the user explicitly opens that phase.
+### Accounting and pricing
 
-### P0 — Roadmap items were not atomic task contracts
+- Normative Token Burn formula and all provider/local-model edge cases.
+- Cross-provider comparability policy.
+- Estimated Cash Burn datasets, aliases, subscriptions, credits, regional pricing, local compute, and correction policy.
+- Period, timezone, late/offline event, tie, streak, reset, and correction semantics.
 
-The roadmap defines phases, but not every task has a stable ID, dependencies, inputs, outputs, evidence, and blockers. `TASK_CATALOG.md` owns that decomposition.
+### Universal compatibility
 
-### P0 — No single dependency graph existed
+- Current machine-readable agent census.
+- Adapter manifest and normalized event schemas.
+- Source reconciliation, double-count prevention, lifecycle, conformance, community governance, and generated compatibility claims.
 
-Ordering was implicit across many files. `DEPENDENCY_MAP.md` now records the critical path and parallel tracks.
+### VibeProof and native core
 
-### P1 — Decision status was unclear
+- Claim fields, CDDL, COSE profile, errors, compatibility, batching, acknowledgements, sequences, forks, corrections, and test vectors.
+- Process/privilege diagram, local database, crash/offline recovery, IPC messages, platform matrix, device lifecycle, CLI commands, installer/update/uninstall, and resource budgets.
 
-Accepted decisions, leading candidates, unresolved bakeoffs, and deferred choices were mixed. `DECISION_REGISTER.md` labels each major choice.
+### Identity, server, and ranking
 
-### P1 — Core implementation contracts remain incomplete
+- GitHub App versus OAuth App and X/Twitter protocol decision.
+- Account/link/merge/session/recovery/provider-loss/native-auth/authorization state machines.
+- Complete APIs, PostgreSQL schema, transactions, outbox/workers, ranking queries, caching, corrections, rebuild, and benchmarks.
 
-Planning must still freeze:
+### Integrity and anti-abuse
 
-- adapter manifests and normalized usage events;
-- provider-neutral token accounting and reconciliation;
-- signed claim envelope, canonical encoding profile, algorithms, and errors;
-- collector-to-sync IPC schemas and state machines;
-- device registration, rotation, loss, and revocation;
-- ingestion APIs, rejection codes, idempotency, and transaction boundaries;
-- SQL schemas for ledger, outbox, aggregates, identity, pricing, social, and moderation;
-- ranking, pagination, ties, late events, rebuild, and cache behavior;
-- privacy-verification payloads and UI copy;
-- native install, update, rollback, and uninstall behavior.
+- Executable fixtures and attack campaigns for every catalog class.
+- Deterministic reason-code and evidence qualification registries.
+- Privacy-safe feature schema.
+- Rules/statistics/graph/classical/SLM detector bakeoff.
+- Calibration budgets, moderation/appeal state machines, red-team operations, and accepted residual risks.
+
+### UX, operations, and open source
+
+- Complete route/state/data/copy contracts and local-to-hosted UX.
+- Accessibility, responsive, browser, native, visual, battery, and performance plans.
+- Packaging, signing, notarization, TUF, consumer verification, deployment, SLOs, observability, backup/restore, DR, incidents, key compromise, and legal/privacy operations.
+- License, DCO/CLA, trademark, contributor/maintainer, security advisory, adapter, signing-key, and release governance.
+- Restored and validated automated checks in the implementation phase.
 
 ## Domain readiness
 
-| Domain | State | Main gap |
+| Domain | State | Main remaining gap |
 |---|---|---|
-| Product and metrics | strong | edge cases and glossary |
-| Token accounting | partial | complete normalized semantics |
-| Agent adapters | partial | manifest, events, degradation, certification |
-| VibeProof | partial | exact schemas, errors, key lifecycle |
-| Collector | partial | process, storage, crash consistency |
-| IPC and identity | partial | messages and platform state machines |
-| Server and ranking | partial | APIs, SQL, transactions, rebuild |
-| Authentication and social | partial | complete user and moderation flows |
-| Web and design | partial | routes, states, copy, data contracts |
-| Release and operations | partial | environments, updater, recovery, promotion |
+| Repository truth and authority | strong | run metadata generator from complete checkout |
+| Product scope and staging | strong direction | exact feature/journey/gate contracts |
+| Token accounting and pricing | partial | normative semantics and comparability |
+| Agent compatibility | strong architecture | registry, schemas, exercised evidence |
+| VibeProof | partial | exact wire and state contracts |
+| Native daemon/client | strong architecture | IPC/storage/lifecycle/platform contracts |
+| Authentication | strong direction | provider decision and complete state machines |
+| Server and ranking | partial | APIs, SQL, transactions, rebuild, benchmarks |
+| Social and groups | partial | complete domain and permission behavior |
+| Anti-cheat | strong control model | executable validation and detector decision |
+| Web/native UX | partial | routes, data, states, accessibility, tests |
+| Operations/open source | partial | concrete provider, recovery, governance, launch evidence |
 
 ## Planning exit gate
 
 Implementation may begin only when all are true or explicitly waived:
 
-1. Root instructions share one authority order and phase.
-2. Every milestone has atomic task IDs, dependencies, and evidence.
-3. Every major choice is in the decision register.
-4. Core interfaces, schemas, state machines, limits, and errors are specified.
-5. Privacy allowlists exist for every boundary.
-6. Threats map to controls and negative tests.
-7. Storage, migrations, rebuild, deletion, and recovery are specified.
+1. No unresolved P0 contradiction or damaged authoritative artifact.
+2. Complete public-launch matrix and staged milestone gates are frozen.
+3. Every material decision has an ID, status, owner/condition, and dependent updates.
+4. Core interfaces, schemas, state machines, limits, errors, authorization, and privacy classes are specified.
+5. Accounting, adapter, claim, IPC, device, API, SQL, ranking, identity, social, moderation, lifecycle, and operations contracts are implementation-grade.
+6. Threats map to controls, tests, residual risk, policy outcomes, and appeals.
+7. Storage, migration, rebuild, correction, export, deletion, recovery, and rollback are specified.
 8. Platform capability and degradation are explicit.
-9. Performance, battery, accessibility, and onboarding budgets have test plans.
-10. Release, rollback, key rotation, incident, moderation, and appeal flows are specified.
-11. CI can detect stale manifests, invalid task links, malformed schemas, and fake evidence.
-12. The user explicitly changes the phase to implementation.
+9. Performance, battery, accessibility, onboarding, reliability, and operations budgets have evidence plans.
+10. Release, updater, key rotation, incident, moderation, appeal, backup, and DR flows are specified.
+11. Repository metadata is regenerated and future CI can detect stale indexes, invalid task links, malformed schemas, and fake evidence.
+12. User explicitly changes the phase to implementation.
 
 ## Status
 
 - Continue planning: **go**.
 - Begin product implementation: **no-go**.
 - Competitive beta: **no-go**.
-- Production release: **no-go**.
+- Public launch: **no-go**.
+
+These no-go outcomes reflect uncompleted contracts and evidence, not unresolved product direction or a recommendation to narrow scope.
