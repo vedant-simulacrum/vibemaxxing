@@ -1,50 +1,41 @@
-# Public Repository Agent Instructions
+# VibeMaxxing Agent Instructions
 
-These instructions apply to humans and coding agents working in the public VibeMaxxing repository.
+## Current phase
+
+The project is in **planning and decision-closing mode**. Do not implement the product unless the user explicitly changes the phase. Start with `MODEL_OPERATING_MANUAL.md` and `docs/planning/TASK_CATALOG.md`.
 
 ## Mission
 
-Build a privacy-preserving, cross-platform, open-source AI-agent activity protocol and social leaderboard without compromising the local/server trust boundary.
+Prepare and later build a privacy-preserving, cross-platform, open-source AI-agent activity protocol and social leaderboard without compromising the local/server trust boundary.
 
-## Non-negotiable privacy boundary
+## Privacy boundary
 
-VibeMaxxing servers must never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project names, credentials, embeddings, summaries, classifications, or personal insights.
-
-Only fixed-schema safe claims may cross the network boundary. Any change to that schema requires protocol, privacy, and security review.
+Servers must never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project or repository names, credentials, embeddings, summaries, classifications, or personal insights. Only fixed-schema safe claims may cross the network boundary.
 
 ## Repository independence
 
-The repository must build and test independently. Do not introduce dependencies on hidden context, private infrastructure, unpublished credentials, or proprietary task logs.
+The repository must be understandable, buildable, and testable without hidden chat context, private task logs, unpublished credentials, or proprietary infrastructure.
 
-## Engineering rules
+## Planning rules
 
-- Read the nearest `AGENTS.md` before modifying a subtree.
-- Keep changes atomic and reviewable.
-- Add or update tests with behavior changes.
-- Use deterministic accounting for exact totals, deduplication, replay prevention, and sequence checks.
-- Local semantic models may classify structural authenticity locally but must not transmit content or decide numerical accounting.
-- Historical imports never enter active competitive rankings.
-- Public UI uses `Standard`, `Hardened`, and `Imported`; avoid consumer-facing claims of absolute verification.
-- Do not add generic dashboard UI. Follow `docs/design/design.md`.
-- Avoid platform assumptions; support macOS, Windows, Linux, WSL, containers, local workspaces, and CI through capability-specific adapters.
+- Read the mandatory files in `MODEL_OPERATING_MANUAL.md`.
+- Select work by task ID from `docs/planning/TASK_CATALOG.md`.
+- Respect `docs/planning/DEPENDENCY_MAP.md`.
+- Update `docs/planning/DECISION_REGISTER.md` when a choice changes.
+- Define interfaces, schemas, invariants, errors, state machines, limits, privacy, security, storage, migrations, recovery, compatibility, observability, tests, and evidence.
+- Verify unstable external facts using primary sources.
+- Do not treat specifications, empty fixtures, skipped tests, or placeholders as implementation evidence.
+- Do not begin implementation because an older prompt says to do so.
 
-## Pull-request requirements
+## Binding product rules
 
-A pull request must include:
+- Token Burn is the default ranking metric.
+- Cash Burn is always explicitly estimated.
+- Historical imports never enter active rankings.
+- Public evidence language is `Standard`, `Hardened`, and `Imported`.
+- Development remains local-first.
+- Follow accepted ADRs unless reopened through the decision register and an evidence-backed ADR.
 
-- problem and scope;
-- security/privacy impact;
-- tests and evidence;
-- screenshots for UI changes;
-- protocol compatibility impact;
-- migration or rollback notes when applicable.
+## Review requirements
 
-Untrusted public pull-request code must run only on GitHub-hosted disposable runners without Azure secrets or private-network access.
-
-## Current development constraint
-
-Development is local-first. Do not configure or propose a remote development control plane, autonomous remote setup, remote model router, persistent remote worker fleet, or remote project-context source of truth.
-
-## Mandatory engineering evidence
-
-Before marking work complete, identify its risk class and run the relevant CI and eval suites. Changes to privacy boundaries, schemas, signatures, accounting, replay handling, authentication, authorization or migrations are R3 and require independent review, negative tests, updated threat-model/ADR material and rollback notes.
+Every change must state its planning task and decision IDs, scope, privacy and security impact, future evidence contract, compatibility and migration impact, rollback implications, and unresolved questions.
