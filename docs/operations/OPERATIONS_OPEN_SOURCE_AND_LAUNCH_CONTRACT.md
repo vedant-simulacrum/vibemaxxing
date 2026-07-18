@@ -1,120 +1,85 @@
 # Operations, Open-Source, and Launch Contract
 
 Status: normative planning contract
-Version: 1
+Version: 2
 
 ## Deployment baseline
 
-The production reference architecture is cloud-portable:
+Production is cloud-portable: managed containers for Go services and Next.js, managed PostgreSQL with point-in-time recovery, optional Redis-compatible ephemeral cache, object storage/CDN for releases, managed KMS/secrets and workload identity, OpenTelemetry-compatible observability, and a PostgreSQL transactional outbox before any broker.
 
-- managed container runtime for Go API/workers and Next.js web;
-- managed PostgreSQL with point-in-time recovery and read replicas where measured;
-- Redis-compatible ephemeral cache for presence/rate limiting only;
-- object storage/CDN for public releases, SBOMs, provenance, and static assets;
-- managed KMS/secrets and workload identity;
-- OpenTelemetry-compatible observability;
-- transactional outbox rather than Kafka initially.
+Provider and region are selected during implementation through an ADR using latency, price, compliance, operational maturity, available credits and portability. Core behavior cannot depend on one provider.
 
-Provider and region are deployment configuration selected through an ADR using latency, price, compliance, operational maturity, credits, and portability. No core contract depends on one provider.
-
-Environments: local, test, preview, staging, production. Production data never enters lower environments. Preview environments use synthetic fixtures. Configuration is typed, validated at startup, and separated from secrets.
+Environments are local, test, preview, staging and production. Production data never enters lower environments. Preview uses synthetic fixtures. Configuration is typed and separated from secrets.
 
 ## Availability and recovery targets
 
-Initial launch targets:
+- Public leaderboard/API: 99.9% monthly.
+- Acknowledged claims: no loss.
+- Leaderboard freshness p95: <=90 seconds.
+- PostgreSQL RPO <=5 minutes and RTO <=60 minutes.
+- Stateless service RTO <=15 minutes.
+- Release/update metadata availability: 99.95%.
+- OAuth outage degrades login/linking while existing sessions and local collection continue.
 
-- public leaderboard/API availability: 99.9% monthly;
-- claim ingestion durability after acknowledgement: no acknowledged claim loss;
-- leaderboard freshness p95: <=90 seconds;
-- PostgreSQL RPO: <=5 minutes, RTO: <=60 minutes;
-- stateless service RTO: <=15 minutes;
-- release/update metadata availability: 99.95%;
-- OAuth provider outage degrades login/linking but existing sessions and collection continue.
+Backups are encrypted, cross-account where practical, retention-tiered and restore-tested monthly. Quarterly DR exercises rebuild from infrastructure code, backups, release artifacts and documented key procedures.
 
-Backups are encrypted, cross-account where possible, retention-tiered, and restore-tested monthly. Quarterly disaster-recovery exercises rebuild a clean environment from infrastructure code, backups, release artifacts, and documented key procedures.
+## Secrets and release keys
 
-## Secrets and keys
-
-Separate keys for OAuth clients, sessions, device enrollment, release signing, TUF roles, database, backups, and observability. Least privilege, workload identity, no long-lived cloud credentials in CI, documented rotation, dual control for root/release keys, offline TUF root where practical, emergency revocation and compromise playbooks.
+Separate OAuth, session, device-enrollment, release-signing, TUF, database, backup and observability keys. Use least privilege, workload identity, no long-lived cloud CI credentials, rotation, dual control for root/release keys, offline TUF root where practical, revocation and compromise playbooks.
 
 ## TUF and release chain
 
-TUF roles: offline root with threshold signatures; online timestamp; snapshot; delegated targets by platform/channel. Metadata has bounded expiry. Client defends against rollback, freeze, mix-and-match, fast-forward, and endless-data attacks; root rotation follows the specification and is tested.
+Use threshold-signed offline root, online timestamp/snapshot and delegated platform/channel targets. Clients defend against rollback, freeze, mix-and-match, fast-forward and endless-data attacks. Every release includes platform signature/notarization, checksums, SBOM, source commit, provenance, dependency/license report, TUF metadata, changelog, supported protocol/database versions, rollback constraints and consumer verification.
 
-Every release includes platform-native signature/notarization, SHA-256 checksums, SBOM, source commit, build provenance, dependency/license report, TUF metadata, changelog, supported protocol/database versions, rollback constraints, and consumer verification instructions.
+Install is atomic. Health checks cover daemon IPC, database migration, privacy boundary and compatibility. Failure rolls back. Security-blocked versions retain export and uninstall.
 
-Install is atomic. Health checks validate daemon IPC, database migration, privacy boundary, and version compatibility. Failure rolls back to the retained known-good version. Security-blocked versions still permit export and uninstall.
+## Planning versus product automation
 
-## CI and security automation
+During planning-hardening, read-only checks may run automatically or manually when they validate documentation, schemas, registries, references, governance and deterministic generators without building or deploying the product. `scripts/repository/doctor.py` and `.github/workflows/planning-checks.yml` are allowed by D-034.
 
-During planning, automatic checks remain disabled to avoid noise. Before implementation merge protection, restore staged checks:
+Product build, dependency, CodeQL, fuzz, security, release, signing, deployment and evaluation automation remains disabled until implementation begins. Before protected implementation merges, restore and tune:
 
-- formatting, lint, unit/integration/property tests;
+- format/lint/unit/integration/property tests;
 - Rust/Go/TypeScript builds and generated-contract drift;
-- schema/CDDL/Protobuf breaking checks;
-- privacy canary and forbidden-field scans;
-- CodeQL/secret/dependency/license scans with tuned severity;
-- fuzz/regression corpus smoke tests;
-- reproducible release and clean-consumer verification;
-- SBOM/provenance/TUF validation;
-- task/decision/reference and generated-metadata validation.
+- schema/CDDL/Protobuf/OpenAPI/SQL validation and breaking checks;
+- privacy canaries and forbidden-field scans;
+- pinned-action CodeQL, secret, dependency and license scans;
+- fuzz/regression smoke tests;
+- reproducible release, SBOM, provenance, TUF and consumer verification.
 
-Scheduled expensive audits run at sensible cadence; notifications are actionable and deduplicated.
+Scheduled expensive audits must be actionable and deduplicated.
 
 ## Observability
 
-Metrics and logs are allowlisted. Retention: detailed operational telemetry 30 days, aggregates 13 months, security audit according to documented legal/security need. Access is role-based and audited. No prompts, responses, claim payloads, handles, repository names, paths, OAuth tokens, cookies, headers, or free-text exception bodies.
+The canonical planning allowlist is `packages/schemas/observability-allowlist-v1.yaml`. Collection is deny-by-default. Never export prompts, responses, claim payloads, handles, repository names, paths, OAuth tokens, cookies, headers or free-text exceptions. Alerts cover ingestion failure, queue age, database saturation, SLO burn, OAuth failures, replay spikes, privacy canaries, updater expiry, release verification, backups and moderator/security anomalies.
 
-Alerts cover ingestion failure, queue age, database saturation, replica lag, error/latency SLO burn, OAuth failures, challenge/replay spikes, privacy-canary violations, updater metadata expiry, release-verification failure, backup failure, and moderator/security anomalies.
+Numeric retention defaults are versioned in the policy registry. Access is role-based and audited.
 
-## Incident response
+## Incidents and lifecycle
 
-Severity levels define commander, communication, containment, evidence preservation, recovery, user notice, regulator/legal review, and postmortem deadlines. Privacy-boundary violation is automatically highest severity until scoped. Security incidents use private advisories and embargoed fixes; public disclosure occurs after users can update unless active exploitation requires earlier warning.
+Severity defines commander, communication, containment, evidence, recovery, user notice, legal/regulatory review and postmortem deadlines. Privacy-boundary violations are highest severity until scoped. Security fixes use private advisories and coordinated disclosure.
 
-## Data lifecycle
-
-Document per-table purpose, owner, lawful/product basis, visibility, retention, deletion, export, backup treatment, and legal hold. Deletion jobs are idempotent and auditable. Backups age out deleted data on the published schedule; restores reapply deletion tombstones before production use.
+Every data table requires purpose, owner, basis, visibility, retention, deletion, export, backup treatment and legal-hold policy. Deletion jobs are idempotent. Restores reapply deletion tombstones before production use.
 
 ## Open-source governance
 
-License plan: Apache-2.0 for original code unless dependency or trademark considerations require an approved exception; protocol specifications and documentation use CC BY 4.0 where appropriate. Final license scan and counsel review precede public release.
+Licensing follows ADR-009 and `LICENSES.md`: Apache-2.0 original code, CC BY 4.0 docs/specs, DCO and no CLA initially, subject to final dependency/license/counsel review. Third-party notices remain intact.
 
-Use Developer Certificate of Origin with signed-off commits; no CLA initially. Add a CLA only if a concrete relicensing or corporate-contribution need arises.
+Before public release provide maintainers and succession, real CODEOWNERS, semantic versioning/changelog, public issue workflow, private advisories, contributor guide, code of conduct, adapter ownership/certification/transfer policy, trademark policy and release-key custody.
 
-Governance:
-
-- maintainers with documented areas and succession;
-- CODEOWNERS for security/privacy/protocol/release paths;
-- semantic versioning and changelog;
-- public roadmap/issues for product work;
-- private security advisories for vulnerabilities;
-- contributor guide, code of conduct, threat-model and privacy requirements;
-- adapter maintainer ownership, conformance badges, emergency suspension, and transfer process;
-- trademark policy protecting `VibeMaxxing`, `vibemaxxing`, and `VibeProof` while allowing accurate nominative use.
-
-The repository becomes public before public launch after secret/history scan, license review, security review, issue-template cleanup, contributor documentation, and release-signing readiness.
+The repository becomes public before public launch only after history/secret scan, license review, security review, issue-template cleanup, contributor documentation and signing readiness.
 
 ## Launch stages
 
-1. Planning complete: all normative contracts committed and contradiction review passes.
-2. Implementation alpha: synthetic vertical slice and one real adapter, no public competition.
-3. Private alpha: native clients, OAuth, core ranking, privacy tests, limited users.
-4. Private competitive beta: multiple adapter families, social loop, attack campaigns, operational drills.
-5. Release candidate: full launch feature matrix, universal compatibility fallback, supported-platform packages, open-source repository, independent security/privacy review.
-6. Public launch: all launch gates pass; no scope reduction hidden as staging.
+1. Planning-hardening: schemas, governance, validation and P-1120..P-1128 pass.
+2. Implementation alpha: synthetic secure spine and one real adapter, no public competition.
+3. Private alpha: native clients, OAuth, core ranking and privacy tests.
+4. Private competitive beta: multiple adapter families, social loop, attack campaigns and operational drills.
+5. Release candidate: complete feature matrix, universal fallback, packages, public repository and independent review.
+6. Public launch: all gates and explicit approval.
 
 ## Public launch gates
 
-- Complete feature matrix across leaderboard scopes/periods, profiles, friends, rivals, overtakes, presence, boards, organizations, communities, countries, notifications, moderation, export/deletion, native shell/daemon/CLI/web.
-- Exercised support registry covers every target adapter family and generic fallback; unsupported cases are explicit.
-- Accounting/protocol conformance and independent implementations agree.
-- Privacy packet captures/canaries show zero forbidden outbound content.
-- Replay, duplicate, fork, clone, downgrade, Sybil, collusion, poisoning, and supply-chain campaigns meet approved budgets.
-- Accessibility, browser, platform, battery, performance, load, soak, failover, backup/restore, update/rollback, clean install/uninstall, and disaster recovery evidence passes.
-- OAuth, account-linking, recovery, privilege, deletion, and moderator workflows pass abuse tests.
-- Legal/privacy terms, security policy, open-source governance, licenses, trademarks, support and incident channels are ready.
-- No unresolved P0/P1 launch blocker; every accepted risk has owner, rationale, expiry/review date, and user impact.
+Require complete product scope; exercised support registry and honest unsupported cases; accounting/protocol agreement; zero forbidden outbound content; adversarial campaigns within budgets; accessibility/browser/platform/battery/performance/load/failover/restore/update evidence; OAuth/recovery/privilege/deletion/moderation abuse tests; legal/privacy/governance/support readiness; and no unresolved P0/P1 blocker or ownerless accepted risk.
 
-## Operational acceptance evidence
-
-Runbooks, architecture diagrams, inventories, dashboards, alert tests, restore logs, incident exercises, key-rotation drills, release-verification artifacts, consumer install tests, public status page, support escalation, and signed launch decision are retained as versioned evidence outside sensitive public thresholds.
+Runbooks, diagrams, inventories, dashboards, alert tests, restore logs, incident exercises, key-rotation drills, release artifacts, consumer install tests, status page, support escalation and signed launch decision are retained as versioned evidence without exposing sensitive thresholds.
