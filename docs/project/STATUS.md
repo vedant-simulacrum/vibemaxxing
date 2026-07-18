@@ -4,34 +4,38 @@ Updated: 2026-07-19
 
 ## Phase
 
-The repository remains in **planning mode**. Product implementation has not begun and is not authorized.
+The repository is in **planning-hardening**. Product implementation has not begun and is not authorized.
 
-The behavioral architecture and major subsystem contracts are substantially planned. The repository is now in a **planning-hardening phase**: draft machine-readable schemas, protocol edge semantics, policy registries, repository validation, governance, and execution-thread preparation must be completed and validated before technical planning can be called complete.
+Major behavioral contracts are substantially specified. A full audit found missing schemas, registry inconsistencies, governance contradictions, unclear protocol recovery, and weak repository validation. Those defects have been repaired at the document and draft-artifact level; clean-checkout and toolchain validation remains pending.
 
 ## Readiness
 
 - Product direction and launch scope: complete at planning level.
 - Major architecture and subsystem behavior: substantially specified.
-- Machine-readable schema/interface drafts: in progress.
-- Protocol edge semantics and centralized policy defaults: in progress.
-- Repository initialization and consistency validation: in progress.
-- Governance and license consistency: in progress.
-- Implementation: not started; explicit user approval required.
-- Competitive beta: no-go until executable evidence passes.
-- Public launch: no-go until the comprehensive launch gate passes.
+- Draft schemas and registries: committed; parser/toolchain and coverage validation pending.
+- Protocol batch/recovery and policy defaults: closed through ADR-007 and ADR-008.
+- Governance and licensing consistency: repaired through ADR-009 and public governance files.
+- Repository doctor and planning workflow: committed; clean-checkout execution pending.
+- Implementation: not started and not authorized.
+- Competitive beta and public launch: no-go.
 
-Planning artifacts must never be represented as working code, passing conformance, tested cryptography, certified adapters, validated performance, deployed infrastructure, or launch readiness.
+Planning artifacts are not working code, tested cryptography, certified compatibility, validated performance, deployed infrastructure, or launch evidence.
 
-## Canonical repository entrypoints
+## Canonical entrypoints
 
-- `AGENTS.md` is the sole agent initialization manual.
-- `docs/project/PROJECT.md` owns project authority.
-- `docs/project/STATUS.md` owns current phase and readiness.
-- `docs/project/DOCUMENTATION.md` is the sole documentation map.
-- `docs/implementation/IMPLEMENTATION_HANDOFF.md` owns implementation order.
-- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` owns granular work decomposition.
-- `docs/research/README.md` is the sole research index.
+- `AGENTS.md`
+- `docs/project/PROJECT.md`
+- `docs/project/STATUS.md`
+- `docs/project/DOCUMENTATION.md`
+- `docs/planning/DECISION_REGISTER.md`
+- `docs/planning/TASK_CATALOG.md`
+
+Run `python3 scripts/repository/doctor.py` from a clean checkout before relying on repository readiness.
 
 ## Automation
 
-During planning, product build, security, release, dependency, and evaluation
+Read-only planning validation may run. Product build, dependency, security, fuzz, release, signing, deployment, and evaluation automation remains disabled until implementation is explicitly opened.
+
+## Current gate
+
+P-1120, P-1126, and P-1128 remain open for schema/toolchain validation, clean-checkout doctor evidence, and independent re-audit. P-1104 cannot open until those pass and the user explicitly authorizes implementation.
