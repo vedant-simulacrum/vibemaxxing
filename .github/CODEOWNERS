@@ -1,6 +1,15 @@
-# Replace with real GitHub handles
-/docs/security/ @security-owner
-/docs/privacy/ @security-owner
-/packages/protocol/ @protocol-owner
-/crates/vibeproof-* @protocol-owner
-/infrastructure/ @infra-owner
+# Planning-phase ownership. Expand to area maintainers before public release.
+* @vedant-simulacrum
+
+/AGENTS.md @vedant-simulacrum
+/docs/project/ @vedant-simulacrum
+/docs/planning/DECISION_REGISTER.md @vedant-simulacrum
+/docs/implementation/ @vedant-simulacrum
+/docs/privacy/ @vedant-simulacrum
+/docs/security/ @vedant-simulacrum
+/docs/decisions/ @vedant-simulacrum
+/packages/schemas/ @vedant-simulacrum
+/packages/protocol/ @vedant-simulacrum
+/conformance/ @vedant-simulacrum
+/.github/workflows/ @vedant-simulacrum
+/scripts/repository/ @vedant-simulacrum
