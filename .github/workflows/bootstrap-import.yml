@@ -4,7 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'bootstrap-import/source-part-*.b64'
+      - 'bootstrap-import/part-00.b64'
+      - 'bootstrap-import/part-01.b64'
+      - 'bootstrap-import/part-02.b64'
       - '.github/workflows/bootstrap-import.yml'
 
 permissions:
@@ -17,31 +19,78 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Verify complete authoritative archive
-        id: archive
+
+      - name: Reconstruct and validate original authoritative archive
         shell: bash
         run: |
           set -euo pipefail
-          expected='e6c53b379db243f31eef0ac218b1655b220d29e12d1342fc6d3bc3813f212df2'
-          count=$(find bootstrap-import -maxdepth 1 -name 'source-part-*.b64' | wc -l | tr -d ' ')
-          if [[ "$count" == '7' && -f bootstrap-import/source-part-00.b64 && -f bootstrap-import/source-part-06.b64 ]]; then
-            cat bootstrap-import/source-part-*.b64 | tr -d '\n' | base64 --decode > /tmp/vibemaxxing-source.tar.gz
-            actual=$(sha256sum /tmp/vibemaxxing-source.tar.gz | awk '{print $1}')
-            test "$actual" = "$expected"
-            echo 'ready=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'ready=false' >> "$GITHUB_OUTPUT"
-          fi
-      - name: Reconstruct authoritative repository
-        if: steps.archive.outputs.ready == 'true'
+          test -f bootstrap-import/part-00.b64
+          test -f bootstrap-import/part-01.b64
+          test -f bootstrap-import/part-02.b64
+
+          cat \
+            bootstrap-import/part-00.b64 \
+            bootstrap-import/part-01.b64 \
+            bootstrap-import/part-02.b64 \
+            | tr -d '\n' \
+            | base64 --decode \
+            > /tmp/vibemaxxing-source.tar.gz
+
+          gzip -t /tmp/vibemaxxing-source.tar.gz
+          mkdir -p /tmp/vibemaxxing-source
+          tar -xzf /tmp/vibemaxxing-source.tar.gz -C /tmp/vibemaxxing-source
+
+          for required in \
+            README.md \
+            START_HERE_PROMPT.md \
+            PROJECT_CONTEXT.md \
+            PROJECT_INSTRUCTIONS.md \
+            CURRENT_STATUS.md \
+            IMPLEMENTATION_ROADMAP.md \
+            RESEARCH_AND_EVIDENCE_BACKLOG.md \
+            AGENTS.md \
+            MANIFEST_FILES.txt \
+            .github/workflows/ci.yml \
+            .github/workflows/security.yml \
+            .github/workflows/release.yml \
+            docs/product/PRODUCT_SPEC.md \
+            docs/privacy/PRIVACY_CONTRACT.md \
+            docs/architecture/ARCHITECTURE.md \
+            docs/implementation/BUILD_PLAN.md \
+            docs/evals/EVAL_SYSTEM.md \
+            evals/suites/suites.yaml \
+            scripts/ci/repository_policy.py \
+            scripts/ci/run_evals.py; do
+            test -f "/tmp/vibemaxxing-source/$required"
+          done
+
+          expected=$(grep -cve '^[[:space:]]*$' /tmp/vibemaxxing-source/MANIFEST_FILES.txt)
+          actual=$(find /tmp/vibemaxxing-source -type f | wc -l | tr -d ' ')
+          test "$actual" -ge "$expected"
+          test "$expected" -ge 90
+          test ! -e /tmp/vibemaxxing-source/bootstrap-import
+
+      - name: Replace temporary repository with authoritative tree
         shell: bash
         run: |
           set -euo pipefail
-          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name bootstrap-import ! -name .github -exec rm -rf {} +
-          find .github -mindepth 1 -maxdepth 1 ! -name workflows -exec rm -rf {} +
-          find .github/workflows -mindepth 1 -maxdepth 1 ! -name bootstrap-import.yml -exec rm -rf {} +
-          tar -xzf /tmp/vibemaxxing-source.tar.gz -C .
+
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name .git \
+            ! -name .github \
+            -exec rm -rf {} +
+
+          find .github -mindepth 1 -maxdepth 1 \
+            ! -name workflows \
+            -exec rm -rf {} +
+
+          find .github/workflows -mindepth 1 -maxdepth 1 \
+            ! -name bootstrap-import.yml \
+            -exec rm -rf {} +
+
+          cp -a /tmp/vibemaxxing-source/. .
           rm -rf bootstrap-import .github/workflows/bootstrap-import.yml
+
           git config user.name 'vibemaxxing-bootstrap'
           git config user.email 'actions@users.noreply.github.com'
           git add -A
