@@ -1,103 +1,88 @@
 # VibeMaxxing Documentation Map
 
-This is the only canonical map of repository documentation. Do not create competing indexes, start prompts, master-context files, duplicate roadmaps, or duplicate research waves.
+This is the sole canonical map. Do not create competing indexes, start prompts, master-context files, duplicate roadmaps, or numbered research waves.
 
 ## Initialization
 
-1. `AGENTS.md` — repository initialization, phase gate, thread handling, dependency policy, and completion rules.
-2. `docs/project/PROJECT.md` — authoritative product, privacy, topology, stack, and authority.
-3. `docs/project/STATUS.md` — current phase, readiness, automation state, and allowed work.
-4. `docs/planning/DECISION_REGISTER.md` — accepted, provisional, superseded, and conditional decisions.
-5. `docs/planning/TASK_CATALOG.md` — completed planning groups and evidence-gated future tasks.
-6. Relevant accepted ADRs and normative subsystem contracts.
-7. `docs/implementation/IMPLEMENTATION_HANDOFF.md` and `PR_SIZED_WORK_BREAKDOWN.md` only after explicit implementation approval.
+1. `AGENTS.md`
+2. `docs/project/PROJECT.md`
+3. `docs/project/STATUS.md`
+4. this file
+5. `docs/planning/DECISION_REGISTER.md`
+6. `docs/planning/TASK_CATALOG.md`
+7. relevant ADRs, schemas, and subsystem contracts
+8. implementation handoff only for implementation planning or after explicit approval
 
-## Normative subsystem contracts
+Run `python3 scripts/repository/doctor.py` before relying on repository state.
 
-### Product
+## Normative product and architecture
 
-- `docs/planning/PRODUCT_SCOPE_FREEZE.md`
-- `docs/product/PRODUCT_SPEC.md`
-- `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
-- `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
+- Scope and product: `docs/planning/PRODUCT_SCOPE_FREEZE.md`, `docs/product/PRODUCT_SPEC.md`
+- Accounting: `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
+- Social/integrity/UX: `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
+- Adapter and VibeProof: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
+- Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`
+- Server/data/ranking: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
+- Privacy/security: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+- Operations/launch: `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
+- Accepted decisions: `docs/decisions/`
 
-### Architecture and protocol
+Important edge decisions:
 
-- `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
-- `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`
-- `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
-- `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`
-- accepted ADRs in `docs/decisions/`
+- `ADR-007-BATCH_CHALLENGE_AND_SEQUENCE_RECOVERY.md`
+- `ADR-008-HANDLE_NORMALIZATION_AND_POLICY_REGISTRY.md`
+- `ADR-009-LICENSING_AND_CONTRIBUTION_MODEL.md`
 
-### Security and privacy
+## Authoritative planning-grade schemas
 
-- `docs/privacy/PRIVACY_CONTRACT.md`
-- `docs/security/THREAT_MODEL.md`
-- `docs/security/INTEGRITY_MODEL.md`
-- `docs/security/AUTHENTICATION_AND_RECOVERY.md`
-- `docs/security/ANTI_CHEAT_RESEARCH_PROGRAM.md`
-- `docs/security/ANTI_CHEAT_ATTACK_CATALOG.md`
-- `docs/security/ADVERSARIAL_TABLETOPS.md`
+`packages/schemas/` owns:
 
-### Operations and quality
+- `adapter-manifest.schema.json`
+- `normalized-event.schema.json`
+- `vibeproof-claim-v1.cddl`
+- `local-control-v1.proto`
+- `openapi-v1.yaml`
+- `planning-schema.sql`
+- `reason-codes-v1.json`
+- `policy-defaults-v1.json`
+- `observability-allowlist-v1.yaml`
 
-- `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
-- `docs/evals/BENCHMARK_AND_EVIDENCE_PROTOCOLS.md`
-- `docs/qa/ACCEPTANCE_GATES.md`
-- `docs/reviews/INDEPENDENT_ARCHITECTURE_REVIEWS.md`
+These are draft normative interfaces, not implemented or toolchain-validated production artifacts.
 
-## Planning evidence
+## Machine registries
 
-`docs/planning/` contains distinct planning evidence, not competing product specifications:
+- Adapter compatibility: `conformance/adapters/agent-registry-v1.json` and adjacent schema.
+- Adversarial cases: `conformance/adversarial/anti-cheat-registry-v1.json` and adjacent schema.
 
-- `DECISION_REGISTER.md` — material decisions and reopen conditions.
-- `TASK_CATALOG.md` — planning completion and future gates.
-- `TRACEABILITY_AND_DRY_RUN_AUDIT.md` — requirement-to-contract traceability.
-- `SCHEMA_AND_INTERFACE_INVENTORY.md` — authoritative schema ownership inventory.
-- `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md` — implementation defaults where measured evidence may later reverse a choice.
-- `MOCK_IMPLEMENTATION_HANDOFF_REVIEW.md` — context-free handoff test.
-- `FINAL_PLANNING_EXIT_AUDIT.md` — final planning result.
+An empty certification list means no product-level support claim. Registry status `planned` is not executable evidence.
+
+## Planning control and evidence
+
+- Decisions: `docs/planning/DECISION_REGISTER.md`
+- Tasks and gates: `docs/planning/TASK_CATALOG.md`
+- Traceability: `docs/planning/TRACEABILITY_AND_DRY_RUN_AUDIT.md`
+- Schema inventory: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
+- Defaults/reversal: `docs/planning/PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`
+- Handoff review: `docs/planning/MOCK_IMPLEMENTATION_HANDOFF_REVIEW.md`
+- Historical exit audit: `docs/planning/FINAL_PLANNING_EXIT_AUDIT.md`; its former PASS is superseded by D-042 and the current status until P-1120..P-1128 pass.
 
 ## Implementation planning
 
-There are exactly two implementation-planning documents:
+- `docs/implementation/IMPLEMENTATION_HANDOFF.md`: build-order contract.
+- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`: 52 bounded units.
+- `docs/implementation/REPOSITORY_LAYOUT.md`: current versus approved future tree.
+- `docs/implementation/ISSUE_GENERATION.md`: deterministic issue-thread contract.
 
-- `docs/implementation/IMPLEMENTATION_HANDOFF.md` — single build-order and ownership contract.
-- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` — granular dependency-ordered work units.
-
-Do not create another roadmap, build plan, execution master plan, or implementation checklist. Add missing behavior to the owning subsystem contract; add execution detail to the work breakdown.
+Do not create another roadmap or build plan.
 
 ## Research
 
-`docs/research/README.md` is the only research entrypoint. Numbered July 2026 research reports are retained as incorporated, partially superseded historical evidence.
+`docs/research/README.md` is the sole research entrypoint. Historical reports never override accepted decisions or normative contracts.
 
-Do not create new numbered research waves. Resolve a current question in the owning ADR or normative contract and add provenance to the research README only when durable attribution is needed.
+## Generated artifacts
 
-## Machine-readable planning artifacts
-
-- `conformance/adapters/agent-registry-v1.json`
-- `conformance/adversarial/anti-cheat-registry-v1.json`
-- schemas, suites, fixtures, and benchmark definitions under `conformance/`, `evals/`, and `benchmarks/`.
-
-## Generated repository metadata
-
-`scripts/repository/generate_repository_metadata.py` writes generated inventory and checksum files under `artifacts/repository/`. Generated metadata is never an authority for product behavior.
-
-## Implementation areas
-
-- `crates/` — Rust native and VibeProof components.
-- `apps/api/` — Go online services.
-- `apps/web/` — Next.js web product.
-- `packages/` — schemas, generated clients, UI, and configuration.
+Repository metadata and issue plans are generated under `artifacts/repository/` and are non-authoritative. Generators live under `scripts/repository/`.
 
 ## Duplication rule
 
-A concept has exactly one normative owner. Other documents link to it rather than restating it.
-
-When consolidating:
-
-1. choose the normative owner;
-2. merge unique content into that owner;
-3. update all surviving links;
-4. delete the duplicate;
-5. record material behavioral changes in the decision register and an ADR where required.
+A concept has one normative owner. Merge unique content into that owner, repair all links, delete the duplicate, and record material changes through the decision register and an ADR when needed.
