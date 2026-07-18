@@ -4,34 +4,35 @@ VibeMaxxing is a privacy-preserving competitive leaderboard and Steam-like socia
 
 ## Status
 
-The repository remains in planning mode. Technical planning and implementation contracts are complete; product implementation has not begun and requires explicit user approval.
+The repository is in **planning-hardening**. Major product and architecture behavior is specified, but schemas, protocol edge semantics, governance and repository validation are being hardened. Product implementation has not begun and is not authorized.
 
 ## Start here
 
 1. [`AGENTS.md`](AGENTS.md) — canonical initialization and operating rules.
-2. [`docs/project/PROJECT.md`](docs/project/PROJECT.md) — authoritative product, privacy, stack, and phase constraints.
+2. [`docs/project/PROJECT.md`](docs/project/PROJECT.md) — authoritative product, privacy and stack direction.
 3. [`docs/project/STATUS.md`](docs/project/STATUS.md) — current readiness and allowed work.
-4. [`docs/project/DOCUMENTATION.md`](docs/project/DOCUMENTATION.md) — canonical documentation map.
-5. [`docs/implementation/IMPLEMENTATION_HANDOFF.md`](docs/implementation/IMPLEMENTATION_HANDOFF.md) — implementation build order after explicit approval.
+4. [`docs/project/DOCUMENTATION.md`](docs/project/DOCUMENTATION.md) — canonical documentation and schema map.
+5. Run `python3 scripts/repository/doctor.py` from a clean checkout.
 
-## Repository structure
+The implementation handoff remains inactive until planning-hardening passes and the user explicitly authorizes implementation.
 
-- `docs/project/` — consolidated project authority, status, and documentation map.
-- `docs/planning/` — decisions, gates, traceability, defaults, and planning evidence.
-- `docs/product/` — normative product, accounting, social, integrity, and UX contracts.
-- `docs/architecture/` — VibeProof, adapters, native runtime, API, data, and ranking contracts.
-- `docs/security/` and `docs/privacy/` — privacy boundary, threats, authentication, anti-cheat, and adversarial planning.
-- `docs/implementation/` — one implementation handoff and dependency-ordered work breakdown.
-- `docs/operations/`, `docs/evals/`, `docs/qa/`, and `docs/reviews/` — launch, reliability, evidence, quality, and independent review requirements.
-- `docs/research/` — classified historical evidence; never higher authority than accepted decisions or normative contracts.
-- `conformance/`, `benchmarks/`, and `evals/` — machine-readable planning artifacts and future executable evidence.
-- `crates/`, `apps/`, and `packages/` — implementation areas.
+## Structure
+
+- `docs/project/` — project authority, status and documentation map.
+- `docs/planning/` — decisions, tasks, traceability and planning evidence.
+- `docs/product/`, `docs/architecture/`, `docs/security/`, `docs/privacy/` — normative behavioral contracts.
+- `docs/decisions/` — accepted ADRs, including protocol recovery, identity normalization and licensing.
+- `docs/implementation/` — future handoff, work units, current/target tree and issue-generation contract.
+- `packages/schemas/` — authoritative planning-grade JSON Schema, CDDL, Protobuf, OpenAPI, SQL and policy artifacts.
+- `conformance/` — schema-backed compatibility and adversarial planning registries.
+- `scripts/repository/` — read-only repository doctor and deterministic generators.
+- `crates/`, `apps/`, `packages/` — current seeds and approved future implementation areas; see `REPOSITORY_LAYOUT.md` before assuming a path exists.
 
 ## Core rules
 
-- No prompt, transcript, code, path, repository name, tool content, credential, embedding, summary, classification, or personal insight may reach VibeMaxxing servers.
+- No prompt, transcript, code, path, repository name, tool content, credential, embedding, summary, classification or personal insight may reach VibeMaxxing servers.
 - Token Burn is the default raw metric; Cash Burn is always explicitly estimated.
 - Historical imports never enter active competition.
-- Agent support is tiered and based on exercised, versioned conformance evidence.
+- Agent support requires exercised exact-version/mode/platform certification evidence.
 - Public launch is comprehensive; staged internal delivery does not reduce scope.
-- Planning documents are not implementation evidence.
+- Planning artifacts are not implementation evidence.
