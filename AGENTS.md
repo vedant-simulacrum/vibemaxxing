@@ -2,40 +2,28 @@
 
 ## Current phase
 
-The project is in **planning and decision-closing mode**. Do not implement the product unless the user explicitly changes the phase. Start with `MODEL_OPERATING_MANUAL.md` and `docs/planning/TASK_CATALOG.md`.
+Technical planning is complete. Product implementation begins only after explicit user approval. Before approval, do not write product code or enable production workflows. After approval, start with `docs/implementation/IMPLEMENTATION_HANDOFF.md`.
 
 ## Mission
 
-Prepare and later build a privacy-preserving, cross-platform, open-source AI-agent activity protocol and social leaderboard without compromising the local/server trust boundary.
+Build a privacy-preserving, cross-platform, open-source AI-agent activity protocol and complete social competition product without compromising the local/server trust boundary.
 
-## Privacy boundary
+## Binding rules
 
-Servers must never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project or repository names, credentials, embeddings, summaries, classifications, or personal insights. Only fixed-schema safe claims may cross the network boundary.
+- Servers never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project/repository names, credentials, embeddings, summaries, classifications or personal insights.
+- Token Burn is the default raw metric; Cash Burn is always estimated.
+- Historical imports never enter active competition.
+- Evidence states are Standard, Hardened and Imported.
+- Public launch is comprehensive; internal implementation may be staged.
+- GitHub App and X PKCE are primary identity paths; stronger credentials are optional.
+- Agent support is tiered and conformance-backed.
+- Local topology includes collector, sync, daemon, CLI, menu-bar/tray, local privacy UI and hosted web.
+- Follow accepted ADRs and normative contracts unless reopened through the decision register.
 
-## Repository independence
+## Work selection
 
-The repository must be understandable, buildable, and testable without hidden chat context, private task logs, unpublished credentials, or proprietary infrastructure.
-
-## Planning rules
-
-- Read the mandatory files in `MODEL_OPERATING_MANUAL.md`.
-- Select work by task ID from `docs/planning/TASK_CATALOG.md`.
-- Respect `docs/planning/DEPENDENCY_MAP.md`.
-- Update `docs/planning/DECISION_REGISTER.md` when a choice changes.
-- Define interfaces, schemas, invariants, errors, state machines, limits, privacy, security, storage, migrations, recovery, compatibility, observability, tests, and evidence.
-- Verify unstable external facts using primary sources.
-- Do not treat specifications, empty fixtures, skipped tests, or placeholders as implementation evidence.
-- Do not begin implementation because an older prompt says to do so.
-
-## Binding product rules
-
-- Token Burn is the default ranking metric.
-- Cash Burn is always explicitly estimated.
-- Historical imports never enter active rankings.
-- Public evidence language is `Standard`, `Hardened`, and `Imported`.
-- Development remains local-first.
-- Follow accepted ADRs unless reopened through the decision register and an evidence-backed ADR.
+Use `docs/planning/TASK_CATALOG.md`. P-1104 is the current gate. Once approved, follow the build order and PR completion contract in `docs/implementation/IMPLEMENTATION_HANDOFF.md`.
 
 ## Review requirements
 
-Every change must state its planning task and decision IDs, scope, privacy and security impact, future evidence contract, compatibility and migration impact, rollback implications, and unresolved questions.
+Every implementation change states task/decision IDs, contract sections, schema/migration impact, privacy/security impact, compatibility, rollback, tests, benchmark impact and remaining risk. Specifications, mocks, placeholders, skipped tests and unexecuted fixtures are not implementation evidence.
