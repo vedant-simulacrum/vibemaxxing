@@ -46,6 +46,7 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-038 | Technical planning contracts are complete; implementation evidence remains separate | accepted | a contradiction or missing critical contract is demonstrated |
 | D-039 | Initial production architecture is cloud-portable managed containers, PostgreSQL, optional Redis and object storage; provider/region are deployment configuration | accepted | provider ADR during implementation |
 | D-040 | Original code targets Apache-2.0, docs/specs CC BY 4.0 where suitable, and DCO without CLA initially, subject to final legal/dependency review | provisional | legal and dependency review before public release |
+| D-041 | `AGENTS.md` is the sole initialization manual; `docs/project/` owns project authority/status/navigation; implementation planning is limited to one handoff plus one PR work breakdown; research is indexed only through `docs/research/README.md` | accepted | explicit repository-governance change |
 
 ## Register rules
 
