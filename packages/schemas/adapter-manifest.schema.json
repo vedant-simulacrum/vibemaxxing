@@ -1,0 +1,31 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://vibemaxxing.dev/schemas/adapter-manifest-v1.json",
+  "title":"VibeMaxxing Adapter Manifest v1",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["schema_version","adapter_id","version","maintainer","source_products","platforms","modes","capture_mechanism","required_permissions","token_categories","source_authority","evidence_ceiling","duplicate_domains","conformance_suite_version","lifecycle"],
+  "properties":{
+    "schema_version":{"const":1},
+    "adapter_id":{"type":"string","pattern":"^[a-z0-9]+(?:-[a-z0-9]+)*$","maxLength":80},
+    "version":{"type":"string","pattern":"^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"},
+    "maintainer":{"type":"object","additionalProperties":false,"required":["kind","id"],"properties":{"kind":{"enum":["project","community","vendor"]},"id":{"type":"string","maxLength":120}}},
+    "source_products":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","pattern":"^[a-z0-9]+(?:-[a-z0-9]+)*$"}},
+    "source_version_range":{"type":"string","maxLength":120},
+    "platforms":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["macos","windows","linux","wsl","container","ci","remote"]}},
+    "modes":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["native-event","extension-api","official-hook","otel","proxy","wrapper","live-log","provider-receipt","import"]}},
+    "capture_mechanism":{"type":"string","maxLength":120},
+    "required_permissions":{"type":"array","uniqueItems":true,"items":{"type":"string","maxLength":120}},
+    "token_categories":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["input","output","cache_read","cache_write","reasoning","multimodal_input","multimodal_output"]}},
+    "model_identity_quality":{"enum":["provider-authenticated","source-reported","mapped-alias","unknown"]},
+    "source_authority":{"enum":["provider-receipt","native-source-event","official-structured-hook","protocol-proxy","live-source-observation","reconstruction","historical-import"]},
+    "evidence_ceiling":{"enum":["hardened-certified","competitive-certified","community-certified","generic-live","imported"]},
+    "privacy_risks":{"type":"array","uniqueItems":true,"items":{"type":"string","maxLength":160}},
+    "duplicate_domains":{"type":"array","uniqueItems":true,"items":{"type":"string","pattern":"^[a-z0-9]+(?:-[a-z0-9]+)*$"}},
+    "capability_probe":{"type":"string","maxLength":160},
+    "conformance_suite_version":{"type":"string","maxLength":40},
+    "lifecycle":{"enum":["experimental","community-certified","competitive-certified","hardened-certified","degraded","suspended","retired","unsupported"]},
+    "emergency_disable":{"type":"boolean","default":false},
+    "sunset_at":{"type":["string","null"],"format":"date-time"}
+  }
+}
