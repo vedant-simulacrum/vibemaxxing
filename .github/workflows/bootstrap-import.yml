@@ -21,9 +21,9 @@ jobs:
         id: parts
         shell: bash
         run: |
-          if [[ -f bootstrap-import/part-00.b64 && -f bootstrap-import/part-06.b64 ]]; then
+          if [[ -f bootstrap-import/part-00.b64 && -f bootstrap-import/part-12.b64 ]]; then
             count=$(find bootstrap-import -maxdepth 1 -name 'part-*.b64' | wc -l | tr -d ' ')
-            if [[ "$count" == "7" ]]; then
+            if [[ "$count" == "13" ]]; then
               echo 'ready=true' >> "$GITHUB_OUTPUT"
             else
               echo 'ready=false' >> "$GITHUB_OUTPUT"
