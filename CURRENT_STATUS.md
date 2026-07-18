@@ -4,44 +4,76 @@ Updated: 2026-07-19
 
 ## Current phase
 
-VibeMaxxing is in **planning and decision-closing mode**. The repository is the source of truth for preparing later implementation, but product implementation must not begin until the planning exit gate passes and the user explicitly changes the phase.
+VibeMaxxing is in **planning and decision-closing mode**. Internal work may be staged. Product implementation begins only after the planning exit review and explicit user approval.
 
-Development remains local-first. Previous remote-development and VM control-plane plans are cancelled.
+Development is local-first. Previous remote development/control-plane plans remain cancelled.
+
+## Product direction now frozen
+
+- Public launch targets the complete initial product rather than a narrow public MVP.
+- Internal milestones and private testing may be narrow and staged.
+- Token Burn is the default ranking metric; Cash Burn is always explicitly estimated.
+- Genuine but intentionally pointless usage counts.
+- Historical imports are private analytics only and never affect active competition.
+- Primary sign-in is GitHub and X/Twitter OAuth; passkeys/hardware credentials are optional stronger factors.
+- Agent support is a tiered universal compatibility system, not a fixed list.
+- Local UX includes a background daemon installed/controlled by CLI, macOS menu-bar, Windows/Linux tray, local audit/control UX, and hosted web dashboard.
+- The repository is private during planning and becomes public open source before public launch.
+
+## Accepted technology direction
+
+- Rust 2024: VibeProof, adapters, collector, native core, privacy boundary, canonical encoding/signing.
+- Go: ingestion, verification orchestration, aggregation, ranking, presence, migrations, and operations tooling.
+- Next.js/strict TypeScript: hosted web product.
+- PostgreSQL/pgx and explicit SQL: server source of truth.
+- Protobuf/Buf internally; canonical CBOR/CDDL/COSE for signed public claims.
 
 ## Repository state
 
-The repository contains a comprehensive product, privacy, integrity, architecture, design, engineering, evaluation, operations, and research baseline. It now also contains a model operating manual, planning audit, decision register, dependency map, and atomic planning task catalog.
+The repository contains substantial product, privacy, integrity, architecture, design, engineering, operations, research, and planning material. Authority-level contradictions involving backend language, authentication, launch scope, agent coverage, and native UX have been corrected.
 
-## Existing executable or seed material
+The repository also contains seed executable material such as a minimal Go health endpoint, policy/eval runners, telemetry canary scanner, capability probe, benchmark seed, and conformance declarations. These are not a production implementation.
 
-- Repository policy and evaluation runners.
-- CI, security, dependency, and release workflow scaffolding.
-- Metadata-only agent capability probe.
-- Telemetry canary scanner.
-- PostgreSQL ranking benchmark seed.
-- Adversarial and conformance case declarations.
-- Minimal Go API health endpoint and test.
+## Automation state
 
-These do not constitute a production implementation.
+During planning:
 
-## Main planning gaps
+- CI is manual-only.
+- Security workflows are manual-only.
+- Release evidence is manual-only.
+- Automated eval matrices are disabled.
+- Dependabot configuration is removed.
 
-- Product glossary and complete token-accounting edge cases.
-- Adapter manifest and normalized agent-event contracts.
-- Final canonical CBOR/COSE library decision and complete VibeProof wire contract.
-- Collector persistence, crash consistency, IPC message schemas, and device lifecycle.
-- Ingestion APIs, SQL model, transaction boundaries, aggregation, ranking, and rebuild contracts.
-- Web route, state, data, privacy-verification, accessibility, and copy contracts.
-- Authentication, recovery, social graph, boards, presence, notification, moderation, and lifecycle contracts.
-- Native packaging, TUF updater, observability schema, deployment, release, rollback, incident, backup, and recovery contracts.
-- Final cross-document contradiction and implementation-readiness review.
+These controls must be restored, redesigned where necessary, and validated before launch. Repository-level GitHub security settings may still create notifications independently of workflow files.
+
+## Remaining planning work
+
+The complete dependency-ordered program is in `docs/planning/TASK_CATALOG.md`. Major unresolved work includes:
+
+- complete launch matrix, user journeys, glossary, and gates;
+- normative token accounting, cross-provider comparability, pricing, periods, and corrections;
+- machine-readable agent census, adapter/event schemas, certification, and community governance;
+- complete VibeProof claim, encoding, signing, error, transport, and state-machine contracts;
+- daemon/collector/sync/CLI/shell IPC, storage, lifecycle, device, installer, update, and platform contracts;
+- GitHub/X identity research, account linking, sessions, recovery, native authorization, and permission matrices;
+- complete APIs, PostgreSQL schema, transactions, workers, ranking, and benchmark plans;
+- social, boards, countries, presence, notifications, moderation, appeals, retention, export, and deletion;
+- populated anti-cheat control catalog, attack lab, detector bakeoff, SLM decision, and red-team operations;
+- route/state contracts, accessibility, privacy verification, design QA, packaging, deployment, SLOs, incident response, backup/restore, and open-source governance;
+- final contradiction, traceability, completeness, implementation, and launch reviews.
+
+## Generated metadata
+
+`MANIFEST_FILES.txt`, `FILE_INDEX.md`, `SHA256SUMS`, and related generated indexes must not be treated as authoritative until regenerated from the live repository tree. A deterministic generator is required; hand-maintained indexes are prohibited.
 
 ## Readiness
 
 - Continue planning: **go**.
 - Begin product implementation: **no-go**.
 - Competitive beta: **no-go**.
-- Production release: **no-go**.
+- Public launch: **no-go**.
+
+These no-go results reflect intentionally incomplete specifications and evidence, not a recommendation to narrow the complete launch scope.
 
 ## Canonical authority order
 
@@ -56,6 +88,6 @@ These do not constitute a production implementation.
 9. Accepted ADRs and current specifications.
 10. Historical research documents.
 
-## Next planning work
+## Next work
 
-Use `docs/planning/TASK_CATALOG.md`. Start with the highest-priority unblocked `ready` task, respect `docs/planning/DEPENDENCY_MAP.md`, and update the decision register and affected specifications when closing a decision.
+Use `docs/planning/TASK_CATALOG.md`. The immediate sequence is P-007/P-008/P-009, then P-051 through P-055, followed by accounting and agent compatibility. Update the decision register and every affected canonical specification when closing a decision.
