@@ -4,64 +4,50 @@ Updated: 2026-07-19
 
 ## Current phase
 
-VibeMaxxing has completed the **technical planning and implementation-contract phase**. Product implementation has not begun. The next phase starts only after the user explicitly approves implementation.
+VibeMaxxing remains in **planning mode**. Technical planning, implementation contracts, traceability, dry runs, adversarial table-tops, benchmark protocols, independent review lenses, implementation decomposition, provisional defaults and the final planning-exit audit are complete. Product implementation has not begun and is not authorized.
 
 Development remains local-first. Previous remote development/control-plane plans remain cancelled.
 
-## Frozen product direction
+## Frozen direction
 
-- Public launch targets the complete initial product; internal delivery may be staged.
-- Token Burn is the default ranking metric; Cash Burn is always explicitly estimated.
-- Genuine but intentionally pointless usage counts.
-- Historical imports are private analytics only and never affect active competition.
-- Primary identity is GitHub App user authorization and X OAuth 2.0 PKCE; passkeys/hardware credentials are optional stronger factors.
-- Agent support is a tiered universal compatibility system with family fallbacks and exact conformance-backed support claims.
-- Local UX includes daemon, private collector, network-safe sync, CLI, macOS menu bar, Windows/Linux tray, local privacy/audit dashboard, and hosted web product.
-- The repository is private during planning and becomes public open source before public launch.
+- Complete public-launch scope with staged internal delivery.
+- Token Burn default; Estimated Cash Burn always explicitly estimated.
+- Authentic intentionally pointless usage counts; imports never compete.
+- GitHub App and X OAuth identity; optional stronger factors.
+- Tiered universal compatibility and conformance-backed support claims.
+- Rust native/protocol core, Go server, Next.js web, PostgreSQL source of truth.
+- Daemon, private collector, network-safe sync, CLI, menu-bar/tray, local audit and hosted web.
+- Deterministic anti-cheat controls before statistical or model-based signals.
+- Private repository during planning; public open source before launch.
 
-## Accepted technology direction
+## Planning evidence now committed
 
-- Rust 2024: VibeProof, adapters, collector, daemon/native core, privacy boundaries, canonical accounting/encoding/signing.
-- Go: public APIs, OAuth callbacks, verification orchestration, ingestion, aggregation, ranking, presence, notifications, migrations, and operations tooling.
-- Next.js/strict TypeScript: hosted web product.
-- PostgreSQL/pgx and explicit SQL: server source of truth.
-- Protobuf/Buf internally; deterministic CBOR/CDDL/COSE for signed public claims.
-
-## Normative implementation contracts
-
-The implementation phase is governed by `docs/implementation/IMPLEMENTATION_HANDOFF.md`, which links the complete contract set for:
-
-- scope, stages, terminology and launch gates;
-- accounting, pricing, periods, ties, corrections and comparability;
-- universal adapters, normalized events and certification;
-- VibeProof claims, canonical encoding, keys, sequences, replay and transport;
-- native processes, storage, IPC, devices, CLI, shell, updates and budgets;
-- OAuth identity, account linking, sessions, recovery and authorization;
-- APIs, PostgreSQL schema, transactions, outbox, aggregation, ranking and cache;
-- profiles, friends, rivals, boards, countries, presence, notifications and moderation;
-- anti-cheat, detector/SLM gates, appeals and red-team operations;
-- web/native routes and states, privacy UX, accessibility and performance;
-- deployment, TUF, observability, SLOs, recovery, open-source governance and launch.
-
-A machine-readable agent registry and adversarial registry are committed under `conformance/`.
+- Normative subsystem implementation contracts.
+- Requirement-to-contract traceability and implementation dry-run audit.
+- Schema and interface inventory.
+- Adversarial table-top scenarios.
+- Benchmark and evidence protocols with thresholds.
+- Independent privacy, protocol, data, native, integrity, product, accessibility, operations and open-source reviews.
+- PR-sized dependency-ordered implementation work breakdown.
+- Context-free mock implementation handoff review.
+- Provisional defaults and evidence-based reversal thresholds.
+- Final planning-exit audit.
 
 ## Automation state
 
-During planning, CI, security, release and eval workflows remain manual-only or disabled, and Dependabot is removed. P-1007 requires restoring and proving tuned automation after implementation begins. GitHub repository-level security settings may still notify independently.
-
-## Repository evidence state
-
-The repository contains specifications, contracts, schemas/registries, planning fixtures and small seed executable material. It does not contain a production product. Planning completion must not be represented as implementation completion.
-
-Stale hand-maintained manifest/checksum files were removed. `scripts/repository/generate_repository_metadata.py` owns deterministic metadata generation from a checkout.
+CI, security, release and eval workflows remain manual-only or disabled during planning, and Dependabot is removed. Restoring and proving tuned automation requires executable implementation and remains P-1007.
 
 ## Readiness
 
-- Technical planning contracts: **complete**.
-- Cross-document P0/P1 contradiction review: **complete at planning level**.
-- Begin implementation: **blocked only on explicit user approval**.
-- Competitive beta: **no-go until implementation evidence passes**.
-- Public launch: **no-go until the comprehensive launch gate passes**.
+- Product and architecture planning: **complete**.
+- Technical implementation contracts: **complete**.
+- Traceability and context-free handoff: **complete**.
+- Planning contradiction review: **complete**.
+- Implementation: **not started and not authorized**.
+- Competitive beta: **no-go pending implementation evidence**.
+- Public launch: **no-go pending complete launch evidence**.
+
+Planning completion must never be represented as working code, passing schemas, tested cryptography, certified adapters, validated performance, deployed infrastructure or launch readiness.
 
 ## Canonical authority order
 
@@ -76,6 +62,6 @@ Stale hand-maintained manifest/checksum files were removed. `scripts/repository/
 9. Accepted ADRs and current normative specifications.
 10. Historical research.
 
-## Next legal action
+## Allowed next planning work
 
-P-1104: the user explicitly approves entry into implementation. After approval, follow the build order and no-invention rules in `docs/implementation/IMPLEMENTATION_HANDOFF.md`; restore automated checks as implementation becomes executable rather than pretending documents are evidence.
+The project may remain in planning mode. Future work should be targeted current research, external review, contract refinement, issue decomposition or evidence-plan improvement tied to a named decision. Broad replanning is warranted only when a concrete contradiction, new requirement or changed external fact is discovered. Entering implementation still requires an explicit later instruction.
