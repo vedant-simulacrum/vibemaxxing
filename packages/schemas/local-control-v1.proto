@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package vibemaxxing.local.v1;
+
+message Envelope {
+  uint32 protocol_major = 1;
+  uint32 protocol_minor = 2;
+  bytes message_id = 3;
+  uint64 sent_at_unix_ms = 4;
+  bytes process_nonce = 5;
+  bytes challenge_response = 6;
+  string correlation_id = 7;
+  oneof body {
+    HealthRequest health_request = 20;
+    HealthResponse health_response = 21;
+    LifecycleRequest lifecycle_request = 22;
+    LifecycleResponse lifecycle_response = 23;
+    NormalizedEventSubmission event_submission = 24;
+    ClaimQueueRequest claim_queue_request = 25;
+    ClaimQueueResponse claim_queue_response = 26;
+  }
+}
+
+message HealthRequest {}
+message HealthResponse {
+  enum State { STATE_UNSPECIFIED = 0; HEALTHY = 1; DEGRADED = 2; RECOVERY = 3; STOPPED = 4; }
+  State state = 1;
+  string build_version = 2;
+  repeated string reason_codes = 3;
+}
+
+message LifecycleRequest {
+  enum Action { ACTION_UNSPECIFIED = 0; START = 1; STOP = 2; PAUSE = 3; RESUME = 4; SYNC = 5; UPDATE = 6; ROLLBACK = 7; EXPORT = 8; DELETE = 9; UNINSTALL = 10; }
+  Action action = 1;
+  bool dry_run = 2;
+  string scope_code = 3;
+  bytes signed_noninteractive_policy = 4;
+}
+
+message LifecycleResponse {
+  bool accepted = 1;
+  string operation_id = 2;
+  string reason_code = 3;
+}
+
+message NormalizedEventSubmission {
+  bytes normalized_event_json = 1;
+  bytes schema_sha256 = 2;
+}
+
+message ClaimQueueRequest {
+  uint32 limit = 1;
+  bytes after_claim_id = 2;
+}
+
+message ClaimQueueResponse {
+  repeated ClaimSummary claims = 1;
+}
+
+message ClaimSummary {
+  bytes claim_id = 1;
+  uint64 sequence = 2;
+  string state = 3;
+  string reason_code = 4;
+  uint64 encoded_bytes = 5;
+}
