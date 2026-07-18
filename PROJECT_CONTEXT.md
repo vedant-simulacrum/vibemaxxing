@@ -6,11 +6,11 @@
 - Greenfield rebuild inspired by WhoBurnedMore; no migration of old accounts, rankings, or scores.
 - Product thesis: **Codex restraint × Steam social competition**.
 - Visual thesis: **The Competitive Ledger**.
-- The repository is private during planning and must become public open source before public launch.
+- The repository is private during planning and becomes public open source before public launch.
 
 ## Current phase
 
-The project is in planning and decision-closing mode. Internal work may be staged, but product implementation starts only after the planning exit gate and an explicit user phase change. Development is local-first; do not introduce a remote coding control plane or remote private-context source of truth.
+Technical planning and implementation contracts are complete. Product implementation has not begun and requires explicit user approval. Development is local-first; do not introduce a remote coding control plane or remote private-context source of truth.
 
 ## Complete public-launch target
 
@@ -24,77 +24,70 @@ Public launch is not a narrow MVP. It includes:
 - local controls plus a hosted web dashboard;
 - broad agent compatibility through a tiered adapter system.
 
-Staged internal milestones are required, but staging must not silently reduce the public-launch scope.
+Staged internal milestones are required, but staging must not silently reduce public-launch scope.
 
-## Metrics
+## Metrics and privacy
 
-- **Token Burn** is the default ranking metric.
+- **Token Burn** is the default raw usage-volume metric.
 - **Estimated Cash Burn** is always explicitly an estimate, never actual spend.
 - Genuine but intentionally pointless usage counts.
 - Historical imports are private analytics only, labelled **Imported**, and never affect active rankings, streaks, overtakes, rivals, or presence.
-
-## Privacy boundary
-
-The server must never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project or repository names, credentials, embeddings, summaries, classifications, or personal insights.
-
-Only fixed-schema safe claims may cross the network boundary. A process that can inspect transcript content must have no network access; a networked sync process must be unable to inspect transcript content.
+- The server never receives prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project/repository names, credentials, embeddings, summaries, classifications, or personal insights.
+- Only fixed-schema safe claims cross the network boundary. Transcript-capable processes have no network; networked sync cannot inspect transcript content.
 
 ## Integrity
 
-- Deterministic code owns counting, normalization, signatures, sequence validation, replay protection, duplicate handling, and claim construction.
+- Deterministic code owns counting, normalization, signatures, sequences, replay protection, duplicate handling, eligibility, and claim construction.
 - Public evidence labels are **Standard**, **Hardened**, and **Imported**.
-- An SLM or other model is only a residual-risk signal. It may not rewrite totals or permanently ban a user by itself.
+- An SLM/model is conditional residual-risk detection only and may not rewrite totals or permanently ban a user.
 - Do not claim mathematical cheat-proofing on a user-controlled machine.
 
 ## Agent compatibility
 
-Support is a living compatibility system, not a fixed list. It must cover CLI, IDE, desktop, hosted, open-source, local-model, gateway, orchestration, ACP, OpenTelemetry, and unknown-tool categories.
+Support is a living compatibility system covering CLI, IDE, desktop, hosted, open-source, local-model, gateway, orchestration, ACP, OpenTelemetry, CI/remote, and unknown tools.
 
-Support tiers:
-
-1. Hardened-certified.
-2. Competitive-certified.
-3. Community-certified.
-4. Generic live.
-5. Imported.
-6. Unsupported, stated honestly.
-
-Public support claims must be generated from an exercised, versioned adapter registry.
+Tiers: Hardened-certified, Competitive-certified, Community-certified, Generic live, Imported, and honestly Unsupported. Public support claims come only from an exercised version/mode/platform registry.
 
 ## Authentication
 
-Primary sign-in is OAuth-based through GitHub and X/Twitter. Passkeys or hardware-backed credentials are optional stronger-authentication factors, not mandatory for normal users. Account linking, provider compromise, recovery, session revocation, and provider loss require explicit state machines.
+GitHub uses a GitHub App with web and device authorization. X uses OAuth 2.0 Authorization Code with PKCE. Passkeys/hardware credentials are optional stronger factors. Account linking, sessions, recovery, provider compromise/loss, native enrollment, authorization and deletion follow ADR-006 and the authentication contract.
 
 ## Local product topology
 
-The intended local system contains separate responsibilities for collection, synchronization, daemon control, CLI installation/control, menu-bar or tray UX, local audit UX, and updating. Closing the tray must not silently corrupt or lose collection state. Platform-specific capability and hardening differences must be explicit.
+Separate collector, sync, daemon, CLI, menu-bar/tray shell, local privacy/audit UI, hosted web product, and updater responsibilities. Closing the shell does not stop collection. Platform capability and hardening differences are explicit.
 
 ## VibeProof
 
-VibeProof is the local-first accounting and integrity protocol. It requires deterministic normalization, fixed-schema claims, canonical CBOR/CDDL, COSE signatures, monotonic sequences, challenge and replay protection, commitments, revocable device keys, isolated collection/sync processes, encrypted local state, an inspectable outbound ledger, and export/deletion controls.
+VibeProof requires deterministic normalized events, fixed-schema signed claims, deterministic CBOR/CDDL, COSE_Sign1 with Ed25519 initially, monotonic sequences, challenge/replay protection, previous-claim chaining, revocable device keys, isolated collection/sync, encrypted local state, inspectable outbound ledger, explicit compatibility, and export/deletion.
 
 ## Accepted implementation direction
 
-- Rust 2024: VibeProof, adapters, collector, local privacy boundaries, canonical encoding/signing, and native core.
-- Go: ingestion APIs, verification orchestration, aggregation, ranking, presence, workers, migrations, and operational tooling.
+- Rust 2024: VibeProof, adapters, collector, daemon/native core, privacy boundaries, canonical accounting/encoding/signing.
+- Go: OAuth/API, verification, ingestion, aggregation, ranking, presence, notifications, migrations and operations.
 - Next.js App Router with strict TypeScript: hosted web product.
 - PostgreSQL with `pgx` and explicit SQL: server source of truth.
 - Protobuf + Buf: internal contracts.
-- Canonical CBOR + CDDL + COSE: signed public claims.
+- Deterministic CBOR + CDDL + COSE: signed public claims.
 
 Do not add Kubernetes, Kafka, GraphQL, service mesh, workflow engine, vector database, or ORM-heavy persistence without an evidence-backed ADR.
 
 ## Design
 
-The leaderboard is the dominant object. The launch direction is a light, premium, technically precise Competitive Ledger: spacious typography, tabular numerals, hairlines, restrained motion, strong accessibility, keyboard navigation, mobile recomposition, and no generic analytics-card, crypto, cyberpunk, flame, coin, gauge, or esports aesthetic.
+The leaderboard is dominant. Launch direction is a light, premium, technically precise Competitive Ledger: spacious typography, tabular numerals, hairlines, restrained motion, accessibility, keyboard navigation, mobile recomposition, and no generic analytics-card, crypto, cyberpunk, flame, coin, gauge, or esports aesthetic.
 
-## Repository and launch rules
+## Normative planning authority
 
-- Keep product source independently buildable and understandable without chat history.
-- Keep secrets, unpublished incidents, active abuse thresholds, exploit signatures, and private business material outside public Git.
-- Automated CI, eval, dependency, security, and release workflows remain manual-only during planning.
-- Before public launch, restore and validate the required automated checks, release signing, consumer verification, operations, legal/privacy readiness, and open-source governance.
+Start implementation from `docs/implementation/IMPLEMENTATION_HANDOFF.md`. It links the frozen accounting, adapters, protocol, native, identity, data, social, integrity, UX, operations and launch contracts. Material behavioral changes require the decision register and an ADR.
 
-## Open decisions
+## Implementation-time selections
 
-Do not silently invent final licenses, cloud providers/regions, RPO/RTO, budgets, exact detector models, country-verification method, privacy defaults, pricing update operations, release notarization details, or whether VibeProof later becomes a separate repository.
+The following are deliberately selected during implementation within frozen contracts rather than left behaviorally undefined:
+
+- exact Rust CBOR/COSE crates after conformance bakeoff;
+- exact cloud provider and primary regions using the portable deployment contract;
+- exact detector/SLM model only if measured lift passes the shipping gate;
+- final dependency/legal confirmation of Apache-2.0, CC BY 4.0 and DCO policy;
+- exact platform signing/notarization accounts and release-key custody implementation;
+- whether VibeProof later separates into its own repository.
+
+These choices may not alter privacy, accounting, evidence, identity, compatibility, data lifecycle, social, authorization or launch semantics without an ADR.
