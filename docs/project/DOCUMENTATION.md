@@ -1,16 +1,16 @@
 # VibeMaxxing Documentation Map
 
-This is the only canonical map of repository documentation. Do not create competing indexes, start prompts, master-context files, or duplicate roadmaps.
+This is the only canonical map of repository documentation. Do not create competing indexes, start prompts, master-context files, duplicate roadmaps, or duplicate research waves.
 
 ## Initialization
 
-1. `AGENTS.md` — initialization, phase gate, repository/thread/dependency rules.
-2. `docs/project/PROJECT.md` — product, privacy, stack, topology, and authority.
-3. `docs/project/STATUS.md` — current phase, readiness, and allowed work.
+1. `AGENTS.md` — repository initialization, phase gate, thread handling, dependency policy, and completion rules.
+2. `docs/project/PROJECT.md` — authoritative product, privacy, topology, stack, and authority.
+3. `docs/project/STATUS.md` — current phase, readiness, automation state, and allowed work.
 4. `docs/planning/DECISION_REGISTER.md` — accepted, provisional, superseded, and conditional decisions.
-5. `docs/planning/TASK_CATALOG.md` — planning and implementation gates.
-6. `docs/implementation/IMPLEMENTATION_HANDOFF.md` — build order and no-invention rules.
-7. `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` — dependency-ordered implementation units.
+5. `docs/planning/TASK_CATALOG.md` — completed planning groups and evidence-gated future tasks.
+6. Relevant accepted ADRs and normative subsystem contracts.
+7. `docs/implementation/IMPLEMENTATION_HANDOFF.md` and `PR_SIZED_WORK_BREAKDOWN.md` only after explicit implementation approval.
 
 ## Normative subsystem contracts
 
@@ -48,42 +48,56 @@ This is the only canonical map of repository documentation. Do not create compet
 
 ## Planning evidence
 
-Planning evidence is maintained under `docs/planning/`:
+`docs/planning/` contains distinct planning evidence, not competing product specifications:
 
-- traceability and dry-run audit;
-- schema/interface inventory;
-- provisional defaults and reversal thresholds;
-- mock implementation handoff review;
-- final planning-exit audit;
-- dependency map and task catalog.
+- `DECISION_REGISTER.md` — material decisions and reopen conditions.
+- `TASK_CATALOG.md` — planning completion and future gates.
+- `TRACEABILITY_AND_DRY_RUN_AUDIT.md` — requirement-to-contract traceability.
+- `SCHEMA_AND_INTERFACE_INVENTORY.md` — authoritative schema ownership inventory.
+- `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md` — implementation defaults where measured evidence may later reverse a choice.
+- `MOCK_IMPLEMENTATION_HANDOFF_REVIEW.md` — context-free handoff test.
+- `FINAL_PLANNING_EXIT_AUDIT.md` — final planning result.
 
-These documents validate planning completeness but do not override normative subsystem contracts.
+## Implementation planning
+
+There are exactly two implementation-planning documents:
+
+- `docs/implementation/IMPLEMENTATION_HANDOFF.md` — single build-order and ownership contract.
+- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` — granular dependency-ordered work units.
+
+Do not create another roadmap, build plan, execution master plan, or implementation checklist. Add missing behavior to the owning subsystem contract; add execution detail to the work breakdown.
 
 ## Research
 
-`docs/research/` contains evidence and historical research. `docs/research/RESEARCH_PROVENANCE_INDEX.md` classifies research as current, incorporated, partially superseded, or historical.
+`docs/research/README.md` is the only research entrypoint. Numbered July 2026 research reports are retained as incorporated, partially superseded historical evidence.
 
-Research is never an authority when an accepted ADR or normative contract exists. Do not produce a new research wave when an existing question can be appended to the provenance index and resolved in the relevant contract or ADR.
+Do not create new numbered research waves. Resolve a current question in the owning ADR or normative contract and add provenance to the research README only when durable attribution is needed.
 
 ## Machine-readable planning artifacts
 
 - `conformance/adapters/agent-registry-v1.json`
 - `conformance/adversarial/anti-cheat-registry-v1.json`
-- existing schemas, suites, fixtures, and benchmark definitions under `conformance/`, `evals/`, and `benchmarks/`.
+- schemas, suites, fixtures, and benchmark definitions under `conformance/`, `evals/`, and `benchmarks/`.
+
+## Generated repository metadata
+
+`scripts/repository/generate_repository_metadata.py` writes generated inventory and checksum files under `artifacts/repository/`. Generated metadata is never an authority for product behavior.
 
 ## Implementation areas
 
-- `crates/`: Rust native and VibeProof components.
-- `apps/api/`: Go online services.
-- `apps/web/`: Next.js web product.
-- `packages/`: shared schemas, generated clients, UI, and configuration.
+- `crates/` — Rust native and VibeProof components.
+- `apps/api/` — Go online services.
+- `apps/web/` — Next.js web product.
+- `packages/` — schemas, generated clients, UI, and configuration.
 
 ## Duplication rule
 
-A concept has exactly one normative home. Other documents link to it rather than restating it. When consolidation is required:
+A concept has exactly one normative owner. Other documents link to it rather than restating it.
+
+When consolidating:
 
 1. choose the normative owner;
 2. merge unique content into that owner;
-3. update links;
+3. update all surviving links;
 4. delete the duplicate;
-5. record any changed decision in the decision register.
+5. record material behavioral changes in the decision register and an ADR where required.
