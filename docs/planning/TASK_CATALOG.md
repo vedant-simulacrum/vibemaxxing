@@ -4,96 +4,40 @@ Updated: 2026-07-19
 
 Statuses: `complete-planning`, `blocked-implementation`, `blocked-approval`, `blocked-launch-evidence`.
 
-A task is `complete-planning` when the committed normative contract defines ownership, interfaces, schemas/fields, invariants, limits, negative cases, failures, recovery, compatibility, privacy/security behavior, tests and acceptance evidence. It does not imply implemented or production-proven.
+A task is `complete-planning` when committed contracts define ownership, interfaces, fields, invariants, limits, failures, recovery, compatibility, privacy/security behavior, tests and acceptance evidence. It does not imply implemented or production-proven.
 
-## Repository truth and governance
+## Completed planning groups
 
-| ID | Task | Status | Output |
+| IDs | Scope | Status | Primary evidence |
 |---|---|---|---|
-| P-001..006 | Authority, phase, evidence, decisions, artifacts and repository operations | complete-planning | root control files and planning system |
-| P-007 | Deterministic repository metadata | complete-planning | `scripts/repository/generate_repository_metadata.py` |
-| P-008 | Historical research provenance | complete-planning | `docs/research/RESEARCH_PROVENANCE_INDEX.md` |
-| P-009 | License, contribution, trademark, maintainer, release and security governance | complete-planning | operations/open-source contract |
+| P-001..009 | authority, phase, decisions, artifacts, metadata, provenance and governance | complete-planning | root controls, planning system, metadata generator, provenance index |
+| P-051..055 | complete scope, staged delivery, glossary, journeys and launch gates | complete-planning | scope freeze and product/operations contracts |
+| P-101..105 | accounting, pricing, comparability, periods and corrections | complete-planning | accounting and time contract |
+| P-201..208 | universal adapters, registry, schemas, reconciliation, certification and governance | complete-planning | compatibility and adapter/VibeProof contracts; agent registry |
+| P-301..307 | VibeProof fields, encoding, signing, errors, state and conformance | complete-planning | adapter and VibeProof contract |
+| P-401..409 | native topology, storage, recovery, IPC, platforms, devices, CLI and budgets | complete-planning | native runtime/storage contract |
+| P-501..505 | identity, native auth, linked accounts, recovery and authorization | complete-planning | ADR-006 and authentication contract |
+| P-601..606 | APIs, PostgreSQL, transactions, workers, ranking and benchmarks | complete-planning | server API/data/ranking contract |
+| P-701..708 | social graph, boards, countries, presence, notifications, moderation and lifecycle | complete-planning | social/integrity/UX contract |
+| P-801..808 | anti-cheat controls, campaigns, detector/SLM gates, calibration and red-team | complete-planning | attack catalog, adversarial registry/tabletops and integrity contracts |
+| P-901..905 | routes, states, local privacy UX, evidence presentation and accessibility | complete-planning | social/UX and native contracts |
+| P-1001..1006 | packages, TUF, observability, deployment, recovery and open-source governance | complete-planning | operations/open-source/launch contract |
+| P-1101 | contradiction and stale-claim review | complete-planning | planning audit and final exit audit |
+| P-1102 | privacy/threat/control traceability | complete-planning | traceability audit and adversarial evidence plan |
+| P-1103 | schema/interface/state/migration/recovery completeness | complete-planning | schema inventory, dry run and mock handoff |
+| P-1110 | benchmark and evidence procedure design | complete-planning | benchmark and evidence protocols |
+| P-1111 | independent architecture review lenses | complete-planning | independent architecture reviews |
+| P-1112 | PR-sized implementation decomposition | complete-planning | PR-sized work breakdown |
+| P-1113 | provisional defaults and reversal thresholds | complete-planning | provisional defaults contract |
 
-## Product scope, journeys and gates
+## Evidence-gated future tasks
 
-| ID | Task | Status | Output |
+| ID | Task | Status | Reason |
 |---|---|---|---|
-| P-051..055 | Complete public scope, staged delivery, terminology, journeys and launch gates | complete-planning | scope freeze, product/social contracts, operations launch gate |
-
-## Accounting, pricing and time
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-101..105 | Token formula, edge cases, comparability, Estimated Cash Burn, periods/ties/corrections | complete-planning | `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md` |
-
-## Universal agent compatibility
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-201..208 | Agent census, manifest/event contracts, source reconciliation, support lifecycle, certification, community governance and generated claims | complete-planning | universal compatibility docs, adapter/protocol contract and machine registry |
-
-## VibeProof protocol
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-301..307 | Claim fields, deterministic CBOR/CDDL, COSE, errors, sequence/replay/corrections, transport and conformance | complete-planning | `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md` |
-
-## Native runtime
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-401..409 | Process boundary, topology, storage, crash recovery, IPC, platform matrix, devices, CLI/shell/update and budgets | complete-planning | native architecture and runtime/storage contract |
-
-## Identity and authorization
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-501..505 | GitHub/X identity, account/session/recovery, native authorization, provider compromise and permissions | complete-planning | ADR-006 and authentication contract |
-
-## Server, database and ranking
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-601..606 | APIs, PostgreSQL schema, acceptance transaction, outbox/workers, ranking/cache and benchmarks | complete-planning | `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md` |
-
-## Social, boards, presence, notifications and lifecycle
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-701..708 | Profiles, friends/blocks/rivals, boards/orgs/communities, countries, presence, notifications, moderation/appeals and lifecycle | complete-planning | `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md` |
-
-## Anti-cheat and evidence integrity
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-801..808 | Attack/control catalog, reason/evidence policy, attack lab design, safe features, detector bakeoff, SLM gate, calibration and red-team operations | complete-planning | anti-cheat program/catalog, adversarial registry and social/integrity contract |
-
-The SLM remains conditional on implementation-phase measured lift. That is a closed planning decision, not a missing contract.
-
-## Web and native UX
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-901..905 | Route/state map, component/data behavior, local privacy UX, evidence presentation, accessibility/browser/performance plan | complete-planning | product/social UX and native runtime contracts |
-
-## Packaging, production and open-source launch
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-1001..1006 | Platform packages, TUF, observability, deployment, SLO/recovery and open-source governance | complete-planning | `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md` |
-| P-1007 | Restore and prove automated CI/security/dependency/eval/release checks | blocked-implementation | requires executable implementation and user-approved phase change |
-
-## Final reviews
-
-| ID | Task | Status | Output |
-|---|---|---|---|
-| P-1101 | Cross-document contradiction and stale-claim audit | complete-planning | planning audit, provenance index and repaired authority files |
-| P-1102 | Privacy/threat/control traceability review | complete-planning | normative contract set and anti-cheat mapping |
-| P-1103 | Schema/API/state/migration/recovery completeness review | complete-planning | `docs/implementation/IMPLEMENTATION_HANDOFF.md` |
-| P-1104 | User approval to enter implementation | blocked-approval | explicit phase change required |
+| P-1007 | Restore and prove automated CI, security, dependency, eval and release checks | blocked-implementation | requires executable code and workflows |
+| P-1104 | Enter implementation phase | blocked-approval | requires explicit user instruction |
 | P-1105 | Comprehensive public-launch readiness review | blocked-launch-evidence | requires implemented system and passing evidence |
 
 ## Planning conclusion
 
-The technical planning phase is complete at contract level. The next legal action is P-1104: explicit user approval to enter implementation. Planning documents cannot satisfy P-1007 or P-1105 because those gates require executable evidence.
+The repository may remain in planning mode indefinitely. Additional research or review must reopen a named decision with evidence or improve a committed contract; it must not restart broad planning without a discovered defect. No implementation or deployment is authorized until P-1104 is explicitly approved.
