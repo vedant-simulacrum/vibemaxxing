@@ -1,0 +1,38 @@
+name: Planning checks
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'AGENTS.md'
+      - 'README.md'
+      - 'LICENSES.md'
+      - 'SECURITY.md'
+      - 'CONTRIBUTING.md'
+      - '.github/CODEOWNERS'
+      - '.github/workflows/planning-checks.yml'
+      - 'docs/**'
+      - 'packages/schemas/**'
+      - 'conformance/**'
+      - 'scripts/repository/**'
+      - 'scripts/ci/repository_policy.py'
+
+permissions:
+  contents: read
+
+jobs:
+  planning-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Repository doctor
+        run: python3 scripts/repository/doctor.py
+      - name: Deterministic issue-plan generation
+        run: python3 scripts/repository/generate_issue_plan.py
+      - name: Verify generator cleanliness
+        run: git diff --exit-code -- artifacts/repository/issue-plan.json
+
+# This workflow validates planning artifacts only. It does not build or implement the product.
