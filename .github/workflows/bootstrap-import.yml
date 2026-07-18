@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'bootstrap-import/**'
+      - 'bootstrap-import/source-part-*.b64'
       - '.github/workflows/bootstrap-import.yml'
 
 permissions:
@@ -17,30 +17,33 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Wait until all source parts exist
-        id: parts
+      - name: Verify complete authoritative archive
+        id: archive
         shell: bash
         run: |
-          if [[ -f bootstrap-import/part-00.b64 && -f bootstrap-import/part-12.b64 ]]; then
-            count=$(find bootstrap-import -maxdepth 1 -name 'part-*.b64' | wc -l | tr -d ' ')
-            if [[ "$count" == "13" ]]; then
-              echo 'ready=true' >> "$GITHUB_OUTPUT"
-            else
-              echo 'ready=false' >> "$GITHUB_OUTPUT"
-            fi
+          set -euo pipefail
+          expected='e6c53b379db243f31eef0ac218b1655b220d29e12d1342fc6d3bc3813f212df2'
+          count=$(find bootstrap-import -maxdepth 1 -name 'source-part-*.b64' | wc -l | tr -d ' ')
+          if [[ "$count" == '7' && -f bootstrap-import/source-part-00.b64 && -f bootstrap-import/source-part-06.b64 ]]; then
+            cat bootstrap-import/source-part-*.b64 | tr -d '\n' | base64 --decode > /tmp/vibemaxxing-source.tar.gz
+            actual=$(sha256sum /tmp/vibemaxxing-source.tar.gz | awk '{print $1}')
+            test "$actual" = "$expected"
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
           else
             echo 'ready=false' >> "$GITHUB_OUTPUT"
           fi
       - name: Reconstruct authoritative repository
-        if: steps.parts.outputs.ready == 'true'
+        if: steps.archive.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          cat bootstrap-import/part-*.b64 | base64 --decode > /tmp/vibemaxxing-source.tar.gz
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name bootstrap-import ! -name .github -exec rm -rf {} +
+          find .github -mindepth 1 -maxdepth 1 ! -name workflows -exec rm -rf {} +
+          find .github/workflows -mindepth 1 -maxdepth 1 ! -name bootstrap-import.yml -exec rm -rf {} +
           tar -xzf /tmp/vibemaxxing-source.tar.gz -C .
           rm -rf bootstrap-import .github/workflows/bootstrap-import.yml
           git config user.name 'vibemaxxing-bootstrap'
           git config user.email 'actions@users.noreply.github.com'
           git add -A
-          git commit -m 'Import authoritative VibeMaxxing project context'
+          git commit -m 'Replace broken bootstrap with authoritative VibeMaxxing tree'
           git push origin HEAD:main
