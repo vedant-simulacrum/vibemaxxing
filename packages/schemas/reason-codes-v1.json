@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "registry_version": "1.0.0-planning",
+  "codes": [
+    {"code":"CLAIM_INVALID_CANONICAL_ENCODING","class":"parser","default_outcome":"rejected_invalid","user_safe":true},
+    {"code":"CLAIM_INVALID_SIGNATURE","class":"signature","default_outcome":"rejected_invalid","user_safe":true},
+    {"code":"CLAIM_CHALLENGE_EXPIRED","class":"challenge","default_outcome":"rejected_replay","user_safe":true},
+    {"code":"CLAIM_CHALLENGE_ALREADY_USED","class":"challenge","default_outcome":"rejected_replay","user_safe":true},
+    {"code":"CLAIM_SEQUENCE_UNEXPECTED","class":"sequence","default_outcome":"quarantined","user_safe":true},
+    {"code":"CLAIM_CHAIN_FORK","class":"sequence","default_outcome":"quarantined","user_safe":true},
+    {"code":"CLAIM_GAP_DECLARATION_REQUIRED","class":"sequence","default_outcome":"retryable","user_safe":true},
+    {"code":"CLAIM_DUPLICATE_IDEMPOTENT","class":"duplicate","default_outcome":"accepted_idempotent","user_safe":true},
+    {"code":"CLAIM_DUPLICATE_CONFLICT","class":"duplicate","default_outcome":"quarantined","user_safe":true},
+    {"code":"CLAIM_ACCOUNTING_INCONSISTENT","class":"accounting","default_outcome":"rejected_invalid","user_safe":true},
+    {"code":"CLAIM_ADAPTER_UNSUPPORTED","class":"adapter","default_outcome":"rejected_unsupported","user_safe":true},
+    {"code":"CLAIM_ADAPTER_DOWNGRADED","class":"adapter","default_outcome":"downgraded","user_safe":true},
+    {"code":"CLAIM_PRIVACY_SCAN_FAILED","class":"privacy","default_outcome":"rejected_privacy","user_safe":true},
+    {"code":"CLAIM_LATE_EXCLUDED","class":"clock","default_outcome":"rejected_unsupported","user_safe":true},
+    {"code":"BATCH_ATOMIC_REJECT","class":"batch","default_outcome":"rejected_invalid","user_safe":true},
+    {"code":"DEVICE_STATE_CLONE_SUSPECTED","class":"device","default_outcome":"quarantined","user_safe":true},
+    {"code":"DEVICE_REVOKED","class":"device","default_outcome":"rejected_unsupported","user_safe":true},
+    {"code":"ACCOUNT_RANKING_RESTRICTED","class":"policy","default_outcome":"quarantined","user_safe":true},
+    {"code":"MODERATION_HUMAN_REVIEW_REQUIRED","class":"moderation","default_outcome":"quarantined","user_safe":true},
+    {"code":"INTERNAL_RETRYABLE","class":"internal","default_outcome":"retryable","user_safe":false}
+  ]
+}
