@@ -1,0 +1,47 @@
+schema_version: 1
+policy: deny-by-default
+allowed_attributes:
+  - route_template
+  - status_class
+  - latency_ms_bucket
+  - request_bytes_bucket
+  - response_bytes_bucket
+  - reason_code
+  - worker_type
+  - queue_age_ms_bucket
+  - database_operation_class
+  - adapter_id
+  - adapter_version
+  - evidence_state
+  - build_version
+  - platform
+forbidden_classes:
+  - prompt
+  - response
+  - transcript
+  - code
+  - diff
+  - tool_content
+  - filename
+  - path
+  - project_name
+  - repository_name
+  - credential
+  - oauth_token
+  - cookie
+  - authorization_header
+  - claim_payload
+  - handle
+  - free_text_exception
+  - embedding
+  - summary
+  - classification
+  - personal_insight
+retention_days:
+  operational_detail: 30
+  operational_aggregate: 395
+  security_audit: 365
+change_control:
+  owner: operations-privacy
+  requires_decision_update: true
+  requires_canary_test: true
