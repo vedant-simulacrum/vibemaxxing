@@ -1,124 +1,84 @@
 # VibeMaxxing Implementation Handoff
 
-Status: normative planning handoff; implementation requires explicit user approval.
-Version: 2
+Status: normative future implementation handoff; inactive until planning-hardening passes and the user explicitly authorizes implementation.
+Version: 3
 
 ## Purpose
 
-This is the single build-order contract for the implementation phase. Do not create another implementation roadmap or build plan. The detailed dependency-ordered units are in `PR_SIZED_WORK_BREAKDOWN.md`.
+This is the single build-order contract. It does not authorize implementation. Detailed units are in `PR_SIZED_WORK_BREAKDOWN.md`; current and future paths are distinguished in `REPOSITORY_LAYOUT.md`; execution-thread generation is governed by `ISSUE_GENERATION.md`.
 
-An implementation agent must not invent behavior that conflicts with the normative contracts. When a platform, provider, dependency, or external fact changes, update the relevant ADR or contract and conformance fixture before changing behavior.
+## Entrance gate
 
-## Initialization and authority
+Implementation may begin only when:
 
-Start with:
+1. P-1120 through P-1128 are complete and the repository doctor passes from a clean checkout;
+2. draft schemas, registries, references, governance, and protocol edge semantics are internally consistent;
+3. the user explicitly opens implementation under P-1104.
 
-1. `/AGENTS.md`
-2. `docs/project/PROJECT.md`
-3. `docs/project/STATUS.md`
-4. `docs/project/DOCUMENTATION.md`
-5. `docs/planning/DECISION_REGISTER.md`
-6. the normative contracts below
-7. accepted ADRs
-8. historical research only when the provenance index identifies relevant evidence
+## Initialization
 
-## Normative contract set
+Read `AGENTS.md`, project authority/status/documentation map, decision register, task catalog, relevant ADRs and contracts, and authoritative schemas. Do not treat historical research, future paths, placeholders, or generated artifacts as implemented state.
 
-- Product and launch: `docs/planning/PRODUCT_SCOPE_FREEZE.md`, `docs/product/PRODUCT_SPEC.md`
-- Accounting, time, and pricing: `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
-- Universal compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`, `conformance/adapters/agent-registry-v1.json`
-- Adapter and VibeProof protocol: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
-- Native runtime, storage, and IPC: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`
-- Native product topology: `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`
-- Identity: `docs/decisions/ADR-006-IDENTITY_AND_NATIVE_AUTH.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
-- Server, data, and ranking: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
-- Social, integrity, and UX: `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
-- Privacy and threats: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`
-- Anti-cheat and adversarial evidence: `docs/security/ANTI_CHEAT_RESEARCH_PROGRAM.md`, `docs/security/ANTI_CHEAT_ATTACK_CATALOG.md`, `docs/security/ADVERSARIAL_TABLETOPS.md`, `conformance/adversarial/anti-cheat-registry-v1.json`
-- Operations, open source, and launch: `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
-- Evidence thresholds: `docs/evals/BENCHMARK_AND_EVIDENCE_PROTOCOLS.md`, `docs/qa/ACCEPTANCE_GATES.md`
+## Normative set
 
-## Intended implementation layout
+- Scope/product: `docs/planning/PRODUCT_SCOPE_FREEZE.md`, `docs/product/PRODUCT_SPEC.md`
+- Accounting: `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
+- Compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`, adapter registry and schema
+- VibeProof: adapter/VibeProof contract, ADR-007, claim CDDL and reason registry
+- Native: native runtime/storage contract, native topology contract and local-control Protobuf
+- Identity: ADR-006, ADR-008 and authentication/recovery contract
+- Server: server API/data/ranking contract, OpenAPI and planning SQL
+- Social/integrity: social/integrity/UX contract, ADR-008, policy registry and adversarial registry
+- Privacy/threats: privacy, threat and integrity contracts plus observability allowlist
+- Licensing/governance: ADR-009, `LICENSES.md`, `CONTRIBUTING.md`, `SECURITY.md`, CODEOWNERS
+- Operations/launch: operations/open-source/launch contract and evidence thresholds
 
-```text
-/apps/web                         Next.js web product
-/apps/api                         Go APIs and workers
-/apps/docs                        public protocol/product documentation
-/apps/desktop                     native shell packaging and platform UI
-/crates/vibeproof-core            canonical events, accounting, claims, crypto
-/crates/vibeproof-adapters        adapter SDK and built-in adapters
-/crates/vibeproof-collector       transcript-private capture process
-/crates/vibeproof-sync            network-safe sync process
-/crates/vibemaxxing-daemon        supervisor and local control API
-/crates/vibemaxxing-cli           installer and control CLI
-/packages/protocol                generated cross-language protocol bindings
-/packages/schemas                 OpenAPI, JSON Schema, Protobuf, and CDDL sources
-/packages/ui                      design tokens and accessible components
-/migrations                       PostgreSQL migrations
-/conformance                      accounting, protocol, adapter, privacy, and attack fixtures
-/benchmarks                       native, server, database, and frontend benchmarks
-/infrastructure                   cloud-portable reference deployment
-```
+## Build sequence after approval
 
-Do not create a second product repository or split VibeProof into another repository without an accepted ADR.
+### 1. Validate contract workspaces
 
-## Build sequence
-
-### 1. Contract workspaces
-
-Create pinned Rust, Go, Node, Protobuf/Buf, CDDL, OpenAPI, JSON Schema, migration, and fixture workspaces. Generated output must be reproducible and drift-checked. Business logic begins only after accounting, event, claim, IPC, API, and database schema sources validate in their target toolchains.
+Pin Rust, Go, Node, package manager, Protobuf/Buf, CDDL, OpenAPI, JSON Schema and migration toolchains. Convert planning DDL into an ordered migration history. Validate all authoritative schemas and examples. Generated output must be reproducible and drift-checked.
 
 ### 2. Synthetic secure spine
 
-Implement synthetic event → deterministic accounting → encrypted local storage → signed claim → isolated sync → challenge and ingestion → append-only ledger and outbox → deterministic aggregate → leaderboard API → accessible leaderboard row.
+Implement synthetic normalized event → deterministic accounting → encrypted local state → signed claim → isolated sync → atomic batch challenge/ingestion → append-only ledger/outbox → deterministic aggregate → leaderboard API → accessible row. Prove canary privacy, invalid signature rejection, atomic replay/idempotency, bounded sequence recovery and rebuild equivalence.
 
-Prove forbidden-content canaries do not leave the device, invalid signatures fail, replay fails, duplicate submission is idempotent, and aggregate rebuild is equivalent.
+### 3. Native boundary
 
-### 3. Native process boundary
-
-Implement collector, sync, daemon, CLI, local control API, peer authentication, encrypted state, crash consistency, offline queue, device enrollment, diagnostics, export/deletion, and update/rollback hooks. Add menu-bar and tray shells only after the daemon API stabilizes.
+Implement collector, sync, daemon, CLI, authenticated bounded IPC, encrypted storage, crash/offline/disk-full recovery, enrollment, diagnostics, audit, export/deletion and update hooks. Shells follow stable daemon API.
 
 ### 4. Identity and accounts
 
-Implement GitHub App web/device authorization, X OAuth 2.0 PKCE, linked identities, sessions, optional stronger credentials, recovery, device binding, provider compromise handling, authorization, merge, export, and deletion.
+Implement GitHub App web/device authorization, X PKCE, linked identities, sessions, optional stronger factors, recovery, provider compromise/loss, merge, authorization and lifecycle.
 
 ### 5. Adapter platform
 
-Implement manifest/event SDKs, capability probes, source reconciliation, deduplication domains, support lifecycle, emergency disable, and conformance runner. Add representative adapters across capture families, then expand using the machine registry. No support badge exists without exact version, mode, platform, and test evidence.
+Implement manifest/event SDK, probes, source precedence, duplicate domains, lifecycle, emergency disable and conformance runner. Product-level support requires populated exact certification records.
 
-### 6. Ranking and social product
+### 6. Ranking and social
 
-Implement periods, ties, late events, corrections, filters, profiles, friendships, blocks, rivals, overtakes, boards, organizations, communities, country policy, presence, notifications, moderation, appeals, retention, export, and deletion. Property-test state machines and authorization.
+Implement periods, ties, corrections, filters, profiles, deterministic handle rules, friends, blocks, rivals, overtakes, boards, country cohorts, presence, notifications, moderation, appeals, export and deletion using the policy registry.
 
-### 7. Full web and native UX
+### 7. Web and native UX
 
-Implement the route map and all loading, empty, error, offline, private, restricted, quarantined, deleted, and unsupported states. Complete privacy inspection, adapter/device management, account/recovery, export/deletion, accessibility, browser, responsive, visual, and performance evidence.
+Implement complete routes and exceptional states, privacy inspection, adapter/device/account controls, accessibility, browser/responsive behavior and performance budgets.
 
 ### 8. Integrity hardening
 
-Execute the attack catalog. Implement deterministic rules and transparent statistical baselines before experimental model work. Ship an SLM only if the measured bakeoff passes privacy, resource, calibration, and false-quarantine gates. Complete independent privacy and security review.
+Execute the adversarial registry. Deterministic controls and transparent baselines precede optional model work. Complete independent privacy/security review.
 
 ### 9. Packaging and operations
 
-Implement platform signing and notarization, TUF updates, atomic rollback, SBOM and provenance, consumer verification, environments, secrets, backups and restores, SLOs, alerts, incident response, key rotation, and disaster-recovery drills. Restore tuned automated checks and branch protection.
+Implement signing/notarization, TUF, rollback, SBOM/provenance, consumer verification, environments, secrets, backups/restores, SLOs, alerts, incidents, key rotation and DR. Restore product CI/security/release automation and branch protection.
 
 ### 10. Open-source release and launch
 
-Complete dependency/license/trademark review, DCO, contributor and security governance, secret/history scan, protocol documentation, adapter SDK, reproducible releases, and the complete launch gate. The repository becomes public only after private-material review and before public launch.
+Complete dependency/license/trademark review, DCO and contributor/security governance, history/secret scan, public documentation, reproducible releases and every launch gate. Public release still requires explicit approval.
 
-## Ownership rules
+## Ownership
 
-- Rust is authoritative for normalized events, accounting, canonical claims, local sequence/chaining, and cryptographic reference fixtures.
-- Go independently verifies claims and owns acceptance transactions, APIs, workers, and ranking.
-- TypeScript consumes generated contracts and owns presentation and interaction, never claim semantics.
-- PostgreSQL constraints and migrations are part of correctness.
-- No server process can receive forbidden content; no transcript-capable process can network.
-- Every externally visible behavior has stable errors or reason codes and a migration story.
+Rust owns canonical events, accounting, claims and local chain semantics. Go independently verifies claims and owns transactions, APIs, workers and ranking. TypeScript consumes generated contracts and owns presentation. PostgreSQL constraints/migrations are correctness. Transcript-capable processes cannot network; server processes cannot receive forbidden content.
 
-## Pull request completion contract
+## PR completion
 
-Each PR identifies task and decision IDs, contract sections implemented, schemas and migrations changed, privacy/security impact, compatibility, rollback, tests, benchmark impact, generated files, and unresolved risks. A PR cannot claim completion using skipped tests, placeholders, mock-only behavior, undocumented feature flags, or unexecuted fixtures.
-
-## Evidence boundary
-
-The repository is implementation-ready at planning level. Executable correctness, security, privacy, performance, compatibility, packaging, operations, and launch readiness require real implementation evidence and cannot be declared by documentation.
+Each PR identifies work key, tasks/decisions, contracts/schemas, privacy/security impact, compatibility/migrations, rollback, tests/benchmarks, generated files and unresolved risk. Placeholders, skipped tests and mock-only behavior do not close work.
