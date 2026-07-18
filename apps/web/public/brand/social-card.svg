@@ -1,0 +1,14 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F4F2ED"/>
+  <path d="M0 104.5H1200M0 525.5H1200" stroke="#DEDAD1"/>
+  <path d="M129 0V630M1071 0V630" stroke="#E7E4DD"/>
+  <rect x="129" y="104" width="942" height="422" rx="24" fill="white" stroke="#DEDAD1"/>
+  <text x="198" y="193" fill="#77736B" font-family="Inter, -apple-system, sans-serif" font-size="17" font-weight="700" letter-spacing="2.5">THE COMPETITIVE LEDGER</text>
+  <text x="192" y="314" fill="#171714" font-family="Inter, -apple-system, sans-serif" font-size="89" font-weight="620" letter-spacing="-5">Burn more.</text>
+  <text x="192" y="406" fill="#171714" font-family="Inter, -apple-system, sans-serif" font-size="89" font-weight="620" letter-spacing="-5">Rank higher.</text>
+  <rect x="196" y="454" width="344" height="44" rx="22" fill="#171714"/>
+  <text x="219" y="483" fill="#FFFFFF" font-family="Inter, -apple-system, sans-serif" font-size="16" font-weight="600">Public competition. Private transcripts.</text>
+  <path d="M875 229L999 373" stroke="#171714" stroke-width="27" stroke-linecap="round"/>
+  <path d="M995 229L879 373" stroke="#5847E8" stroke-width="27" stroke-linecap="round"/>
+  <circle cx="879" cy="373" r="14" fill="#7567FF"/>
+</svg>
