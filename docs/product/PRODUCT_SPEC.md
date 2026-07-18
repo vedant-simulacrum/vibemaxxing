@@ -1,125 +1,114 @@
-# Product Specification
+# VibeMaxxing Product Specification
+
+Updated: 2026-07-19
+Status: planning contract
 
 ## Product definition
 
-VibeMaxxing is a public social leaderboard for people using AI coding agents. It combines a polished competitive identity layer with privacy-preserving local measurement.
+VibeMaxxing is a privacy-preserving public leaderboard and Steam-like social competition layer for AI-agent activity. It measures authentic agent usage without judging usefulness or productivity.
 
-## Primary metrics
+## Public-launch scope
+
+Public launch targets the complete initial product. Internal delivery may be staged, but launch includes:
+
+- global, friends, private-board, organization, hacker-house, community, and country leaderboards;
+- daily, weekly, monthly, seasonal, yearly, and lifetime periods;
+- profiles, friendships, blocks, rivals, overtakes, rank movement, streaks, presence, notifications, boards, organizations, communities, moderation, appeals, export, and deletion;
+- background daemon, CLI installation/control, macOS menu-bar, Windows/Linux tray, local privacy/audit controls, and hosted web dashboard;
+- broad agent compatibility through explicit support tiers.
+
+## Metrics
 
 ### Token Burn
 
-Accepted token usage attributed to live qualifying activity.
+The default ranking metric is accepted live Token Burn. A normative accounting specification must define input, output, cache read/write, reasoning, tool/context, multimodal, retries, failures, streaming, compaction, subagents, local models, unknown categories, and double-count prevention.
 
-The interface may break it down into:
+Genuine but intentionally wasteful use counts. Fabricated, copied, replayed, duplicated, backdated, or source-misrepresented activity does not.
 
-- Input
-- Output
-- Cache read
-- Cache write
-- Reasoning, where exposed
-- Tool/context activity where applicable
+### Estimated Cash Burn
 
-### Cash Burn
+Estimated Cash Burn is API-equivalent interpretation of immutable usage facts. It is never actual spend. Pricing datasets are versioned with provenance and effective dates. Subscription, credit, enterprise, regional, batch, cache, local-compute, unknown-price, correction, and model-alias behavior require explicit policy. Historical estimates may not silently change.
 
-Estimated current API-equivalent value of the accepted usage.
+## Evidence states
 
-Rules:
+- **Standard** — live qualifying capture with ordinary supported controls.
+- **Hardened** — stronger source, process, device, continuity, and available attestation evidence.
+- **Imported** — retrospective private analytics only.
 
-- It is not presented as the user's actual bill.
-- Subscription users are still shown an estimate.
-- Local-model usage may show `Local compute` or no dollar equivalent until a defensible local-compute estimator exists.
-- Pricing tables are versioned and time-aware.
+Internal capture and environment strength remain separate. Weak evidence may not masquerade as strong evidence.
 
-## Ranking periods
+## Agent support
 
-Launch with:
+Support states are Hardened-certified, Competitive-certified, Community-certified, Generic live, Imported, and Unsupported. Public support claims are generated from a versioned exercised adapter registry.
 
-- Daily
-- Weekly
-- Monthly
-- Season
-- Annual
-- Lifetime
+## Accounts and identity
 
-Leaderboard updates should materialize approximately once per minute.
+Users sign in through GitHub or X/Twitter OAuth. Accounts may link multiple providers. Optional passkeys or hardware credentials provide stronger protection for sensitive actions but are not mandatory.
 
-## Ranking scopes
+Identity behavior must cover stable provider subjects, mutable handles, username allocation, rename, impersonation, provider compromise/loss/suspension, account linking, merge conflicts, sessions, recovery, restrictions, export, and deletion.
 
-- Global
-- Friends
-- Private boards
-- Organizations
-- Hacker houses
-- Communities
-- Countries
+## Leaderboards
 
-Private boards may define their own eligible agents, visibility, and ranking preferences.
+Every leaderboard defines scope, period, eligibility, evidence policy, privacy, tie behavior, pagination, current-user rank, late/offline claims, corrections, quarantines, deletion, and season closure.
 
-## Social layer
+Private boards may configure visibility and eligible evidence/agents within global safety and privacy rules. Board rules may not redefine token accounting.
 
-- Anyone may send friend requests.
-- Users can control discoverability and request handling.
-- Presence is active only while a qualifying agent session is active.
-- Friends can see overtakes, movement, and active-agent state subject to privacy settings.
-- Core initial loop: add friend → see activity → get overtaken → return and compete.
+## Profiles
 
-Challenges, levels, achievements, and collectible badges should be architected for later but are not required for the first production milestone.
+Profiles may expose Token Burn, Estimated Cash Burn, rank, movement, periods, agent/model mix, daily activity, presence, friends, boards, organization/community memberships, evidence state, and achievements introduced by the launch scope.
 
-## Public profile
+Users control visibility of Cash Burn, activity history, agent/model breakdown, presence, friends, country, and memberships. Privacy rules must prevent inference of projects, repositories, files, prompts, tools, or work content.
 
-Default profile may expose:
+## Friends, blocks, and rivals
 
-- Token Burn
-- Cash Burn
-- Rank
-- Agent/model mix
-- Daily activity
-- Current presence
-- Rank movement
-- Board memberships
+Friend requests require explicit lifecycle, limits, discoverability, blocking, removal, privacy, and abuse handling. Rivals may be manual or product-selected only under documented rules. Blocking overrides discovery, requests, presence, notifications, and private-board interaction as specified.
 
-User-controlled visibility:
+## Overtakes, rank movement, streaks, and seasons
 
-- Hide Cash Burn
-- Hide agent/model breakdown
-- Hide activity history
-- Hide presence
-- Hide friends
-- Hide country
-- Hide board membership
-- Show rank only within a specific board
+Define tie-aware overtake events, hysteresis, duplicate suppression, movement comparison windows, late-event corrections, streak qualification, season start/end, archived standings, post-close appeals, and reset behavior.
 
 ## Presence
 
-States:
+Presence states include active, idle, offline, and private. Presence exists only while qualifying live agent activity is genuinely active. It exposes no prompt, response, tool, path, file, project, repository, or transcript-derived detail.
 
-- Active
-- Idle
-- Offline
-- Private
+The presence contract must define heartbeat, expiry, idle threshold, multi-device, multi-agent, sleep/resume, offline sync, private mode, false-active prevention, and restricted/quarantined behavior.
 
-No project name, repository, path, prompt, or transcript-derived detail may appear in presence.
+## Notifications
 
-## Deletion
+Notifications cover requests, acceptances, rivals, overtakes, movement, streaks, seasons, boards, organizations, moderation, appeals, device/security changes, and product operations. Define channels, grouping, rate limits, quiet hours, hysteresis, duplicate suppression, privacy, retention, and user controls.
 
-Users can:
+## Boards, organizations, hacker houses, and communities
 
-- Disconnect a device
-- Stop collection
-- Remove adapters
-- Restore changed source configuration
-- Delete local models
-- Delete local intelligence data
-- Delete the outbound audit ledger
-- Delete public profile
-- Delete server-side claims and aggregates
-- Delete everything
+Define ownership, administrators, invitations, approval, public/private/unlisted visibility, membership, removal, transfer, eligibility, evidence requirements, score history, moderation, deletion, and audit. Organization verification must not require access to private code or prompts.
+
+## Country boards
+
+Country representation must be coarse, privacy-preserving, user-understandable, change-limited, and protected by minimum cohort thresholds. Research must define assertion source, travel/dual-country behavior, abuse, hiding, deletion, and whether government identity is ever necessary; it is not the default.
+
+## Native local experience
+
+The daemon owns lifecycle and supervision; collector owns transcript-private observation; sync owns network transport of safe claims; CLI owns installation/control/headless operation; menu-bar/tray owns local status and controls. Closing the shell must not silently stop collection. Local UX owns permissions, adapters, device state, privacy verification, outbound ledger, diagnostics, export, deletion, and updates.
+
+## Hosted web experience
+
+The hosted product owns leaderboards, profiles, social graph, boards, organizations, communities, countries, notifications, account settings, moderation, appeals, and server-side lifecycle controls. It never requires access to transcript content.
+
+## Moderation and appeals
+
+Anti-abuse is progressive, reason-coded, reviewable, and appealable. Define claim exclusion, evidence downgrade, session/account-score quarantine, temporary ranking restriction, device revocation, moderator actions, restoration, insider controls, notifications, retention, and appeal service levels. An SLM cannot permanently ban by itself.
+
+## Export, deletion, and lifecycle
+
+Users can stop collection, remove adapters, disconnect/revoke devices, inspect/export local and server-side safe data, delete local models/intelligence, delete outbound ledger, delete profile, delete claims/aggregates subject to legal policy, and delete the account. Define grace periods, backups, derived data, social references, leaderboard history, moderation records, and irreversible completion.
 
 ## Explicit non-goals
 
-- Measuring engineering productivity
-- Judging whether usage is useful
-- Rewarding code quality
-- Uploading transcripts
-- Asking users for provider API keys
-- Claiming local evidence is provider-authenticated
+- Measuring productivity, code quality, usefulness, or commercial value.
+- Uploading prompts, responses, transcripts, code, diffs, tools, paths, files, projects, repositories, embeddings, summaries, or personal insights.
+- Asking for provider API keys merely to prove usage.
+- Claiming provider authentication or mathematical cheat-proofing without evidence.
+- Treating social login as proof of one-person uniqueness or activity authenticity.
+
+## Launch gate
+
+Public launch requires complete functional scope, major agent-family coverage, privacy/control traceability, adversarial integrity evidence, accessibility, performance, native packaging/update verification, production operations, moderation/appeals, legal/privacy readiness, and public open-source governance. A narrow vertical slice is an internal milestone, not the launch product.
