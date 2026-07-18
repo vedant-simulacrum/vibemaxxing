@@ -1,153 +1,89 @@
-# VibeMaxxing Implementation Roadmap
+# VibeMaxxing Staged Delivery and Launch Roadmap
 
-## Objective
+Updated: 2026-07-19
+Status: planning roadmap; implementation not authorized
 
-Prove that VibeMaxxing can privately and deterministically measure real usage from major AI agents, resist obvious competitive-integrity attacks, operate unobtrusively on user devices, and get a new user onto a trustworthy leaderboard in under five minutes.
+## Governing rule
 
-## Phase 0 — Repository truth and build integrity
+Internal milestones are deliberately narrow and evidence-driven. Public launch is not a narrow MVP: it requires the complete initial product and launch gates defined by the planning catalog.
 
-Exit criteria:
+## Stage 0 — Repository truth and planning exit
 
-- Clean checkout builds all implemented components.
-- CI cannot pass because a required command is missing or skipped.
-- Toolchains and lockfiles are pinned.
-- Required branch protections and CODEOWNERS are documented.
-- Every eval is either a real pass, a real failure, or explicitly `not_applicable` with an owning milestone.
+Close authority contradictions, generated metadata, glossary, launch matrix, user journeys, decisions, schemas, state machines, negative cases, research ownership, and implementation handoff.
 
-## Phase 1 — Three exercised agent adapters
+Exit requires P-1101 through P-1104. Until then, no product implementation.
 
-Initial targets:
+## Stage 1 — Synthetic secure spine
 
-1. Gemini CLI
-2. Claude Code
-3. Codex
+First implementation milestone after approval:
 
-For each adapter:
+synthetic live source → deterministic accounting → fixed-schema signed claim → isolated sync boundary → server verification → replay/duplicate rejection → append-only persistence → deterministic aggregate → leaderboard API → polished row.
 
-- Machine-readable manifest and version probe.
-- Synthetic live-session fixture.
-- Authoritative or explicitly estimated token source.
-- Input/output/cache/reasoning category reconciliation.
-- Execution-mode-specific tests.
-- Forbidden-field and telemetry-canary tests.
-- Upgrade-breakage test.
-- Double-counting prevention.
-- Evidence-state classification.
+This stage proves architecture only. It is not a public product or adapter-support claim.
 
-Exit criteria:
+## Stage 2 — Native local foundation
 
-- Three adapters pass conformance and privacy-negative tests.
-- Public support claims are generated from the tested registry.
+Deliver daemon, collector, sync, CLI, local storage, device identity, IPC, local privacy audit, platform lifecycle, crash/offline recovery, and initial menu-bar/tray shells.
 
-## Phase 2 — VibeProof protocol core
+Exit requires platform-specific attack tests and resource budgets. Baseline operation must not require elevated privileges; optional hardening is tiered.
 
-Deliverables:
+## Stage 3 — VibeProof interoperability
 
-- Frozen canonical CBOR profile.
-- CDDL schema.
-- COSE signing profile with pinned algorithms.
-- Rust reference implementation.
-- Independent cross-language verifier.
-- Exact-byte golden vectors.
-- Duplicate-key, non-minimal integer, indefinite-length, malformed-header, algorithm-confusion, deep-nesting, and oversized-input rejection.
-- Fuzzing and differential tests.
+Deliver frozen claim schema, canonical CBOR/CDDL profile, COSE signing profile, cross-language verifier, error registry, sequences/challenges, batching, compatibility, golden/malformed vectors, fuzzing, resource limits, and differential tests.
 
-Exit criteria:
+## Stage 4 — Universal adapter framework
 
-- Cross-language vectors pass.
-- Invalid and altered claims fail deterministically.
-- Parser differentials cannot produce acceptance disagreement.
+Deliver machine-readable agent census, adapter manifest, normalized events, source reconciliation, support tiers, certification, community governance, emergency disable, and generated compatibility claims.
 
-## Phase 3 — Secure local boundary and device identity
+Begin with a few representative adapters across different families for framework validation, then expand continuously. Public launch requires coverage of all major agent families and credible generic paths; it does not falsely claim Hardened certification for every private or future tool.
 
-Deliverables:
+## Stage 5 — Server, accounting, and ranking core
 
-- Separate transcript-reading and network-sync processes.
-- Linux Unix-socket peer credential enforcement.
-- macOS signed XPC/helper identity path or clearly labeled weaker development path.
-- Windows named-pipe DACL and peer identity path.
-- Application-level challenge-response, process nonce, sequence, size, and rate limits.
-- Device registration, rotation, revocation, and lost-key state machine.
+Deliver OAuth account foundation, device authorization, ingestion, PostgreSQL schema, claim transaction, outbox, aggregation, periods, ties, late/offline behavior, corrections, rebuilds, pagination, current-user rank, evidence filters, and capacity/failure benchmarks.
 
-Exit criteria:
+## Stage 6 — Competitive Ledger product
 
-- Rogue-process, PID reuse, socket replacement, replay, stale challenge, flood, downgrade, and state-cloning tests pass per platform.
+Deliver complete route/state architecture for leaderboards, profiles, periods, scopes, Estimated Cash Burn, movement, evidence explanations, privacy verification, responsive/accessibility behavior, and native-to-hosted continuity.
 
-## Phase 4 — Server ingestion and deterministic ranking
+## Stage 7 — Full social and group system
 
-Deliverables:
+Deliver friendships, blocks, rivals, overtakes, streaks, seasons, presence, notifications, private boards, organizations, hacker houses, communities, country boards, ownership/administration, privacy, and lifecycle behavior.
 
-- Go ingestion API.
-- PostgreSQL append-only accepted-claim ledger.
-- Replay and idempotency state.
-- Transactional outbox.
-- Idempotent aggregation worker.
-- Minute and period score tables.
-- Deterministic tie policy and current-user rank.
-- Rebuild-from-ledger path.
+## Stage 8 — Authentication, recovery, moderation, and appeals
 
-Exit criteria:
+Deliver GitHub and X/Twitter OAuth, linked providers, optional stronger factors, sessions, provider loss/compromise, account merge, native authorization, permission matrix, abuse controls, quarantine, moderator audit, appeals, restoration, export, and deletion.
 
-- Invalid signatures, replays, and duplicate races cannot increase scores.
-- Aggregates rebuild identically from the ledger.
-- Benchmarks meet approved budgets at staged data sizes.
+## Stage 9 — Anti-cheat validation
 
-## Phase 5 — Competitive Ledger web slice
+Execute the attack catalog, deterministic control tests, replay/clone/rollback/downgrade/Sybil/collusion campaigns, statistical baselines, detector bakeoff, optional SLM feasibility decision, calibration budgets, red-team tournaments, and independent review.
 
-Deliverables:
+No model-based detector may replace deterministic accounting or permanently ban by itself.
 
-- Leaderboard route with Token Burn default and explicitly estimated Cash Burn.
-- Period and scope controls.
-- Current-user row and movement.
-- Accessible loading, empty, error, offline, and private states.
-- Responsive layouts and visual regression.
-- Privacy-verification screen showing exactly what leaves the device.
+## Stage 10 — Packaging and production operations
 
-Exit criteria:
+Deliver signed native packages, notarization, TUF updater, rollback/freeze defense, consumer verification, SBOM/provenance, deployment, observability allowlists/canaries, SLOs, backup/restore, disaster recovery, incidents, key compromise, moderation operations, and legal/privacy operations.
 
-- Accessibility, browser, performance, and visual-regression gates pass.
-- User testing confirms core ranking and evidence language is understood.
+## Stage 11 — Open-source release candidate
 
-## Phase 6 — Authentication, social, and abuse controls
+Finalize license, DCO/CLA decision, trademark policy, contributor/maintainer governance, community adapter policy, security advisories, release authority, signing-key custody, public documentation, clean checkout, reproducible build evidence, and restored automated checks.
 
-Deliverables:
+The repository becomes public before public launch after a secrets, incident, private-threshold, and exploit-enabling-material review.
 
-- Passkeys with multiple credentials.
-- Hardened recovery and session revocation.
-- Friends, rivals, overtakes, presence, and private boards.
-- Progressive rate limits, quarantine, appeals, moderator audit trail, and device revocation.
-- Country privacy controls and cohort thresholds.
+## Stage 12 — Comprehensive public-launch gate
 
-Exit criteria:
+Public launch requires:
 
-- WebAuthn interoperability matrix passes.
-- Recovery cannot silently bypass credential security.
-- Abuse simulations and moderation workflows meet defined thresholds.
+- complete intended product scope;
+- major agent-family coverage and honest support tiers;
+- privacy and threat/control traceability;
+- successful adversarial integrity evidence;
+- accessibility, browser, native-platform, performance, and reliability evidence;
+- production operations and moderation readiness;
+- verified packaging/update/recovery;
+- public open-source governance;
+- zero unresolved P0 contradictions or launch-blocking accepted risks;
+- explicit user launch approval.
 
-## Phase 7 — Packaging, updates, and operations
+## Current next tasks
 
-Deliverables:
-
-- Signed native packages for supported platforms.
-- TUF-based updater with root rotation, expiry, rollback/freeze protection, and atomic recovery.
-- Checksums, SBOM, provenance, Sigstore evidence, and TUF metadata.
-- Clean consumer-side verification test.
-- Privacy-safe observability with telemetry canary blocking.
-- Backup, restore, migration, rollback, incident, SLO, load, soak, and failure-injection evidence.
-
-Exit criteria:
-
-- A clean consumer verifies and installs every release layer.
-- Recovery and restore tests pass.
-- Production-readiness review is approved with evidence.
-
-## Immediate next tasks
-
-1. Run the capability probe on a developer machine with target agents installed.
-2. Implement the Gemini CLI synthetic adapter spike.
-3. Implement Claude Code JSON/stream-JSON adapter spike.
-4. Implement Codex mode-by-mode adapter probes.
-5. Write the versioned token-accounting semantics specification.
-6. Build the Rust CBOR/COSE bakeoff harness.
-7. Turn the PostgreSQL seed into a reproducible benchmark runner.
-8. Create the first complete signed-claim-to-leaderboard vertical slice.
+Remain in planning. Follow `docs/planning/TASK_CATALOG.md`, beginning with repository metadata/provenance and complete launch/product contracts. Do not run implementation spikes until P-1104 explicitly opens implementation.
