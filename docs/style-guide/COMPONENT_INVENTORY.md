@@ -38,7 +38,8 @@ This file is the human-readable registry for the UI system. It distinguishes cur
 
 | Screen | Status | Executable reference | Boundary |
 |---|---|---|---|
-| Leaderboard bento baseline | Approved-design | `packages/ui/src/concepts/leaderboard-bento.stories.tsx` | Fixture-only visual recreation; no production component API or application wiring |
+| Leaderboard First baseline | Approved-design | `docs/style-guide/references/leaderboard-first-approved.png` and `LEADERBOARD_FIRST_BASELINE.md` | General direction and measured specification approved; final responsive mock-up review required before production extraction |
+| Leaderboard bento prototype | Deprecated | `packages/ui/src/concepts/leaderboard-bento.stories.tsx` | Superseded fixture-only prototype; must not drive new implementation |
 
 The earlier Competition Slice directions are rejected exploration artifacts and are not approved sources for product implementation.
 

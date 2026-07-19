@@ -4,6 +4,27 @@ This system uses principles from official specifications and established design-
 
 ## Findings and adopted decisions
 
+### Interface polish comes from correct type roles, not a novelty font
+
+Inter is designed for detailed user interfaces and provides optical sizing, contextual alternates, and tabular figures. The Leaderboard First baseline therefore keeps Inter Variable, enables its UI features, uses tabular Inter for comparable numeric columns, and limits monospace to ranks and model identifiers. This avoids turning the entire interface into a synthetic developer/editorial treatment.
+
+Source: https://rsms.me/inter/
+
+### Dense tables need an explicit typography and spacing contract
+
+Carbon specifies 14px row and column-header typography for data tables and documents token-bound table spacing. VibeMaxxing adopts the same readable density class while locking its own row height, padding, column widths, alignment, and truncation order in the screen baseline.
+
+Source: https://carbondesignsystem.com/components/data-table/style/
+
+### A limited spacing rhythm is a quality control
+
+Atlassian documents an 8px base unit and limited spacing scale as a foundation for consistent layouts and responsive behavior. VibeMaxxing retains a 4px sub-step for compact relationships but makes 8px the primary page-layout beat. Token-bound layout primitives keep those decisions reusable instead of allowing route-local padding drift.
+
+Sources:
+
+- https://atlassian.design/foundations/grid-beta/applying-grid
+- https://atlassian.design/components/primitives/overview/
+
 ### Variables, components, and templates form a reusable ladder
 
 Webflow describes scalable systems as variables, components, assets, and page templates, with component properties, slots, and variants providing controlled flexibility. VibeMaxxing adopts the same ladder in code: tokens, primitives, components, product patterns, templates, and pages.
