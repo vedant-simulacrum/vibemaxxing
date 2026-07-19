@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/t20-optimization-evidence-v1.json",
+  "title": "T20 optimized Hardened evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "certification_ref",
+    "accounting",
+    "performance",
+    "reliability",
+    "coverage_depth",
+    "user_experience",
+    "maintenance",
+    "result"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "certification_ref": {"type": "string", "minLength": 1},
+    "accounting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authoritative_vectors", "passed_vectors", "fidelity_percent", "category_semantics_complete", "duplicate_domains_resolved"],
+      "properties": {
+        "authoritative_vectors": {"type": "integer", "minimum": 1},
+        "passed_vectors": {"type": "integer", "minimum": 0},
+        "fidelity_percent": {"type": "number", "minimum": 0, "maximum": 100},
+        "category_semantics_complete": {"type": "boolean"},
+        "duplicate_domains_resolved": {"type": "boolean"}
+      }
+    },
+    "performance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cpu_overhead_percent_p95", "memory_overhead_mb_p95", "disk_mb_per_day_p95", "network_kb_per_1000_events_p95", "startup_overhead_ms_p95", "claim_latency_ms_p95", "budget_ref", "within_budget"],
+      "properties": {
+        "cpu_overhead_percent_p95": {"type": "number", "minimum": 0},
+        "memory_overhead_mb_p95": {"type": "number", "minimum": 0},
+        "disk_mb_per_day_p95": {"type": "number", "minimum": 0},
+        "network_kb_per_1000_events_p95": {"type": "number", "minimum": 0},
+        "startup_overhead_ms_p95": {"type": "number", "minimum": 0},
+        "claim_latency_ms_p95": {"type": "number", "minimum": 0},
+        "budget_ref": {"type": "string", "minLength": 1},
+        "within_budget": {"type": "boolean"}
+      }
+    },
+    "reliability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["soak_hours", "restart_passed", "offline_recovery_passed", "upgrade_passed", "rollback_passed", "provider_change_passed"],
+      "properties": {
+        "soak_hours": {"type": "number", "minimum": 0},
+        "restart_passed": {"type": "boolean"},
+        "offline_recovery_passed": {"type": "boolean"},
+        "upgrade_passed": {"type": "boolean"},
+        "rollback_passed": {"type": "boolean"},
+        "provider_change_passed": {"type": "boolean"}
+      }
+    },
+    "coverage_depth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["material_usage_coverage", "optimized_modes", "explicitly_unsupported_modes"],
+      "properties": {
+        "material_usage_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "optimized_modes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "explicitly_unsupported_modes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "user_experience": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["automatic_detection", "manual_model_mapping_required", "normal_path_setup_steps", "recovery_guidance_tested"],
+      "properties": {
+        "automatic_detection": {"const": true},
+        "manual_model_mapping_required": {"const": false},
+        "normal_path_setup_steps": {"type": "integer", "minimum": 0},
+        "recovery_guidance_tested": {"type": "boolean"}
+      }
+    },
+    "maintenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "upstream_change_detection_hours", "triage_target_hours", "recertification_target_hours", "emergency_disable_tested"],
+      "properties": {
+        "owner": {"type": "string", "minLength": 1},
+        "upstream_change_detection_hours": {"type": "number", "minimum": 0},
+        "triage_target_hours": {"type": "number", "minimum": 0},
+        "recertification_target_hours": {"type": "number", "minimum": 0},
+        "emergency_disable_tested": {"type": "boolean"}
+      }
+    },
+    "result": {"enum": ["pass", "fail", "expired"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"result": {"const": "pass"}}, "required": ["result"]},
+      "then": {
+        "properties": {
+          "accounting": {"properties": {"category_semantics_complete": {"const": true}, "duplicate_domains_resolved": {"const": true}}},
+          "performance": {"properties": {"within_budget": {"const": true}}},
+          "reliability": {"properties": {"restart_passed": {"const": true}, "offline_recovery_passed": {"const": true}, "upgrade_passed": {"const": true}, "rollback_passed": {"const": true}, "provider_change_passed": {"const": true}}},
+          "user_experience": {"properties": {"automatic_detection": {"const": true}, "manual_model_mapping_required": {"const": false}, "recovery_guidance_tested": {"const": true}}},
+          "maintenance": {"properties": {"emergency_disable_tested": {"const": true}}}
+        }
+      }
+    }
+  ]
+}
