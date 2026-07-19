@@ -16,6 +16,7 @@ This directory is the entry point for every product-UI decision. It exists to ke
 | Definition of a reusable component | `COMPONENT_STANDARD.md` |
 | AI/vibe-coding rules | `AI_UI_RULES.md` |
 | Approved, proposed, and deprecated UI | `COMPONENT_INVENTORY.md` |
+| Implemented component usage contracts | `COMPONENTS.md` and `/style-guide` |
 | Research and source rationale | `RESEARCH.md` |
 | Current gaps and migration sequence | `MIGRATION.md` |
 
@@ -36,7 +37,7 @@ Pages consume the system. Pages do not become a second design system.
 
 | Layer | Examples | Owned by |
 |---|---|---|
-| Tokens | color, type, spacing, radius, motion | `packages/ui/src/tokens.*` |
+| Tokens | color, type, spacing, radius, motion | `packages/ui/src/tokens.source.json` |
 | Primitives | Button, Link, Text, Icon, Stack | `packages/ui/src/primitives/` |
 | Components | Tabs, Avatar, StatusTag, Dialog | `packages/ui/src/components/` |
 | Product patterns | LedgerRow, RankMovement, EvidenceBadge | `packages/ui/src/patterns/` |

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "ui:check": "node ../../scripts/ui/check-ui-system.mjs"
   },
   "dependencies": {
     "@vibemaxxing/ui": "file:../../packages/ui",

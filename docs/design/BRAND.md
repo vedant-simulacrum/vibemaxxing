@@ -124,21 +124,35 @@ Positive, negative, and warning colors communicate state only. They never replac
 
 ## 5. Typography
 
-The logo is an outlined custom lockup constructed from an open grotesk source. Do not typeset it manually.
+### Logo construction
 
-Product typography uses Inter where available and the platform system stack otherwise. The product font remains separate from the logo asset.
+The logo is an outlined lockup constructed from **Nimbus Sans Bold, OpenType Version 1.00** (`NimbusSans-Bold`, unique ID `URW:NimbusSans-Bold:2016`). The approved generator input is pinned to SHA-256 `7f33328e6b4d4cd21b45fa625791928c9407dc702db6780e56b09ca9a3ecaa67`.
+
+Maintainers obtain the font from the official [Artifex URW Base 35 repository](https://github.com/ArtifexSoftware/urw-base35-fonts). Its upstream license is GNU AGPL v3 with the font embedding exception; see the official [`fonts/LICENSE`](https://github.com/ArtifexSoftware/urw-base35-fonts/blob/master/fonts/LICENSE). The binary is not shipped with this repository, and product consumers do not need it because all approved logos are outlined. Do not recreate the wordmark with live text or regenerate it from a different font. Read `assets/brand/FONT_PROVENANCE.md` before regeneration or redistribution; final public-release licensing treatment remains subject to legal review.
+
+### Product interface
+
+Product typography uses **Inter**. Production uses the official `InterVariable.woff2` upright variable font, range 100–900, self-hosted with its SIL Open Font License 1.1 notice. Obtain it from the official [Inter project](https://github.com/rsms/inter) or [Inter download site](https://rsms.me/inter/); the license is published in the official [`LICENSE.txt`](https://github.com/rsms/inter/blob/master/LICENSE.txt). Do not depend on a third-party font CDN at runtime.
+
+The canonical CSS stack is:
+
+```css
+"InterVariable", "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
+```
+
+Until the WOFF2 file is bundled by an application, this stack intentionally falls back to the platform UI font. The logo font and product font are separate systems.
 
 | Role | Size | Weight | Notes |
 |---|---:|---:|---|
-| Display | 40–48px | 560–620 | Tight tracking; marketing and major product moments |
-| Page title | 28–40px | 560–620 | Calm, never theatrical |
-| Section title | 18–24px | 600–650 | Sentence case |
+| Display | 40–48px | 600–700 | Tight tracking; marketing and major product moments |
+| Page title | 28–40px | 600–700 | Calm, never theatrical |
+| Section title | 18–24px | 600–700 | Sentence case |
 | Body | 14–16px | 400–500 | Comfortable reading |
-| UI label | 10–12px | 550–700 | Compact but legible |
+| UI label | 10–12px | 500–700 | Compact but legible |
 | Eyebrow | 9–11px | 700 | Uppercase, 0.08–0.12em tracking |
-| Data | contextual | 550–700 | Always tabular numerals |
+| Data | contextual | 600–700 | Always tabular numerals |
 
-Use the platform monospace stack for commands, immutable identifiers, and aligned technical values only. Do not make monospace the general brand voice.
+The allowed Inter weights are 400 Regular, 500 Medium, 600 SemiBold, and 700 Bold. Use the platform monospace stack `ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace` for commands and immutable identifiers only. No monospace font is bundled. Do not make monospace the general brand voice.
 
 ## 6. Composition
 

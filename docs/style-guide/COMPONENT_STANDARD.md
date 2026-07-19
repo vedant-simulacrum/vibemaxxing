@@ -31,7 +31,7 @@ Every implemented component documents:
 
 ## Component file contract
 
-When component implementation begins, use this co-located shape:
+Larger components use this co-located shape when separate files improve ownership:
 
 ```text
 ComponentName/
@@ -43,11 +43,11 @@ ComponentName/
   index.ts
 ```
 
-Simple primitives may omit MDX when the story documentation contains the full contract. Product patterns should not.
+Simple primitives may share a module while the library is small. Their public exports, usage contract, executable catalogue coverage, and tests remain mandatory. Product patterns should move to co-located folders as their fixtures or behavior grow.
 
 ## Story coverage
 
-Stories are the executable catalogue. Cover all meaningful variants and difficult states, including long text, zero and extreme values, keyboard focus, loading, error, reduced motion, narrow viewport, and high zoom where relevant. Stories use realistic fixtures without private data.
+An executable catalogue—currently the first-party `/style-guide` route—covers meaningful variants and difficult states, including long text, zero and extreme values, keyboard focus, loading, error, reduced motion, narrow viewport, and high zoom where relevant. Catalogue examples use realistic fixtures without private data. Storybook may replace or consume this catalogue when its additional isolated testing workflow is justified.
 
 ## Accessibility baseline
 

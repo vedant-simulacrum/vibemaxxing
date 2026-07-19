@@ -29,6 +29,8 @@ Canonical machine-readable tokens live in:
 
 They cover color, typography, spacing, radii, elevation, layout, focus, and motion. Product code consumes these tokens rather than duplicating raw values.
 
+The governing reuse architecture, component contract, inventory, and AI-authoring rules live in `docs/style-guide/`. That directory is the required entry point before any component or page implementation.
+
 ## 4. Layout
 
 ### Desktop
@@ -84,6 +86,11 @@ Radii:
 
 ## 7. Typography and data
 
+- Product UI family: Inter; self-host the official `InterVariable.woff2` upright variable font (100–900) under SIL OFL 1.1.
+- Allowed product weights: 400 Regular, 500 Medium, 600 SemiBold, and 700 Bold.
+- Canonical sans stack: `"InterVariable", "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`.
+- Canonical technical stack: `ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace`.
+- Font source, license links, logo-construction font identity, and pinned checksum are recorded in `assets/brand/FONT_PROVENANCE.md`.
 - Use sentence case for headings and controls.
 - Use uppercase tracked eyebrows sparingly.
 - Use tabular numerals for ranks, tokens, money, percentages, dates, and movement.

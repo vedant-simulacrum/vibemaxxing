@@ -1,10 +1,12 @@
+/* Generated from tokens.source.json. Do not edit. */
 :root {
   color-scheme: light;
-
-  /* Brand */
   --vm-color-canvas: #f4f2ed;
   --vm-color-surface: #ffffff;
   --vm-color-surface-subtle: #faf9f6;
+  --vm-color-surface-glass: rgb(255 255 255 / 93%);
+  --vm-color-surface-raised: rgb(255 255 255 / 70%);
+  --vm-color-surface-on-dark: rgb(255 255 255 / 9%);
   --vm-color-ink: #171714;
   --vm-color-muted: #716f68;
   --vm-color-muted-2: #9b9890;
@@ -16,10 +18,36 @@
   --vm-color-positive: #18794e;
   --vm-color-negative: #b84b44;
   --vm-color-warning: #96651b;
-
-  /* Typography */
-  --vm-font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --vm-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --vm-color-surface-hover: #fcfbf9;
+  --vm-color-surface-indigo: #fbfaff;
+  --vm-color-control-muted: #efeee9;
+  --vm-color-control-hover: #f0eee9;
+  --vm-color-row-line: #e9e7e1;
+  --vm-color-progress-track: #dfddd7;
+  --vm-color-positive-dot: #2f9e62;
+  --vm-color-positive-halo: #e7f4eb;
+  --vm-color-positive-halo-strong: #e8f5ed;
+  --vm-color-callout: #1d1c19;
+  --vm-color-profile: #272622;
+  --vm-color-icon: #55534e;
+  --vm-color-code: #3d3b37;
+  --vm-color-copy-muted: #4e4c47;
+  --vm-color-avatar-ink: #38343a;
+  --vm-color-avatar-plum: #e7dce8;
+  --vm-color-avatar-sand: #eae3d5;
+  --vm-color-avatar-blue: #dce6ef;
+  --vm-color-avatar-rose: #eedfde;
+  --vm-color-avatar-green: #dceadf;
+  --vm-color-avatar-amber: #eee3c9;
+  --vm-color-avatar-violet: #e4e0f1;
+  --vm-color-avatar-cyan: #d9e9e8;
+  --vm-color-callout-muted: #aaa8a1;
+  --vm-color-callout-icon: #bdb6ff;
+  --vm-color-callout-link: #c8c3ff;
+  --vm-color-link-underline: #bbb7ae;
+  --vm-color-border-hover: #aaa69c;
+  --vm-font-sans: "InterVariable", "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --vm-font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --vm-font-size-10: 0.625rem;
   --vm-font-size-11: 0.6875rem;
   --vm-font-size-12: 0.75rem;
@@ -29,8 +57,6 @@
   --vm-font-size-28: 1.75rem;
   --vm-font-size-40: 2.5rem;
   --vm-font-size-48: 3rem;
-
-  /* Spacing */
   --vm-space-1: 0.25rem;
   --vm-space-2: 0.5rem;
   --vm-space-3: 0.75rem;
@@ -41,8 +67,6 @@
   --vm-space-10: 2.5rem;
   --vm-space-12: 3rem;
   --vm-space-16: 4rem;
-
-  /* Shape and elevation */
   --vm-radius-control: 0.4375rem;
   --vm-radius-sm: 0.5625rem;
   --vm-radius-md: 0.75rem;
@@ -50,17 +74,17 @@
   --vm-radius-pill: 999px;
   --vm-shadow-surface: 0 1px 2px rgb(28 25 20 / 3.5%), 0 10px 36px rgb(28 25 20 / 3.5%);
   --vm-shadow-overlay: 0 16px 48px rgb(28 25 20 / 14%);
-
-  /* Layout and interaction */
-  --vm-content-max: 1396px;
-  --vm-sidebar-width: 320px;
-  --vm-header-height: 68px;
+  --vm-shadow-callout: 0 8px 24px rgb(20 19 17 / 12%);
+  --vm-shadow-control: 0 1px 3px rgb(24 22 18 / 12%);
+  --vm-shadow-control-subtle: 0 1px 1px rgb(20 20 18 / 2.5%);
+  --vm-layout-content-max: 1396px;
+  --vm-layout-sidebar-width: 320px;
+  --vm-layout-header-height: 68px;
   --vm-focus-ring: 0 0 0 2px var(--vm-color-indigo);
   --vm-duration-fast: 120ms;
   --vm-duration-default: 160ms;
   --vm-ease-out: cubic-bezier(.2, .8, .2, 1);
 
-  /* Compatibility aliases for the current reference UI. */
   --canvas: var(--vm-color-canvas);
   --surface: var(--vm-color-surface);
   --surface-subtle: var(--vm-color-surface-subtle);
