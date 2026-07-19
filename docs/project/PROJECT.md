@@ -1,6 +1,6 @@
 # VibeMaxxing Project Authority
 
-Status: planning-hardening. Product implementation is not authorized.
+Status: technical planning complete at validated contract level; implementation not authorized.
 
 ## Identity and product
 
@@ -16,15 +16,14 @@ Public launch includes all intended leaderboard periods and scopes, profiles, fr
 - Servers never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project or repository names, credentials, embeddings, summaries, classifications or personal insights.
 - Only fixed-schema safe claims cross the device boundary.
 - Transcript-capable processes have no network access; networked sync cannot inspect transcript content.
-- Token Burn is the default raw ranking metric.
-- Estimated Cash Burn is always explicitly an estimate.
+- Token Burn is the default raw ranking metric; Estimated Cash Burn is always explicitly an estimate.
 - Historical imports remain private analytics and never enter active competition.
 - Authentic intentionally pointless usage counts.
 - Deterministic controls own accounting, signatures, sequences, replay, duplicates and hard eligibility.
 - Public evidence states are Standard, Hardened and Imported.
 - Models and statistical detectors are secondary signals and cannot independently rewrite totals or permanently ban users.
 
-## Product topology
+## Product topology and identity
 
 The local product contains separate collector, sync, daemon, CLI, menu-bar/tray shell, local privacy/audit UI and updater responsibilities. Closing the shell does not stop collection. Platform capabilities and hardening differences are explicit.
 
@@ -45,9 +44,9 @@ Do not add Kubernetes, Kafka, GraphQL, service mesh, workflow engines, vector da
 
 ## Planning and evidence boundary
 
-Major behavioral contracts are substantially specified. Planning is not complete until P-1120 through P-1128 pass: draft schemas and registries validate, protocol edge semantics and policy ownership are closed, governance is coherent, canonical references resolve and the repository doctor passes from a clean checkout.
+Planning contracts, schemas, registries and repository validation have passed the planning workflow recorded in `docs/planning/PLANNING_HARDENING_VALIDATION_REPORT.md`. Implementation still requires explicit user approval under P-1104.
 
-Planning artifacts are not implementation evidence. Working code, generated bindings, cryptographic vectors, certified adapters, passing tests, benchmarks, packages, deployment, security review and launch evidence require a later explicitly authorized implementation phase.
+Planning artifacts are not working code, cryptographic interoperability evidence, certified adapters, performance evidence, packages, deployments, security hardening or launch readiness.
 
 The repository remains private during planning and must become public open source before public launch.
 
