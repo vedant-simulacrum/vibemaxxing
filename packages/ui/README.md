@@ -11,9 +11,11 @@ This package currently owns stable design tokens only. Components will be added 
 ```
 
 ```ts
-import { brand, layout, motion, radius, space } from "@vibemaxxing/ui/tokens";
+import { tokens } from "@vibemaxxing/ui/tokens";
 ```
 
 Canonical product behavior and composition rules live in `docs/design/UI_FOUNDATIONS.md`.
 
 The governing style-guide entry point is `docs/style-guide/README.md`. Its architecture, component standard, inventory, and AI-authoring rules must be read before adding UI. Application routes compose this package; they do not recreate its components locally.
+
+`src/tokens.source.json` is canonical. Run `npm run tokens:generate` after changing it and `npm run tokens:check` in validation. Never edit `tokens.css` or `tokens.ts` directly.

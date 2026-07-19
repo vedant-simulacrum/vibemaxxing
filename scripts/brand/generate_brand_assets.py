@@ -8,6 +8,7 @@ override the development font used to construct the outlines.
 from __future__ import annotations
 
 import html
+import hashlib
 import math
 import os
 import subprocess
@@ -20,6 +21,7 @@ from fontTools.ttLib import TTFont
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "assets" / "brand" / "source"
 DEFAULT_FONT = "/usr/share/fonts/opentype/urw-base35/NimbusSans-Bold.otf"
+EXPECTED_FONT_SHA256 = "7f33328e6b4d4cd21b45fa625791928c9407dc702db6780e56b09ca9a3ecaa67"
 
 INK = "#171714"
 INDIGO = "#5847E8"
@@ -50,6 +52,14 @@ def resolve_font() -> Path:
 
 
 FONT_PATH = resolve_font()
+FONT_SHA256 = hashlib.sha256(FONT_PATH.read_bytes()).hexdigest()
+if FONT_SHA256 != EXPECTED_FONT_SHA256 and os.environ.get("VIBEMAXXING_ALLOW_UNPINNED_FONT") != "1":
+    raise SystemExit(
+        "Brand font checksum mismatch. Expected "
+        f"{EXPECTED_FONT_SHA256}, received {FONT_SHA256}. "
+        "Do not regenerate identity assets with a different font without visual approval. "
+        "Set VIBEMAXXING_ALLOW_UNPINNED_FONT=1 only for an explicitly reviewed migration."
+    )
 FONT = TTFont(FONT_PATH)
 GLYPHS = FONT.getGlyphSet()
 CMAP = FONT.getBestCmap()

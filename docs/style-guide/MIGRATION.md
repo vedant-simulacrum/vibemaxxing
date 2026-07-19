@@ -1,6 +1,6 @@
 # Current UI Audit and Migration
 
-Status: audit of the current reference implementation; not approval to redesign the page
+Status: first reference-page migration completed; not approval to redesign the page
 
 ## Current strengths
 
@@ -9,39 +9,35 @@ Status: audit of the current reference implementation; not approval to redesign 
 - The current prototype already exposes repeated concepts such as icons, wordmark, ledger rows, tabs, avatars, evidence, presence, and metric values.
 - Responsive and reduced-motion behavior has been considered.
 
-## Current gaps
+## Completed migration
 
-| Gap | Risk | Required correction |
-|---|---|---|
-| No dedicated style-guide directory before this change | Agents cannot discover one governing workflow | Use `docs/style-guide/README.md` as the entry point |
-| Reusable UI lives in the page module | Other routes will copy or fork it | Extract only after approved component mock-ups |
-| Many raw colors, sizes, shadows, and spacing values remain in page CSS | Near-duplicate visuals accumulate | Complete semantic tokens, then prohibit raw values |
-| CSS and TypeScript tokens are separately handwritten | Values can drift | Introduce one canonical token source and generated outputs |
-| No component stories or executable catalogue | States and variants remain implicit | Add Storybook with the first approved component set |
-| No component behavior, accessibility, or visual regression gates | AI-generated changes can silently break shared UI | Add story-based testing and CI gates |
-| No public component exports yet | Reuse cannot be enforced through package boundaries | Add exports as approved components are implemented |
+| Previous gap | Completed correction |
+|---|---|
+| No governing style-guide directory | Added the required `docs/style-guide/` entry point and contracts |
+| Reusable UI lived in the page module | Extracted implemented UI to public `@vibemaxxing/ui` exports |
+| Raw component colors | Replaced with canonical UI tokens and added a rejecting check |
+| Handwritten CSS and TypeScript token copies | Added one 83-token source and deterministic generator/check |
+| No executable catalogue | Added the built `/style-guide` component catalogue |
+| No reuse enforcement | Added checks for page-local recreations, inline styles, raw colors, stale tokens, and catalogue coverage |
+| Live-text wordmark reconstruction | Replaced with the approved outlined SVG asset |
 
-## Safe migration sequence
+## Migration performed
 
-1. Approve desktop and mobile mock-ups for the target page and its reusable elements.
-2. Confirm the first component inventory and APIs from those mock-ups.
-3. Introduce a canonical token file with reference and semantic aliases; generate CSS and TypeScript.
-4. Install and configure the executable component catalogue.
-5. Implement primitives first, then components, patterns, and templates.
-6. Replace prototype-local implementations route by route without changing product behavior unintentionally.
-7. Add CI gates for raw values, forbidden deep imports, stories, accessibility, behavior, and visual diffs.
-8. Mark inventory entries stable only after reuse in more than one approved context.
+1. Preserved the current reference composition without a visual redesign.
+2. Extracted its repeatable primitives, components, and product patterns.
+3. Migrated the page to public package imports.
+4. Centralized component CSS in the UI package.
+5. Added canonical token generation and an executable catalogue.
+6. Added automated architectural checks and retained build/type/lint validation.
 
-## Enforcement backlog
+## Remaining future gates
 
-The following controls are specified but not yet implemented:
+The following controls become appropriate as the component library and team grow:
 
-- lint rule or style check rejecting unapproved raw visual values;
-- package-boundary rule preventing application-local shared primitives;
-- token generation and drift check;
-- Storybook build and story coverage check;
-- automated accessibility and interaction tests;
+- AST-based lint rules replacing the current focused source checks;
+- isolated browser interaction tests for stateful components;
+- automated browser accessibility scans;
 - approved visual-regression baseline;
 - duplicate-component review in the pull-request template.
 
-Keeping these items explicit prevents documentation from being mistaken for enforcement.
+The current enforcement is real but deliberately proportional to the implemented surface. These future gates are not presented as completed.
