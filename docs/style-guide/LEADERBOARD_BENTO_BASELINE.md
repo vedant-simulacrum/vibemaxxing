@@ -64,7 +64,7 @@ Target review viewport: 1536 × 1024.
 
 | Property | Locked value |
 |---|---|
-| Header height | `68px` / `--vm-layout-header-height` |
+| Header height | `66px` / `--vm-layout-header-height` |
 | Page maximum | `1536px` for prototype review; production content may use `--vm-layout-content-max` after fidelity review |
 | Outer gutter | `24px` / `--vm-space-6` |
 | Summary and rail gap | `16px` / `--vm-space-4` |
@@ -88,7 +88,7 @@ All implementation values come from `packages/ui/src/tokens.source.json`.
 
 | Role | Token | Current value |
 |---|---|---|
-| Canvas | `color.canvas` | `#f4f2ed` |
+| Canvas | `color.canvas` | `#fbfaf9` |
 | Primary surface | `color.surface` | `#ffffff` |
 | Primary text | `color.ink` | `#171714` |
 | Secondary text | `color.muted` | `#716f68` |

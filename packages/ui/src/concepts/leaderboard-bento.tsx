@@ -45,7 +45,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 function IdentityTile() {
   return (
     <section className="vm-bento-tile vm-bento-identity" aria-label="Current user">
-      <span className="vm-bento-avatar-wrap vm-bento-avatar-lg"><Avatar initials="V" tint="violet" label="Vedant" /></span>
+      <img className="vm-bento-profile-photo" src="/brand-assets/ui/fixtures/vedant-avatar.png" alt="Vedant" />
       <div>
         <strong>Vedant</strong>
         <span>@vedant</span>
@@ -110,7 +110,6 @@ function LeaderboardTable() {
             <tr key={entry.handle} className={entry.accent ? "is-current" : undefined}>
               <td className="vm-bento-rank">
                 <span>{String(entry.rank).padStart(2, "0")}</span>
-                {entry.movement ? <Movement value={entry.movement} /> : null}
               </td>
               <td>
                 <div className="vm-bento-user">
@@ -128,7 +127,7 @@ function LeaderboardTable() {
           ))}
         </tbody>
       </table>
-      <footer className="vm-bento-table-footer">Showing top 10 of 2,842 users</footer>
+      <div className="vm-bento-table-footer" role="status">Showing top 10 of 2,842 users</div>
     </div>
   );
 }
