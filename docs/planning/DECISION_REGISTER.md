@@ -51,6 +51,7 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-043 | Protocol v1 uses one challenge per atomic batch; partial acceptance is prohibited; bounded signed gap declarations downgrade continuity | accepted | ADR-007 or protocol-major revision |
 | D-044 | Handle normalization uses Unicode 16.0 NFKC/full case fold/confusable skeleton rules; configurable defaults live in a versioned policy registry | accepted | ADR-008 or proven internationalization failure |
 | D-045 | Technical planning is complete at validated contract level; implementation remains inactive until explicit P-1104 approval | accepted | a new P0/P1 contradiction, requirement change or failed planning validation reopens hardening |
+| D-046 | Public launch requires bespoke non-expired Hardened coverage for a rolling T20 cohort of the 20 most materially relevant model families; generic compatibility cannot satisfy a T20 slot | accepted | explicit product reversal or evidence that the selection method systematically misses material competitive usage |
 
 ## Register rules
 
