@@ -1,6 +1,6 @@
 # VibeMaxxing Documentation Map
 
-This is the sole canonical map. Do not create competing indexes, start prompts, master-context files, duplicate roadmaps, or numbered research waves.
+This is the sole canonical map. Do not create competing indexes, start prompts, master-context files, duplicate roadmaps or numbered research waves.
 
 ## Initialization
 
@@ -10,7 +10,7 @@ This is the sole canonical map. Do not create competing indexes, start prompts, 
 4. this file
 5. `docs/planning/DECISION_REGISTER.md`
 6. `docs/planning/TASK_CATALOG.md`
-7. relevant ADRs, schemas, and subsystem contracts
+7. relevant ADRs, schemas and subsystem contracts
 8. implementation handoff only for implementation planning or after explicit approval
 
 Run `python3 scripts/repository/doctor.py` before relying on repository state.
@@ -22,8 +22,9 @@ Run `python3 scripts/repository/doctor.py` before relying on repository state.
 - Social/integrity/UX: `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
 - Adapter and VibeProof: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
 - Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`
+- Platform key/privilege boundary: `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`
 - Server/data/ranking: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
-- Privacy/security: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+- Privacy/security: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
 - Operations/launch: `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
 - Accepted decisions: `docs/decisions/`
 
@@ -47,14 +48,15 @@ Important edge decisions:
 - `policy-defaults-v1.json`
 - `observability-allowlist-v1.yaml`
 
-These are draft normative interfaces, not implemented or toolchain-validated production artifacts.
+These are validated planning-grade interfaces, not implemented production artifacts. The previously recorded planning workflow passed schema, OpenAPI, CDDL, Protobuf and PostgreSQL DDL checks; any changed interface requires renewed validation before targeted hardening can close.
 
 ## Machine registries
 
 - Adapter compatibility: `conformance/adapters/agent-registry-v1.json` and adjacent schema.
+- T20 model hardening: `conformance/models/t20-model-registry-v1.json` and adjacent schema.
 - Adversarial cases: `conformance/adversarial/anti-cheat-registry-v1.json` and adjacent schema.
 
-An empty certification list means no product-level support claim. Registry status `planned` is not executable evidence.
+An empty certification list means no product-level support claim. Registry status `planned` or `prelaunch-pending` is not executable evidence.
 
 ## Planning control and evidence
 
@@ -64,12 +66,18 @@ An empty certification list means no product-level support claim. Registry statu
 - Schema inventory: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
 - Defaults/reversal: `docs/planning/PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`
 - Handoff review: `docs/planning/MOCK_IMPLEMENTATION_HANDOFF_REVIEW.md`
-- Historical exit audit: `docs/planning/FINAL_PLANNING_EXIT_AUDIT.md`; its former PASS is superseded by D-042 and the current status until P-1120..P-1128 pass.
+- Validated broad hardening evidence: `docs/planning/PLANNING_HARDENING_VALIDATION_REPORT.md`
+- Historical exit audit: `docs/planning/FINAL_PLANNING_EXIT_AUDIT.md`; historical conclusions do not override current D-045/D-046 targeted reopen status.
+- Current targeted hardening thread: GitHub issue #12 and P-1130A through P-1130E.
+
+## Artifact maturity
+
+The authoritative maturity taxonomy is in `docs/project/STATUS.md` and D-047. Specifications, mocks, runnable prototypes, production implementation and executable evidence are distinct. `apps/web` is a bounded fixture-backed runnable prototype unless a later accepted phase decision changes that classification.
 
 ## Implementation planning
 
 - `docs/implementation/IMPLEMENTATION_HANDOFF.md`: build-order contract.
-- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`: 52 bounded units.
+- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`: bounded implementation units.
 - `docs/implementation/REPOSITORY_LAYOUT.md`: current versus approved future tree.
 - `docs/implementation/ISSUE_GENERATION.md`: deterministic issue-thread contract.
 
@@ -85,4 +93,4 @@ Repository metadata and issue plans are generated under `artifacts/repository/` 
 
 ## Duplication rule
 
-A concept has one normative owner. Merge unique content into that owner, repair all links, delete the duplicate, and record material changes through the decision register and an ADR when needed.
+A concept has one normative owner. Merge unique content into that owner, repair all links, delete the duplicate and record material changes through the decision register and an ADR when needed.
