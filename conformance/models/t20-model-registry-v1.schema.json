@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/t20-model-registry-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_version", "selection_status", "selection_window_days", "slots", "selection_method"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "registry_version": {"type": "string", "minLength": 1},
+    "selection_status": {"enum": ["prelaunch-pending", "active", "superseded"]},
+    "selection_window_days": {"type": "integer", "minimum": 7, "maximum": 90},
+    "selection_method": {"type": "string", "minLength": 40},
+    "slots": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/slot"}
+    }
+  },
+  "$defs": {
+    "certification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_model_id", "version", "mode", "platform", "capture_path", "suite_version", "fixture_ref", "tested_at", "expires_at", "result", "maintainer"],
+      "properties": {
+        "provider_model_id": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "mode": {"type": "string", "minLength": 1},
+        "platform": {"enum": ["macos", "windows", "linux", "wsl", "container", "ci", "remote", "provider-api"]},
+        "capture_path": {"type": "string", "minLength": 1},
+        "suite_version": {"type": "string", "minLength": 1},
+        "fixture_ref": {"type": "string", "minLength": 1},
+        "tested_at": {"type": "string", "format": "date-time"},
+        "expires_at": {"type": "string", "format": "date-time"},
+        "result": {"enum": ["pass", "fail", "expired"]},
+        "maintainer": {"type": "string", "minLength": 1}
+      }
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rank", "family_id", "provider", "selection_score", "selection_inputs", "aliases", "status", "certifications"],
+      "properties": {
+        "rank": {"type": "integer", "minimum": 1, "maximum": 20},
+        "family_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "provider": {"type": "string", "minLength": 1},
+        "selection_score": {"type": "number", "minimum": 0, "maximum": 100},
+        "selection_inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["usage", "agent_coding_relevance", "capability_relevance", "diversity"],
+          "properties": {
+            "usage": {"type": "number", "minimum": 0, "maximum": 100},
+            "agent_coding_relevance": {"type": "number", "minimum": 0, "maximum": 100},
+            "capability_relevance": {"type": "number", "minimum": 0, "maximum": 100},
+            "diversity": {"type": "number", "minimum": 0, "maximum": 100}
+          }
+        },
+        "aliases": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "status": {"enum": ["candidate", "t20-pending", "hardened", "departing", "retired"]},
+        "certifications": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/certification"}}
+      }
+    }
+  }
+}
