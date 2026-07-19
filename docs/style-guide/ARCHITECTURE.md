@@ -52,3 +52,13 @@ Each reusable unit has one named export from `@vibemaxxing/ui`. Consumers import
 ## Responsive behavior
 
 Responsiveness is part of the component contract. Components define how their own content reflows; templates define page-level recomposition. Pages must not patch a shared component with route-specific media-query overrides.
+
+## Documentation architecture
+
+The UI system has three non-interchangeable layers:
+
+1. `@vibemaxxing/ui` owns implementation.
+2. Storybook owns isolated executable states, controls, accessibility checks, and future visual-regression baselines.
+3. `/style-guide` owns the curated brand and product-system narrative.
+
+Stories and `/style-guide` import the package public API. They never copy component markup or styling. A component is not implemented until its required Storybook states exist; appearing on `/style-guide` alone is insufficient.

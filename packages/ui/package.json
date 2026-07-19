@@ -3,11 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "storybook:build": "storybook build",
     "tokens:generate": "node scripts/generate-tokens.mjs",
     "tokens:check": "node scripts/generate-tokens.mjs --check",
     "test": "esbuild src/components.test.tsx --bundle --platform=node --format=cjs --jsx=automatic --outfile=/tmp/vibemaxxing-ui.test.cjs && node --test /tmp/vibemaxxing-ui.test.cjs"
   },
-  "sideEffects": ["**/*.css"],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "exports": {
     ".": "./src/components.tsx",
     "./components.css": "./src/components.css",
@@ -18,11 +22,15 @@
     "react": ">=19"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "^10.5.2",
+    "@storybook/addon-docs": "^10.5.2",
+    "@storybook/react-vite": "^10.5.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "esbuild": "0.28.1",
     "react": "19.2.7",
     "react-dom": "19.2.7",
+    "storybook": "^10.5.2",
     "typescript": "^5.9.0"
   }
 }

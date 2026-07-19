@@ -10,9 +10,9 @@ export default function StyleGuidePage() {
   const [scope, setScope] = useState<(typeof scopes)[number]>("Global");
 
   return <main className="style-guide-page">
-    <header className="style-guide-header"><Wordmark href="/"/><div><span>UI system</span><strong>Executable component catalogue</strong></div></header>
+    <header className="style-guide-header"><Wordmark href="/"/><div><span>UI system</span><strong>Curated brand reference</strong></div></header>
 
-    <section className="style-guide-intro"><p className="eyebrow">Implemented inventory</p><h1>Reusable interface components</h1><p>Rendered from <code>@vibemaxxing/ui</code>. This route documents real components and difficult states; proposed components remain in the inventory until implemented.</p></section>
+    <section className="style-guide-intro"><p className="eyebrow">Approved system</p><h1>Brand and interface reference</h1><p>Rendered from <code>@vibemaxxing/ui</code>. This route is the curated, product-facing reference; Storybook is the required isolated catalogue for every implemented component and state.</p></section>
 
     <section className="component-showcase"><div className="showcase-copy"><h2>Brand and icons</h2><p>Approved outlined wordmark and one consistent outline icon family.</p></div><div className="showcase-stage row"><Wordmark/>{(["globe", "search", "bell", "shield", "users", "arrow"] as const).map(name => <Icon key={name} name={name}/>)}</div></section>
 

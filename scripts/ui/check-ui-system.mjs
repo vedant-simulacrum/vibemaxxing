@@ -22,9 +22,30 @@ for (const name of ["Icon", "Wordmark", "Avatar", "RankMovement", "EvidenceBadge
 }
 if (/style=\{\{/.test(appPage)) failures.push("apps/web/app/page.tsx contains page-local inline styles.");
 
-const catalogue = read("apps/web/app/style-guide/page.tsx");
-for (const name of ["Wordmark", "Icon", "IconButton", "ChoiceGroup", "Avatar", "RankMovement", "EvidenceBadge", "PresenceIndicator", "MetricValue", "Progress", "LedgerRow"]) {
-  if (!catalogue.includes(name)) failures.push(`Executable catalogue does not cover ${name}.`);
+const componentSource = read("packages/ui/src/components.tsx");
+const publicComponents = [...componentSource.matchAll(/export function\s+(\w+)\b/g)].map(match => match[1]);
+const storybookMain = read("packages/ui/.storybook/main.ts");
+const storybookPreview = read("packages/ui/.storybook/preview.ts");
+const stories = read("packages/ui/src/components.stories.tsx");
+const packageJson = JSON.parse(read("packages/ui/package.json"));
+const styleGuide = read("apps/web/app/style-guide/page.tsx");
+
+for (const dependency of ["storybook", "@storybook/react-vite", "@storybook/addon-docs", "@storybook/addon-a11y"]) {
+  if (!packageJson.devDependencies?.[dependency]) failures.push(`Storybook dependency ${dependency} is required.`);
+}
+for (const script of ["storybook", "storybook:build"]) {
+  if (!packageJson.scripts?.[script]) failures.push(`packages/ui is missing the ${script} script.`);
+}
+for (const addon of ["@storybook/addon-docs", "@storybook/addon-a11y"]) {
+  if (!storybookMain.includes(addon)) failures.push(`Storybook must enable ${addon}.`);
+}
+if (!storybookPreview.includes('test: "error"')) failures.push("Storybook accessibility violations must be configured as test errors.");
+if (!stories.includes('from "@vibemaxxing/ui"')) failures.push("Storybook stories must consume the @vibemaxxing/ui public API.");
+if (!styleGuide.includes("Curated brand reference")) failures.push("/style-guide must identify itself as the curated brand reference, not the executable catalogue.");
+if (!styleGuide.includes('from "@vibemaxxing/ui"')) failures.push("/style-guide must consume the @vibemaxxing/ui public API.");
+
+for (const name of publicComponents) {
+  if (!stories.includes(`<${name}`)) failures.push(`Storybook does not render public component ${name}.`);
 }
 
 if (failures.length) {
@@ -32,4 +53,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("UI system checks passed: generated tokens, raw colors, component reuse, inline styles, and catalogue coverage.");
+console.log("UI system checks passed: generated tokens, raw colors, component reuse, Storybook coverage, accessibility configuration, and /style-guide role parity.");
