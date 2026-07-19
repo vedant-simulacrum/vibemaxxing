@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "registry_version": "1.0.0-planning",
+  "selection_status": "prelaunch-pending",
+  "selection_window_days": 30,
+  "selection_method": "Rolling weighted selection: 40 percent observed usage, 30 percent agent and coding relevance, 20 percent capability relevance, and 10 percent provider and deployment diversity, subject to provider concentration and open-weight representation constraints.",
+  "slots": []
+}
