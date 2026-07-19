@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "adapter_id": "synthetic-agent",
+  "version": "1.0.0",
+  "maintainer": {"kind": "project", "id": "vibemaxxing"},
+  "source_products": ["synthetic-agent"],
+  "source_version_range": ">=1.0.0 <2.0.0",
+  "platforms": ["macos", "windows", "linux"],
+  "modes": ["native-event"],
+  "capture_mechanism": "synthetic structured event source",
+  "required_permissions": [],
+  "token_categories": ["input", "output", "cache_read", "cache_write", "reasoning"],
+  "model_identity_quality": "source-reported",
+  "source_authority": "native-source-event",
+  "evidence_ceiling": "competitive-certified",
+  "privacy_risks": [],
+  "duplicate_domains": ["synthetic-request"],
+  "capability_probe": "synthetic-v1",
+  "conformance_suite_version": "1.0.0",
+  "lifecycle": "experimental",
+  "emergency_disable": false,
+  "sunset_at": null
+}
