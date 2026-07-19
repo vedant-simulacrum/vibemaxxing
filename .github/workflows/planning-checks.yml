@@ -2,6 +2,22 @@ name: Planning checks
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'AGENTS.md'
+      - 'README.md'
+      - 'LICENSES.md'
+      - 'SECURITY.md'
+      - 'CONTRIBUTING.md'
+      - 'requirements-planning.txt'
+      - '.github/CODEOWNERS'
+      - '.github/workflows/planning-checks.yml'
+      - 'docs/**'
+      - 'packages/schemas/**'
+      - 'conformance/**'
+      - 'scripts/repository/**'
+      - 'scripts/ci/repository_policy.py'
   pull_request:
     paths:
       - 'AGENTS.md'
@@ -9,6 +25,7 @@ on:
       - 'LICENSES.md'
       - 'SECURITY.md'
       - 'CONTRIBUTING.md'
+      - 'requirements-planning.txt'
       - '.github/CODEOWNERS'
       - '.github/workflows/planning-checks.yml'
       - 'docs/**'
@@ -23,21 +40,40 @@ permissions:
 jobs:
   planning-checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vibemaxxing_planning
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vibemaxxing_planning"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PLANNING_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/vibemaxxing_planning
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+      - name: Install pinned planning validators
+        run: python3 -m pip install --disable-pip-version-check -r requirements-planning.txt
       - name: Repository doctor
         run: python3 scripts/repository/doctor.py
+      - name: Validate schemas, registries, examples, protocols, API, and SQL
+        run: python3 scripts/repository/validate_planning_artifacts.py
       - name: Validate deterministic issue-plan generation
         run: |
           python3 scripts/repository/generate_issue_plan.py
           python3 - <<'PY'
           import json
           from pathlib import Path
-          p = Path('artifacts/repository/issue-plan.json')
-          data = json.loads(p.read_text())
+          data = json.loads(Path('artifacts/repository/issue-plan.json').read_text())
           assert len(data['issues']) == 52
           assert data['issues'][0]['key'] == 'IMP-001'
           assert data['issues'][-1]['key'] == 'IMP-052'
