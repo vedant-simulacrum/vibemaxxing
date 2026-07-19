@@ -1,6 +1,6 @@
 # VibeMaxxing Style Guide
 
-Status: governing structure approved in principle; component visuals still require mock-up approval
+Status: governing structure approved; leaderboard bento baseline approved for Storybook fidelity work
 
 This directory is the entry point for every product-UI decision. It exists to keep human-written and AI-generated interfaces on the same system instead of allowing each page to invent its own controls, spacing, colors, and interaction patterns.
 
@@ -21,6 +21,7 @@ This directory is the entry point for every product-UI decision. It exists to ke
 | Curated brand and product-system reference | `/style-guide` |
 | Research and source rationale | `RESEARCH.md` |
 | Current gaps and migration sequence | `MIGRATION.md` |
+| Approved first-screen baseline and execution specification | `LEADERBOARD_BENTO_BASELINE.md` |
 
 ## Required order of work
 

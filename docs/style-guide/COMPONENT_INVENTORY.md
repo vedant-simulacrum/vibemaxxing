@@ -34,6 +34,14 @@ This file is the human-readable registry for the UI system. It distinguishes cur
 | Product pattern | MetricValue | Implemented | Token and estimated-cash formatting with exact-value access |
 | Template | LeaderboardShell | Proposed | Ledger-first page structure and contextual rail |
 
+## Approved fidelity prototypes
+
+| Screen | Status | Executable reference | Boundary |
+|---|---|---|---|
+| Leaderboard bento baseline | Approved-design | `packages/ui/src/concepts/leaderboard-bento.stories.tsx` | Fixture-only visual recreation; no production component API or application wiring |
+
+The earlier Competition Slice directions are rejected exploration artifacts and are not approved sources for product implementation.
+
 The current reference page consumes the implemented entries from `@vibemaxxing/ui`. Remaining proposed entries are not available for reuse and must not be invented locally.
 
 ## Updating the inventory

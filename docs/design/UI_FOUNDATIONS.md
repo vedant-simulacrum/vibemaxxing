@@ -1,6 +1,6 @@
 # Competitive Ledger UI Foundations
 
-Status: approved foundations; page mock-ups pending visual review
+Status: approved foundations; first leaderboard bento baseline approved for Storybook fidelity work
 
 ## 1. Purpose
 
@@ -189,4 +189,4 @@ Page design proceeds through visible review:
 6. Implement only after explicit visual approval.
 7. Validate against the mock-up at target viewport sizes before merge.
 
-The current reference screen is not automatically canonical. Future mock-ups may replace its composition while retaining these approved foundations.
+The approved first-screen composition is recorded in `docs/style-guide/LEADERBOARD_BENTO_BASELINE.md`. It is canonical as a visual baseline, not yet as a production component API or application route.
