@@ -8,6 +8,12 @@ Visual reference: [`references/leaderboard-bento-approved.png`](references/leade
 
 Executable review surface: `packages/ui/src/concepts/leaderboard-bento.stories.tsx`
 
+Coded render previews:
+
+- [`references/leaderboard-bento-coded-desktop.png`](references/leaderboard-bento-coded-desktop.png)
+- [`references/leaderboard-bento-coded-tablet.png`](references/leaderboard-bento-coded-tablet.png)
+- [`references/leaderboard-bento-coded-mobile.png`](references/leaderboard-bento-coded-mobile.png)
+
 ## Decision
 
 The light-mode bento leaderboard is the canonical starting point for the first VibeMaxxing product screen. It replaces the rejected Signal Ledger, Trackside, and Duel explorations as the direction from which future screen and component work proceeds.
