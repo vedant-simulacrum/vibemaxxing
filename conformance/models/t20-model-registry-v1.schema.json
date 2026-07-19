@@ -3,13 +3,28 @@
   "$id": "https://vibemaxxing.dev/schemas/t20-model-registry-v1.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "registry_version", "selection_status", "selection_window_days", "slots", "selection_method"],
+  "required": [
+    "schema_version",
+    "registry_version",
+    "selection_status",
+    "selection_window_days",
+    "selection_policy_version",
+    "selection_method",
+    "prelaunch_limitations",
+    "selection_runs",
+    "accounting_profiles",
+    "slots"
+  ],
   "properties": {
     "schema_version": {"const": 1},
     "registry_version": {"type": "string", "minLength": 1},
     "selection_status": {"enum": ["prelaunch-pending", "active", "superseded"]},
     "selection_window_days": {"type": "integer", "minimum": 7, "maximum": 90},
-    "selection_method": {"type": "string", "minLength": 40},
+    "selection_policy_version": {"type": "string", "minLength": 1},
+    "selection_method": {"type": "string", "minLength": 80},
+    "prelaunch_limitations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 10}},
+    "selection_runs": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/selection_run"}},
+    "accounting_profiles": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/accounting_profile"}},
     "slots": {
       "type": "array",
       "maxItems": 20,
@@ -18,16 +33,96 @@
     }
   },
   "$defs": {
+    "selection_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "status", "window_start", "window_end", "eligible_population", "privacy_threshold", "minimum_sample_size", "datasets", "deduplication_method", "normalization_method", "confidence_method", "tie_breaking", "algorithm_version", "reviewer"],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["draft", "approved", "rejected", "superseded"]},
+        "window_start": {"type": "string", "format": "date-time"},
+        "window_end": {"type": "string", "format": "date-time"},
+        "eligible_population": {"type": "string", "minLength": 20},
+        "privacy_threshold": {"type": "integer", "minimum": 2},
+        "minimum_sample_size": {"type": "integer", "minimum": 1},
+        "datasets": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/dataset"}},
+        "deduplication_method": {"type": "string", "minLength": 20},
+        "normalization_method": {"type": "string", "minLength": 20},
+        "confidence_method": {"type": "string", "minLength": 20},
+        "tie_breaking": {"type": "string", "minLength": 20},
+        "algorithm_version": {"type": "string", "minLength": 1},
+        "reviewer": {"type": "string", "minLength": 1}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dataset_id", "provenance", "coverage", "known_biases", "weight"],
+      "properties": {
+        "dataset_id": {"type": "string", "minLength": 1},
+        "provenance": {"type": "string", "minLength": 10},
+        "coverage": {"type": "string", "minLength": 10},
+        "known_biases": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 5}},
+        "weight": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "accounting_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "version", "provider", "api_surface", "authority", "categories", "retry_semantics", "streaming_semantics", "missing_usage_behavior", "pricing_dataset_ref"],
+      "properties": {
+        "profile_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "version": {"type": "string", "minLength": 1},
+        "provider": {"type": "string", "minLength": 1},
+        "api_surface": {"type": "string", "minLength": 1},
+        "authority": {"enum": ["provider-reported", "runtime-reported", "gateway-observed", "deterministically-derived"]},
+        "categories": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "retry_semantics": {"type": "string", "minLength": 10},
+        "streaming_semantics": {"type": "string", "minLength": 10},
+        "missing_usage_behavior": {"enum": ["reject", "downgrade", "estimate-labelled", "private-import-only"]},
+        "pricing_dataset_ref": {"type": ["string", "null"], "minLength": 1}
+      }
+    },
     "certification": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["provider_model_id", "version", "mode", "platform", "capture_path", "suite_version", "fixture_ref", "tested_at", "expires_at", "result", "maintainer"],
+      "required": [
+        "certification_id",
+        "provider_model_id",
+        "model_version",
+        "agent_runtime",
+        "agent_runtime_version",
+        "api_mode",
+        "platform",
+        "architecture",
+        "capture_path",
+        "duplicate_domain",
+        "accounting_profile_ref",
+        "evidence_class",
+        "source_binding",
+        "replay_controls",
+        "suite_version",
+        "fixture_ref",
+        "tested_at",
+        "expires_at",
+        "result",
+        "maintainer"
+      ],
       "properties": {
+        "certification_id": {"type": "string", "minLength": 1},
         "provider_model_id": {"type": "string", "minLength": 1},
-        "version": {"type": "string", "minLength": 1},
-        "mode": {"type": "string", "minLength": 1},
+        "model_version": {"type": "string", "minLength": 1},
+        "agent_runtime": {"type": "string", "minLength": 1},
+        "agent_runtime_version": {"type": "string", "minLength": 1},
+        "api_mode": {"type": "string", "minLength": 1},
         "platform": {"enum": ["macos", "windows", "linux", "wsl", "container", "ci", "remote", "provider-api"]},
+        "architecture": {"enum": ["arm64", "x86_64", "universal", "provider-managed", "other"]},
         "capture_path": {"type": "string", "minLength": 1},
+        "duplicate_domain": {"type": "string", "minLength": 1},
+        "accounting_profile_ref": {"type": "string", "minLength": 1},
+        "evidence_class": {"enum": ["E1-provider-signed", "E2-server-observed-provider-response", "E3-trusted-local-structured-event", "E4-gateway-proxy-observation", "E5-deterministic-derivation", "E6-untrusted-import"]},
+        "source_binding": {"type": "string", "minLength": 20},
+        "replay_controls": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 3}},
         "suite_version": {"type": "string", "minLength": 1},
         "fixture_ref": {"type": "string", "minLength": 1},
         "tested_at": {"type": "string", "format": "date-time"},
@@ -36,14 +131,29 @@
         "maintainer": {"type": "string", "minLength": 1}
       }
     },
+    "coverage_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_runtime", "capture_path", "api_mode", "platform", "status", "usage_share", "certification_refs"],
+      "properties": {
+        "agent_runtime": {"type": "string", "minLength": 1},
+        "capture_path": {"type": "string", "minLength": 1},
+        "api_mode": {"type": "string", "minLength": 1},
+        "platform": {"type": "string", "minLength": 1},
+        "status": {"enum": ["hardened", "competitive-certified", "community-certified", "generic-live", "pending", "unsupported"]},
+        "usage_share": {"type": "number", "minimum": 0, "maximum": 1},
+        "certification_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
     "slot": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["rank", "family_id", "provider", "selection_score", "selection_inputs", "aliases", "status", "certifications"],
+      "required": ["rank", "family_id", "provider", "selection_run_ref", "selection_score", "selection_inputs", "confidence", "aliases", "status", "material_usage_coverage_threshold", "coverage_matrix", "certifications"],
       "properties": {
         "rank": {"type": "integer", "minimum": 1, "maximum": 20},
         "family_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
         "provider": {"type": "string", "minLength": 1},
+        "selection_run_ref": {"type": "string", "minLength": 1},
         "selection_score": {"type": "number", "minimum": 0, "maximum": 100},
         "selection_inputs": {
           "type": "object",
@@ -56,8 +166,11 @@
             "diversity": {"type": "number", "minimum": 0, "maximum": 100}
           }
         },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         "aliases": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "status": {"enum": ["candidate", "t20-pending", "hardened", "departing", "retired"]},
+        "material_usage_coverage_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+        "coverage_matrix": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/coverage_entry"}},
         "certifications": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/certification"}}
       }
     }
