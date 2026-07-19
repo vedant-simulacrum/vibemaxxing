@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "certification_ref": "planning-invalid-certification",
+  "accounting": {
+    "authoritative_vectors": 20,
+    "passed_vectors": 19,
+    "fidelity_percent": 95,
+    "category_semantics_complete": false,
+    "duplicate_domains_resolved": false
+  },
+  "performance": {
+    "cpu_overhead_percent_p95": 9.5,
+    "memory_overhead_mb_p95": 512,
+    "disk_mb_per_day_p95": 90,
+    "network_kb_per_1000_events_p95": 9000,
+    "startup_overhead_ms_p95": 5000,
+    "claim_latency_ms_p95": 30000,
+    "budget_ref": "planning-budget-example-v1",
+    "within_budget": false
+  },
+  "reliability": {
+    "soak_hours": 1,
+    "restart_passed": false,
+    "offline_recovery_passed": false,
+    "upgrade_passed": false,
+    "rollback_passed": false,
+    "provider_change_passed": false
+  },
+  "coverage_depth": {
+    "material_usage_coverage": 0.2,
+    "optimized_modes": ["generic-fallback"],
+    "explicitly_unsupported_modes": ["material-provider-api"]
+  },
+  "user_experience": {
+    "automatic_detection": true,
+    "manual_model_mapping_required": false,
+    "normal_path_setup_steps": 4,
+    "recovery_guidance_tested": false
+  },
+  "maintenance": {
+    "owner": "planning-invalid-owner",
+    "upstream_change_detection_hours": 168,
+    "triage_target_hours": 336,
+    "recertification_target_hours": 720,
+    "emergency_disable_tested": false
+  },
+  "result": "pass"
+}
