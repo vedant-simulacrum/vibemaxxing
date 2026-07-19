@@ -93,7 +93,7 @@ Radii:
 - Font source, license links, logo-construction font identity, and pinned checksum are recorded in `assets/brand/FONT_PROVENANCE.md`.
 - Use sentence case for headings and controls.
 - Use uppercase tracked eyebrows sparingly.
-- Use Inter tabular figures for comparable token totals, money, percentages, dates, and movement. Reserve the technical monospace stack for ranks, model identifiers, and code-like values whose identity benefits from fixed-width glyphs.
+- Use Inter tabular figures for comparable token totals, money, percentages, dates, and movement. Reserve the technical monospace stack for dense-table ranks, model identifiers, and code-like values whose identity benefits from fixed-width glyphs. Identity and summary surfaces keep rank and model values in Inter so they read as product status rather than terminal output.
 - Align comparable numbers on the decimal or right edge.
 - Use abbreviated values in dense views and expose exact values on focus, hover, or detail.
 - Do not animate counters continuously.

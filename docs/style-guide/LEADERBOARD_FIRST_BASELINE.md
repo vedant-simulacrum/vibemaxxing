@@ -155,7 +155,7 @@ font-variant-numeric: tabular-nums lining-nums;
 font-feature-settings: "tnum" 1, "calt" 1;
 ```
 
-The canonical monospace stack is reserved for ranks and model identifiers. Token totals, percentages, dates, navigation, names, handles, and headings remain Inter.
+The personal-status strip uses Inter for every visible value, including `#07` and `GPT-5.4`. It is an identity-and-status surface, not a code readout. The canonical monospace stack is reserved for dense table ranks and model identifiers only. Token totals, percentages, dates, navigation, names, handles, headings, and all status-strip copy remain Inter.
 
 ### Type roles
 
@@ -164,6 +164,7 @@ The canonical monospace stack is reserved for ranks and model identifiers. Token
 | Navigation | `14 / 20px` | `500`; active `600` | `0` |
 | Player name | `20 / 28px` | `600` | `-0.01em` |
 | Status metric | `20 / 28px` | `500` | `-0.01em` |
+| Status rank / model | `18 / 24px` | `500–600` | `0` |
 | Card title | `16 / 24px` | `600` | `-0.01em` |
 | Table name | `14 / 20px` | `500` | `0` |
 | Table numeric | `14 / 20px` | `500` | `0` |
@@ -179,6 +180,7 @@ Rules:
 - no product text below `12px`;
 - no weight above `600` except the outlined wordmark asset;
 - never use monospace as a shortcut for “developer aesthetic”;
+- never use monospace anywhere inside `PlayerStatusStrip`;
 - verify the real font loaded with `document.fonts.check()` before visual comparison;
 - screenshots rendered with fallback fonts fail the fidelity gate.
 

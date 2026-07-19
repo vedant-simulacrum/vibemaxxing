@@ -6,7 +6,7 @@ This system uses principles from official specifications and established design-
 
 ### Interface polish comes from correct type roles, not a novelty font
 
-Inter is designed for detailed user interfaces and provides optical sizing, contextual alternates, and tabular figures. The Leaderboard First baseline therefore keeps Inter Variable, enables its UI features, uses tabular Inter for comparable numeric columns, and limits monospace to ranks and model identifiers. This avoids turning the entire interface into a synthetic developer/editorial treatment.
+Inter is designed for detailed user interfaces and provides optical sizing, contextual alternates, and tabular figures. The Leaderboard First baseline therefore keeps Inter Variable, enables its UI features, uses tabular Inter for comparable numeric columns, and limits monospace to dense-table ranks and model identifiers. The personal-status strip is entirely Inter. This avoids turning identity and status into a synthetic developer/editorial treatment.
 
 Source: https://rsms.me/inter/
 
