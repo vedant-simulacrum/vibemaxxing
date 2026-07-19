@@ -1,23 +1,25 @@
 # Planning Hardening Validation Report
 
-Status: passed planning validation
+Status: passed; technical planning complete at validated contract level
 Date: 2026-07-19
 
 ## Scope
 
-This report closes the validation-only planning-hardening cycle. No product code, deployment, release, signing, production security automation, or compatibility certification was created.
+This report closes the validation-only planning-hardening cycle. No product code, deployment, release, signing, production security automation or compatibility certification was created.
 
-## Clean-checkout evidence
+## Final clean-checkout evidence
 
-The complete planning workflow ran in a fresh GitHub-hosted checkout through draft PR #9.
+The complete planning workflow ran in a fresh GitHub-hosted checkout after the canonical authority was changed from planning-hardening to planning complete.
 
 - Workflow: `Planning checks`
-- Run ID: `29666625336`
-- Run number: `12`
-- Validation head: `01e62076bdebfedd56befaa4c67746a0522db569`
+- Final run ID: `29666765188`
+- Final run number: `21`
+- Validation head: `093aab79c64582507e9c2a1f95b8e819b91231df`
+- Base main commit: `5c51c6da43d03ce12c2b067cf64d63e2c5d420ce`
 - Result: `success`
+- Trigger PR: #10, closed unmerged
 
-The PR contained only a temporary validation-trigger document and was not merged.
+An earlier complete artifact run, `29666625336`, also passed before the final authority transition. Both validation PRs contained only temporary trigger documents and were intentionally not merged.
 
 ## Pinned validator set
 
@@ -30,74 +32,47 @@ The PR contained only a temporary validation-trigger document and was not merged
 - `cddlparser==0.6.0`
 - `psycopg[binary]==3.3.4`
 
-The workflow used a disposable PostgreSQL 16 service and the pinned `actions/checkout` commit already recorded in the workflow.
+The workflow used PostgreSQL 16 and a pinned `actions/checkout` commit.
 
 ## Checks executed and passed
 
-1. Repository doctor:
-   - canonical files and phase hierarchy;
-   - removed/forbidden duplicate files;
-   - canonical references;
-   - decision and task references;
-   - governance and licensing consistency;
-   - registry vocabulary and reason-code linkage.
-2. JSON Schema:
-   - all four schemas meta-validated;
-   - valid adapter and normalized-event examples accepted;
-   - forbidden-field negative event rejected;
-   - compatibility and adversarial registries validated.
-3. Cross-registry semantics:
-   - unique family, product, case, action and reason identifiers;
-   - valid family and tier references;
-   - adversarial actions and reason codes resolved;
-   - no product support inferred from empty certifications.
-4. CDDL:
-   - VibeProof claim grammar parsed;
-   - required claim, token, batch and gap rules present.
-5. Protobuf:
-   - local-control and social/integrity event contracts compiled with `grpcio-tools`.
-6. OpenAPI 3.1:
-   - specification validated;
-   - every launch-critical API family present;
-   - operation IDs unique;
-   - responses present;
-   - mutating endpoints follow the planned idempotency policy.
-7. PostgreSQL:
-   - planning DDL loaded successfully into a disposable PostgreSQL schema;
-   - all launch-critical identity, integrity, ranking, social, moderation, lifecycle and operations tables present.
-8. Policy and observability:
-   - policy defaults within declared ranges and owned;
-   - deny-by-default observability allowlist parsed;
-   - retention values agree with the policy registry;
-   - prohibited content classes are not allowlisted.
-9. Issue generation:
-   - deterministic generation produced exactly `IMP-001` through `IMP-052`.
+1. Repository doctor: canonical files, phase hierarchy, removed duplicates, references, task/decision IDs, governance, licensing and registry linkage.
+2. JSON Schema: four schemas meta-validated; valid fixtures accepted; forbidden-field fixture rejected; registries validated.
+3. Cross-registry semantics: unique IDs, valid family/tier references, resolved actions/reason codes and no support inferred from empty certifications.
+4. CDDL: VibeProof grammar parsed; claim, token, batch and gap rules present.
+5. Protobuf: local-control and social/integrity event contracts compiled.
+6. OpenAPI 3.1: parsed; every launch-critical API family present; operation IDs unique; responses present; planned idempotency rules enforced.
+7. PostgreSQL: full planning DDL loaded into a disposable database; every launch-critical logical entity group present.
+8. Policy and observability: defaults ranged and owned; deny-by-default allowlist parsed; retention matched policy; prohibited classes absent.
+9. Issue generation: exactly `IMP-001` through `IMP-052` generated deterministically.
+10. Final authority state: D-045, closed P-1120/P-1126/P-1128 and P-1104-only implementation gating passed the repository doctor.
 
-## Defects found and repaired during validation
+## Defects found and repaired
 
-- unconstrained adapter certification and target tiers;
+- unconstrained certification and target tiers;
 - duplicate-capable registry collections;
 - unconstrained adversarial expected actions;
-- unconstrained normalized-event capture mode;
-- empty normalized-event token objects;
-- a repository-doctor false positive caused by negative license wording;
+- unconstrained normalized-event capture modes;
+- empty token objects;
+- a license-wording doctor false positive;
 - incomplete OpenAPI launch-family coverage;
-- incomplete PostgreSQL logical-schema coverage.
+- incomplete PostgreSQL logical-schema coverage;
+- stale authority statements after the phase transition.
 
 ## Context-free handoff re-audit
 
-A fresh read beginning at `AGENTS.md`, without relying on chat history, produces the following unambiguous interpretation:
+A fresh read beginning at `AGENTS.md`, without chat history, produces one unambiguous interpretation:
 
 - current phase: planning complete, implementation not authorized;
 - authority: project/status/documentation map, decision register, task catalog, ADRs, schemas and subsystem contracts;
-- schema source of truth: `packages/schemas/` and adjacent conformance registry schemas;
-- current versus future repository paths: explicitly separated by `docs/implementation/REPOSITORY_LAYOUT.md`;
-- implementation entrance: blocked until explicit user approval under P-1104;
-- first future implementation unit: pinned contract workspaces and clean-checkout validation, followed by the synthetic secure spine;
-- product completion cannot be inferred from planning evidence.
+- schema source of truth: `packages/schemas/` and adjacent registry schemas;
+- current versus future repository paths: separated by `docs/implementation/REPOSITORY_LAYOUT.md`;
+- implementation entrance: explicit user approval under P-1104;
+- first future implementation work: validated contract workspaces, then the synthetic secure spine;
+- planning evidence is not product completion.
 
-No remaining P0/P1 planning contradiction was found in the hardened authority, schema, registry, protocol, governance or execution-thread layers.
+No remaining P0/P1 planning contradiction was found in the authority, schema, registry, protocol, governance or execution-thread layers.
 
 ## Evidence boundary
 
-This pass proves that the planning artifacts are internally parseable, cross-referenced and sufficiently complete to hand off. It does not prove runtime correctness, cryptographic interoperability, adapter compatibility, performance, platform isolation, packaging, deployment, security hardening, operational recovery or launch readiness. Those remain implementation and launch evidence gates.
+This pass proves the planning artifacts are internally parseable, cross-referenced and sufficiently complete to hand off. It does not prove runtime correctness, cryptographic interoperability, adapter compatibility, performance, platform isolation, packaging, deployment, security hardening, operational recovery or launch readiness. Those remain implementation and launch evidence gates.

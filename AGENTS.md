@@ -8,21 +8,20 @@ Before changing anything:
 
 1. Confirm the repository is `vedant-simulacrum/vibemaxxing` or an authorized fork.
 2. Resolve root, default branch, current branch, working-tree state, current issue/PR, linked issue, and unresolved review threads.
-3. Run `python3 scripts/repository/doctor.py` from a clean checkout. Do not continue past a failure without repairing or explicitly documenting it.
-4. Read, in order: `docs/project/PROJECT.md`, `docs/project/STATUS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, then the relevant ADRs, schemas, and subsystem contracts.
-5. Read `docs/implementation/IMPLEMENTATION_HANDOFF.md` and `PR_SIZED_WORK_BREAKDOWN.md` only for implementation planning or after explicit implementation authorization.
+3. Run `python3 scripts/repository/doctor.py` from a clean checkout. Do not continue past a failure without repairing or documenting it.
+4. Read, in order: `docs/project/PROJECT.md`, `docs/project/STATUS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, then relevant ADRs, schemas, and subsystem contracts.
+5. Read the implementation handoff and PR work breakdown only for implementation planning or after explicit implementation authorization.
 6. Use `docs/research/README.md` to locate only research relevant to the active decision.
 
 Do not treat chat history, generated indexes, stale branches, external notes, another repository, or unexecuted fixtures as authority.
 
 ## Current phase
 
-The current phase is defined only by `docs/project/STATUS.md`. The repository is in **planning-hardening**:
+The current phase is defined only by `docs/project/STATUS.md`.
 
-- product implementation has not begun;
-- implementation requires a later explicit user instruction after P-1120 through P-1128 pass;
-- allowed work includes schemas, ADRs, contract repair, validation, governance, issue preparation, research, review, and evidence planning;
-- do not write product code, deploy infrastructure, activate product security/release automation, or claim executable evidence.
+Technical planning is complete at validated contract level. Product implementation has not begun and requires a later explicit user instruction under P-1104.
+
+Allowed planning work includes targeted current research, external review, contract refinement, issue preparation, and evidence-plan maintenance tied to a concrete new fact, requirement, or contradiction. Do not restart broad planning without such a trigger. Do not write product code, deploy infrastructure, activate product security/release automation, or claim implementation evidence.
 
 ## Binding rules
 
@@ -49,46 +48,35 @@ Do not add Kubernetes, Kafka, GraphQL, service mesh, workflow engines, vector da
 
 ## Repository and dependency discipline
 
-- Use the exact upstream repository named by a contract, lockfile, manifest, ADR, or issue.
+- Use exact upstreams named by a contract, lockfile, manifest, ADR, or issue.
 - Verify ownership, license, release status, maintenance, compatibility, security posture, update path, and removal plan before adoption.
 - Prefer official upstreams and primary documentation.
-- Do not fork or vendor merely to avoid understanding integration; forks require an ADR, divergence policy, update strategy, and exit plan.
-- Pin toolchains and dependencies. Avoid overlapping libraries for the same responsibility.
-- `docs/implementation/REPOSITORY_LAYOUT.md` distinguishes current paths from approved future paths. Never treat a future path as existing.
+- Forks require an ADR, divergence policy, update strategy, and exit plan.
+- Pin toolchains and dependencies; avoid overlapping libraries for the same responsibility.
+- `docs/implementation/REPOSITORY_LAYOUT.md` distinguishes current paths from future paths.
 
 ## Schema and policy discipline
 
 - Authoritative schemas live in `packages/schemas/`; update them before dependent business logic.
 - Generated bindings originate from authoritative schemas; do not hand-maintain parallel types.
 - Stable reasons come from `reason-codes-v1.json`; configurable defaults come from `policy-defaults-v1.json`.
-- Registry entries must validate against their adjacent schema and may not imply exercised support when certifications are empty.
-- Database constraints, idempotency, migrations, corrections, rebuilds, deletion, recovery and rollback are correctness requirements.
+- Registries validate against adjacent schemas and may not imply exercised support when certifications are empty.
+- Database constraints, idempotency, migrations, corrections, rebuilds, deletion, recovery, and rollback are correctness requirements.
 
 ## Work and thread discipline
 
-Planning work must map to a user instruction, issue/review thread, task P-1120..P-1128, decision, or concrete contract defect. Broad replanning without a discovered defect is prohibited.
+Planning work must map to a user instruction, issue/review thread, decision, or concrete contract defect. After implementation authorization, use `PR_SIZED_WORK_BREAKDOWN.md` in dependency order and generate GitHub threads through `docs/implementation/ISSUE_GENERATION.md`.
 
-After implementation authorization, use `PR_SIZED_WORK_BREAKDOWN.md` in order. `docs/implementation/ISSUE_GENERATION.md` defines how GitHub issues are generated without duplicating task authority.
-
-Read complete issue and PR conversations. Durable conclusions must be merged into canonical docs, ADRs, schemas, or registries. Comments and hidden branches are never the sole home of a decision.
+Read complete issue and PR conversations. Durable conclusions belong in canonical docs, ADRs, schemas, or registries—not only comments or hidden branches.
 
 ## Documentation ownership
 
-Use `docs/project/DOCUMENTATION.md` to locate the single normative owner. When duplicate information appears: choose the owner, merge unique content, repair links, delete the duplicate, and record material changes in the decision register.
+Use `docs/project/DOCUMENTATION.md` to locate the single normative owner. When duplicates appear: choose the owner, merge unique content, repair links, delete the duplicate, and record material changes.
 
-Never create another project context, current status, start prompt, implementation roadmap, duplicate architecture summary, or numbered research wave.
+Never create another project context, status file, start prompt, implementation roadmap, duplicate architecture summary, or numbered research wave.
 
 ## Completion report
 
-Report:
-
-1. phase and task/decision IDs;
-2. files and threads inspected;
-3. files changed, created, moved, or deleted;
-4. decisions and contradictions resolved;
-5. validations actually run;
-6. privacy, security, schema, migration, compatibility and rollback impact;
-7. remaining risks or blocked evidence;
-8. next unblocked task without silently changing phase.
+Report the phase and IDs, files/threads inspected, changes, decisions resolved, validations actually run, privacy/security/schema/migration/compatibility impact, remaining risks, and next unblocked task without silently changing phase.
 
 Specifications, mocks, placeholders, skipped checks, empty fixtures, and unexecuted tests are not implementation evidence.
