@@ -1,8 +1,16 @@
 {
   "schema_version": 1,
-  "registry_version": "1.0.0-planning",
+  "registry_version": "1.1.0-planning",
   "selection_status": "prelaunch-pending",
   "selection_window_days": 30,
-  "selection_method": "Rolling weighted selection: 40 percent observed usage, 30 percent agent and coding relevance, 20 percent capability relevance, and 10 percent provider and deployment diversity, subject to provider concentration and open-weight representation constraints.",
+  "selection_policy_version": "t20-selection-v1-draft",
+  "selection_method": "Rolling weighted selection uses deduplicated eligible competitive usage, agent and coding relevance, capability relevance, and provider and deployment diversity. A valid run additionally requires recorded dataset provenance, privacy thresholds, minimum sample size, missing-data treatment, normalization, confidence, deterministic tie handling, concentration constraints, and approval.",
+  "prelaunch_limitations": [
+    "VibeMaxxing does not yet have representative competitive usage from which to calculate a production T20 cohort.",
+    "External datasets may nominate candidates but cannot establish measured VibeMaxxing usage coverage or launch readiness.",
+    "No model family, endpoint, agent, runtime, capture path, platform, evidence class, or accounting profile is currently certified."
+  ],
+  "selection_runs": [],
+  "accounting_profiles": [],
   "slots": []
 }

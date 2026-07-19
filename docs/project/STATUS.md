@@ -4,22 +4,31 @@ Updated: 2026-07-19
 
 ## Phase
 
-The repository remains in **planning mode**. Technical planning is complete at validated contract level. Product implementation has not begun and is not authorized.
+The repository remains in **planning mode**. Broad technical planning previously passed validated contract checks, but targeted T20 hardening is reopened under issue #12 after a post-validation audit found unresolved selection, evidence, accounting and coverage semantics. Further product implementation is not authorized.
 
-Planning-hardening closed the previously identified schema, registry, protocol-edge, governance, repository-validation, API-coverage and data-model gaps. The complete planning workflow passed in a fresh GitHub-hosted checkout; evidence is recorded in `docs/planning/PLANNING_HARDENING_VALIDATION_REPORT.md`.
+One bounded fixture-backed hosted-web slice exists and is classified as a **runnable prototype**. It is not production implementation, backend integration, launch evidence, or authorization to continue implementation.
 
 ## Readiness
 
 - Product direction and complete launch scope: complete at planning level.
-- Architecture and subsystem behavior: complete at planning-contract level.
-- Planning-grade schemas and registries: validated.
+- Architecture and subsystem behavior outside the reopened T20 scope: complete at planning-contract level.
+- Planning-grade schemas and registries: previously validated; T20 registry/schema require renewed validation after repair.
 - Protocol batch/recovery and policy defaults: closed through ADR-007 and ADR-008.
 - Governance and licensing consistency: closed through ADR-009.
-- Repository doctor, OpenAPI, CDDL, Protobuf, PostgreSQL DDL and coverage validation: passed.
-- Implementation: not started and not authorized.
+- Repository doctor, OpenAPI, CDDL, Protobuf, PostgreSQL DDL and coverage validation: previously passed.
+- T20 selection, source-bound evidence, multidimensional certification and accounting profiles: targeted planning hardening in progress.
+- Implementation: only the explicitly bounded fixture-backed web prototype exists; no backend, collector, protocol runtime, identity service, ranking service, storage, deployment or production implementation exists.
 - Competitive beta and public launch: no-go pending executable evidence.
 
-Planning artifacts are not working code, cryptographic interoperability evidence, certified adapter support, validated performance, deployed infrastructure, security hardening or launch evidence.
+Planning artifacts and runnable prototypes are not working production systems, cryptographic interoperability evidence, certified adapter support, validated performance, deployed infrastructure, security hardening or launch evidence.
+
+## Artifact maturity
+
+1. **Specification** — normative intended behavior without executable proof.
+2. **Mock** — static or illustrative design artifact.
+3. **Runnable prototype** — executable exploratory work using fixtures or incomplete integrations; non-normative unless separately adopted.
+4. **Production implementation** — integrated product code satisfying accepted contracts and implementation gates.
+5. **Executable evidence** — reproducible test, conformance, benchmark, security or operational output supporting a specific claim.
 
 ## Canonical entrypoints
 
@@ -38,4 +47,4 @@ Read-only planning validation may run. Product build, dependency, security, fuzz
 
 ## Current gate
 
-P-1104 is the only implementation entrance gate: a later explicit user instruction. The repository may remain in planning mode for targeted research, external review and contract refinement without reopening broad planning unless a concrete new requirement, changed fact or contradiction appears.
+P-1130A through P-1130E must close the targeted T20 contradiction. P-1104 remains the only entrance gate for further product implementation and still requires a later explicit user instruction.
