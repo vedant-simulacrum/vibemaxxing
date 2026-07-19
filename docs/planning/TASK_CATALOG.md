@@ -24,17 +24,12 @@ A task is `complete-planning` only when normative behavior and required planning
 | P-1001..1006 | packages, updates, observability, deployment, recovery and open-source governance | complete-planning | operations contract, ADR-009 and allowlist |
 | P-1110..1114 | benchmarks, review lenses, work decomposition, defaults and consolidation | complete-planning | corresponding planning documents |
 | P-1120..1128 | schema hardening, registry repair, validation, governance, repository doctor and final audit | complete-planning | planning-hardening validation report and successful workflow |
-| P-1130F | Define repository artifact maturity taxonomy and classify existing fixture-backed web work | complete-planning | D-047, status/manual/README and `apps/web/README.md` |
-
-## Reopened targeted planning hardening
-
-| ID | Task | Status | Dependency / completion evidence |
-|---|---|---|---|
-| P-1130A | Define the T20 certification tuple and measurable coverage matrix across exact endpoint, runtime, mode, capture path, platform, architecture and accounting profile | in-progress-planning | normative contract and schema agree |
-| P-1130B | Define source-bound evidence classes, trust roots, replay binding and downgrade rules | blocked-planning | depends on P-1130A |
-| P-1130C | Define a reproducible privacy-safe T20 selection algorithm, eligible population, dataset weighting, deduplication, normalization, confidence and tie handling | blocked-planning | depends on P-1130A |
-| P-1130D | Define provider/API/version accounting profiles and precedence across provider, runtime, gateway and deterministic estimates | blocked-planning | depends on P-1130B |
-| P-1130E | Add registry fixtures and validation proving the repaired contract and close D-045/D-046 | blocked-planning | depends on P-1130A..D |
+| P-1130A | exact T20 certification tuple and usage-weighted coverage matrix | complete-planning | T20 certification/selection specification, registry schema and validator |
+| P-1130B | source-bound evidence classes, trust precedence, replay binding and downgrade rules | complete-planning | T20 certification/selection specification and evidence-class schema fields |
+| P-1130C | reproducible privacy-safe T20 selection algorithm and deterministic tie handling | complete-planning | selection-run schema, canonical pending registry and T20 specification |
+| P-1130D | provider/API/version accounting profiles and source precedence | complete-planning | accounting-profile schema and T20 specification |
+| P-1130E | fixtures and validation proving the repaired T20 planning contract | complete-planning | valid/invalid optimization fixtures, dedicated validator and completion report |
+| P-1130F | repository artifact maturity taxonomy and classification of existing fixture-backed web work | complete-planning | D-047, status/manual/README and `apps/web/README.md` |
 
 ## Evidence-gated future tasks
 
@@ -43,8 +38,8 @@ A task is `complete-planning` only when normative behavior and required planning
 | P-1007 | Restore and prove product CI, security, dependency, eval and release checks | blocked-implementation | requires executable product code |
 | P-1104 | Enter implementation phase | blocked-approval | requires a later explicit user instruction |
 | P-1105 | Comprehensive public-launch readiness review | blocked-launch-evidence | requires implemented system and passing evidence |
-| P-1131 | Select the current T20 cohort and produce non-expired bespoke Hardened certifications for all 20 slots | blocked-launch-evidence | requires completed P-1130A..E, real usage inputs, exact provider versions, adapters, fixtures and exercised conformance |
+| P-1131 | Select the current T20 cohort and produce non-expired bespoke optimized Hardened certifications for all 20 slots | blocked-launch-evidence | requires real usage inputs, exact provider versions, implemented adapters, coverage matrices, benchmark results and exercised conformance |
 
 ## Current conclusion
 
-The repository remains in planning mode. Broad planning is not reopened, but targeted T20 hardening is active because a post-validation audit found a new P0/P1 contradiction. The fixture-backed web application is a bounded runnable prototype, not production implementation or executable product evidence. P-1104 remains the only entrance to further product implementation.
+Technical planning is complete at validated contract level, including the targeted T20 hardening work. The repository remains in planning mode. P-1104 is the only entrance to further product implementation and requires explicit user authorization. Public launch is additionally blocked until P-1131 produces real evidence; generic compatibility cannot substitute for an optimized T20 Hardened slot.
