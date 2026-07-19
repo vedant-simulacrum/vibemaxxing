@@ -1,6 +1,6 @@
 # Competitive Ledger UI Foundations
 
-Status: approved foundations; first leaderboard bento baseline approved for Storybook fidelity work
+Status: approved foundations; Leaderboard First baseline approved for final reference review
 
 ## 1. Purpose
 
@@ -93,7 +93,7 @@ Radii:
 - Font source, license links, logo-construction font identity, and pinned checksum are recorded in `assets/brand/FONT_PROVENANCE.md`.
 - Use sentence case for headings and controls.
 - Use uppercase tracked eyebrows sparingly.
-- Use tabular numerals for ranks, tokens, money, percentages, dates, and movement.
+- Use Inter tabular figures for comparable token totals, money, percentages, dates, and movement. Reserve the technical monospace stack for ranks, model identifiers, and code-like values whose identity benefits from fixed-width glyphs.
 - Align comparable numbers on the decimal or right edge.
 - Use abbreviated values in dense views and expose exact values on focus, hover, or detail.
 - Do not animate counters continuously.
@@ -189,4 +189,4 @@ Page design proceeds through visible review:
 6. Implement only after explicit visual approval.
 7. Validate against the mock-up at target viewport sizes before merge.
 
-The approved first-screen composition is recorded in `docs/style-guide/LEADERBOARD_BENTO_BASELINE.md`. It is canonical as a visual baseline, not yet as a production component API or application route.
+The approved first-screen composition is recorded in `docs/style-guide/LEADERBOARD_FIRST_BASELINE.md`. Its general direction and implementation measurements are canonical; it is not yet a production component API or application route. The earlier bento Storybook prototype is superseded history.

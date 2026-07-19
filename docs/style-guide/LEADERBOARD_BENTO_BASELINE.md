@@ -1,6 +1,8 @@
-# Approved Leaderboard Bento Baseline
+# Superseded Leaderboard Bento Baseline
 
-Status: approved visual baseline; Storybook fidelity prototype; not production implementation
+Status: superseded by [`LEADERBOARD_FIRST_BASELINE.md`](LEADERBOARD_FIRST_BASELINE.md); retained as prototype history
+
+> Do not implement new product work from this document or its screenshots. The approved general direction, typography, spacing, and table contract now live in `LEADERBOARD_FIRST_BASELINE.md`.
 
 Approved: 2026-07-19
 
@@ -16,7 +18,7 @@ Coded render previews:
 
 ## Decision
 
-The light-mode bento leaderboard is the canonical starting point for the first VibeMaxxing product screen. It replaces the rejected Signal Ledger, Trackside, and Duel explorations as the direction from which future screen and component work proceeds.
+This light-mode bento leaderboard was the canonical starting point during the initial fidelity phase. It replaced the rejected Signal Ledger, Trackside, and Duel explorations, and was later superseded by the quieter Leaderboard First direction.
 
 This approval locks the visual grammar and information hierarchy, not production readiness. The current Storybook recreation uses static fixture data and local interaction state only. It deliberately contains no backend requests, authentication, routing, analytics, persistence, real-time transport, or product authorization logic.
 
