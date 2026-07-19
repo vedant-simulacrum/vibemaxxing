@@ -1,20 +1,61 @@
 {
-  "$schema":"https://json-schema.org/draft/2020-12/schema",
-  "$id":"https://vibemaxxing.dev/schemas/agent-registry-v1.json",
-  "type":"object",
-  "additionalProperties":false,
-  "required":["schema_version","registry_version","support_tiers","families","products","publication_rule"],
-  "properties":{
-    "schema_version":{"const":1},
-    "registry_version":{"type":"string"},
-    "support_tiers":{"type":"array","uniqueItems":true,"items":{"enum":["hardened-certified","competitive-certified","community-certified","generic-live","imported","unsupported"]}},
-    "families":{"type":"array","items":{"$ref":"#/$defs/family"}},
-    "products":{"type":"array","items":{"$ref":"#/$defs/product"}},
-    "publication_rule":{"type":"string","minLength":20}
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/agent-registry-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_version", "support_tiers", "families", "products", "publication_rule"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "registry_version": {"type": "string", "minLength": 1},
+    "support_tiers": {
+      "type": "array",
+      "minItems": 6,
+      "uniqueItems": true,
+      "items": {"enum": ["hardened-certified", "competitive-certified", "community-certified", "generic-live", "imported", "unsupported"]}
+    },
+    "families": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/family"}},
+    "products": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/product"}},
+    "publication_rule": {"type": "string", "minLength": 20}
   },
-  "$defs":{
-    "family":{"type":"object","additionalProperties":false,"required":["id","generic_capture_paths","examples"],"properties":{"id":{"type":"string","pattern":"^[a-z0-9]+(?:-[a-z0-9]+)*$"},"generic_capture_paths":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","pattern":"^[a-z0-9]+(?:-[a-z0-9]+)*$"}},"examples":{"type":"array","items":{"type":"string"}}}},
-    "certification":{"type":"object","additionalProperties":false,"required":["version","mode","platform","tier","suite_version","result","tested_at","fixture_ref","maintainer"],"properties":{"version":{"type":"string"},"mode":{"type":"string"},"platform":{"enum":["macos","windows","linux","wsl","container","ci","remote"]},"tier":{"type":"string"},"suite_version":{"type":"string"},"result":{"enum":["pass","fail","expired"]},"tested_at":{"type":"string","format":"date-time"},"fixture_ref":{"type":"string"},"maintainer":{"type":"string"}}},
-    "product":{"type":"object","additionalProperties":false,"required":["id","family","planning_status","target_tier","certifications"],"properties":{"id":{"type":"string","pattern":"^[a-z0-9]+(?:-[a-z0-9]+)*$"},"family":{"type":"string"},"planning_status":{"enum":["research-required","specified","certification-planned"]},"target_tier":{"type":"string"},"certifications":{"type":"array","items":{"$ref":"#/$defs/certification"}}}}
+  "$defs": {
+    "tier": {"enum": ["hardened-certified", "competitive-certified", "community-certified", "generic-live", "imported", "unsupported"]},
+    "family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "generic_capture_paths", "examples"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "generic_capture_paths": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}},
+        "examples": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "certification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "mode", "platform", "tier", "suite_version", "result", "tested_at", "fixture_ref", "maintainer"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "mode": {"enum": ["native-event", "extension-api", "official-hook", "otel", "proxy", "wrapper", "live-log", "provider-receipt", "import"]},
+        "platform": {"enum": ["macos", "windows", "linux", "wsl", "container", "ci", "remote"]},
+        "tier": {"$ref": "#/$defs/tier"},
+        "suite_version": {"type": "string", "minLength": 1},
+        "result": {"enum": ["pass", "fail", "expired"]},
+        "tested_at": {"type": "string", "format": "date-time"},
+        "fixture_ref": {"type": "string", "minLength": 1},
+        "maintainer": {"type": "string", "minLength": 1}
+      }
+    },
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "family", "planning_status", "target_tier", "certifications"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "family": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "planning_status": {"enum": ["research-required", "specified", "certification-planned"]},
+        "target_tier": {"$ref": "#/$defs/tier"},
+        "certifications": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/certification"}}
+      }
+    }
   }
 }
