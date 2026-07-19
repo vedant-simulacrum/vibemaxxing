@@ -159,8 +159,8 @@ function ComparisonChart() {
         <span className="vm-bento-y y100">100M</span><span className="vm-bento-y y75">75M</span><span className="vm-bento-y y50">50M</span><span className="vm-bento-y y25">25M</span><span className="vm-bento-y y0">0</span>
         <svg viewBox="0 0 320 150" preserveAspectRatio="none" aria-hidden="true">
           <g className="vm-bento-grid"><line x1="0" y1="8" x2="320" y2="8"/><line x1="0" y1="43" x2="320" y2="43"/><line x1="0" y1="78" x2="320" y2="78"/><line x1="0" y1="113" x2="320" y2="113"/><line x1="0" y1="148" x2="320" y2="148"/></g>
-          <polyline className="vm-bento-line is-user" points="0,116 18,106 36,101 54,102 72,85 90,79 108,82 126,67 144,61 162,68 180,62 198,51 216,49 234,48 252,36 270,38 288,27 306,26 320,20"/>
-          <polyline className="vm-bento-line is-rival" points="0,136 18,128 36,119 54,113 72,103 90,104 108,94 126,84 144,87 162,77 180,73 198,66 216,60 234,58 252,52 270,47 288,43 306,38 320,34"/>
+          <polyline className="vm-bento-line is-user" points="0,89 18,81 36,77 54,77 72,64 90,58 108,60 126,49 144,44 162,47 180,39 198,37 216,31 234,30 252,19 270,20 288,9 306,8 320,5"/>
+          <polyline className="vm-bento-line is-rival" points="0,112 18,105 36,98 54,92 72,84 90,84 108,76 126,69 144,72 162,65 180,62 198,58 216,54 234,53 252,49 270,45 288,42 306,38 320,34"/>
         </svg>
         <div className="vm-bento-x"><span>7d ago</span><span>5d ago</span><span>3d ago</span><span>1d ago</span><span>Today</span></div>
       </div>
@@ -191,7 +191,7 @@ export function LeaderboardBentoPrototype() {
       <main className="vm-bento-shell">
         <div className="vm-bento-summary">
           <IdentityTile />
-          <MetricTile label="Your rank" detail={<Movement value={3} />}>#07</MetricTile>
+          <MetricTile label="Your rank"><span>#07</span><Movement value={3} /></MetricTile>
           <MetricTile label="Burn today" detail="tokens">86.4M</MetricTile>
           <MetricTile label="Top model">GPT-5.4</MetricTile>
           <RivalTile />
