@@ -14,6 +14,9 @@ REQUIRED = [
     "docs/project/PROJECT.md", "docs/project/STATUS.md", "docs/project/DOCUMENTATION.md",
     "docs/planning/DECISION_REGISTER.md", "docs/planning/TASK_CATALOG.md",
     "docs/planning/PLANNING_HARDENING_VALIDATION_REPORT.md",
+    "docs/planning/T20_PLANNING_COMPLETION_REPORT.md",
+    "docs/integrations/T20_MODEL_HARDENING_CONTRACT.md",
+    "docs/integrations/T20_CERTIFICATION_AND_SELECTION_SPEC.md",
     "docs/implementation/IMPLEMENTATION_HANDOFF.md", "docs/implementation/PR_SIZED_WORK_BREAKDOWN.md",
     "docs/implementation/REPOSITORY_LAYOUT.md", "docs/implementation/ISSUE_GENERATION.md",
     "docs/decisions/ADR-007-BATCH_CHALLENGE_AND_SEQUENCE_RECOVERY.md",
@@ -26,6 +29,11 @@ REQUIRED = [
     "packages/schemas/policy-defaults-v1.json", "packages/schemas/observability-allowlist-v1.yaml",
     "conformance/adapters/agent-registry-v1.json", "conformance/adapters/agent-registry-v1.schema.json",
     "conformance/adversarial/anti-cheat-registry-v1.json", "conformance/adversarial/anti-cheat-registry-v1.schema.json",
+    "conformance/models/t20-model-registry-v1.json", "conformance/models/t20-model-registry-v1.schema.json",
+    "conformance/models/t20-optimization-evidence-v1.schema.json",
+    "conformance/models/fixtures/t20-optimization-evidence.valid.json",
+    "conformance/models/fixtures/t20-optimization-evidence.invalid-pass.json",
+    "scripts/repository/validate_t20_contract.py",
 ]
 
 FORBIDDEN = [
@@ -42,7 +50,7 @@ CORE_DOCS = [
 ]
 PATH_TOKEN = re.compile(r"`((?:\.?\.?/)?[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+)`")
 DECISION = re.compile(r"\bD-\d{3}\b")
-TASK = re.compile(r"\bP-\d{3,4}\b")
+TASK = re.compile(r"\bP-\d{3,4}[A-Z]?\b")
 
 
 def load_json(path: str) -> object:
@@ -91,15 +99,27 @@ def main() -> None:
                 errors.append(f"unregistered task reference: {doc}: {task}")
 
     status = (ROOT / "docs/project/STATUS.md").read_text(encoding="utf-8")
-    if "Technical planning is complete at validated contract level" not in status:
-        errors.append("status must state validated technical planning completion")
+    if "Technical planning, including the targeted T20 golden-path hardening, is complete" not in status:
+        errors.append("status must state completed T20 planning hardening")
     if "P-1104" not in status:
         errors.append("status must identify P-1104 as the implementation entrance gate")
-    if "D-045" not in decisions_text:
-        errors.append("decision register must contain D-045 planning completion decision")
-    for task in ("P-1120", "P-1126", "P-1128"):
+    for decision in ("D-045", "D-046"):
+        if not re.search(rf"\| {decision} \|.*\| accepted \|", decisions_text):
+            errors.append(f"decision register must accept {decision}")
+    for task in ("P-1120", "P-1126", "P-1128", "P-1130A", "P-1130B", "P-1130C", "P-1130D", "P-1130E"):
         if not re.search(rf"\| {task} \|.*\| complete-planning \|", tasks_text):
             errors.append(f"task catalog must close {task} as complete-planning")
+    if not re.search(r"\| P-1104 \|.*\| blocked-approval \|", tasks_text):
+        errors.append("P-1104 must remain blocked-approval")
+    if not re.search(r"\| P-1131 \|.*\| blocked-launch-evidence \|", tasks_text):
+        errors.append("P-1131 must remain blocked-launch-evidence")
+
+    t20_registry = load_json("conformance/models/t20-model-registry-v1.json")
+    if t20_registry.get("selection_status") != "prelaunch-pending":
+        errors.append("planning-phase T20 registry must remain prelaunch-pending")
+    for key in ("slots", "selection_runs", "accounting_profiles"):
+        if t20_registry.get(key):
+            errors.append(f"planning-phase T20 registry must not claim {key}")
 
     codeowners = (ROOT / ".github/CODEOWNERS").read_text(encoding="utf-8")
     if any(marker in codeowners for marker in ("@security-owner", "@protocol-owner", "@infra-owner", "Replace with real")):
@@ -146,6 +166,8 @@ def main() -> None:
         "packages/schemas/openapi-v1.yaml": "openapi: 3.1.0",
         "packages/schemas/planning-schema.sql": "create table claims",
         "packages/schemas/observability-allowlist-v1.yaml": "policy: deny-by-default",
+        "docs/integrations/T20_MODEL_HARDENING_CONTRACT.md": "T20 is the product's **golden path**",
+        "docs/integrations/T20_CERTIFICATION_AND_SELECTION_SPEC.md": "Source precedence within one duplicate domain",
     }
     for path, marker in structural.items():
         if marker not in (ROOT / path).read_text(encoding="utf-8"):
