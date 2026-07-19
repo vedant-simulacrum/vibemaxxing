@@ -23,15 +23,8 @@ A task is `complete-planning` only when normative behavior and required planning
 | P-901..905 | routes, states, privacy UX, evidence presentation and accessibility | complete-planning | social/UX and native contracts |
 | P-1001..1006 | packages, updates, observability, deployment, recovery and open-source governance | complete-planning | operations contract, ADR-009 and allowlist |
 | P-1110..1114 | benchmarks, review lenses, work decomposition, defaults and consolidation | complete-planning | corresponding planning documents |
-| P-1120 | Planning-grade JSON Schema, CDDL, Protobuf, OpenAPI, SQL, reason, policy and observability artifacts | complete-planning | full validator and coverage gate passed in workflow run 29666625336 |
-| P-1121 | Repair adversarial and adapter registries with schemas and consistent vocabularies | complete-planning | schema-backed canonical registries; obsolete registry removed |
-| P-1122 | Close challenge batching, partial acceptance, sequence-gap and recovery semantics | complete-planning | ADR-007 plus claim, API and SQL contracts |
-| P-1123 | Centralize configurable defaults, ranges, ownership, versioning and retroactivity | complete-planning | ADR-008 and policy registry |
-| P-1124 | Resolve license, contribution, security reporting and CODEOWNERS contradictions | complete-planning | ADR-009 and public governance files |
-| P-1125 | Distinguish current repository tree from approved future tree | complete-planning | `REPOSITORY_LAYOUT.md` and implementation handoff |
-| P-1126 | Add and execute read-only repository doctor | complete-planning | clean GitHub-hosted checkout passed in workflow run 29666625336 |
-| P-1127 | Define deterministic issue-generation plan without duplicating task authority | complete-planning | issue-generation contract and validated 52-unit plan |
-| P-1128 | Re-run full planning-hardening audit | complete-planning | `PLANNING_HARDENING_VALIDATION_REPORT.md` and successful final workflow |
+| P-1120..1128 | schema hardening, registry repair, validation, governance, repository doctor and final audit | complete-planning | planning-hardening validation report and successful workflow |
+| P-1130 | Define bespoke Hardened coverage for a rolling top-20 model cohort | complete-planning | D-046, `docs/integrations/T20_MODEL_HARDENING_CONTRACT.md`, and `conformance/models/t20-model-registry-v1.*` |
 
 ## Evidence-gated future tasks
 
@@ -40,7 +33,8 @@ A task is `complete-planning` only when normative behavior and required planning
 | P-1007 | Restore and prove product CI, security, dependency, eval and release checks | blocked-implementation | requires executable product code |
 | P-1104 | Enter implementation phase | blocked-approval | requires a later explicit user instruction |
 | P-1105 | Comprehensive public-launch readiness review | blocked-launch-evidence | requires implemented system and passing evidence |
+| P-1131 | Select the current T20 cohort and produce non-expired bespoke Hardened certifications for all 20 slots | blocked-launch-evidence | requires real usage inputs, exact provider versions, adapters, fixtures and exercised conformance |
 
 ## Current conclusion
 
-Technical planning is complete at validated contract level. The project remains in planning mode until the user explicitly opens implementation under P-1104. Further planning should be targeted research, external review or contract refinement tied to a concrete new fact, requirement or contradiction—not another broad replanning cycle.
+Technical planning is complete at validated contract level. The project remains in planning mode until the user explicitly opens implementation under P-1104. Public launch is additionally blocked until P-1131 passes; generic compatibility cannot substitute for a T20 Hardened slot.
