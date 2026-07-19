@@ -8,7 +8,8 @@ These rules are written for coding agents and apply to every UI change.
 2. Search `packages/ui`, its public exports, and `COMPONENT_INVENTORY.md` for an existing solution.
 3. List the components, patterns, and tokens the proposed screen will reuse.
 4. Identify any missing state or variant before proposing a new component.
-5. Stop for visual approval when the work introduces or materially changes a component appearance or page composition.
+5. Add or update Storybook stories for every affected public component.
+6. Stop for visual approval when the work introduces or materially changes a component appearance or page composition.
 
 ## Generation constraints
 
@@ -21,6 +22,8 @@ These rules are written for coding agents and apply to every UI change.
 - Do not add a new icon style, state color, or responsive breakpoint locally.
 - Do not treat a screenshot as the component API; infer the underlying reusable jobs and states.
 - Do not claim a component exists because it is listed as proposed.
+- Do not use `/style-guide` coverage as a substitute for isolated Storybook stories.
+- Do not implement a second component inside a story or `/style-guide`; both must import the package public API.
 
 ## Reuse decision
 

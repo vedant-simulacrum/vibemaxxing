@@ -47,7 +47,9 @@ Simple primitives may share a module while the library is small. Their public ex
 
 ## Story coverage
 
-An executable catalogue—currently the first-party `/style-guide` route—covers meaningful variants and difficult states, including long text, zero and extreme values, keyboard focus, loading, error, reduced motion, narrow viewport, and high zoom where relevant. Catalogue examples use realistic fixtures without private data. Storybook may replace or consume this catalogue when its additional isolated testing workflow is justified.
+Storybook is the required executable component catalogue. Every public component has stories for meaningful variants and difficult states, including long text, zero and extreme values, keyboard focus, loading, error, reduced motion, narrow viewport, and high zoom where relevant. Stories use realistic fixtures without private data and import only the public `@vibemaxxing/ui` implementation.
+
+The `/style-guide` route is a curated brand reference, not a substitute for isolated stories. It may show representative compositions but is not required to duplicate every engineering state.
 
 ## Accessibility baseline
 

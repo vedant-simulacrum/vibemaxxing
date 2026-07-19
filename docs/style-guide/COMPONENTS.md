@@ -1,6 +1,6 @@
 # Implemented Components
 
-The executable examples live at `/style-guide`. Public components are exported from `@vibemaxxing/ui`.
+The executable state catalogue lives in Storybook under `packages/ui`; the curated brand reference lives at `/style-guide`. Both consume public components exported from `@vibemaxxing/ui`.
 
 | Component | Use when | Do not use when | Contract highlights |
 |---|---|---|---|
@@ -18,4 +18,4 @@ The executable examples live at `/style-guide`. Public components are exported f
 
 ## Shared state coverage
 
-The catalogue renders default, selected, disabled, positive, negative, neutral, Hardened, Standard, Imported, present, absent, token, cash, and responsive ledger states. Loading, empty, error, offline, restricted, and quarantined states remain pattern-level work because the current reference page does not yet implement those product states.
+Storybook renders default, selected, disabled, positive, negative, neutral, Hardened, Standard, Imported, present, absent, token, cash, zero, complete, long-content, and ledger states. Loading, empty, error, offline, restricted, and quarantined states remain pattern-level work because the current implementation does not yet expose those product states.

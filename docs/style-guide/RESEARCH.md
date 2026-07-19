@@ -31,7 +31,7 @@ Sources:
 
 ### The catalogue should be executable
 
-Storybook treats a story as a captured component state and uses stories for documentation, interaction checks, accessibility checks, and visual comparison. VibeMaxxing will use stories as the component catalogue once component implementation is approved rather than maintaining screenshots or prose that can silently diverge from code.
+Storybook treats a story as a captured component state and uses stories for documentation, interaction checks, accessibility checks, and visual comparison. VibeMaxxing uses Storybook as the mandatory isolated component catalogue. The `/style-guide` route remains a curated brand reference, and both surfaces consume the same shared implementation so screenshots or prose cannot silently become a parallel system.
 
 Sources:
 
