@@ -1,7 +1,7 @@
 {
   "$description": "Canonical VibeMaxxing UI token source. Generated CSS and TypeScript must not be edited directly.",
   "tokens": {
-    "color.canvas": "#f4f2ed",
+    "color.canvas": "#fbfaf9",
     "color.surface": "#ffffff",
     "color.surface-subtle": "#faf9f6",
     "color.surface-glass": "rgb(255 255 255 / 93%)",
@@ -79,7 +79,7 @@
     "shadow.control-subtle": "0 1px 1px rgb(20 20 18 / 2.5%)",
     "layout.content-max": "1396px",
     "layout.sidebar-width": "320px",
-    "layout.header-height": "68px",
+    "layout.header-height": "66px",
     "focus.ring": "0 0 0 2px var(--vm-color-indigo)",
     "duration.fast": "120ms",
     "duration.default": "160ms",

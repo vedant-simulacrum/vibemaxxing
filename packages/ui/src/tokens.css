@@ -1,7 +1,7 @@
 /* Generated from tokens.source.json. Do not edit. */
 :root {
   color-scheme: light;
-  --vm-color-canvas: #f4f2ed;
+  --vm-color-canvas: #fbfaf9;
   --vm-color-surface: #ffffff;
   --vm-color-surface-subtle: #faf9f6;
   --vm-color-surface-glass: rgb(255 255 255 / 93%);
@@ -79,7 +79,7 @@
   --vm-shadow-control-subtle: 0 1px 1px rgb(20 20 18 / 2.5%);
   --vm-layout-content-max: 1396px;
   --vm-layout-sidebar-width: 320px;
-  --vm-layout-header-height: 68px;
+  --vm-layout-header-height: 66px;
   --vm-focus-ring: 0 0 0 2px var(--vm-color-indigo);
   --vm-duration-fast: 120ms;
   --vm-duration-default: 160ms;
