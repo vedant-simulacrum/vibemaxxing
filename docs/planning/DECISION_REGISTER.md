@@ -50,8 +50,9 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-042 | Repository remains in planning-hardening until draft schemas, validation, governance and protocol edge semantics pass | superseded | replaced by D-045 after P-1120 through P-1128 passed |
 | D-043 | Protocol v1 uses one challenge per atomic batch; partial acceptance is prohibited; bounded signed gap declarations downgrade continuity | accepted | ADR-007 or protocol-major revision |
 | D-044 | Handle normalization uses Unicode 16.0 NFKC/full case fold/confusable skeleton rules; configurable defaults live in a versioned policy registry | accepted | ADR-008 or proven internationalization failure |
-| D-045 | Technical planning is complete at validated contract level; implementation remains inactive until explicit P-1104 approval | accepted | a new P0/P1 contradiction, requirement change or failed planning validation reopens hardening |
-| D-046 | Public launch requires bespoke non-expired Hardened coverage for a rolling T20 cohort of the 20 most materially relevant model families; generic compatibility cannot satisfy a T20 slot | accepted | explicit product reversal or evidence that the selection method systematically misses material competitive usage |
+| D-045 | Technical planning is complete at validated contract level except for explicitly reopened targeted hardening | provisional | P-1130A through P-1130E pass and no new P0/P1 contradiction remains |
+| D-046 | T20 remains the rolling golden-path engineering cohort, but launch certification is multidimensional and selection/evidence semantics require completed planning validation | research-required | reproducible selection, evidence classes, accounting profiles, coverage thresholds and validator evidence pass |
+| D-047 | Repository artifacts are classified as specification, mock, runnable prototype, production implementation, or executable evidence; the existing fixture-backed web app is a bounded runnable prototype and does not authorize further implementation | accepted | explicit phase change or artifact evidence changes |
 
 ## Register rules
 
