@@ -21,6 +21,9 @@ Run `python3 scripts/repository/doctor.py` before relying on repository state.
 - Accounting: `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
 - Social/integrity/UX: `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
 - Adapter and VibeProof: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
+- Universal agent compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`
+- T20 golden-path requirement: `docs/integrations/T20_MODEL_HARDENING_CONTRACT.md`
+- T20 certification, evidence, selection and accounting semantics: `docs/integrations/T20_CERTIFICATION_AND_SELECTION_SPEC.md`
 - Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`
 - Server/data/ranking: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
 - Privacy/security: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
@@ -47,29 +50,34 @@ Important edge decisions:
 - `policy-defaults-v1.json`
 - `observability-allowlist-v1.yaml`
 
-These are draft normative interfaces, not implemented or toolchain-validated production artifacts.
+These are draft normative interfaces, not implemented or production-proven artifacts.
 
-## Machine registries
+## Machine registries and conformance planning
 
 - Adapter compatibility: `conformance/adapters/agent-registry-v1.json` and adjacent schema.
 - Adversarial cases: `conformance/adversarial/anti-cheat-registry-v1.json` and adjacent schema.
+- T20 model registry: `conformance/models/t20-model-registry-v1.json` and adjacent schema.
+- T20 quantitative optimization evidence: `conformance/models/t20-optimization-evidence-v1.schema.json`.
+- T20 planning fixtures: `conformance/models/fixtures/`.
+- T20 planning validator: `scripts/repository/validate_t20_contract.py`.
 
-An empty certification list means no product-level support claim. Registry status `planned` is not executable evidence.
+An empty certification list means no product-level support claim. Registry status `planned` or `prelaunch-pending` is not executable evidence.
 
 ## Planning control and evidence
 
 - Decisions: `docs/planning/DECISION_REGISTER.md`
 - Tasks and gates: `docs/planning/TASK_CATALOG.md`
+- T20 completion record: `docs/planning/T20_PLANNING_COMPLETION_REPORT.md`
 - Traceability: `docs/planning/TRACEABILITY_AND_DRY_RUN_AUDIT.md`
 - Schema inventory: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
 - Defaults/reversal: `docs/planning/PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`
 - Handoff review: `docs/planning/MOCK_IMPLEMENTATION_HANDOFF_REVIEW.md`
-- Historical exit audit: `docs/planning/FINAL_PLANNING_EXIT_AUDIT.md`; its former PASS is superseded by D-042 and the current status until P-1120..P-1128 pass.
+- Historical exit audit: `docs/planning/FINAL_PLANNING_EXIT_AUDIT.md`; later hardening and completion records supersede stale conclusions where they conflict.
 
 ## Implementation planning
 
 - `docs/implementation/IMPLEMENTATION_HANDOFF.md`: build-order contract.
-- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`: 52 bounded units.
+- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`: bounded implementation units.
 - `docs/implementation/REPOSITORY_LAYOUT.md`: current versus approved future tree.
 - `docs/implementation/ISSUE_GENERATION.md`: deterministic issue-thread contract.
 
