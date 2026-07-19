@@ -47,9 +47,10 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-039 | Initial production architecture is cloud-portable managed containers, PostgreSQL, optional Redis and object storage | accepted | provider ADR during implementation |
 | D-040 | Apache-2.0 for original code, CC BY 4.0 for docs/specs, DCO without CLA initially | accepted | ADR-009; final dependency/counsel review remains release evidence |
 | D-041 | `AGENTS.md` is the sole initialization manual; `docs/project/` owns project authority/status/navigation; implementation planning is limited to one handoff plus one PR work breakdown; research is indexed only through `docs/research/README.md` | accepted | explicit repository-governance change |
-| D-042 | Repository is in planning-hardening until draft schemas, validation, governance, and protocol edge semantics pass | accepted | P-1120 through P-1128 pass |
+| D-042 | Repository remains in planning-hardening until draft schemas, validation, governance and protocol edge semantics pass | superseded | replaced by D-045 after P-1120 through P-1128 passed |
 | D-043 | Protocol v1 uses one challenge per atomic batch; partial acceptance is prohibited; bounded signed gap declarations downgrade continuity | accepted | ADR-007 or protocol-major revision |
 | D-044 | Handle normalization uses Unicode 16.0 NFKC/full case fold/confusable skeleton rules; configurable defaults live in a versioned policy registry | accepted | ADR-008 or proven internationalization failure |
+| D-045 | Technical planning is complete at validated contract level; implementation remains inactive until explicit P-1104 approval | accepted | a new P0/P1 contradiction, requirement change or failed planning validation reopens hardening |
 
 ## Register rules
 
