@@ -19,17 +19,17 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-011 | Deterministic CBOR + CDDL + COSE_Sign1 for signed public claims | accepted | conformance failure requiring a protocol ADR |
 | D-012 | Final Rust CBOR/COSE implementation crates are selected during implementation bakeoff behind an internal boundary | research-required | malformed, fuzz, differential and resource tests pass |
 | D-013 | OS-specific isolation; never claim equal sandbox strength | accepted | platform evidence changes |
-| D-014 | Local IPC combines OS peer identity, ACLs, challenge-response, versioning and limits | accepted | attack laboratory disproves design |
+| D-014 | Local IPC combines OS peer identity, ACLs, challenge-response, versioning and limits | accepted | adversarial validation disproves design |
 | D-015 | Device identities are revocable Ed25519 public keys with sequence/hash continuity and explicit rotation | accepted | cryptographic or platform evidence requires revision |
 | D-016 | Passkeys are mandatory primary authentication | superseded | replaced by D-028 |
 | D-017 | Append-only claim ledger + transactional outbox + idempotent aggregates | accepted | benchmark or correctness failure |
 | D-018 | Competition ranking uses SQL `rank()` gaps, with stable display tie-breakers | accepted | user testing or simulation demonstrates material harm |
 | D-019 | Pricing uses immutable versioned datasets with provenance and effective dates | accepted | evidence-backed ADR |
-| D-020 | Country boards use user assertions, change cooldowns, optional stronger evidence and minimum-cohort privacy thresholds | accepted | privacy or abuse evidence requires revision |
-| D-021 | Anti-abuse is progressive, appealable and does not require government ID by default | accepted | severe integrity evidence |
+| D-020 | Country boards use user assertions, change cooldowns, optional stronger evidence and minimum-cohort privacy thresholds | accepted | privacy or integrity evidence requires revision |
+| D-021 | Integrity enforcement is progressive, appealable and does not require identity documents by default | accepted | severe integrity evidence |
 | D-022 | Public support claims are generated from an exercised adapter registry | accepted | none |
 | D-023 | Three named CLI adapters are the complete launch scope | superseded | replaced by D-030 |
-| D-024 | Secure updater uses TUF and must pass conformance and malicious-metadata tests | accepted | updater ADR |
+| D-024 | Secure updater uses TUF and must pass conformance and hostile-metadata tests | accepted | updater ADR |
 | D-025 | Telemetry is allowlisted and content-bearing fields are forbidden | accepted | never silently reopen |
 | D-026 | Kubernetes, Kafka, GraphQL, service mesh, vector DB, workflow engine and ORM-heavy persistence are excluded absent ADR evidence | accepted | evidence-backed ADR |
 | D-027 | Product implementation requires explicit user phase approval | accepted | explicit user phase change |
@@ -50,9 +50,10 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-042 | Repository remains in planning-hardening until draft schemas, validation, governance and protocol edge semantics pass | superseded | replaced by D-045 after P-1120 through P-1128 passed |
 | D-043 | Protocol v1 uses one challenge per atomic batch; partial acceptance is prohibited; bounded signed gap declarations downgrade continuity | accepted | ADR-007 or protocol-major revision |
 | D-044 | Handle normalization uses Unicode 16.0 NFKC/full case fold/confusable skeleton rules; configurable defaults live in a versioned policy registry | accepted | ADR-008 or proven internationalization failure |
-| D-045 | Technical planning is complete at validated contract level except for explicitly reopened targeted hardening | provisional | P-1130A through P-1130E pass and no new P0/P1 contradiction remains |
-| D-046 | T20 remains the rolling golden-path engineering cohort, but launch certification is multidimensional and selection/evidence semantics require completed planning validation | research-required | reproducible selection, evidence classes, accounting profiles, coverage thresholds and validator evidence pass |
-| D-047 | Repository artifacts are classified as specification, mock, runnable prototype, production implementation, or executable evidence; the existing fixture-backed web app is a bounded runnable prototype and does not authorize further implementation | accepted | explicit phase change or artifact evidence changes |\n| D-048 | Light-mode leaderboard bento is the approved first-screen visual baseline; dark mode and the Signal Ledger, Trackside, and Duel directions are rejected | accepted | explicit visual-direction change after rendered frontend review |
+| D-045 | Technical planning is complete at validated contract level; implementation remains inactive until explicit P-1104 approval | accepted | a new P0/P1 contradiction, requirement change or failed planning validation reopens hardening |
+| D-046 | T20 is the rolling golden-path engineering cohort; each active slot requires exact multidimensional certification plus quantitative optimization evidence, while non-T20 models may use lower honest support tiers | accepted | explicit product reversal or validated evidence that the selection/certification contract systematically misses material competitive usage |
+| D-047 | Repository artifacts are classified as specification, mock, runnable prototype, production implementation, or executable evidence; the existing fixture-backed web app is a bounded runnable prototype and does not authorize further implementation | accepted | explicit phase change or artifact evidence changes |
+| D-048 | Light-mode leaderboard bento is the approved first-screen visual baseline; dark mode and the Signal Ledger, Trackside, and Duel directions are rejected | accepted | explicit visual-direction change after rendered frontend review |
 
 ## Register rules
 
