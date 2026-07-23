@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/egress-allowlist-v1.json",
+  "title": "Outbound Egress Field Registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_id",
+    "default",
+    "fields",
+    "forbidden_classes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "policy_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "default": {
+      "const": "deny"
+    },
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field_id",
+          "wire_type",
+          "max_encoded_bytes",
+          "semantic_owner",
+          "privacy_class",
+          "source_process",
+          "destination",
+          "retention_policy_id",
+          "user_explanation_key",
+          "positive_fixture",
+          "negative_fixture"
+        ],
+        "properties": {
+          "field_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 128
+          },
+          "wire_type": {
+            "enum": [
+              "uint",
+              "uuid7",
+              "digest32",
+              "registered-id",
+              "enum",
+              "boolean",
+              "byte-string"
+            ]
+          },
+          "max_encoded_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65536
+          },
+          "semantic_owner": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 128
+          },
+          "privacy_class": {
+            "const": "L2"
+          },
+          "source_process": {
+            "enum": [
+              "collector",
+              "sync"
+            ]
+          },
+          "destination": {
+            "const": "verifier-api"
+          },
+          "retention_policy_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 128
+          },
+          "user_explanation_key": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 128
+          },
+          "positive_fixture": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 128
+          },
+          "negative_fixture": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    "forbidden_classes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "prompt",
+          "response",
+          "transcript",
+          "code",
+          "diff",
+          "tool-content",
+          "filename",
+          "path",
+          "project-name",
+          "repository-name",
+          "credential",
+          "oauth-token",
+          "cookie",
+          "request-id",
+          "raw-model-alias",
+          "raw-log",
+          "content-hash",
+          "embedding",
+          "summary",
+          "classification",
+          "free-text",
+          "arbitrary-metadata"
+        ]
+      }
+    }
+  }
+}
