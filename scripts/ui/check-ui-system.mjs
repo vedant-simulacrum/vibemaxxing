@@ -21,7 +21,8 @@ for (const required of [
   "packages/ui/src/ui/product-icons.ts",
   "packages/ui/src/concepts/product-storyboards.stories.tsx",
   "packages/ui/src/concepts/product-state-matrix.stories.tsx",
-  "packages/ui/scripts/audit-product-storyboards.mjs",
+  "scripts/ui/playwright-runtime/audit-product-storyboards.mjs",
+  "scripts/ui/playwright-runtime/package-lock.json",
   "packages/ui/scripts/compare-product-storyboards.mjs",
   "apps/web/app/profile/[handle]/page.tsx",
   "apps/web/app/rivals/[handle]/page.tsx",
@@ -117,13 +118,17 @@ const stories = read("packages/ui/src/components.stories.tsx");
 const productStories = read("packages/ui/src/concepts/product-storyboards.stories.tsx");
 const stateMatrixStories = read("packages/ui/src/concepts/product-state-matrix.stories.tsx");
 const packageJson = JSON.parse(read("packages/ui/package.json"));
+const browserRuntime = JSON.parse(read("scripts/ui/playwright-runtime/package.json"));
 const styleGuide = read("apps/web/app/style-guide/page.tsx");
 const workflow = read(".github/workflows/storyboard-visuals.yml");
 
-for (const dependency of ["storybook", "@storybook/react-vite", "@storybook/addon-docs", "@storybook/addon-a11y", "@axe-core/playwright", "playwright", "pixelmatch", "pngjs"]) {
+for (const dependency of ["storybook", "@storybook/react-vite", "@storybook/addon-docs", "@storybook/addon-a11y", "pixelmatch", "pngjs"]) {
   if (!packageJson.devDependencies?.[dependency]) failures.push(`UI dependency ${dependency} is required.`);
 }
-for (const script of ["storybook", "storybook:build", "storybook:compare", "storybook:audit"]) {
+for (const dependency of ["playwright", "@axe-core/playwright"]) {
+  if (!browserRuntime.dependencies?.[dependency]) failures.push(`Locked prototype browser runtime is missing ${dependency}.`);
+}
+for (const script of ["storybook", "storybook:build", "storybook:compare"]) {
   if (!packageJson.scripts?.[script]) failures.push(`packages/ui is missing the ${script} script.`);
 }
 for (const addon of ["@storybook/addon-docs", "@storybook/addon-a11y"]) {
@@ -151,7 +156,7 @@ for (const screen of ["Profile", "Rival", "Friends", "Activity", "Board"]) {
     if (!stateMatrixStories.includes(`export const ${screen}${state}`)) failures.push(`State matrix is missing ${screen}${state}.`);
   }
 }
-for (const required of ["Prototype storyboard visuals", "compare-product-storyboards.mjs", "storybook:audit", "storybook-diffs"]) {
+for (const required of ["Prototype storyboard visuals", "compare-product-storyboards.mjs", "audit-product-storyboards.mjs", "storybook-diffs"]) {
   if (!workflow.includes(required)) failures.push(`Visual workflow is missing ${required}.`);
 }
 
