@@ -133,6 +133,7 @@ const packageJson = JSON.parse(read("packages/ui/package.json"));
 const browserRuntime = JSON.parse(read("scripts/ui/playwright-runtime/package.json"));
 const styleGuide = read("apps/web/app/style-guide/page.tsx");
 const workflow = read(".github/workflows/storyboard-visuals.yml");
+const captureScript = read("packages/ui/scripts/capture-product-storyboards.mjs");
 
 for (const dependency of ["storybook", "@storybook/react-vite", "@storybook/addon-docs", "@storybook/addon-a11y", "pixelmatch", "pngjs"]) {
   if (!packageJson.devDependencies?.[dependency]) failures.push(`UI dependency ${dependency} is required.`);
@@ -176,6 +177,9 @@ for (const required of ["Prototype storyboard visuals", "workflow_dispatch:", "p
 }
 if (/^\s{2}push:/m.test(workflow)) failures.push("Visual workflow must not run on push under ADR-014.");
 if (workflow.includes('"apps/web/**"') || workflow.includes("'apps/web/**'")) failures.push("Visual workflow must not include apps/web/** under ADR-014.");
+for (const candidate of ["candidate-global-leaderboard", "candidate-own-profile-overview", "candidate-own-profile-analytics", "candidate-own-profile-connections", "candidate-own-profile-privacy"]) {
+  if (!captureScript.includes(candidate)) failures.push(`Candidate visual-review capture is missing ${candidate}.`);
+}
 
 const routeContracts = new Map([
   ["apps/web/app/page.tsx", "LeaderboardHubStoryboard"],

@@ -29,6 +29,8 @@ A route, fixture, screenshot, story, or label must never override a binding prod
 
 The candidate batch may be used for implementation review and iteration. It must not move under `Approved baseline/*`, acquire governed reference images, or replace accepted visual baselines until a human explicitly approves its appearance.
 
+Pull-request workflow artifacts include desktop, tablet, and mobile PNGs named `candidate-global-leaderboard-*` and `candidate-own-profile-*`. These are disposable review evidence. They are intentionally excluded from baseline comparison until approval.
+
 ## Leaderboard contract
 
 - Token Burn is always the default ranking metric.
