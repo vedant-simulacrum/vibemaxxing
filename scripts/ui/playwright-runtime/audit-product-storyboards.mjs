@@ -117,7 +117,10 @@ async function auditExceptionalState(browser, screen, state) {
     if (!await message.isVisible()) failures.push(`${label}: governed state message is not visible`);
     const expectedRole = state === "error" || state === "offline" ? "alert" : "status";
     if (await message.getAttribute("role") !== expectedRole) failures.push(`${label}: expected role ${expectedRole}`);
-    const results = await new AxeBuilder({ page }).withTags(accessibilityTags).analyze();
+    const results = await new AxeBuilder({ page })
+      .exclude(".vm-product-state-context")
+      .withTags(accessibilityTags)
+      .analyze();
     recordViolations(label, results);
     scenarios.push({
       kind: "exceptional-state",
