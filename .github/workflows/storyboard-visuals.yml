@@ -5,19 +5,8 @@ name: Prototype storyboard visuals
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "apps/web/**"
-      - "packages/ui/**"
-      - "assets/**"
-      - "scripts/ui/**"
-      - "docs/style-guide/**"
-      - ".github/workflows/storyboard-visuals.yml"
   pull_request:
     paths:
-      - "apps/web/**"
       - "packages/ui/**"
       - "assets/**"
       - "scripts/ui/**"
