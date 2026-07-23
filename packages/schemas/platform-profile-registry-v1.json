@@ -1,0 +1,4041 @@
+{
+  "schema_version": 1,
+  "registry_id": "launch-platform-profiles-2026-07-24",
+  "verified_on": "2026-07-24",
+  "sources": [
+    {
+      "source_id": "apple-macos-tahoe-26",
+      "url": "https://support.apple.com/en-us/122867",
+      "authority": "vendor"
+    },
+    {
+      "source_id": "microsoft-windows-11-25h2",
+      "url": "https://learn.microsoft.com/en-us/windows/whats-new/whats-new-windows-11-version-25h2",
+      "authority": "vendor"
+    },
+    {
+      "source_id": "microsoft-windows-server-2025",
+      "url": "https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2025",
+      "authority": "vendor"
+    },
+    {
+      "source_id": "ubuntu-26.04",
+      "url": "https://releases.ubuntu.com/26.04/",
+      "authority": "distribution-project"
+    },
+    {
+      "source_id": "ubuntu-24.04",
+      "url": "https://releases.ubuntu.com/24.04/",
+      "authority": "distribution-project"
+    },
+    {
+      "source_id": "debian-13",
+      "url": "https://www.debian.org/releases/stable/",
+      "authority": "distribution-project"
+    },
+    {
+      "source_id": "fedora-44",
+      "url": "https://fedoramagazine.org/announcing-fedora-linux-44/",
+      "authority": "distribution-project"
+    },
+    {
+      "source_id": "alpine-3.23",
+      "url": "https://alpinelinux.org/posts/Alpine-3.23.0-released.html",
+      "authority": "distribution-project"
+    },
+    {
+      "source_id": "nixos-26.05",
+      "url": "https://nixos.org/blog/announcements/2026/nixos-2605/",
+      "authority": "distribution-project"
+    },
+    {
+      "source_id": "vibemaxxing-platform-policy",
+      "url": "https://github.com/vedant-simulacrum/vibemaxxing/blob/main/docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md",
+      "authority": "project-policy"
+    }
+  ],
+  "profiles": [
+    {
+      "profile_id": "macos-26-arm64-user-launchd",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "macos",
+      "os_release": "26",
+      "architecture": "arm64",
+      "distribution": "apple-macos",
+      "package_profile": "signed-pkg",
+      "environment_kind": "desktop",
+      "desktop_environment": "aqua",
+      "init_or_supervisor": "launchd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "keychain-secure-enclave-capability",
+      "ipc_transport": "unix-domain-socket",
+      "update_mechanism": "signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "macos-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "apple-macos-tahoe-26",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "macos-26-x86-64-user-launchd",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "macos",
+      "os_release": "26",
+      "architecture": "x86-64",
+      "distribution": "apple-macos",
+      "package_profile": "signed-pkg",
+      "environment_kind": "desktop",
+      "desktop_environment": "aqua",
+      "init_or_supervisor": "launchd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "keychain",
+      "ipc_transport": "unix-domain-socket",
+      "update_mechanism": "signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "macos-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "apple-macos-tahoe-26",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "macos-15-arm64-user-launchd",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "macos",
+      "os_release": "15",
+      "architecture": "arm64",
+      "distribution": "apple-macos",
+      "package_profile": "signed-pkg",
+      "environment_kind": "desktop",
+      "desktop_environment": "aqua",
+      "init_or_supervisor": "launchd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "keychain-secure-enclave-capability",
+      "ipc_transport": "unix-domain-socket",
+      "update_mechanism": "signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "macos-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "apple-macos-tahoe-26",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "macos-15-x86-64-user-launchd",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "macos",
+      "os_release": "15",
+      "architecture": "x86-64",
+      "distribution": "apple-macos",
+      "package_profile": "signed-pkg",
+      "environment_kind": "desktop",
+      "desktop_environment": "aqua",
+      "init_or_supervisor": "launchd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "keychain",
+      "ipc_transport": "unix-domain-socket",
+      "update_mechanism": "signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "macos-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "apple-macos-tahoe-26",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "macos-14-arm64-user-launchd",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "macos",
+      "os_release": "14",
+      "architecture": "arm64",
+      "distribution": "apple-macos",
+      "package_profile": "signed-pkg",
+      "environment_kind": "desktop",
+      "desktop_environment": "aqua",
+      "init_or_supervisor": "launchd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "keychain-secure-enclave-capability",
+      "ipc_transport": "unix-domain-socket",
+      "update_mechanism": "signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "macos-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "apple-macos-tahoe-26",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "macos-14-x86-64-user-launchd",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "macos",
+      "os_release": "14",
+      "architecture": "x86-64",
+      "distribution": "apple-macos",
+      "package_profile": "signed-pkg",
+      "environment_kind": "desktop",
+      "desktop_environment": "aqua",
+      "init_or_supervisor": "launchd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "keychain",
+      "ipc_transport": "unix-domain-socket",
+      "update_mechanism": "signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "macos-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "apple-macos-tahoe-26",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "windows-11-25h2-x86-64-user-service",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "windows",
+      "os_release": "11-25h2",
+      "architecture": "x86-64",
+      "distribution": "microsoft-windows",
+      "package_profile": "msix-or-signed-installer",
+      "environment_kind": "desktop",
+      "desktop_environment": "windows-shell",
+      "init_or_supervisor": "windows-user-service",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "cng-tpm-or-dpapi",
+      "ipc_transport": "named-pipe-user-acl",
+      "update_mechanism": "signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "windows-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "microsoft-windows-11-25h2",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "windows-11-25h2-arm64-user-service",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "windows",
+      "os_release": "11-25h2",
+      "architecture": "arm64",
+      "distribution": "microsoft-windows",
+      "package_profile": "msix-or-signed-installer",
+      "environment_kind": "desktop",
+      "desktop_environment": "windows-shell",
+      "init_or_supervisor": "windows-user-service",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "cng-tpm-or-dpapi",
+      "ipc_transport": "named-pipe-user-acl",
+      "update_mechanism": "signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "windows-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "microsoft-windows-11-25h2",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "windows-server-2025-x86-64-service",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "windows",
+      "os_release": "server-2025",
+      "architecture": "x86-64",
+      "distribution": "microsoft-windows-server",
+      "package_profile": "signed-installer",
+      "environment_kind": "server",
+      "desktop_environment": "none",
+      "init_or_supervisor": "windows-service",
+      "lifecycle_mode": "optional-machine-wide",
+      "key_backend": "cng-tpm-or-dpapi",
+      "ipc_transport": "named-pipe-service-acl",
+      "update_mechanism": "signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "windows-server",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "microsoft-windows-server-2025",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "ubuntu-26.04-x86-64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "26.04-lts",
+      "architecture": "x86-64",
+      "distribution": "ubuntu-26.04",
+      "package_profile": "deb",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "ubuntu-26.04",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "ubuntu-26.04-x86-64-gnome-wayland",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "26.04-lts",
+      "architecture": "x86-64",
+      "distribution": "ubuntu-26.04",
+      "package_profile": "deb",
+      "environment_kind": "desktop",
+      "desktop_environment": "gnome-wayland",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "ubuntu-26.04",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "ubuntu-26.04-aarch64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "26.04-lts",
+      "architecture": "aarch64",
+      "distribution": "ubuntu-26.04",
+      "package_profile": "deb",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "ubuntu-26.04",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "ubuntu-26.04-aarch64-gnome-wayland",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "26.04-lts",
+      "architecture": "aarch64",
+      "distribution": "ubuntu-26.04",
+      "package_profile": "deb",
+      "environment_kind": "desktop",
+      "desktop_environment": "gnome-wayland",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "ubuntu-26.04",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "ubuntu-24.04-x86-64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "24.04-lts",
+      "architecture": "x86-64",
+      "distribution": "ubuntu-24.04",
+      "package_profile": "deb",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "ubuntu-24.04",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "ubuntu-24.04-aarch64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "24.04-lts",
+      "architecture": "aarch64",
+      "distribution": "ubuntu-24.04",
+      "package_profile": "deb",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "ubuntu-24.04",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "debian-13-x86-64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "13",
+      "architecture": "x86-64",
+      "distribution": "debian-13",
+      "package_profile": "deb",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "debian-13",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "debian-13-x86-64-gnome-wayland",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "13",
+      "architecture": "x86-64",
+      "distribution": "debian-13",
+      "package_profile": "deb",
+      "environment_kind": "desktop",
+      "desktop_environment": "gnome-wayland",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "debian-13",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "debian-13-aarch64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "13",
+      "architecture": "aarch64",
+      "distribution": "debian-13",
+      "package_profile": "deb",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "debian-13",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "debian-13-aarch64-gnome-wayland",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "13",
+      "architecture": "aarch64",
+      "distribution": "debian-13",
+      "package_profile": "deb",
+      "environment_kind": "desktop",
+      "desktop_environment": "gnome-wayland",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "debian-13",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "fedora-44-x86-64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "44",
+      "architecture": "x86-64",
+      "distribution": "fedora-44",
+      "package_profile": "rpm",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "fedora-44",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "fedora-44-x86-64-gnome-wayland",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "44",
+      "architecture": "x86-64",
+      "distribution": "fedora-44",
+      "package_profile": "rpm",
+      "environment_kind": "desktop",
+      "desktop_environment": "gnome-wayland",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "fedora-44",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "fedora-44-aarch64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "44",
+      "architecture": "aarch64",
+      "distribution": "fedora-44",
+      "package_profile": "rpm",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "fedora-44",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "fedora-44-aarch64-gnome-wayland",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "44",
+      "architecture": "aarch64",
+      "distribution": "fedora-44",
+      "package_profile": "rpm",
+      "environment_kind": "desktop",
+      "desktop_environment": "gnome-wayland",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "fedora-44",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "alpine-3.23-x86-64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "3.23",
+      "architecture": "x86-64",
+      "distribution": "alpine-3.23",
+      "package_profile": "apk",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "openrc-user-template",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "encrypted-file-or-kernel-keyring",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "alpine-3.23",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "alpine-3.23-aarch64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "3.23",
+      "architecture": "aarch64",
+      "distribution": "alpine-3.23",
+      "package_profile": "apk",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "openrc-user-template",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "encrypted-file-or-kernel-keyring",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "alpine-3.23",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "nixos-26.05-x86-64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "26.05",
+      "architecture": "x86-64",
+      "distribution": "nixos-26.05",
+      "package_profile": "nix",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "nixos-26.05",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "nixos-26.05-x86-64-gnome-wayland",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "26.05",
+      "architecture": "x86-64",
+      "distribution": "nixos-26.05",
+      "package_profile": "nix",
+      "environment_kind": "desktop",
+      "desktop_environment": "gnome-wayland",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "nixos-26.05",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "nixos-26.05-aarch64-headless",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "26.05",
+      "architecture": "aarch64",
+      "distribution": "nixos-26.05",
+      "package_profile": "nix",
+      "environment_kind": "headless",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-headless",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "nixos-26.05",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "nixos-26.05-aarch64-gnome-wayland",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "linux",
+      "os_release": "26.05",
+      "architecture": "aarch64",
+      "distribution": "nixos-26.05",
+      "package_profile": "nix",
+      "environment_kind": "desktop",
+      "desktop_environment": "gnome-wayland",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "secret-service-or-tpm",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "repository-or-signed-release-set",
+      "default_evidence_ceiling": "capability-derived",
+      "duplicate_domain": "linux-desktop",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "nixos-26.05",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "wsl2-ubuntu-26.04-x86-64-systemd",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "wsl",
+      "os_release": "wsl2-ubuntu-26.04",
+      "architecture": "x86-64",
+      "distribution": "ubuntu-wsl",
+      "package_profile": "wsl-package",
+      "environment_kind": "wsl-guest",
+      "desktop_environment": "none",
+      "init_or_supervisor": "systemd-user",
+      "lifecycle_mode": "per-user-always-on",
+      "key_backend": "guest-secret-service-or-encrypted-file",
+      "ipc_transport": "unix-domain-socket-user",
+      "update_mechanism": "independent-guest-release-set",
+      "default_evidence_ceiling": "standard-competitive",
+      "duplicate_domain": "wsl-wsl-guest",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "ubuntu-26.04",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "oci-linux-x86-64-immutable",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "container",
+      "os_release": "oci-image-v1",
+      "architecture": "x86-64",
+      "distribution": "vibemaxxing-oci",
+      "package_profile": "signed-oci-image",
+      "environment_kind": "container",
+      "desktop_environment": "none",
+      "init_or_supervisor": "orchestrator",
+      "lifecycle_mode": "orchestrator-lifetime",
+      "key_backend": "workload-key",
+      "ipc_transport": "unix-domain-socket-volume",
+      "update_mechanism": "immutable-image-replacement",
+      "default_evidence_ceiling": "standard-competitive",
+      "duplicate_domain": "container-container",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "not-applicable",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "not-applicable",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "oci-linux-aarch64-immutable",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "container",
+      "os_release": "oci-image-v1",
+      "architecture": "aarch64",
+      "distribution": "vibemaxxing-oci",
+      "package_profile": "signed-oci-image",
+      "environment_kind": "container",
+      "desktop_environment": "none",
+      "init_or_supervisor": "orchestrator",
+      "lifecycle_mode": "orchestrator-lifetime",
+      "key_backend": "workload-key",
+      "ipc_transport": "unix-domain-socket-volume",
+      "update_mechanism": "immutable-image-replacement",
+      "default_evidence_ceiling": "standard-competitive",
+      "duplicate_domain": "container-container",
+      "capabilities": {
+        "install": true,
+        "autostart": true,
+        "autorestart": true,
+        "shell-independent": true,
+        "offline-collection": true,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "not-applicable",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "not-applicable",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "ci-linux-x86-64-ephemeral",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "ci",
+      "os_release": "ubuntu-24.04-runner",
+      "architecture": "x86-64",
+      "distribution": "github-hosted-compatible",
+      "package_profile": "pinned-signed-tool",
+      "environment_kind": "ci-ephemeral",
+      "desktop_environment": "none",
+      "init_or_supervisor": "job-runner",
+      "lifecycle_mode": "job-lifetime",
+      "key_backend": "short-lived-job-key",
+      "ipc_transport": "process-local",
+      "update_mechanism": "pinned-artifact-expiry",
+      "default_evidence_ceiling": "standard-competitive",
+      "duplicate_domain": "ci-ci-ephemeral",
+      "capabilities": {
+        "install": true,
+        "autostart": false,
+        "autorestart": false,
+        "shell-independent": false,
+        "offline-collection": false,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "terminate-explicitly"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "not-applicable",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "not-applicable",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "not-applicable",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "ubuntu-24.04",
+        "vibemaxxing-platform-policy"
+      ]
+    },
+    {
+      "profile_id": "ci-linux-aarch64-ephemeral",
+      "advertised": false,
+      "certification_state": "planned-validation-required",
+      "os_family": "ci",
+      "os_release": "ubuntu-24.04-runner",
+      "architecture": "aarch64",
+      "distribution": "github-hosted-compatible",
+      "package_profile": "pinned-signed-tool",
+      "environment_kind": "ci-ephemeral",
+      "desktop_environment": "none",
+      "init_or_supervisor": "job-runner",
+      "lifecycle_mode": "job-lifetime",
+      "key_backend": "short-lived-job-key",
+      "ipc_transport": "process-local",
+      "update_mechanism": "pinned-artifact-expiry",
+      "default_evidence_ceiling": "standard-competitive",
+      "duplicate_domain": "ci-ci-ephemeral",
+      "capabilities": {
+        "install": true,
+        "autostart": false,
+        "autorestart": false,
+        "shell-independent": false,
+        "offline-collection": false,
+        "signed-update": true,
+        "rollback": true,
+        "export": true,
+        "local-delete": true,
+        "uninstall": true
+      },
+      "failure_matrix": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "terminate-explicitly"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "not-applicable",
+          "expected": "recover"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "not-applicable",
+          "expected": "recover"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "not-applicable",
+          "expected": "recover"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed"
+        }
+      ],
+      "source_ids": [
+        "ubuntu-24.04",
+        "vibemaxxing-platform-policy"
+      ]
+    }
+  ],
+  "explicitly_unsupported_native": [
+    "android",
+    "ios",
+    "ipados",
+    "chromeos"
+  ]
+}
