@@ -47,9 +47,16 @@ for (const asset of fixtureManifest.assets ?? []) {
 }
 
 const referenceManifest = JSON.parse(read("assets/ui/references/manifest.json"));
+for (const viewport of ["desktop", "tablet", "mobile"]) {
+  if (!referenceManifest.viewports?.[viewport]) failures.push(`Reference manifest is missing the ${viewport} viewport contract.`);
+}
 for (const reference of referenceManifest.references ?? []) {
   requireFile(path.join("assets/ui/references", reference.mockup));
-  requireFile(path.join("assets/ui/references", reference.render));
+  for (const viewport of ["desktop", "tablet", "mobile"]) {
+    if (!reference.renders?.[viewport]) failures.push(`${reference.id} is missing its ${viewport} render.`);
+    else requireFile(path.join("assets/ui/references", reference.renders[viewport]));
+    if (!reference.approvedCaptureSha256?.[viewport]) failures.push(`${reference.id} is missing its reviewed ${viewport} capture digest.`);
+  }
 }
 for (const evidence of referenceManifest.supportingEvidence ?? []) {
   requireFile(path.join("assets/ui/references", evidence.file));
