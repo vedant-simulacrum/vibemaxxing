@@ -34,8 +34,8 @@ One bounded fixture-backed hosted-web/Storybook slice exists and is classified a
 - Planning tooling: doctor, coverage validation, artifact validation, provisional T20 validation, stable work-unit generation and prototype workflow dependency controls are aligned to D-001 through D-069.
 - Historical planning-complete reports are explicitly non-authoritative.
 - Exact machine-contract repair requirements are recorded in `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`.
-- Current CDDL, JSON Schema, Protobuf, OpenAPI, SQL, reason codes and policy defaults remain planning placeholders blocked from implementation where P-1140 has not repaired their semantics.
-- The SQL file is an explicitly blocked structural inventory, not a migration design.
+- P-1140B/C contracts are complete-planning; the P-1140D state/API/SQL/social/platform/release candidate is present and awaits exact-head validation.
+- The SQL file is a repaired PostgreSQL 16 planning migration contract; it is not a deployed migration history or implementation evidence.
 - Backend, collector, protocol runtime, identity service, ranking service, production storage, installers, updater, deployment and operational systems are not implemented.
 - No collector platform is currently production-complete or exercised.
 - Competitive beta and public launch remain no-go pending implementation and executable evidence.
@@ -69,11 +69,13 @@ Candidate contract set now present:
 
 Planning checks run #219 passed on the exact P-1140C candidate head. The gate-transition head must also pass before merge.
 
-Active work is the deterministic CBOR/COSE claim, appraisal, checkpoint, batch, continuity, gap, rotation, correction and replay state contract. It must preserve the P-1140B authority and privacy boundaries.
+The VibeProof contract is frozen as planning input to P-1140D/E. Independent runtime interoperability remains unproven.
 
 ### Active P-1140D — identity, API, ranking, social, native and release state machines
 
 P-1140D now owns OAuth/session, ranked identity, API/idempotency, SQL, ranking views, pricing persistence, social/presence/notification/moderation state, export/deletion, native platform lifecycle, privileged supervision, mandatory updates and release trust.
+
+Candidate artifacts now encode 23 authoritative state machines, 34 exact launch platform profiles, endpoint-specific OpenAPI resources, the repaired PostgreSQL ownership/constraint model, a closed social event union, signed release sets, immutable ranking views, typed exports and enriched reason/policy lifecycle fields. All profiles remain uncertified and unadvertised; candidate checks and a separate gate-transition check are still required.
 
 ### Following gates
 
