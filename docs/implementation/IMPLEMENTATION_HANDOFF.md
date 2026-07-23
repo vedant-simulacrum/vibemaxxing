@@ -27,7 +27,7 @@ Before P-1104 can be proposed, maintainers must reconcile this file and `PR_SIZE
 
 ### Concurrent branch handoff rule
 
-Branch-local work is not canonical handoff state. For the July 24 active branches, land the ADR-014 repair before rebasing/reconciling the UI application-lockdown branch, preserve the stricter workflow boundary and repository-doctor invariants, and rerun checks on the reconciled exact head. The authoritative status is updated only after merge.
+Branch-local work is not canonical handoff state. The ADR-014 repair is merged through PR #31; the UI application-lockdown branch must now be updated onto that baseline, preserve the stricter workflow boundary and repository-doctor invariants, and rerun checks on the reconciled exact head. The authoritative status is updated only after merge.
 
 ## Mandatory pre-read
 
