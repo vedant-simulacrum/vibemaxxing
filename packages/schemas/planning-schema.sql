@@ -551,3 +551,103 @@ create table appeal_decisions (
   decision_digest bytea not null check (octet_length(decision_digest) = 32),
   decided_at timestamptz not null
 );
+
+
+create table export_artifacts (
+  export_id uuid not null references exports(export_id),
+  logical_name text not null,
+  media_type text not null check (media_type in ('application/jsonl','application/json','application/cbor')),
+  artifact_digest bytea not null check (octet_length(artifact_digest) = 32),
+  size_bytes bigint not null check (size_bytes >= 0),
+  record_count bigint not null check (record_count >= 0),
+  primary key (export_id, logical_name)
+);
+
+create table deletion_effects (
+  deletion_job_id uuid not null references deletion_jobs(deletion_job_id),
+  subsystem text not null,
+  state text not null check (state in ('pending','executing','completed','failed','not-applicable')),
+  effect_digest bytea,
+  completed_at timestamptz,
+  primary key (deletion_job_id, subsystem)
+);
+
+create table local_deletion_commands (
+  command_id uuid primary key,
+  deletion_job_id uuid not null references deletion_jobs(deletion_job_id),
+  device_id uuid not null references devices(device_id),
+  command_digest bytea not null check (octet_length(command_digest) = 32),
+  expires_at timestamptz not null
+);
+
+create table local_deletion_receipts (
+  command_id uuid primary key references local_deletion_commands(command_id),
+  device_id uuid not null references devices(device_id),
+  receipt_digest bytea not null check (octet_length(receipt_digest) = 32),
+  completed_at timestamptz not null
+);
+
+create table platform_profiles (
+  platform_profile_id text primary key,
+  os_family text not null,
+  os_version text not null,
+  architecture text not null,
+  environment text not null,
+  advertised boolean not null default false check (not advertised),
+  validation_state text not null check (validation_state in ('planned-validation-required','certified','blocked','retired'))
+);
+
+create table tuf_roots (
+  root_version bigint primary key check (root_version > 0),
+  root_digest bytea not null unique check (octet_length(root_digest) = 32),
+  threshold smallint not null check (threshold between 2 and 10),
+  expires_at timestamptz not null
+);
+
+create table release_sets (
+  release_set_id uuid primary key,
+  version text not null unique,
+  tuf_root_version bigint not null references tuf_roots(root_version),
+  compatibility_registry_digest bytea not null check (octet_length(compatibility_registry_digest) = 32),
+  state text not null check (state in ('draft','signed','published','revoked','expired')),
+  published_at timestamptz,
+  mandatory_after timestamptz
+);
+
+create table release_targets (
+  release_set_id uuid not null references release_sets(release_set_id),
+  platform_profile_id text not null references platform_profiles(platform_profile_id),
+  artifact_kind text not null check (artifact_kind in ('pkg','dmg','msix','msi','deb','rpm','apk','tar-zst','oci','ci-bundle')),
+  artifact_digest bytea not null check (octet_length(artifact_digest) = 32),
+  sbom_digest bytea not null check (octet_length(sbom_digest) = 32),
+  provenance_digest bytea not null check (octet_length(provenance_digest) = 32),
+  size_bytes bigint not null check (size_bytes > 0),
+  primary key (release_set_id, platform_profile_id, artifact_kind)
+);
+
+create table platform_certifications (
+  certification_id uuid primary key,
+  platform_profile_id text not null references platform_profiles(platform_profile_id),
+  release_set_id uuid not null references release_sets(release_set_id),
+  test_run_digest bytea not null check (octet_length(test_run_digest) = 32),
+  state text not null check (state in ('candidate','certified','failed','revoked')),
+  certified_at timestamptz
+);
+
+create table update_installations (
+  update_installation_id uuid primary key,
+  device_id uuid not null references devices(device_id),
+  release_set_id uuid not null references release_sets(release_set_id),
+  state text not null check (state in ('available','downloading','verified','installing','active','rolled_back','blocked','failed')),
+  previous_release_set_id uuid references release_sets(release_set_id),
+  revision bigint not null check (revision >= 0),
+  updated_at timestamptz not null
+);
+
+create unique index board_one_active_owner
+  on board_memberships (board_id)
+  where role = 'owner' and state = 'active';
+
+create index claims_account_received_idx on claims (account_id, received_at desc);
+create index notifications_account_created_idx on notifications (account_id, created_at desc);
+create index social_integrity_events_aggregate_idx on social_integrity_events (aggregate_id, aggregate_revision);
