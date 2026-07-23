@@ -14,6 +14,7 @@ SOURCE = ROOT / "docs/implementation/PR_SIZED_WORK_BREAKDOWN.md"
 DEFAULT_OUTPUT = ROOT / "artifacts/repository/issue-plan.json"
 EPIC = re.compile(r"^##\s+Epic\s+([A-Z][A-Z0-9]*)\s+[—-]\s+(.+?)\s*$")
 UNIT = re.compile(r"^###\s+([A-Z][A-Z0-9]*-\d{2})\s+(.+?)\s*$")
+POST_LAUNCH_HEADING = "## Post-launch tracks"
 
 
 def slug(value: str) -> str:
@@ -38,6 +39,10 @@ def main() -> None:
         if epic_match:
             current_epic_id = epic_match.group(1)
             current_epic_title = epic_match.group(2).strip()
+            continue
+        if line.strip() == POST_LAUNCH_HEADING:
+            current_epic_id = "PL"
+            current_epic_title = "post-launch tracks"
             continue
 
         unit_match = UNIT.match(line)
