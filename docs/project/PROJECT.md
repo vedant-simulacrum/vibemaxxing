@@ -40,9 +40,24 @@ Country leaderboards are explicitly post-launch. Internal implementation may be 
 - The SLM detector is post-launch research only and is not a launch dependency.
 - The system must never be marketed as mathematically cheat-proof or as universally proving provider origin or unique human identity.
 
+## Always-on local service
+
+`vibemaxxing-daemon` is a core always-on product service under D-061 and ADR-010.
+
+- Successful installation registers and enables the daemon with the platform service manager.
+- The daemon auto-starts at the earliest supported boot or user-login boundary.
+- It is automatically restarted after crashes and resumes health reconciliation after sleep, hibernation, network loss and OS restart.
+- Closing or crashing the menu-bar/tray shell never stops the daemon, collector or pending synchronization.
+- Pausing collection or synchronization changes only that function; the daemon remains resident for health, recovery, privacy inspection, export, update, rollback and uninstall.
+- Offline, authentication-required, permission-required, disk-full, corrupt-state, security-hold and update-failure conditions place the daemon in an explicit degraded or recovery state rather than causing it to exit.
+- The product must never silently expose an ordinary “quit daemon” action.
+- Users and the operating system retain the ability to disable or uninstall the background service. VibeMaxxing detects and visibly reports that state instead of bypassing user control.
+- “Always-on” applies only while the machine is powered on, the OS can schedule the applicable service context, and the service remains installed and enabled.
+- Session-bound platform limitations are disclosed honestly. A per-user service is not described as running while the user is logged out unless the platform mode actually supports that behavior.
+
 ## Product topology and identity
 
-The local product has separate adapter, collector, deterministic validation, local commitment, device-key, sync, daemon/control, CLI, menu-bar/tray, privacy/audit and updater responsibilities. A process capable of reading content does not receive network access. Closing the shell does not stop collection unless the user explicitly requests it.
+The local product has separate adapter, collector, deterministic validation, local commitment, device-key, sync, always-on daemon/control, CLI, menu-bar/tray, privacy/audit and updater responsibilities. A process capable of reading content does not receive network access. The daemon owns supervision and lifecycle; the shell is only a replaceable control surface.
 
 The default runtime is unprivileged and per-user. Privileged helpers require a separate accepted capability, privacy and platform decision.
 
