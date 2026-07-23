@@ -365,8 +365,8 @@ def main() -> None:
     status_lower = status.lower()
     if "planning contract repair" not in status_lower:
         errors.append("status must state the current planning contract repair phase")
-    if "p-1140d is active" not in status_lower:
-        errors.append("status must identify P-1140D as active")
+    if "p-1140e is active" not in status_lower:
+        errors.append("status must identify P-1140E as active")
     if "product implementation remains unauthorized" not in status_lower:
         errors.append("status must state that product implementation remains unauthorized")
     if "phase: planning complete" in status_lower or "technical planning, including the targeted t20" in status_lower:
@@ -376,8 +376,8 @@ def main() -> None:
         "P-1140A": "complete-planning",
         "P-1140B": "complete-planning",
         "P-1140C": "complete-planning",
-        "P-1140D": "in-progress-planning",
-        "P-1140E": "blocked-planning",
+        "P-1140D": "complete-planning",
+        "P-1140E": "in-progress-planning",
         "P-1104": "blocked-approval",
         "P-1131": "blocked-launch-evidence",
     }
