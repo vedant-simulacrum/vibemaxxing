@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "purpose": "Frozen high-fidelity mockups and reproducible Storybook browser renders",
   "viewport": {
     "width": 1536,
@@ -12,6 +12,7 @@
       "label": "Public profile",
       "mockup": "product-storyboards/mockups/public-profile.png",
       "render": "product-storyboards/renders/public-profile.png",
+      "approvedCaptureSha256": "50340a9b69d7aa4d46fa7cce45595bfda91b7893736eea92b5a30cf5fd4ce3a4",
       "status": "review-baseline"
     },
     {
@@ -19,6 +20,7 @@
       "label": "Rival comparison",
       "mockup": "product-storyboards/mockups/rival-comparison.png",
       "render": "product-storyboards/renders/rival-comparison.png",
+      "approvedCaptureSha256": "f7c00c2393edd88ed811c30f045e7a2bcb5dc9447d882fc76951d1575dd767be",
       "status": "review-baseline"
     },
     {
@@ -26,6 +28,7 @@
       "label": "Friends",
       "mockup": "product-storyboards/mockups/friends.png",
       "render": "product-storyboards/renders/friends.png",
+      "approvedCaptureSha256": "6719dd3138e82fc53f3f37f95c06fd9b86c42f2d66bd3f124e5dc91191c0df8f",
       "status": "review-baseline"
     },
     {
@@ -33,6 +36,7 @@
       "label": "Activity and notifications",
       "mockup": "product-storyboards/mockups/activity-and-notifications.png",
       "render": "product-storyboards/renders/activity-and-notifications.png",
+      "approvedCaptureSha256": "8b50f75f5f33aa5c2b0f1298fdf88c9aec0a422612de827a879c9ef94b619061",
       "status": "review-baseline"
     },
     {
@@ -40,6 +44,7 @@
       "label": "Board standings",
       "mockup": "product-storyboards/mockups/board-standings.png",
       "render": "product-storyboards/renders/board-standings.png",
+      "approvedCaptureSha256": "0ec77b6303e172e7069dfe0beec837ef88ebf6dbcef87b659f05928ad23a39f5",
       "status": "review-baseline"
     }
   ],
@@ -53,6 +58,7 @@
     "runtimeUse": false,
     "sourceOfTruth": "mockup",
     "generatedRender": "evidence",
+    "captureApproval": "An exact SHA-256 may record a visually reviewed deterministic prototype render; unrecognized captures fall back to pixel comparison against the frozen render.",
     "rejectedIterations": "Do not commit; promote only approved references."
   }
 }
