@@ -132,9 +132,22 @@ Acceptance:
 
 ### P-1140D — identity, API, ranking, social, native and release state machines
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140B; protocol-facing work also depends on P-1140C.
+
+Completed planning contract set:
+
+- one JSON Schema-validated registry for 23 authoritative mutable-state machines;
+- one exact launch platform registry with 34 uncertified/unadvertised profiles and a complete 16-case failure matrix per profile;
+- endpoint-specific OpenAPI resources with authorization, recent-auth, durable idempotency, typed rate limits and bounded VibeProof CBOR input;
+- PostgreSQL 16 ownership/constraint contract with canonical friendship pairs, membership-owned board authority, token families, lineage, appraisal, receipts, ranking views, typed social state, deletion effects and release trust;
+- closed social/integrity Protobuf event union;
+- typed signed release-set, immutable ranking-view and export-manifest schemas;
+- enriched reason-code and policy lifecycle authority;
+- normative OAuth/session/device-bound proof, ranked-identity, API, ranking, social, native lifecycle, privileged supervision and update/release contract.
+
+Validation: Planning checks run #234 passed on exact candidate head `366691f8e1f06c03915652209dc83adb3a40af0c`. The gate-transition head must also pass before merge.
 
 Deliverables:
 
@@ -178,7 +191,7 @@ Acceptance:
 
 ### P-1140E — cross-contract planning validation
 
-Status: `blocked-planning`
+Status: `in-progress-planning`
 
 Dependencies: P-1140B, P-1140C and P-1140D.
 

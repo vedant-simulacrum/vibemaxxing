@@ -1,89 +1,115 @@
 syntax = "proto3";
 
-package vibemaxxing.events.v1;
+package vibemaxxing.social.v1;
 
-message EventEnvelope {
-  string event_id = 1;
-  uint64 occurred_at_unix_ms = 2;
-  string policy_version = 3;
-  string idempotency_key = 4;
-  oneof body {
-    NotificationEvent notification = 20;
-    ModerationEvent moderation = 21;
-    AppealEvent appeal = 22;
-  }
+// P-1140D closed event contract. Every identifier is a fixed 16-byte UUID;
+// every Digest256 is exactly 32 bytes. Consumers reject the wrong length.
+message Uuid { bytes value = 1; }
+message Digest256 { bytes value = 1; }
+
+message EventHeader {
+  Uuid event_id = 1;
+  Uuid aggregate_id = 2;
+  uint64 aggregate_revision = 3;
+  uint64 occurred_at_unix_ms = 4;
+  Uuid actor_account_id = 5;
+  Uuid idempotency_key = 6;
+  string reason_code = 7;
+  Digest256 policy_version_digest = 8;
+}
+
+message FriendshipEvent {
+  enum Action { ACTION_UNSPECIFIED = 0; REQUESTED = 1; ACCEPTED = 2; DECLINED = 3; CANCELLED = 4; REMOVED = 5; RETRACTED = 6; }
+  EventHeader header = 1;
+  Uuid lower_account_id = 2;
+  Uuid upper_account_id = 3;
+  Action action = 4;
+}
+
+message BlockEvent {
+  enum Action { ACTION_UNSPECIFIED = 0; CREATED = 1; REMOVED = 2; RETRACTED = 3; }
+  EventHeader header = 1;
+  Uuid blocker_account_id = 2;
+  Uuid blocked_account_id = 3;
+  Action action = 4;
+}
+
+message RivalEvent {
+  enum Action { ACTION_UNSPECIFIED = 0; CREATED = 1; REMOVED = 2; RETRACTED = 3; }
+  EventHeader header = 1;
+  Uuid account_id = 2;
+  Uuid rival_account_id = 3;
+  Action action = 4;
+}
+
+message BoardMembershipEvent {
+  enum Action { ACTION_UNSPECIFIED = 0; INVITED = 1; JOINED = 2; ROLE_CHANGED = 3; LEFT = 4; REMOVED = 5; OWNERSHIP_TRANSFERRED = 6; RETRACTED = 7; }
+  enum Role { ROLE_UNSPECIFIED = 0; OWNER = 1; ADMIN = 2; MEMBER = 3; VIEWER = 4; }
+  EventHeader header = 1;
+  Uuid board_id = 2;
+  Uuid account_id = 3;
+  Action action = 4;
+  Role role = 5;
+}
+
+message PresenceEvent {
+  enum Availability { AVAILABILITY_UNSPECIFIED = 0; ONLINE = 1; IDLE = 2; OFFLINE = 3; }
+  EventHeader header = 1;
+  Uuid account_id = 2;
+  Availability availability = 3;
+  uint64 lease_expires_at_unix_ms = 4;
 }
 
 message NotificationEvent {
-  enum Type {
-    TYPE_UNSPECIFIED = 0;
-    FRIEND_REQUEST = 1;
-    FRIEND_ACCEPTED = 2;
-    RIVAL_SUGGESTION = 3;
-    OVERTAKE = 4;
-    RANK_MOVEMENT = 5;
-    BOARD_INVITE = 6;
-    BOARD_ADMINISTRATION = 7;
-    DEVICE_SECURITY = 8;
-    QUARANTINE = 9;
-    APPEAL_UPDATE = 10;
-    COMPATIBILITY_CHANGE = 11;
-    RELEASE_SECURITY_NOTICE = 12;
-  }
-  Type type = 1;
-  string recipient_account_id = 2;
-  string actor_account_id = 3;
-  string scope_type = 4;
-  string scope_id = 5;
-  string grouping_key = 6;
-  string reason_code = 7;
+  enum Type { TYPE_UNSPECIFIED = 0; FRIEND_REQUEST = 1; BOARD_INVITATION = 2; RANK_OVERTAKE = 3; MODERATION = 4; APPEAL = 5; SECURITY = 6; COMPATIBILITY = 7; RELEASE = 8; }
+  enum Action { ACTION_UNSPECIFIED = 0; QUEUED = 1; DELIVERED = 2; READ = 3; SUPPRESSED = 4; EXPIRED = 5; RETRACTED = 6; }
+  EventHeader header = 1;
+  Uuid recipient_account_id = 2;
+  Uuid actor_account_id = 3;
+  Uuid scope_id = 4;
+  Type type = 5;
+  Action action = 6;
+  Digest256 grouping_key = 7;
   bool security_critical = 8;
 }
 
-message ModerationEvent {
-  enum Action {
-    ACTION_UNSPECIFIED = 0;
-    OPEN_CASE = 1;
-    DOWNGRADE_STANDARD = 2;
-    EXCLUDE_CLAIM = 3;
-    QUARANTINE_SESSION = 4;
-    QUARANTINE_SCORE = 5;
-    REQUIRE_STRONGER_EVIDENCE = 6;
-    RESTRICT_RANKING = 7;
-    REVOKE_DEVICE = 8;
-    SUSPEND_ACCOUNT = 9;
-    RESTORE = 10;
-    CLOSE_CASE = 11;
-  }
-  string case_id = 1;
-  Action action = 2;
-  string target_account_id = 3;
-  string target_device_id = 4;
-  string target_claim_id = 5;
-  string actor_type = 6;
-  string actor_id = 7;
-  string reason_code = 8;
-  uint64 review_at_unix_ms = 9;
-  bool appeal_eligible = 10;
-  bytes evidence_commitment = 11;
+message ModerationEffectEvent {
+  enum Effect { EFFECT_UNSPECIFIED = 0; DOWNGRADE_STANDARD = 1; EXCLUDE_CLAIM = 2; QUARANTINE_SESSION = 3; QUARANTINE_SCORE = 4; REQUIRE_STRONGER_EVIDENCE = 5; RESTRICT_RANKING = 6; REVOKE_DEVICE = 7; SUSPEND_ACCOUNT = 8; RESTORE = 9; }
+  EventHeader header = 1;
+  Uuid case_id = 2;
+  Uuid target_id = 3;
+  Effect effect = 4;
+  uint64 effective_at_unix_ms = 5;
+  uint64 review_at_unix_ms = 6;
+  bool appeal_eligible = 7;
+  Digest256 evidence_commitment = 8;
 }
 
-message AppealEvent {
-  enum State {
-    STATE_UNSPECIFIED = 0;
-    SUBMITTED = 1;
-    NEEDS_INFORMATION = 2;
-    UNDER_REVIEW = 3;
-    UPHELD = 4;
-    PARTIALLY_UPHELD = 5;
-    REVERSED = 6;
-    EXPIRED = 7;
+message AppealDecisionEvent {
+  enum Decision { DECISION_UNSPECIFIED = 0; NEEDS_INFORMATION = 1; UPHELD = 2; PARTIALLY_UPHELD = 3; REVERSED = 4; EXPIRED = 5; }
+  EventHeader header = 1;
+  Uuid appeal_id = 2;
+  Uuid case_id = 3;
+  Decision decision = 4;
+  Digest256 decision_commitment = 5;
+}
+
+message RetractionEvent {
+  EventHeader header = 1;
+  Uuid retracted_event_id = 2;
+  Digest256 replacement_event_digest = 3;
+}
+
+message SocialIntegrityEvent {
+  oneof event {
+    FriendshipEvent friendship = 1;
+    BlockEvent block = 2;
+    RivalEvent rival = 3;
+    BoardMembershipEvent board_membership = 4;
+    PresenceEvent presence = 5;
+    NotificationEvent notification = 6;
+    ModerationEffectEvent moderation_effect = 7;
+    AppealDecisionEvent appeal_decision = 8;
+    RetractionEvent retraction = 9;
   }
-  string appeal_id = 1;
-  string case_id = 2;
-  State state = 3;
-  string actor_type = 4;
-  string actor_id = 5;
-  string reason_code = 6;
-  bytes evidence_commitment = 7;
 }

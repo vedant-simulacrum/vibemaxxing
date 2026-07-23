@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Validate current planning-placeholder coverage and repaired launch scope.
+"""Validate repaired P-1140D planning coverage and launch scope.
 
-This is structural planning validation only. It deliberately does not claim that the
-blocked OpenAPI or PostgreSQL placeholders are implementation-ready.
+This proves declared structural coverage only; implementation remains unauthorized.
 """
 from __future__ import annotations
 
@@ -52,13 +51,13 @@ IDEMPOTENCY_EXCEPTIONS = {
 }
 
 REPAIR_TARGETS = {
-    "VerifierAppraisal": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "VerifierAppraisal"),
-    "CheckpointReceipt": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "CheckpointReceipt"),
-    "refresh-token families": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "refresh-token family"),
-    "durable idempotency ownership": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "idempotency uniqueness"),
-    "immutable ranking view identity": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "ranking_view_id"),
-    "exact platform support profiles": ("docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md", "support profile"),
-    "mandatory automatic updates": ("docs/decisions/ADR-013-MANDATORY_AUTOMATIC_UPDATES.md", "mandatory automatic updates"),
+    "VerifierAppraisal": ("packages/schemas/vibeproof-claim-v1.cddl", "verifier-appraisal-v1"),
+    "CheckpointReceipt": ("packages/schemas/vibeproof-claim-v1.cddl", "checkpoint-receipt-v1"),
+    "refresh-token families": ("packages/schemas/state-machine-registry-v1.json", "web-session-family"),
+    "durable idempotency ownership": ("packages/schemas/planning-schema.sql", "idempotency_records"),
+    "immutable ranking view identity": ("packages/schemas/ranking-view-v1.schema.json", "ranking_view_id"),
+    "exact platform support profiles": ("packages/schemas/platform-profile-registry-v1.json", "profile_id"),
+    "mandatory automatic updates": ("packages/schemas/release-set-v1.schema.json", "mandatory_after"),
 }
 
 
@@ -80,7 +79,7 @@ def main() -> None:
         errors.append(f"missing current planning API paths: {missing_paths}")
     forbidden_paths = sorted(FORBIDDEN_LAUNCH_PATHS & set(paths))
     if forbidden_paths:
-        errors.append(f"post-launch country paths remain in the launch API placeholder: {forbidden_paths}")
+        errors.append(f"post-launch country paths remain in the launch API contract: {forbidden_paths}")
 
     operation_ids: list[str] = []
     for path, item in paths.items():
@@ -109,9 +108,15 @@ def main() -> None:
         errors.append(f"missing current planning PostgreSQL tables: {missing_tables}")
     forbidden_tables = sorted(FORBIDDEN_LAUNCH_TABLES & tables)
     if forbidden_tables:
-        errors.append(f"post-launch country tables remain in the launch SQL placeholder: {forbidden_tables}")
+        errors.append(f"post-launch country tables remain in the launch SQL contract: {forbidden_tables}")
     if re.search(r"board_type\s+in\s*\([^)]*'country'", sql, flags=re.IGNORECASE | re.DOTALL):
         errors.append("country remains an allowed launch board_type")
+    if "P-1140D REPAIRED PLANNING MIGRATION CONTRACT" not in sql:
+        errors.append("PostgreSQL contract lacks repaired P-1140D marker")
+    if re.search(r"(?i)\bjsonb\b", sql):
+        errors.append("untyped jsonb remains in the repaired SQL contract")
+    if "board_one_active_owner" not in sql or "check (account_id_a < account_id_b)" not in sql:
+        errors.append("repaired social SQL lacks canonical pair or single-owner constraints")
 
     for label, (relative_path, marker) in REPAIR_TARGETS.items():
         text = (ROOT / relative_path).read_text(encoding="utf-8")
@@ -122,9 +127,9 @@ def main() -> None:
     print(
         "planning coverage: PASS "
         f"({len(REQUIRED_PATHS)} current API paths, {len(REQUIRED_TABLES)} current tables, "
-        f"{len(REPAIR_TARGETS)} deferred repair targets)"
+        f"{len(REPAIR_TARGETS)} repaired authority targets)"
     )
-    print("artifact maturity: blocked planning placeholders; not implementation evidence")
+    print("artifact maturity: repaired P-1140D planning contract; implementation remains unauthorized")
 
 
 if __name__ == "__main__":
