@@ -1,9 +1,10 @@
-name: Storyboard visuals
+# Prototype-only visual validation under ADR-014 / D-069.
+# This workflow is not product CI, release evidence, security evidence, deployment
+# automation, accessibility completion, or authorization to implement the product.
+name: Prototype storyboard visuals
 
 on:
-  push:
-    branches:
-      - agent/storyboard-core-product-screens
+  workflow_dispatch:
   pull_request:
     paths:
       - "packages/ui/**"
@@ -15,8 +16,18 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: prototype-storyboards-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  VIBEMAXXING_ARTIFACT_MATURITY: runnable-prototype
+  VIBEMAXXING_FIXTURE_POLICY: synthetic-only
+  CI: "true"
+
 jobs:
   capture:
+    name: Build and capture synthetic Storybook fixtures
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -29,28 +40,34 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: packages/ui/package-lock.json
-      - run: npm ci
+      - name: Install locked UI dependencies
+        run: npm ci
       - name: Validate design system and governed assets
         working-directory: .
         run: node scripts/ui/check-ui-system.mjs
-      - run: npm install --no-save playwright@1.55.0
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test
-      - run: npm run storybook:build
-      - name: Serve Storybook
+      - name: Install temporary screenshot runtime
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium for isolated capture
+        run: npx playwright install --with-deps chromium
+      - name: Run prototype UI tests
+        run: npm run test
+      - name: Build static Storybook prototype
+        run: npm run storybook:build
+      - name: Serve Storybook on loopback only
         run: |
-          python3 -m http.server 4173 -d storybook-static > /tmp/vibemaxxing-storybook.log 2>&1 &
+          python3 -m http.server 4173 --bind 127.0.0.1 -d storybook-static > /tmp/vibemaxxing-storybook.log 2>&1 &
           for attempt in {1..30}; do
             curl --fail --silent http://127.0.0.1:4173/iframe.html >/dev/null && exit 0
             sleep 1
           done
           cat /tmp/vibemaxxing-storybook.log
           exit 1
-      - name: Capture locked storyboards
+      - name: Capture locked synthetic storyboards
         run: node scripts/capture-product-storyboards.mjs storybook-captures
-      - uses: actions/upload-artifact@v4
+      - name: Upload prototype visual-review artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: product-storyboards-1536x1024
+          name: prototype-storyboards-1536x1024
           path: packages/ui/storybook-captures/*.png
           if-no-files-found: error
           retention-days: 30
