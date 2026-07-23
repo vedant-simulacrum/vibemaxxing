@@ -1,7 +1,7 @@
 # PR-Sized Implementation Work Breakdown
 
-Status: normative future implementation planning; inactive until P-1140B–E and P-1104 pass.
-Updated: 2026-07-23
+Status: normative planning-ready work breakdown; inactive until the user explicitly authorizes P-1104.
+Updated: 2026-07-24
 
 Each unit must be independently reviewable, tested, migration-aware and reversible where possible. Units may be combined only when risk, ownership and rollback remain clear.
 
@@ -9,7 +9,7 @@ Country leaderboards and the SLM detector are not launch implementation units. A
 
 ## Dependency rules
 
-- Do not implement against schemas blocked by P-1140.
+- Bind implementation to the P-1140B–E repaired schemas, registries, fixtures and state-machine IDs; changes require explicit authority updates.
 - Foundation precedes the synthetic secure spine.
 - The synthetic spine precedes real adapters and broad UX.
 - Device/continuity and server-verifier units precede competitive ranking.
@@ -27,7 +27,7 @@ Country leaderboards and the SLM detector are not launch implementation units. A
 Rust 2024, Go, Node/package manager, Buf/Protobuf, CDDL, OpenAPI, JSON Schema, migration and cross-compilation tooling.
 
 ### F-02 Authoritative schema workspaces
-Repaired local event schemas, VibeProof CDDL/COSE, internal Protobuf, OpenAPI, SQL migrations, reason/policy registries and platform-profile registry.
+Repaired local event schemas, VibeProof CDDL/COSE, internal Protobuf, endpoint-specific OpenAPI, PostgreSQL migrations, reason/policy registries, state-machine registry, exact platform profiles, release sets, ranking views and export manifests.
 
 ### F-03 Generated binding pipeline
 Generate Rust, Go and TypeScript bindings. Clean regeneration must be byte-identical.
@@ -45,7 +45,7 @@ Cross-language safe token, sequence, timestamp, duration and money primitives.
 Machine-readable OS family/release/architecture/distribution/environment/lifecycle/key/update/support tuple.
 
 ### F-08 Decision traceability validator
-Validate D-001..D-069 ownership and reject superseded paths or out-of-scope mobile/ChromeOS native work.
+Run `validate_p1140e_contracts.py` to validate D-001..D-069 ownership, API/state/platform coverage, SQL race plans and reason references, and reject superseded paths or out-of-scope mobile/ChromeOS native work.
 
 Acceptance: blocked schemas cannot enter builds; unsupported toolchains fail clearly; generated output and traceability are deterministic.
 
