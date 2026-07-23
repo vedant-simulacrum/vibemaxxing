@@ -1,8 +1,7 @@
--- BLOCKED STRUCTURAL PLANNING PLACEHOLDER.
--- This file is intentionally executable only for inventory validation. It is not a
--- production migration history and must not generate implementation code. P-1140B-D
--- own the authoritative fields, constraints, transactions, indexes and migrations.
--- Country leaderboards are post-launch under D-052 and are absent from this schema.
+-- P-1140D REPAIRED PLANNING MIGRATION CONTRACT.
+-- PostgreSQL 16 executable ownership, constraint, and transaction-boundary contract.
+-- It becomes implementation input only after the explicit P-1104 authorization gate.
+-- Country leaderboards remain post-launch under D-052 and are intentionally absent.
 
 create table accounts (
   account_id uuid primary key,
@@ -165,8 +164,10 @@ create table evidence_assessments (
   claim_id uuid not null references claims(claim_id),
   verifier_profile_id text not null,
   public_state text not null,
-  dimensions jsonb not null,
-  reason_codes jsonb not null,
+  provenance_state text not null check (provenance_state in ('verified','partial','unverified','rejected')),
+  continuity_state text not null check (continuity_state in ('continuous','gap-declared','broken')),
+  integrity_state text not null check (integrity_state in ('verified','degraded','failed')),
+  reason_codes text[] not null default '{}',
   created_at timestamptz not null
 );
 
@@ -260,7 +261,7 @@ create table cost_interpretations (
 
 create table profiles (
   account_id uuid primary key references accounts(account_id),
-  visibility jsonb not null,
+  visibility text not null check (visibility in ('public','friends','private')),
   updated_at timestamptz not null
 );
 
@@ -274,7 +275,9 @@ create table friend_requests (
 create table friend_edges (
   account_id_a uuid not null references accounts(account_id),
   account_id_b uuid not null references accounts(account_id),
-  primary key (account_id_a, account_id_b)
+  established_at timestamptz not null,
+  primary key (account_id_a, account_id_b),
+  check (account_id_a < account_id_b)
 );
 
 create table blocks (
@@ -305,8 +308,8 @@ create table communities (
 create table boards (
   board_id uuid primary key,
   board_type text not null check (board_type in ('private','organization','hacker-house','community')),
-  owner_account_id uuid not null references accounts(account_id),
-  policy_version text not null
+  policy_version text not null,
+  state text not null check (state in ('active','archived'))
 );
 
 create table board_memberships (
@@ -335,36 +338,51 @@ create table presence_leases (
 create table notifications (
   notification_id uuid primary key,
   account_id uuid not null references accounts(account_id),
-  event_type text not null,
-  payload jsonb not null,
+  event_type text not null check (event_type in ('friend_request','board_invitation','rank_overtake','moderation','appeal','security','compatibility','release')),
+  state text not null check (state in ('queued','delivered','read','suppressed','expired')),
+  actor_account_id uuid references accounts(account_id),
+  scope_id uuid,
+  grouping_digest bytea not null check (octet_length(grouping_digest) = 32),
   created_at timestamptz not null
 );
 
 create table notification_preferences (
   account_id uuid primary key references accounts(account_id),
-  preferences jsonb not null,
-  quiet_hours jsonb
+  social_enabled boolean not null,
+  ranking_enabled boolean not null,
+  moderation_enabled boolean not null,
+  security_enabled boolean not null check (security_enabled),
+  quiet_hours_start_minute smallint check (quiet_hours_start_minute between 0 and 1439),
+  quiet_hours_end_minute smallint check (quiet_hours_end_minute between 0 and 1439),
+  timezone_name text not null
 );
 
 create table outbox_events (
   outbox_id uuid primary key,
   event_type text not null,
   aggregate_id uuid not null,
-  payload jsonb not null,
-  processed_at timestamptz
+  aggregate_revision bigint not null check (aggregate_revision >= 0),
+  event_digest bytea not null check (octet_length(event_digest) = 32),
+  created_at timestamptz not null,
+  processed_at timestamptz,
+  unique (aggregate_id, aggregate_revision)
 );
 
 create table worker_checkpoints (
   worker_name text primary key,
-  checkpoint jsonb not null,
+  source_revision bigint not null check (source_revision >= 0),
+  checkpoint_digest bytea not null check (octet_length(checkpoint_digest) = 32),
   updated_at timestamptz not null
 );
 
 create table audit_events (
   audit_event_id uuid primary key,
   actor_type text not null,
+  actor_id uuid,
   event_type text not null,
-  safe_metadata jsonb not null,
+  target_type text not null,
+  target_digest bytea not null check (octet_length(target_digest) = 32),
+  reason_code text not null,
   created_at timestamptz not null
 );
 
@@ -384,7 +402,12 @@ create table deletion_jobs (
 
 create table feature_flags (
   flag_key text primary key,
-  value jsonb not null
+  value_type text not null check (value_type in ('boolean','integer','string')),
+  boolean_value boolean,
+  integer_value bigint,
+  string_value text,
+  revision bigint not null check (revision >= 0),
+  check (num_nonnulls(boolean_value, integer_value, string_value) = 1)
 );
 
 create table schema_migrations (
