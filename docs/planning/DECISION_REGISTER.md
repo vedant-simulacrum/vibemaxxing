@@ -66,6 +66,7 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-058 | Adapter, collector, detector and release trust is digest-addressed and provenance-bound; mutable names or versions alone never establish official identity | accepted | supply-chain evidence requires revision |
 | D-059 | Public launch targets the complete core social product except countries; internal staging does not permit weak or placeholder launch behavior | accepted | explicit user scope change |
 | D-060 | Open PR #17 is superseded by the July 23 audit, launch decisions, privacy and anti-cheat work and must not be merged unchanged | accepted | none |
+| D-061 | `vibemaxxing-daemon` is an always-on OS-supervised per-user background service: enabled at installation, auto-started, automatically restarted, independent of shell state, and resident through paused/offline/degraded/recovery states; platform-imposed session boundaries must be disclosed honestly | accepted | explicit user reversal or executable evidence that the selected platform mechanism cannot meet ADR-010 |
 
 ## Register rules
 
