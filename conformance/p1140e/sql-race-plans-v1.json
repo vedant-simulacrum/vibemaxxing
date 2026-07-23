@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "maturity": "planning-race-plans-only",
+  "database": "PostgreSQL 16",
+  "cases": [
+    {
+      "case_id": "oauth-single-consume",
+      "tables": [
+        "oauth_transactions",
+        "web_sessions"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "one callback consumes one transaction and creates at most one session",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "refresh-parent-reuse",
+      "tables": [
+        "session_families",
+        "web_sessions"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "one child commits; reuse revokes the token family",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "challenge-single-use",
+      "tables": [
+        "claim_challenges",
+        "claims",
+        "checkpoint_receipts"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "one atomic batch consumes the challenge and advances one checkpoint",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "idempotency-same-bytes",
+      "tables": [
+        "idempotency_records"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "byte-identical retries return one stored result",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "idempotency-conflict",
+      "tables": [
+        "idempotency_records"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "same key with a different digest rejects without business mutation",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "device-sequence-fork",
+      "tables": [
+        "device_sequences",
+        "claims",
+        "quarantines"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "one sequence wins and the conflicting fork is quarantined",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "friend-cross-request",
+      "tables": [
+        "friend_requests",
+        "friend_edges",
+        "social_integrity_events"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "crossed requests create one canonical ordered friendship",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "block-race",
+      "tables": [
+        "blocks",
+        "friend_edges",
+        "rival_edges",
+        "board_invites"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "block atomically removes incompatible relationships and invitations",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "board-owner-transfer",
+      "tables": [
+        "boards",
+        "board_memberships"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "exactly one active owner exists before and after transfer",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "ranking-generation-promote",
+      "tables": [
+        "ranking_views",
+        "ranking_projection_generations",
+        "score_snapshots"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "only a validated complete generation becomes published",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "moderation-appeal-reversal",
+      "tables": [
+        "moderation_cases",
+        "moderation_effects",
+        "appeals",
+        "appeal_decisions",
+        "ranking_corrections"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "appeal reversal appends inverse effects and schedules rebuild",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "deletion-export-race",
+      "tables": [
+        "exports",
+        "export_artifacts",
+        "deletion_jobs",
+        "deletion_effects"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "export snapshot and deletion policy yield one explicit allowed or denied result",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "local-delete-ack",
+      "tables": [
+        "local_deletion_commands",
+        "local_deletion_receipts"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "one signed command produces at most one device-bound receipt",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "release-promote-rollback",
+      "tables": [
+        "tuf_roots",
+        "release_sets",
+        "release_targets",
+        "update_installations"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "transaction-a-locks-authority",
+        "transaction-b-attempts-conflict",
+        "transaction-a-commits",
+        "transaction-b-rechecks"
+      ],
+      "expected": "only threshold-signed compatible release promotes; failure rolls back",
+      "execution_state": "planned-runtime-evidence"
+    }
+  ]
+}
