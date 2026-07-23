@@ -81,7 +81,7 @@ Until P-1140B–E close:
 - normalized event retains blocked authority, metadata and timing issues;
 - VibeProof CDDL retains blocked evidence, pricing, checkpoint, batch, correction and rotation issues;
 - local Protobuf retains blocked opaque transport and missing process/deadline semantics;
-- OpenAPI retains blocked generic resources, country remnants, presence/deletion and authorization semantics;
+- OpenAPI retains blocked generic resources plus unresolved presence, deletion and authorization semantics;
 - planning SQL lacks complete token families, lineages, appraisals, receipts, idempotency, ranking views, typed social and release/update state;
 - reason codes/defaults remain provisional where state machines are unresolved.
 
