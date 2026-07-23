@@ -64,7 +64,7 @@ export function RivalComparisonStoryboard() {
     <Panel className="duel-hero"><div className="duelist"><Avatar id={0} size={96} online/><div><h2>Vedant</h2><p>#07　·　86.4M</p></div></div><div className="duel-score"><b>5.3M <span>lead</span></b><small><i/> Ahead by 6.5%</small></div><div className="duelist right"><div><h2>Sam Rivera</h2><p>#08　·　81.1M</p></div><Avatar id={1} size={96}/></div></Panel>
     <div className="vm-sb-grid rival-grid"><div className="vm-sb-stack">
       <Panel className="compare-chart"><header><h2>Token Burn <span>(30 days)</span></h2><Tabs labels={["Today","7 days","30 days","Season"]} active="30 days"/></header><div className="legend"><i/>Vedant <i className="grey"/>Sam Rivera</div><ProductTrendChart compare label="Vedant and Sam Rivera Token Burn comparison" /></Panel>
-      <Panel className="overtakes"><h2>Recent overtakes</h2><div className="table-head"><span>Date</span><span>Leader change</span><span>New leader</span><span>Lead after change</span><span>Notes</span></div>{[
+      <Panel className="overtakes" label="Recent overtakes" tabIndex={0}><h2>Recent overtakes</h2><div className="table-head"><span>Date</span><span>Leader change</span><span>New leader</span><span>Lead after change</span><span>Notes</span></div>{[
         ["May 24, 2025","Vedant overtook Sam Rivera","Vedant","2.1M","Vedant burned 18.7M vs Sam’s 11.2M",0],
         ["May 16, 2025","Sam Rivera overtook Vedant","Sam Rivera","0.8M","Sam burned 16.3M vs Vedant’s 10.9M",1],
         ["May 11, 2025","Vedant overtook Sam Rivera","Vedant","1.3M","Vedant burned 14.6M vs Sam’s 9.8M",0],
