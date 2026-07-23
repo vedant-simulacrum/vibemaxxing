@@ -13,7 +13,7 @@ try {
     await page.goto(`${baseUrl}/iframe.html?id=approved-baseline-product-screens--${story}&viewMode=story`, { waitUntil: "networkidle" });
     await page.waitForSelector(".vm-sb-page");
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
-    for (const violation of results.violations) failures.push(`${story}: ${violation.id} — ${violation.help}`);
+    for (const violation of results.violations) {\n      const nodes = violation.nodes.map((node) => `${node.target.join(" ")}: ${node.failureSummary ?? node.html}`).join(" | ");\n      failures.push(`${story}: ${violation.id} — ${violation.help} — ${nodes}`);\n    }
 
     await page.keyboard.press("Tab");
     const firstFocus = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent?.trim());
