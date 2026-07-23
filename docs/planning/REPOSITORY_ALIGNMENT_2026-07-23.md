@@ -1,6 +1,6 @@
 # Repository-wide authority alignment audit
 
-Updated: 2026-07-23
+Updated: 2026-07-24
 Status: canonical planning audit and reconciliation record
 
 ## Purpose
@@ -38,6 +38,34 @@ The central inconsistency is temporal:
 5. the top-level status, handoff, schemas and older subsystem contracts were not updated to adopt those later decisions.
 
 Therefore the correct repository phase is **planning alignment and contract repair**, not “planning complete” and not implementation.
+
+## July 24 handoff consolidation update
+
+A connector-backed audit of current `main`, open pull requests, issues, authority files, implementation planning, planning schemas, seed packages and workflow state found:
+
+- `main` at `111173b32ef972b600148f08675143d552cad4d9` remains a planning repository with one bounded web/Storybook prototype;
+- no root Rust, Go or JavaScript workspace exists; `apps/api/go.mod` is a module seed without a server entrypoint, the planned Rust crates are not present, and `packages/protocol` is explicitly a future generated-bindings placeholder;
+- the implementation handoff and PR-sized breakdown are broad and dependency ordered, but they cannot be treated as executable handoff authority while P-1140B through P-1140E remain incomplete;
+- the July 19 schema/interface inventory and traceability dry-run still used current-sounding `validated`, `normative` and `complete` language even though later audits reopened their assumptions;
+- open PR #30 contains the active UI application-lockdown work: 49 changed files and 24 branch commits, but it is two commits behind `main`, currently non-mergeable, and overlaps workflow/governance files changed by PR #31;
+- open draft PR #31 is the ADR-014 workflow-boundary repair: five files, mergeable at audit time, with planning checks passing on its exact head while its prototype workflow was still running.
+
+### Consolidation disposition
+
+- `SCHEMA_AND_INTERFACE_INVENTORY.md` is a current repair index, not implementation-ready schema approval.
+- `TRACEABILITY_AND_DRY_RUN_AUDIT.md` is historical evidence superseded by `decision-traceability/`, P-1140 and this alignment record.
+- `IMPLEMENTATION_HANDOFF.md` remains the sole future build-order contract, but now carries an explicit handoff-health section and cannot graduate until repaired machine contracts and clean validation exist.
+- Existing research and anti-cheat plans remain inputs. Unique decisions must flow into the accepted owners; they are not parallel roadmaps.
+
+### Concurrent-work merge safety
+
+1. Complete and merge PR #31 only after its exact-head planning and prototype checks finish successfully.
+2. Update PR #30 onto the resulting `main`.
+3. Resolve its workflow, documentation-map and UI-checker overlaps in favor of ADR-014 and the repaired repository doctor.
+4. Re-run planning and scoped prototype validation on the reconciled UI head.
+5. Refresh canonical status/alignment only from the merged state; never infer completion from a branch or a pre-merge run.
+
+This ordering is coordination guidance, not authorization to merge a PR whose checks or review are incomplete.
 
 ## Current artifact maturity
 
