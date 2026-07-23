@@ -104,7 +104,7 @@ P-1140B acceptance:
 
 ### P-1140C — VibeProof v1 protocol rewrite
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140B.
 
@@ -120,7 +120,7 @@ Candidate deliverables present on `agent/p1140c-vibeproof-v1`:
 - fixed claim and receipt exact-byte Ed25519 vectors plus malformed/resource/transaction corpus;
 - validator checks for CDDL coverage, prohibited client authority, digests, lengths and cryptographic signatures.
 
-Remaining gate work before `complete-planning`: pass exact-head Planning checks, repair validator findings, reconcile current `main`, and transition P-1140D to active without claiming runtime interoperability.
+Validation: Planning checks run #219 passed on exact candidate head `e6f334772f05d4f3806935a7d8a701a2a8bb32d0`; the gate-transition head must also pass before merge. These are planning vectors, not independent runtime interoperability evidence.
 
 Acceptance:
 
@@ -132,7 +132,7 @@ Acceptance:
 
 ### P-1140D — identity, API, ranking, social, native and release state machines
 
-Status: `blocked-planning`
+Status: `in-progress-planning`
 
 Dependencies: P-1140B; protocol-facing work also depends on P-1140C.
 
