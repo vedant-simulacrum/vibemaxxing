@@ -1,200 +1,3766 @@
-openapi: 3.1.0
-info:
-  title: VibeMaxxing Public API
-  version: 1.0.0-planning
-  description: Planning-grade interface contract. It is not an implemented service.
-servers:
-  - url: https://api.vibemaxxing.dev/v1
-security:
-  - bearerAuth: []
-paths:
-  /auth/github/start:
-    post: {operationId: startGitHubAuth, security: [], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /auth/github/callback:
-    get: {operationId: completeGitHubAuth, security: [], responses: {'200': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /auth/x/start:
-    post: {operationId: startXAuth, security: [], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /auth/x/callback:
-    get: {operationId: completeXAuth, security: [], responses: {'200': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /auth/device/start:
-    post: {operationId: startDeviceAuth, security: [], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /auth/device/poll:
-    post: {operationId: pollDeviceAuth, security: [], responses: {'200': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /auth/device/exchange:
-    post: {operationId: exchangeDeviceAuth, security: [], responses: {'200': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /sessions:
-    get: {operationId: listSessions, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-  /sessions/{id}/revoke:
-    post:
-      operationId: revokeSession
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}
-  /identities:
-    get: {operationId: listIdentities, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-  /identities/link:
-    post: {operationId: linkIdentity, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /identities/unlink:
-    post: {operationId: unlinkIdentity, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /devices:
-    get: {operationId: listDevices, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-  /devices/enroll:
-    post: {operationId: enrollDevice, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'201': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /devices/{id}/rotate:
-    post: {operationId: rotateDeviceKey, parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IdempotencyKey'}], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /devices/{id}/revoke:
-    post: {operationId: revokeDevice, parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IdempotencyKey'}], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /claim-challenges:
-    post:
-      operationId: createClaimChallenge
-      responses:
-        '201':
-          description: Account and device bound batch challenge
-          content: {application/json: {schema: {$ref: '#/components/schemas/ClaimChallenge'}}}
-        default: {$ref: '#/components/responses/Error'}
-  /claim-batches:
-    post:
-      operationId: submitClaimBatch
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/cbor: {schema: {type: string, contentEncoding: base64}}}}
-      responses:
-        '200': {description: Atomic batch verification result, content: {application/json: {schema: {$ref: '#/components/schemas/BatchResult'}}}}
-        default: {$ref: '#/components/responses/Error'}
-  /claims/{id}:
-    get: {operationId: getClaim, parameters: [{$ref: '#/components/parameters/Id'}], responses: {'200': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /leaderboards/{scope}/{period}:
-    get:
-      operationId: getLeaderboard
-      security: []
-      parameters:
-        - {name: scope, in: path, required: true, schema: {type: string}}
-        - {name: period, in: path, required: true, schema: {enum: [daily, weekly, monthly, seasonal, yearly, lifetime]}}
-        - {name: cursor, in: query, schema: {type: string, maxLength: 2048}}
-        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 50}}
-      responses:
-        '200': {description: Snapshot-consistent leaderboard page, content: {application/json: {schema: {$ref: '#/components/schemas/LeaderboardPage'}}}}
-        default: {$ref: '#/components/responses/Error'}
-  /rank/me:
-    get: {operationId: getCurrentRank, responses: {'200': {description: Current-user rank, content: {application/json: {schema: {$ref: '#/components/schemas/RankEntry'}}}}, default: {$ref: '#/components/responses/Error'}}}
-  /profiles/{handle}:
-    get: {operationId: getPublicProfile, security: [], parameters: [{$ref: '#/components/parameters/Handle'}], responses: {'200': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /me:
-    get: {operationId: getMe, responses: {'200': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-    patch: {operationId: updateMe, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'200': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /friends:
-    get: {operationId: listFriends, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-  /friend-requests:
-    get: {operationId: listFriendRequests, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-    post: {operationId: createFriendRequest, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /blocks:
-    get: {operationId: listBlocks, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-    post: {operationId: createBlock, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /rivals:
-    get: {operationId: listRivals, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-    post: {operationId: createRival, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /boards:
-    get: {operationId: listBoards, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-    post: {operationId: createBoard, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'201': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /boards/{id}/invitations:
-    post: {operationId: createBoardInvitation, parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IdempotencyKey'}], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /organizations:
-    get: {operationId: listOrganizations, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-    post: {operationId: createOrganization, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'201': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /communities:
-    get: {operationId: listCommunities, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-    post: {operationId: createCommunity, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'201': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /presence:
-    get: {operationId: getPresence, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-    put: {operationId: renewPresence, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'200': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /notifications:
-    get: {operationId: listNotifications, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-  /moderation/cases:
-    get: {operationId: listModerationCases, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-    post: {operationId: createModerationCase, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'201': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /appeals:
-    get: {operationId: listAppeals, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-    post: {operationId: createAppeal, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'201': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /exports:
-    post: {operationId: requestExport, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}}
-  /deletion-requests:
-    post:
-      operationId: requestDeletion
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: false, required: [scope], properties: {scope: {enum: [server, local, everything]}}}}}}
-      responses: {'202': {$ref: '#/components/responses/Operation'}, default: {$ref: '#/components/responses/Error'}}
-  /pricing-datasets:
-    get: {operationId: listPricingDatasets, security: [], responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-  /compatibility:
-    get: {operationId: getCompatibility, security: [], responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
-components:
-  securitySchemes:
-    bearerAuth: {type: http, scheme: bearer}
-  parameters:
-    Id: {name: id, in: path, required: true, schema: {type: string, format: uuid}}
-    Handle: {name: handle, in: path, required: true, schema: {type: string, minLength: 3, maxLength: 30}}
-    IdempotencyKey: {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 16, maxLength: 128}}
-  responses:
-    Error: {description: Stable safe error envelope, content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
-    Resource: {description: Resource response, content: {application/json: {schema: {$ref: '#/components/schemas/Resource'}}}}
-    Collection: {description: Collection response, content: {application/json: {schema: {$ref: '#/components/schemas/Collection'}}}}
-    Operation: {description: Accepted operation, content: {application/json: {schema: {$ref: '#/components/schemas/Operation'}}}}
-  schemas:
-    Resource:
-      type: object
-      additionalProperties: true
-      required: [request_id, id]
-      properties: {request_id: {type: string, format: uuid}, id: {type: string}}
-    Collection:
-      type: object
-      additionalProperties: false
-      required: [request_id, items]
-      properties: {request_id: {type: string, format: uuid}, next_cursor: {type: [string, 'null']}, items: {type: array, items: {type: object}}}
-    ClaimChallenge:
-      type: object
-      additionalProperties: false
-      required: [challenge_id, nonce, expires_at, max_claims, device_id]
-      properties:
-        challenge_id: {type: string, maxLength: 80}
-        nonce: {type: string, contentEncoding: base64}
-        expires_at: {type: string, format: date-time}
-        max_claims: {type: integer, minimum: 1, maximum: 500}
-        device_id: {type: string, format: uuid}
-    BatchResult:
-      type: object
-      additionalProperties: false
-      required: [request_id, batch_id, atomic, outcome, claims]
-      properties:
-        request_id: {type: string, format: uuid}
-        batch_id: {type: string, format: uuid}
-        atomic: {const: true}
-        outcome: {enum: [accepted, accepted_idempotent, rejected, retryable]}
-        claims:
-          type: array
-          maxItems: 500
-          items:
-            type: object
-            additionalProperties: false
-            required: [claim_id, outcome]
-            properties:
-              claim_id: {type: string, format: uuid}
-              outcome: {enum: [accepted, accepted_idempotent, rejected_invalid, rejected_replay, rejected_privacy, rejected_unsupported, downgraded, quarantined, retryable]}
-              reason_code: {type: [string, 'null']}
-    RankEntry:
-      type: object
-      additionalProperties: false
-      required: [account_id, rank, score, evidence_state]
-      properties: {account_id: {type: string, format: uuid}, rank: {type: integer, minimum: 1}, score: {type: integer, minimum: 0}, evidence_state: {enum: [standard, hardened]}}
-    LeaderboardPage:
-      type: object
-      additionalProperties: false
-      required: [request_id, snapshot_generation, entries]
-      properties: {request_id: {type: string, format: uuid}, snapshot_generation: {type: string}, next_cursor: {type: [string, 'null']}, entries: {type: array, items: {$ref: '#/components/schemas/RankEntry'}}}
-    Operation:
-      type: object
-      additionalProperties: false
-      required: [request_id, operation_id, state]
-      properties: {request_id: {type: string, format: uuid}, operation_id: {type: string, format: uuid}, state: {enum: [accepted, running, completed, failed]}}
-    Error:
-      type: object
-      additionalProperties: false
-      required: [request_id, code, message, retryable]
-      properties: {request_id: {type: string, format: uuid}, code: {type: string, pattern: '^[A-Z][A-Z0-9_]{2,79}$'}, message: {type: string, maxLength: 300}, retryable: {type: boolean}, details: {type: object, additionalProperties: true}}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VibeMaxxing Public API",
+    "version": "1.0.0-p1140d",
+    "description": "P-1140D planning contract. Implementation remains unauthorized."
+  },
+  "servers": [
+    {
+      "url": "https://api.vibemaxxing.dev/v1"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/github/start": {
+      "post": {
+        "operationId": "startGitHubAuth",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "202": {
+            "description": "OAuthStart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthStart"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthStartRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/github/callback": {
+      "get": {
+        "operationId": "completeGitHubAuth",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "OAuthCompletion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCompletion"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OAuthCode"
+          },
+          {
+            "$ref": "#/components/parameters/OAuthState"
+          }
+        ]
+      }
+    },
+    "/auth/x/start": {
+      "post": {
+        "operationId": "startXAuth",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "202": {
+            "description": "OAuthStart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthStart"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthStartRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/x/callback": {
+      "get": {
+        "operationId": "completeXAuth",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "OAuthCompletion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCompletion"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OAuthCode"
+          },
+          {
+            "$ref": "#/components/parameters/OAuthState"
+          }
+        ]
+      }
+    },
+    "/auth/device/start": {
+      "post": {
+        "operationId": "startDeviceAuth",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "202": {
+            "description": "DeviceAuthorization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceAuthorization"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceAuthStartRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/device/poll": {
+      "post": {
+        "operationId": "pollDeviceAuth",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "DeviceAuthorizationStatus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceAuthorizationStatus"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceAuthPollRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/device/exchange": {
+      "post": {
+        "operationId": "exchangeDeviceAuth",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "NativeSession",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NativeSession"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceAuthExchangeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions": {
+      "get": {
+        "operationId": "listSessions",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "SessionPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/sessions/{id}/revoke": {
+      "post": {
+        "operationId": "revokeSession",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "TransitionReceipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitionReceipt"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ]
+      }
+    },
+    "/identities": {
+      "get": {
+        "operationId": "listIdentities",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "IdentityPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/identities/link": {
+      "post": {
+        "operationId": "linkIdentity",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "TransitionReceipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitionReceipt"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityMutationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/identities/unlink": {
+      "post": {
+        "operationId": "unlinkIdentity",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "TransitionReceipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitionReceipt"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityMutationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/devices": {
+      "get": {
+        "operationId": "listDevices",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "DevicePage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevicePage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/devices/enroll": {
+      "post": {
+        "operationId": "enrollDevice",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "201": {
+            "description": "Device",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Device"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceEnrollRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/devices/{id}/rotate": {
+      "post": {
+        "operationId": "rotateDeviceKey",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "TransitionReceipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitionReceipt"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceKeyRotationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/devices/{id}/revoke": {
+      "post": {
+        "operationId": "revokeDevice",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "TransitionReceipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitionReceipt"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ]
+      }
+    },
+    "/claim-challenges": {
+      "post": {
+        "operationId": "createClaimChallenge",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "server-challenge-uniqueness",
+        "responses": {
+          "201": {
+            "description": "ClaimChallenge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimChallenge"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimChallengeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/claim-batches": {
+      "post": {
+        "operationId": "submitClaimBatch",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "200": {
+            "description": "ClaimBatchResult",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimBatchResult"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/vibemaxxing-claim-batch+cbor": {
+              "schema": {
+                "type": "string",
+                "contentEncoding": "base64",
+                "maxLength": 1398104
+              }
+            }
+          }
+        }
+      }
+    },
+    "/claims/{id}": {
+      "get": {
+        "operationId": "getClaim",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "ClaimRecord",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimRecord"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          }
+        ]
+      }
+    },
+    "/leaderboards/{scope}/{period}": {
+      "get": {
+        "operationId": "getLeaderboard",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "LeaderboardPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Scope"
+          },
+          {
+            "$ref": "#/components/parameters/Period"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/RankingView"
+          }
+        ]
+      }
+    },
+    "/rank/me": {
+      "get": {
+        "operationId": "getCurrentRank",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "RankEntry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankEntry"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/profiles/{handle}": {
+      "get": {
+        "operationId": "getPublicProfile",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "PublicProfile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProfile"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Handle"
+          }
+        ]
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "getMe",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "AccountProfile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountProfile"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateMe",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "200": {
+            "description": "AccountProfile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountProfile"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/friends": {
+      "get": {
+        "operationId": "listFriends",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "RelationshipPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/friend-requests": {
+      "get": {
+        "operationId": "listFriendRequests",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "RelationshipPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createFriendRequest",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "TransitionReceipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitionReceipt"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipMutationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/blocks": {
+      "get": {
+        "operationId": "listBlocks",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "RelationshipPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createBlock",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "TransitionReceipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitionReceipt"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipMutationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rivals": {
+      "get": {
+        "operationId": "listRivals",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "RelationshipPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createRival",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "TransitionReceipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitionReceipt"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationshipMutationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards": {
+      "get": {
+        "operationId": "listBoards",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "BoardPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createBoard",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "201": {
+            "description": "Board",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Board"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardCreateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boards/{id}/invitations": {
+      "post": {
+        "operationId": "createBoardInvitation",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "TransitionReceipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitionReceipt"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardInvitationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations": {
+      "get": {
+        "operationId": "listOrganizations",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "OrganizationPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createOrganization",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "201": {
+            "description": "Organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Organization"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NamedResourceRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/communities": {
+      "get": {
+        "operationId": "listCommunities",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "CommunityPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCommunity",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "201": {
+            "description": "Community",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Community"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NamedResourceRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/presence": {
+      "get": {
+        "operationId": "getPresence",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "PresencePage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresencePage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "put": {
+        "operationId": "renewPresence",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "200": {
+            "description": "PresenceLease",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresenceLease"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresenceRenewalRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "operationId": "listNotifications",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "NotificationPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ]
+      }
+    },
+    "/moderation/cases": {
+      "get": {
+        "operationId": "listModerationCases",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "ModerationCasePage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationCasePage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createModerationCase",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "201": {
+            "description": "ModerationCase",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationCase"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationCaseRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appeals": {
+      "get": {
+        "operationId": "listAppeals",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "AppealPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppealPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAppeal",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "201": {
+            "description": "Appeal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appeal"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppealRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/exports": {
+      "post": {
+        "operationId": "requestExport",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "ExportJob",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportJob"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deletion-requests": {
+      "post": {
+        "operationId": "requestDeletion",
+        "x-authorization": "authenticated-account",
+        "x-recent-auth": "required",
+        "x-idempotency": "required-durable-request-hash",
+        "responses": {
+          "202": {
+            "description": "DeletionJob",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionJob"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pricing-datasets": {
+      "get": {
+        "operationId": "listPricingDatasets",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "PricingDatasetPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingDatasetPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ]
+      }
+    },
+    "/compatibility": {
+      "get": {
+        "operationId": "getCompatibility",
+        "x-authorization": "public",
+        "x-recent-auth": "not-required",
+        "x-idempotency": "not-applicable",
+        "responses": {
+          "200": {
+            "description": "CompatibilityPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompatibilityPage"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "opaque"
+      }
+    },
+    "parameters": {
+      "Id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Handle": {
+        "name": "handle",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 30
+        }
+      },
+      "OAuthCode": {
+        "name": "code",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 2048
+        }
+      },
+      "OAuthState": {
+        "name": "state",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Scope": {
+        "name": "scope",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "enum": [
+            "global",
+            "friends",
+            "rivals",
+            "board"
+          ]
+        }
+      },
+      "Period": {
+        "name": "period",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "enum": [
+            "daily",
+            "weekly",
+            "monthly",
+            "seasonal",
+            "yearly",
+            "lifetime"
+          ]
+        }
+      },
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 2048
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50
+        }
+      },
+      "RankingView": {
+        "name": "ranking_view_id",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "responses": {
+      "Problem": {
+        "description": "Stable typed problem envelope",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate limit exceeded",
+        "headers": {
+          "Retry-After": {
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Problem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "title",
+          "status",
+          "reason_code",
+          "retryable",
+          "details"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "reason_code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "details": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field",
+                "issue"
+              ],
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "issue": {
+                  "enum": [
+                    "invalid",
+                    "missing",
+                    "conflict",
+                    "expired",
+                    "forbidden",
+                    "too_large"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "TransitionReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "transition_id",
+          "state",
+          "revision",
+          "committed_at"
+        ],
+        "properties": {
+          "transition_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "committed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OAuthStartRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "redirect_uri",
+          "intended_action"
+        ],
+        "properties": {
+          "redirect_uri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "intended_action": {
+            "enum": [
+              "sign_in",
+              "link_identity"
+            ]
+          }
+        }
+      },
+      "OAuthStart": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "transaction_id",
+          "authorization_url",
+          "expires_at"
+        ],
+        "properties": {
+          "transaction_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "authorization_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OAuthCompletion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "transaction_id",
+          "account_id",
+          "session_id",
+          "state"
+        ],
+        "properties": {
+          "transaction_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "enum": [
+              "completed"
+            ]
+          }
+        }
+      },
+      "DeviceAuthStartRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "installation_id",
+          "device_name"
+        ],
+        "properties": {
+          "installation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "device_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        }
+      },
+      "DeviceAuthorization": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "device_code",
+          "user_code",
+          "verification_uri",
+          "expires_at",
+          "poll_interval_seconds"
+        ],
+        "properties": {
+          "device_code": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "user_code": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{8}$"
+          },
+          "verification_uri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "poll_interval_seconds": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 60
+          }
+        }
+      },
+      "DeviceAuthPollRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "device_code"
+        ],
+        "properties": {
+          "device_code": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "DeviceAuthorizationStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state",
+          "retry_after_seconds"
+        ],
+        "properties": {
+          "state": {
+            "enum": [
+              "pending",
+              "approved",
+              "denied",
+              "expired",
+              "consumed"
+            ]
+          },
+          "retry_after_seconds": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 60
+          }
+        }
+      },
+      "DeviceAuthExchangeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "device_code",
+          "device_proof"
+        ],
+        "properties": {
+          "device_code": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "device_proof": {
+            "type": "string",
+            "minLength": 40,
+            "maxLength": 4096
+          }
+        }
+      },
+      "NativeSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "session_id",
+          "token_type",
+          "access_token",
+          "expires_at",
+          "device_key_thumbprint"
+        ],
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token_type": {
+            "enum": [
+              "Device-Bound"
+            ]
+          },
+          "access_token": {
+            "type": "string",
+            "minLength": 32,
+            "maxLength": 4096
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "device_key_thumbprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "Session": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "session_id",
+          "kind",
+          "state",
+          "created_at",
+          "expires_at",
+          "current"
+        ],
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "web",
+              "native"
+            ]
+          },
+          "state": {
+            "enum": [
+              "active",
+              "revoked",
+              "expired",
+              "rotated"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "current": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SessionPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/Session"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Identity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "identity_id",
+          "provider",
+          "subject",
+          "state",
+          "linked_at"
+        ],
+        "properties": {
+          "identity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "enum": [
+              "github",
+              "x"
+            ]
+          },
+          "subject": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "state": {
+            "enum": [
+              "linked",
+              "unlink_pending",
+              "unlinked"
+            ]
+          },
+          "linked_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IdentityPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/Identity"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "IdentityMutationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider",
+          "authorization_code"
+        ],
+        "properties": {
+          "provider": {
+            "enum": [
+              "github",
+              "x"
+            ]
+          },
+          "authorization_code": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 2048
+          }
+        }
+      },
+      "Device": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "device_id",
+          "lineage_id",
+          "platform_profile_id",
+          "state",
+          "key_id"
+        ],
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lineage_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "platform_profile_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "active",
+              "quarantined",
+              "revoked",
+              "deleted"
+            ]
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "DevicePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/Device"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "DeviceEnrollRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "installation_id",
+          "lineage_id",
+          "platform_profile_id",
+          "public_key"
+        ],
+        "properties": {
+          "installation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lineage_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "platform_profile_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "public_key": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "maxLength": 128
+          }
+        }
+      },
+      "DeviceKeyRotationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "previous_key_id",
+          "new_public_key",
+          "continuity_signature"
+        ],
+        "properties": {
+          "previous_key_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "new_public_key": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "maxLength": 128
+          },
+          "continuity_signature": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "maxLength": 128
+          }
+        }
+      },
+      "ClaimChallengeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "device_id",
+          "batch_commitment"
+        ],
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "batch_commitment": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "ClaimChallenge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "challenge_id",
+          "device_id",
+          "nonce",
+          "batch_commitment",
+          "expires_at"
+        ],
+        "properties": {
+          "challenge_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "device_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nonce": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "maxLength": 64
+          },
+          "batch_commitment": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ClaimRejection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_index",
+          "reason_code",
+          "retryable"
+        ],
+        "properties": {
+          "claim_index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "reason_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ClaimBatchResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "batch_id",
+          "state",
+          "accepted_claim_ids",
+          "rejections",
+          "checkpoint_receipt"
+        ],
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "enum": [
+              "accepted",
+              "rejected"
+            ]
+          },
+          "accepted_claim_ids": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "rejections": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/ClaimRejection"
+            }
+          },
+          "checkpoint_receipt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "contentEncoding": "base64",
+            "maxLength": 4096
+          }
+        }
+      },
+      "ClaimRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_id",
+          "device_id",
+          "sequence",
+          "state",
+          "payload_digest",
+          "appraisal_id",
+          "accepted_at"
+        ],
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "device_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "state": {
+            "enum": [
+              "accepted",
+              "corrected",
+              "retracted",
+              "quarantined"
+            ]
+          },
+          "payload_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "appraisal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accepted_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RankEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account_id",
+          "handle",
+          "score",
+          "position",
+          "ranking_view_id",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "handle": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "ranking_view_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "LeaderboardPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/RankEntry"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "PublicProfile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account_id",
+          "handle",
+          "ranked_state",
+          "created_at"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "handle": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30
+          },
+          "ranked_state": {
+            "enum": [
+              "unranked",
+              "eligible",
+              "restricted",
+              "suspended"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AccountProfile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account_id",
+          "handle",
+          "ranked_state",
+          "revision"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "handle": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30
+          },
+          "ranked_state": {
+            "enum": [
+              "unranked",
+              "eligible",
+              "restricted",
+              "suspended"
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ProfileUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "handle"
+        ],
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30
+          }
+        }
+      },
+      "Relationship": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relationship_id",
+          "kind",
+          "peer_account_id",
+          "state",
+          "revision"
+        ],
+        "properties": {
+          "relationship_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "friend",
+              "friend_request",
+              "block",
+              "rival"
+            ]
+          },
+          "peer_account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "RelationshipPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/Relationship"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "RelationshipMutationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target_account_id"
+        ],
+        "properties": {
+          "target_account_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "Board": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "board_id",
+          "kind",
+          "name",
+          "membership_revision",
+          "state"
+        ],
+        "properties": {
+          "board_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "organization",
+              "community",
+              "private"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "membership_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "state": {
+            "enum": [
+              "active",
+              "archived"
+            ]
+          }
+        }
+      },
+      "BoardPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/Board"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "BoardCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "name"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "organization",
+              "community",
+              "private"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        }
+      },
+      "BoardInvitationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account_id",
+          "role"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "enum": [
+              "owner",
+              "admin",
+              "member",
+              "viewer"
+            ]
+          }
+        }
+      },
+      "NamedResourceRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "name",
+          "board_id",
+          "state"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "board_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "enum": [
+              "active",
+              "archived"
+            ]
+          }
+        }
+      },
+      "OrganizationPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/Organization"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Community": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "community_id",
+          "name",
+          "board_id",
+          "state"
+        ],
+        "properties": {
+          "community_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "board_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "enum": [
+              "active",
+              "archived"
+            ]
+          }
+        }
+      },
+      "CommunityPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/Community"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "PresenceRenewalRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "availability"
+        ],
+        "properties": {
+          "availability": {
+            "enum": [
+              "online",
+              "idle",
+              "offline"
+            ]
+          }
+        }
+      },
+      "PresenceLease": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account_id",
+          "availability",
+          "lease_expires_at",
+          "revision"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "availability": {
+            "enum": [
+              "online",
+              "idle",
+              "offline"
+            ]
+          },
+          "lease_expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "PresencePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/PresenceLease"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "notification_id",
+          "type",
+          "state",
+          "created_at",
+          "actor_account_id",
+          "scope_id"
+        ],
+        "properties": {
+          "notification_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": [
+              "friend_request",
+              "board_invitation",
+              "rank_overtake",
+              "moderation",
+              "appeal",
+              "security",
+              "compatibility",
+              "release"
+            ]
+          },
+          "state": {
+            "enum": [
+              "queued",
+              "delivered",
+              "read",
+              "suppressed",
+              "expired"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actor_account_id": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scope_id": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "NotificationPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ModerationCaseRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target_type",
+          "target_id",
+          "reason_code",
+          "evidence_commitment"
+        ],
+        "properties": {
+          "target_type": {
+            "enum": [
+              "account",
+              "device",
+              "claim",
+              "session"
+            ]
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "evidence_commitment": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "ModerationCase": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "target_type",
+          "target_id",
+          "state",
+          "policy_version",
+          "revision"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "target_type": {
+            "enum": [
+              "account",
+              "device",
+              "claim",
+              "session"
+            ]
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "enum": [
+              "open",
+              "investigating",
+              "actioned",
+              "appealed",
+              "closed"
+            ]
+          },
+          "policy_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ModerationCasePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/ModerationCase"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "AppealRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "statement_commitment"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "statement_commitment": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "Appeal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "appeal_id",
+          "case_id",
+          "state",
+          "revision"
+        ],
+        "properties": {
+          "appeal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "case_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "enum": [
+              "submitted",
+              "needs_information",
+              "under_review",
+              "upheld",
+              "partially_upheld",
+              "reversed",
+              "expired"
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "AppealPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/Appeal"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ExportRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scope"
+        ],
+        "properties": {
+          "scope": {
+            "enum": [
+              "account",
+              "claims",
+              "social",
+              "all"
+            ]
+          }
+        }
+      },
+      "ExportJob": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "export_id",
+          "state",
+          "requested_at",
+          "expires_at"
+        ],
+        "properties": {
+          "export_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "enum": [
+              "queued",
+              "building",
+              "ready",
+              "downloaded",
+              "expired",
+              "failed"
+            ]
+          },
+          "requested_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeletionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scope"
+        ],
+        "properties": {
+          "scope": {
+            "enum": [
+              "server",
+              "local",
+              "everything"
+            ]
+          }
+        }
+      },
+      "DeletionJob": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deletion_job_id",
+          "state",
+          "requested_at",
+          "effective_after"
+        ],
+        "properties": {
+          "deletion_job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "enum": [
+              "requested",
+              "cooling_off",
+              "executing",
+              "awaiting_local_receipt",
+              "completed",
+              "failed"
+            ]
+          },
+          "requested_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effective_after": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PricingDataset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pricing_dataset_id",
+          "effective_at",
+          "content_digest",
+          "state"
+        ],
+        "properties": {
+          "pricing_dataset_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "effective_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "content_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "state": {
+            "enum": [
+              "published",
+              "superseded",
+              "revoked"
+            ]
+          }
+        }
+      },
+      "PricingDatasetPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/PricingDataset"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CompatibilityProfile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "platform_profile_id",
+          "os_family",
+          "os_version",
+          "architecture",
+          "environment",
+          "advertised",
+          "validation_state"
+        ],
+        "properties": {
+          "platform_profile_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "os_family": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "os_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "architecture": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "environment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "advertised": {
+            "type": "boolean"
+          },
+          "validation_state": {
+            "enum": [
+              "planned-validation-required",
+              "certified",
+              "blocked",
+              "retired"
+            ]
+          }
+        }
+      },
+      "CompatibilityPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "cursor",
+          "snapshot_id",
+          "revision"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/CompatibilityProfile"
+            }
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}
