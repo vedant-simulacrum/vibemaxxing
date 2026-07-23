@@ -1,3 +1,13 @@
+@font-face {
+  font-family: "InterVariable";
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+}
+
+html, body, #storybook-root { margin: 0; min-height: 100%; }
+
 .storybook-ledger {
   width: min(960px, 100%);
 }
