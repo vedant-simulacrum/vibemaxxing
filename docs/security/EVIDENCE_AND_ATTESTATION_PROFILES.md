@@ -1,6 +1,6 @@
 # Evidence and Attestation Profiles
 
-Status: normative planning direction; machine-readable policy requires P-1140B/C.
+Status: normative planning contract; P-1140B appraisal policy frozen, P-1140C wire binding pending.
 Updated: 2026-07-23
 
 ## Purpose
@@ -15,6 +15,12 @@ It does not by itself prove:
 - that an OAuth account maps to one unique human.
 
 Consumer-facing states remain Standard, Hardened and Imported. The server verifier awards Standard or Hardened through a named, versioned profile. The client submits facts and cannot select its final state.
+
+## Machine-readable appraisal policy
+
+`packages/schemas/evidence-profile-policy-v1.json` is the planning authority for the independent dimension enums, named profile minimums, fatal conditions and downgrade order. The client does not serialize a desired public state. The server stores an immutable `VerifierAppraisal` that references the exact policy and implementation digests; changing policy creates a new appraisal or explicit re-evaluation record rather than mutating a claim.
+
+Evaluation is dimensional: a stronger key cannot compensate for contradictory accounting, and strong source authority cannot bypass privacy, continuity or artifact failures. Fatal conditions reject or quarantine. Failure to satisfy Hardened evaluates Standard; failure to satisfy Standard becomes private analytics. E5 remains Imported/private only.
 
 ## Independent dimensions
 
