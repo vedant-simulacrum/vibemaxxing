@@ -1,0 +1,1015 @@
+{
+  "schema_version": 1,
+  "maturity": "planning-validation-only",
+  "decision_bindings": [
+    {
+      "decision_id": "D-001",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-002",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-003",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-004",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-005",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-006",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-007",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-008",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-009",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-010",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-011",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-012",
+      "decision_status": "research-required",
+      "active": false,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-013",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-014",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-015",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-016",
+      "decision_status": "superseded",
+      "active": false,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-017",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-018",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-019",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-020",
+      "decision_status": "superseded",
+      "active": false,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-001-D-020.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-001-D-020.md",
+      "platform_scope": "docs/planning/decision-traceability/D-001-D-020.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-021",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-022",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-023",
+      "decision_status": "superseded",
+      "active": false,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-024",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-025",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-026",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-027",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-028",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-029",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-030",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-031",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-032",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-033",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-034",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-035",
+      "decision_status": "superseded",
+      "active": false,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-036",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-037",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-038",
+      "decision_status": "superseded",
+      "active": false,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-039",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-040",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",
+      "platform_scope": "docs/planning/decision-traceability/D-021-D-040.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-041",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-042",
+      "decision_status": "superseded",
+      "active": false,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-043",
+      "decision_status": "provisional",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-044",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-045",
+      "decision_status": "superseded",
+      "active": false,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-046",
+      "decision_status": "provisional",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-047",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-048",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-049",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-050",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-051",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-052",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-053",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-054",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-055",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-056",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-057",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-058",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-059",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-060",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-061",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-041-D-061.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-041-D-061.md",
+      "platform_scope": "docs/planning/decision-traceability/D-041-D-061.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-062",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-062-D-069.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-062-D-069.md",
+      "platform_scope": "docs/planning/decision-traceability/D-062-D-069.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-063",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-062-D-069.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-062-D-069.md",
+      "platform_scope": "docs/planning/decision-traceability/D-062-D-069.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-064",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-062-D-069.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-062-D-069.md",
+      "platform_scope": "docs/planning/decision-traceability/D-062-D-069.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-065",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-062-D-069.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-062-D-069.md",
+      "platform_scope": "docs/planning/decision-traceability/D-062-D-069.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-066",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-062-D-069.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-062-D-069.md",
+      "platform_scope": "docs/planning/decision-traceability/D-062-D-069.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-067",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-062-D-069.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-062-D-069.md",
+      "platform_scope": "docs/planning/decision-traceability/D-062-D-069.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-068",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-062-D-069.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-062-D-069.md",
+      "platform_scope": "docs/planning/decision-traceability/D-062-D-069.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    },
+    {
+      "decision_id": "D-069",
+      "decision_status": "accepted",
+      "active": true,
+      "normative_owner": "docs/planning/DECISION_REGISTER.md",
+      "work_unit": "docs/planning/decision-traceability/D-062-D-069.md",
+      "schema_or_state_owner": "docs/planning/decision-traceability/D-062-D-069.md",
+      "platform_scope": "docs/planning/decision-traceability/D-062-D-069.md",
+      "fixture_path": "conformance/p1140e/validation-matrix-v1.json"
+    }
+  ],
+  "api_operations": [
+    "completeGitHubAuth",
+    "completeXAuth",
+    "createAppeal",
+    "createBlock",
+    "createBoard",
+    "createBoardInvitation",
+    "createClaimChallenge",
+    "createCommunity",
+    "createFriendRequest",
+    "createModerationCase",
+    "createOrganization",
+    "createRival",
+    "enrollDevice",
+    "exchangeDeviceAuth",
+    "getClaim",
+    "getCompatibility",
+    "getCurrentRank",
+    "getLeaderboard",
+    "getMe",
+    "getPresence",
+    "getPublicProfile",
+    "linkIdentity",
+    "listAppeals",
+    "listBlocks",
+    "listBoards",
+    "listCommunities",
+    "listDevices",
+    "listFriendRequests",
+    "listFriends",
+    "listIdentities",
+    "listModerationCases",
+    "listNotifications",
+    "listOrganizations",
+    "listPricingDatasets",
+    "listRivals",
+    "listSessions",
+    "pollDeviceAuth",
+    "renewPresence",
+    "requestDeletion",
+    "requestExport",
+    "revokeDevice",
+    "revokeSession",
+    "rotateDeviceKey",
+    "startDeviceAuth",
+    "startGitHubAuth",
+    "startXAuth",
+    "submitClaimBatch",
+    "unlinkIdentity",
+    "updateMe"
+  ],
+  "state_machines": [
+    "appeal",
+    "board-invitation",
+    "board-membership",
+    "daemon-lifecycle",
+    "export-job",
+    "friendship",
+    "idempotency-ledger",
+    "local-deletion-command",
+    "model-alias-resolution",
+    "moderation-case",
+    "native-session-family",
+    "notification-delivery",
+    "oauth-transaction",
+    "platform-certification",
+    "presence-lease",
+    "privileged-supervisor",
+    "ranked-identity-eligibility",
+    "ranking-projection",
+    "release-trust",
+    "rivalry",
+    "server-deletion",
+    "update-lifecycle",
+    "web-session-family"
+  ],
+  "platform_profiles": [
+    "alpine-3.23-aarch64-headless",
+    "alpine-3.23-x86-64-headless",
+    "ci-linux-aarch64-ephemeral",
+    "ci-linux-x86-64-ephemeral",
+    "debian-13-aarch64-gnome-wayland",
+    "debian-13-aarch64-headless",
+    "debian-13-x86-64-gnome-wayland",
+    "debian-13-x86-64-headless",
+    "fedora-44-aarch64-gnome-wayland",
+    "fedora-44-aarch64-headless",
+    "fedora-44-x86-64-gnome-wayland",
+    "fedora-44-x86-64-headless",
+    "macos-14-arm64-user-launchd",
+    "macos-14-x86-64-user-launchd",
+    "macos-15-arm64-user-launchd",
+    "macos-15-x86-64-user-launchd",
+    "macos-26-arm64-user-launchd",
+    "macos-26-x86-64-user-launchd",
+    "nixos-26.05-aarch64-gnome-wayland",
+    "nixos-26.05-aarch64-headless",
+    "nixos-26.05-x86-64-gnome-wayland",
+    "nixos-26.05-x86-64-headless",
+    "oci-linux-aarch64-immutable",
+    "oci-linux-x86-64-immutable",
+    "ubuntu-24.04-aarch64-headless",
+    "ubuntu-24.04-x86-64-headless",
+    "ubuntu-26.04-aarch64-gnome-wayland",
+    "ubuntu-26.04-aarch64-headless",
+    "ubuntu-26.04-x86-64-gnome-wayland",
+    "ubuntu-26.04-x86-64-headless",
+    "windows-11-25h2-arm64-user-service",
+    "windows-11-25h2-x86-64-user-service",
+    "windows-server-2025-x86-64-service",
+    "wsl2-ubuntu-26.04-x86-64-systemd"
+  ],
+  "validation_domains": [
+    {
+      "domain_id": "decision-traceability",
+      "authorities": [
+        "docs/planning/DECISION_REGISTER.md",
+        "docs/planning/decision-traceability/README.md"
+      ],
+      "fixtures": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ],
+      "expected": "Every registered decision has exactly one current status and complete traceability dimensions.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "protocol-exact-bytes",
+      "authorities": [
+        "docs/architecture/VIBEPROOF_V1_PROTOCOL.md",
+        "packages/schemas/vibeproof-claim-v1.cddl"
+      ],
+      "fixtures": [
+        "conformance/vibeproof/v1/exact-byte-vectors.json"
+      ],
+      "expected": "Fixed claim and receipt bytes, digests, lengths, and Ed25519 signatures verify.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "protocol-malformed-resource",
+      "authorities": [
+        "docs/architecture/VIBEPROOF_V1_PROTOCOL.md"
+      ],
+      "fixtures": [
+        "conformance/vibeproof/v1/malformed-resource-corpus.json"
+      ],
+      "expected": "Malformed, resource, replay, and rotation cases remain complete.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "accounting",
+      "authorities": [
+        "packages/schemas/accounting-profile.schema.json"
+      ],
+      "fixtures": [
+        "conformance/accounting/p1140b-accounting-cases-v1.json"
+      ],
+      "expected": "Representative cloud/local containment and non-double-counting cases remain covered.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "privacy-boundaries",
+      "authorities": [
+        "packages/schemas/egress-allowlist-v1.json"
+      ],
+      "fixtures": [
+        "conformance/privacy/p1140b-boundary-canaries-v1.json"
+      ],
+      "expected": "Every required boundary has an accept and reject-before-egress canary.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "oauth-session-identity",
+      "authorities": [
+        "packages/schemas/state-machine-registry-v1.json"
+      ],
+      "fixtures": [
+        "conformance/p1140e/state-machine-fixtures-v1.json"
+      ],
+      "expected": "OAuth, session-family, and ranked-identity transitions have positive and invalid-transition fixtures.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "api-idempotency-rate",
+      "authorities": [
+        "packages/schemas/openapi-v1.yaml"
+      ],
+      "fixtures": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ],
+      "expected": "Every operation has typed responses and authority metadata; mutations have durable idempotency.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "sql-constraints-races",
+      "authorities": [
+        "packages/schemas/planning-schema.sql"
+      ],
+      "fixtures": [
+        "conformance/p1140e/sql-race-plans-v1.json"
+      ],
+      "expected": "PostgreSQL loads and high-risk ownership/idempotency/ranking races have deterministic plans.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "ranking-pricing",
+      "authorities": [
+        "packages/schemas/ranking-view-v1.schema.json",
+        "packages/schemas/pricing-interpretation.schema.json"
+      ],
+      "fixtures": [
+        "conformance/p1140e/sql-race-plans-v1.json"
+      ],
+      "expected": "Immutable ranking and pricing identities bind exact source digests and rebuild authority.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "social-moderation",
+      "authorities": [
+        "packages/schemas/social-integrity-events-v1.proto",
+        "packages/schemas/state-machine-registry-v1.json"
+      ],
+      "fixtures": [
+        "conformance/p1140e/state-machine-fixtures-v1.json"
+      ],
+      "expected": "Relationship, board, notification, moderation, appeal, and reversal events are closed and state-bound.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "export-deletion",
+      "authorities": [
+        "packages/schemas/export-manifest-v1.schema.json",
+        "packages/schemas/state-machine-registry-v1.json"
+      ],
+      "fixtures": [
+        "conformance/p1140e/state-machine-fixtures-v1.json"
+      ],
+      "expected": "Server and local deletion remain separate and export contents are typed.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "platform-profile-coverage",
+      "authorities": [
+        "packages/schemas/platform-profile-registry-v1.json"
+      ],
+      "fixtures": [
+        "conformance/p1140e/platform-validation-plan-v1.json"
+      ],
+      "expected": "Every exact profile binds the complete failure matrix and remains unadvertised until certified.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "platform-runtime-evidence",
+      "authorities": [
+        "docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md"
+      ],
+      "fixtures": [
+        "conformance/p1140e/platform-validation-plan-v1.json"
+      ],
+      "expected": "Install, supervision, key, IPC, offline, update, rollback, and uninstall must be exercised per profile after implementation.",
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "domain_id": "release-update",
+      "authorities": [
+        "packages/schemas/release-set-v1.schema.json",
+        "packages/schemas/state-machine-registry-v1.json"
+      ],
+      "fixtures": [
+        "conformance/p1140e/state-machine-fixtures-v1.json"
+      ],
+      "expected": "TUF trust and update installation state remain separate with mandatory deadlines and recovery.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "reason-policy-references",
+      "authorities": [
+        "packages/schemas/reason-codes-v1.json",
+        "packages/schemas/policy-defaults-v1.json"
+      ],
+      "fixtures": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ],
+      "expected": "Reason and policy lifecycle references resolve to registered authorities and fixtures.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "registry-references",
+      "authorities": [
+        "docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md"
+      ],
+      "fixtures": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ],
+      "expected": "Every matrix path exists and every machine/API/platform identifier resolves exactly.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "current-future-paths",
+      "authorities": [
+        "docs/implementation/REPOSITORY_LAYOUT.md"
+      ],
+      "fixtures": [
+        "scripts/repository/doctor.py"
+      ],
+      "expected": "Out-of-scope native mobile paths and superseded active implementation paths are absent.",
+      "execution_state": "planning-validated"
+    },
+    {
+      "domain_id": "clean-checkout",
+      "authorities": [
+        ".github/workflows/planning-checks.yml"
+      ],
+      "fixtures": [
+        "scripts/repository/validate_p1140e_contracts.py"
+      ],
+      "expected": "All planning validators pass together on one exact pull-request head.",
+      "execution_state": "planning-validated"
+    }
+  ]
+}
