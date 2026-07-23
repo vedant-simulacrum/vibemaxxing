@@ -1,6 +1,6 @@
 # VibeMaxxing Planning Task Catalog
 
-Updated: 2026-07-23
+Updated: 2026-07-24
 
 Statuses: `complete-planning`, `in-progress-planning`, `blocked-planning`, `blocked-implementation`, `blocked-approval`, `blocked-launch-evidence`.
 
@@ -65,7 +65,7 @@ Completed planning inputs:
 - accepted ADR-014 prototype visual-validation automation;
 - issue #26 platform questions resolved.
 
-Candidate deliverables present on `agent/p1140b-core-contracts`:
+Candidate deliverables merged through PR #35:
 
 1. **Evidence/appraisal separation**
    - server-owned dimensional policy, named minimums, fatal conditions and deterministic downgrade order;
@@ -91,7 +91,7 @@ Candidate deliverables present on `agent/p1140b-core-contracts`:
    - schema-validated deny-by-default claim-egress registry;
    - positive/negative canaries across adapter, IPC, local store, detector, claim, HTTP, telemetry, notification, moderation and export.
 
-Validation: Planning checks run #211 passed on exact candidate head `9165fcb38ea2a4c26c8e539ff15de97fa59f59c2`; the gate-transition head must also pass before merge. The artifacts remain planning contracts, not implementation or executable security evidence.
+Validation: Planning checks run #211 passed on exact candidate head `9165fcb38ea2a4c26c8e539ff15de97fa59f59c2`; the gate-transition head also passed before merge. The artifacts remain planning contracts, not implementation or executable security evidence.
 
 P-1140B acceptance:
 
@@ -108,7 +108,7 @@ Status: `complete-planning`
 
 Dependencies: P-1140B.
 
-Candidate deliverables present on `agent/p1140c-vibeproof-v1`:
+Candidate deliverables merged through PR #36:
 
 - closed integer-label CDDL for EvidenceClaim, VerifierAppraisal, CheckpointReceipt, Challenge, atomic batch/result, KeyRotationTransition, GapDeclaration and CorrectionRecord;
 - exact deterministic CBOR rules, numeric/time/size/depth/allocation limits and no extension map;
@@ -120,7 +120,7 @@ Candidate deliverables present on `agent/p1140c-vibeproof-v1`:
 - fixed claim and receipt exact-byte Ed25519 vectors plus malformed/resource/transaction corpus;
 - validator checks for CDDL coverage, prohibited client authority, digests, lengths and cryptographic signatures.
 
-Validation: Planning checks run #219 passed on exact candidate head `e6f334772f05d4f3806935a7d8a701a2a8bb32d0`; the gate-transition head must also pass before merge. These are planning vectors, not independent runtime interoperability evidence.
+Validation: Planning checks run #219 passed on exact candidate head `e6f334772f05d4f3806935a7d8a701a2a8bb32d0`; the gate-transition head also passed before merge. These are planning vectors, not independent runtime interoperability evidence.
 
 Acceptance:
 
@@ -226,4 +226,4 @@ Acceptance:
 
 ## Current conclusion
 
-P-1140A is complete. P-1140B is active. P-1140C–E remain dependency-blocked. Platform scope is frozen under D-062 through D-069. P-1104 remains blocked and is not the next task.
+P-1140A through P-1140C are complete. P-1140D is active. P-1140E remains dependency-blocked. Platform scope is frozen under D-062 through D-069. P-1104 remains blocked and is not the next task.
