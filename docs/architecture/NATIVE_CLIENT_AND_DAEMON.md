@@ -10,228 +10,254 @@ The local product consists of:
 - `vibemaxxing-daemon`: always-on lifecycle owner and local control plane;
 - `vibeproof-collector`: transcript-private live observation and deterministic normalization;
 - `vibeproof-sync`: networked safe-claim synchronization process with no transcript access;
-- `vibemaxxing-cli`: installer, diagnostics, automation, and headless control;
+- `vibemaxxing-cli`: installer, diagnostics, automation and headless control;
 - `vibemaxxing-desktop-shell`: macOS menu-bar and Windows/Linux tray UX;
 - local audit/control UI;
 - hosted VibeMaxxing web dashboard;
-- signed updater and platform service integration.
+- mandatory signed updater and platform service integration;
+- optional privileged lifecycle supervisor under ADR-012.
 
-Process separation must preserve the privacy boundary: a process that can inspect content cannot access the network, while the networked process cannot inspect content.
+There is no Android, iOS, iPadOS or ChromeOS native product.
+
+Process separation preserves the privacy boundary: a process that can inspect content cannot access the network, while the networked process cannot inspect content.
 
 ## Always-on requirement
 
-Under D-061 and ADR-010, the daemon desired state is `enabled` after successful installation.
+Under D-061 and ADR-010, daemon desired state is `enabled` after successful installation.
 
-- The platform service manager starts it automatically at the earliest supported boot or login boundary.
+- The platform service manager starts it at the earliest supported boot/login boundary.
 - The platform service manager restarts it after abnormal termination.
-- The daemon remains resident when collection is paused, sync is paused, the network is unavailable, authentication is missing, permissions are revoked, storage is blocked, an adapter is broken, or recovery is required.
-- Closing, quitting, crashing, updating, or never opening the desktop shell does not stop the daemon.
-- The shell is not a parent process, owner, watchdog, or source of truth for daemon lifecycle.
-- Normal product UX does not expose `quit daemon`; it exposes `pause collection`, `pause sync`, `restart`, `repair background service`, and `uninstall` as separate actions.
-- A durable service-disable action is advanced, explicit, confirmed, visible, and reversible.
-- The daemon must not self-daemonize or detach from the OS supervisor.
+- The daemon remains resident when collection or sync is paused, network/auth/permissions/storage are unavailable, an adapter is broken or recovery is required.
+- Closing, crashing, updating or never opening the desktop shell does not stop the daemon.
+- The shell is not a parent, owner or watchdog.
+- Ordinary UX exposes pause/restart/repair/uninstall, not casual daemon quit.
+- A durable service-disable action is advanced, explicit, confirmed and visible.
+- The daemon does not self-daemonize or escape the OS supervisor.
 
-The truthful boundary is that no process can run while the machine is powered off, the OS cannot schedule the user service, the service is disabled or uninstalled, or hardware is fully suspended. The product must distinguish `machine-wide`, `boot-persistent`, `session-bound`, and `ephemeral` lifecycle modes.
+No process runs while hardware is powered off, fully suspended or unavailable to the relevant service context. Lifecycle modes are `machine-wide`, `boot-persistent`, `session-bound`, `host-dependent`, `orchestrator-dependent` and `ephemeral`.
 
 ## Ownership
 
 ### Daemon
 
-Owns process supervision, adapter registry, local account/device binding, health, local configuration, IPC routing, lifecycle, service-manager reconciliation, and upgrade coordination. It must not become a transcript-processing monolith.
+Owns supervision, adapter registry, local account/device binding, health, configuration, IPC routing, service-manager reconciliation and update coordination. It cannot become a transcript-processing monolith.
 
-The daemon remains alive in `degraded`, `recovery`, `security-hold`, and `update-required` states so diagnostics, privacy inspection, update, rollback, export, repair, and uninstall remain available.
+The daemon remains alive in `degraded`, `recovery`, `security-hold`, `update-required` and `blocked-version` states so diagnostics, privacy inspection, update, rollback, export, repair and uninstall remain available.
 
 ### Collector
 
-Owns source observation, privacy filtering, deterministic event normalization, local evidence continuity, and safe handoff. No network access.
+Owns source observation, privacy filtering, deterministic event normalization, local continuity and safe handoff. No network access.
 
 ### Sync
 
-Owns challenge retrieval, claim submission, acknowledgements, retries, backoff, and server session renewal. It receives only safe fixed-schema data.
+Owns challenges, claim submission, acknowledgements, retries, backoff and server-session renewal. It receives fixed-schema safe data only.
 
 ### CLI
 
-Supports install, uninstall, start, restart, status, login, logout, adapter list/add/remove/diagnose, privacy audit, export, delete, update, rollback, logs, doctor, pause collection, pause sync, resume collection, resume sync, background-service status/repair/enable/disable, and headless operation. Commands require stable exit codes and machine-readable output.
-
-A temporary daemon stop is reserved for installer, updater, uninstaller, test harness, or explicit advanced maintenance. `stop` must not be presented as the ordinary equivalent of pause.
+Supports install, uninstall, status, login/logout, adapters, privacy audit, export/delete, update/rollback, logs, doctor, collection/sync pause/resume, background-service status/repair/enable/disable, privileged-profile status and headless operation. Commands have stable exit codes and machine-readable output.
 
 ### Desktop shell
 
-Shows active/idle/offline/private state, supported adapters, sync health, daemon/service-manager health, privacy boundary, updates, account/device controls, and a link or authenticated bridge to the hosted dashboard. Closing the shell must never stop the daemon, collector, or sync process.
+Shows collection/sync/daemon state, exact support profile, lifecycle mode, update deadline, privacy boundary, account/device controls and repair actions. Closing it never stops daemon, collector or sync.
+
+### Optional privileged supervisor
+
+Under ADR-012, a separate machine-wide component may register, start, monitor, update and recover approved user-scoped services. It cannot inspect source content, hold ordinary user claim keys, intercept provider traffic, merge users or open remote-control ports.
 
 ## Two-level supervision
 
-### OS-level supervision
+### OS/orchestrator supervision
 
-The OS service manager owns the daemon process.
-
-- One service registration per installation and user context.
+- One service registration per installation/profile.
 - Single-instance enforcement.
-- Auto-start enabled after installation.
+- Auto-start enabled after install.
 - Restart after abnormal exit.
-- Graceful stop deadline followed by forced termination only when required.
-- Exit classification and service-manager diagnostics.
-- No host reboot as a recovery action.
+- Bounded graceful-stop and forced-stop deadlines.
+- Classified exit diagnostics.
+- No host reboot as first recovery action.
 - No unlimited hot restart loop.
 
-### Daemon-level supervision
+### Daemon child supervision
 
-The daemon owns child processes.
+- authenticated monotonic heartbeat;
+- at least two missed probes before unresponsive classification;
+- graceful stop before force kill;
+- bounded exponential backoff with jitter;
+- restart counters reset only after sustained health;
+- per-component crash-loop quarantine;
+- adapter isolation;
+- child generation IDs rejecting stale IPC;
+- durable-state reconciliation before resume.
 
-- Authenticated monotonic heartbeat per child.
-- At least two missed probes before an unresponsive decision.
-- Graceful termination request before force kill.
-- Bounded exponential restart backoff with jitter.
-- Restart counter reset only after sustained health.
-- Per-component crash-loop quarantine.
-- Failing adapter isolation.
-- Child generation IDs to reject stale IPC after restart.
-- Durable state reconciled before a recovered child resumes work.
-
-A child failure may degrade collection or sync, but must not terminate the daemon.
-
-## Local versus hosted UX
-
-Local UX owns installation, permissions, adapter discovery, privacy verification, device state, collection controls, daemon/service repair, diagnostics, outbound ledger inspection, local export/deletion, and update status.
-
-Hosted web owns leaderboards, profiles, friends, rivals, boards, organizations, communities, social notifications, moderation, appeals, and server-side account settings.
-
-No hosted page may require prompt, transcript, project, repository, path, or code access.
+A child failure may degrade collection or sync but cannot terminate the daemon.
 
 ## State model
 
-Lifecycle dimensions are independent.
-
 ### Service registration
 
-`unregistered -> registering -> enabled -> disabled-by-user | disabled-by-policy | registration-error -> unregistering -> unregistered`
+`unregistered | registering | enabled | disabled-by-user | disabled-by-policy | registration-error | unregistering`
 
 ### Daemon health
 
-`starting -> healthy -> degraded | recovery | security-hold | updating | rolling-back -> healthy`
-
-Exceptional state: `failed-restart-pending`, owned by the OS supervisor and repair UX.
+`starting | healthy | degraded | recovery | security-hold | update-required | updating | rolling-back | blocked-version | failed-restart-pending`
 
 ### Collection
 
-`enabled | paused-by-user | paused-by-policy | permission-required | source-unavailable | storage-blocked`
+`enabled | paused-by-user | paused-by-policy | permission-required | source-unavailable | storage-blocked | update-blocked`
 
 ### Sync
 
-`enabled | offline | backoff | paused-by-user | auth-required | server-blocked | security-hold`
+`enabled | offline | backoff | paused-by-user | auth-required | server-blocked | security-hold | version-expired`
 
 ### Shell
 
 `closed | starting | open | crashed`
 
-Shell state has no transition that changes service registration or daemon desired state.
+### Privileged supervisor
 
-## Platform behavior
+`absent | installing | enabled | degraded | update-required | removing`
+
+Shell state has no transition that changes daemon desired state.
+
+## Accepted platform profiles
 
 ### macOS
 
-- Per-user LaunchAgent registered through `SMAppService`.
-- launchd job configured for continuous keep-alive and login loading.
-- Separate menu-bar application.
-- Shell reports `SMAppService.status` and provides repair instructions when disabled in System Settings.
-- App signing and notarization apply to daemon, shell, helpers, and updater.
-- Per-user mode is session-bound across logout; it automatically resumes at next login.
-- No LaunchDaemon or privileged helper solely to claim 24/7 uptime. Machine-wide mode requires a separate ADR.
+- Apple silicon `arm64` and Intel `x86_64` are launch requirements.
+- Per-user LaunchAgent through `SMAppService` is default.
+- launchd continuous keep-alive and login loading.
+- separate menu-bar application.
+- signed/notarized Universal 2 or architecture-specific compatible release set.
+- Keychain/Secure Enclave capability classification.
+- XPC or Unix-socket peer validation.
+- per-user mode is session-bound across logout.
+- optional constrained LaunchDaemon/helper may strengthen supervision under ADR-012.
 
 ### Windows
 
-- OS-managed per-user background service where supported; otherwise an OS-managed scheduled startup task with equivalent single-instance, restart, and health semantics.
-- Automatic start in the relevant user context.
-- Recovery actions restart the service with bounded delays.
-- Never configure automatic host reboot as recovery.
-- Tray shell remains independent.
-- Machine-wide pre-login service requires a separate privilege/privacy decision.
+- Native x64 and native ARM64 are launch requirements.
+- Maintained desktop and applicable Server/headless profiles.
+- OS-managed per-user service or scheduled startup fallback with equivalent semantics.
+- independent tray shell.
+- named-pipe DACL and peer identity.
+- CNG/TPM non-exportable key path with DPAPI fallback classification.
+- optional constrained Windows Service under ADR-012.
 
 ### Linux
 
-- `systemd --user` service where available.
-- `Restart=always` plus application-level bounded crash-loop backoff.
-- Offer and detect user lingering where supported to start at boot and continue after logout.
-- Report `linger-enabled`, `session-bound`, `linger-unavailable`, or `authorization-required` honestly.
-- Non-systemd fallback uses desktop/session autostart plus a single-instance supervisor and is assigned a weaker lifecycle grade.
+- Maintained desktop, headless and remote profiles on x86_64 and aarch64 at launch.
+- systemd-user primary; lingering offered and recommended with explicit authorization.
+- OpenRC, runit, s6 and dinit templates for supported non-systemd headless profiles.
+- desktop autostart only as weaker session-bound fallback.
+- GNOME, KDE, Xfce, Cinnamon, MATE and LXQt control compatibility where advertised.
+- Wayland/X11-independent core.
+- TPM/Secret Service/kernel-keyring/encrypted fallback classification.
+- optional constrained system service under ADR-012.
 
-### WSL, containers, CI, and headless environments
+### WSL
 
-- CLI/daemon only unless a graphical shell is explicitly supported.
-- Use the strongest native supervisor available.
-- Container process remains foreground; container restart policy is deployment-owned.
-- Ephemeral environments are labeled `ephemeral` and do not claim persistent uptime.
+- Distinct guest lineage and keys.
+- Globally competitive by default at verifier-awarded level.
+- Host/guest duplicate reconciliation.
+- systemd-enabled and disabled paths.
+- host-dependent lifecycle disclosed.
+- independent install/update/uninstall.
+- Standard default ceiling unless stronger profile certified.
 
-Baseline operation must not require administrator/root privileges. Optional hardening may require explicit elevated setup and must produce a stronger evidence label rather than silently changing behavior.
+### Containers
+
+- Globally competitive certified profile.
+- Foreground process under orchestrator.
+- non-root, signed, provenance-bound image;
+- explicit state volume and read-only root compatibility where practical;
+- no container runtime socket by default;
+- immutable image replacement;
+- replica/volume identity and duplicate prevention.
+
+### CI/ephemeral
+
+- Globally competitive by default.
+- short-lived environment/device identity;
+- workflow/run binding and deterministic retry/matrix duplicate domains;
+- no background process expected after job end;
+- current pinned artifact required;
+- Standard default ceiling unless stronger runner profile certified.
 
 ## IPC
 
-All local IPC requires peer identity, restrictive ACLs, challenge-response, protocol versioning, message size and rate limits, replay protection where relevant, explicit errors, capability negotiation, child generation binding, and deadlines. Never rely only on socket path secrecy.
+All local and privileged IPC requires peer identity, restrictive ACLs, challenge-response, protocol versioning, message/depth/rate limits, replay protection, explicit errors, capability negotiation, process-generation binding and deadlines. Socket-path secrecy alone is insufficient.
 
 ## Storage and service records
 
-Define separate storage for configuration, normalized events, pending claims, accepted acknowledgements, audit ledger, adapter state, evidence continuity, diagnostics, and lifecycle supervision.
+Separate storage exists for configuration, normalized facts, pending claims, acknowledgements, audit ledger, adapter state, continuity, diagnostics and lifecycle supervision.
 
-The lifecycle record includes:
+Lifecycle records include:
 
-- service-registration identifier and mode;
-- desired enabled/disabled state;
-- current process generation and build digest;
-- last successful start and clean stop;
-- last monotonic heartbeat;
+- exact platform support tuple;
+- service-registration ID and mode;
+- desired state;
+- process generation and build digest;
+- last successful start/stop;
+- heartbeat;
 - classified exit/restart reason;
-- daemon and child restart counters;
-- service-manager status;
-- Linux lingering status;
-- disabled-background-item state;
-- current degraded/recovery reason codes.
+- daemon/child restart counters;
+- service-manager and linger status;
+- privileged-profile status;
+- mandatory-update channel/deadline/version state;
+- degraded/recovery reason codes.
 
-It contains no prompt, transcript, path, repository, or source content.
-
-Sensitive keys use OS credential facilities where available. Database encryption, crash consistency, checkpoints, rollback detection, retention, export, and deletion require normative specifications.
+No record contains prompt, transcript, path, repository or source content.
 
 ## Offline and failure behavior
 
-- Collection may continue offline within bounded encrypted storage limits.
-- Sync retries use bounded exponential backoff and server acknowledgements.
-- Network loss changes sync state; it does not restart or terminate the daemon.
-- Disk-full behavior blocks collection safely while daemon diagnostics remain available.
-- Sleep/resume, clock change, network change, process crash, OS restart, and partial upgrade require deterministic recovery.
-- Corrupt state enters recovery/quarantine; it may not silently reset sequences or duplicate claims.
-- Key-store lock, permission loss, unsupported source, and auth expiry are degraded states, not daemon-exit conditions.
+- Collection may continue offline within bounded encrypted storage and compatibility policy.
+- Sync retries use bounded backoff and durable acknowledgements.
+- Network loss changes sync state without daemon restart.
+- Disk full blocks collection safely while diagnostics remain.
+- Sleep/resume, clock/network change, crash, OS restart and partial upgrade have deterministic recovery.
+- Corruption enters recovery/quarantine without silent sequence reset.
+- Key-store lock, permission loss, unsupported source and auth expiry are degraded states.
+- WSL/container/CI lifecycle termination is classified and never misrepresented as native machine-wide persistence.
 
-## Updates
+## Mandatory updates
 
-Updates require signed metadata, TUF conformance, atomic installation, rollback protection, interrupted-download recovery, version compatibility checks, and consumer verification.
+Under ADR-013:
 
-The updater must preserve service registration, acquire a maintenance lease and single-instance lock, drain durable writes, replace binaries atomically, and return lifecycle ownership to the OS supervisor. A new build passes startup, IPC, storage, migration, and privacy self-checks before the previous known-good build is removed.
+- competitive profiles cannot permanently disable required updates;
+- security/integrity, compatibility and routine update classes have signed deadlines;
+- users may choose supported channel and bounded maintenance timing;
+- maintenance lease drains durable writes before ordinary restart;
+- release-set compatibility covers daemon, collector, sync, CLI, shell, adapters, schemas and assets;
+- new builds pass startup, IPC, storage, migration and privacy checks before old build removal;
+- failed updates roll back without resetting lineage or losing queued claims;
+- blocked versions retain diagnostics, update, export and uninstall where safe;
+- containers replace immutable images;
+- CI uses current pinned artifacts rather than a persistent updater.
 
-Collector, sync, daemon, CLI, shell, adapters, schemas, and model/runtime assets may have different compatibility constraints but one coordinated release policy.
-
-## Availability and recovery targets
+## Availability targets
 
 Planning targets requiring executable evidence:
 
-- successful installer completion implies service registration and enabled desired state;
-- daemon readiness p95 <= 5 seconds after service-manager launch;
+- installer success implies service registration and enabled desired state;
+- readiness p95 <= 5 seconds after supervisor launch;
 - abnormal-exit restart p95 <= 10 seconds and p99 <= 60 seconds excluding OS throttling;
 - hung-child replacement <= 90 seconds;
-- resume reconciliation begins <= 5 seconds after wake notification;
-- update handoff causes < 30 seconds daemon unavailability;
-- local daemon availability >= 99.9% while the applicable OS/user service context is available;
-- zero silent loss of durably queued claims across restart.
+- resume reconciliation begins <= 5 seconds;
+- ordinary update handoff causes < 30 seconds daemon unavailability;
+- daemon availability >= 99.9% while the applicable service context exists;
+- zero silent loss of durable queued claims.
 
 ## Completion outputs
 
-- process, privilege, and supervision diagram;
-- OS service-manager manifests/configuration;
-- IPC schemas and state machines;
-- lifecycle mode/capability matrix;
-- daemon and child watchdog contract;
-- CLI command contract;
-- local storage and service-record schema;
-- installer/uninstaller and update state machines;
-- resource and availability budgets;
-- accessibility and platform UX requirements;
-- failure, recovery, export, and deletion matrices;
-- reboot, logout/login, sleep/resume, crash-loop, disabled-service, disk-full, corrupt-state, interrupted-update, and uninstall evidence.
+- process/privilege/supervision diagram;
+- service manifests for every exact profile;
+- IPC schemas/state machines;
+- platform tuple registry;
+- watchdog contract;
+- CLI contract;
+- storage/service-record schema;
+- privileged-profile contract;
+- mandatory-update/rollback state machines;
+- resource/availability/accessibility budgets;
+- complete failure/recovery/export/deletion evidence matrix;
+- negative evidence that no Android/iOS/iPadOS/ChromeOS native path exists.
