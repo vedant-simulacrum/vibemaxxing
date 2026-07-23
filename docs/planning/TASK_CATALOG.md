@@ -1,6 +1,6 @@
 # VibeMaxxing Planning Task Catalog
 
-Updated: 2026-07-23
+Updated: 2026-07-24
 
 Statuses: `complete-planning`, `in-progress-planning`, `blocked-planning`, `blocked-implementation`, `blocked-approval`, `blocked-launch-evidence`.
 
@@ -135,6 +135,19 @@ Acceptance:
 Status: `in-progress-planning`
 
 Dependencies: P-1140B; protocol-facing work also depends on P-1140C.
+
+Candidate contract set on `agent/p1140d-state-platform-contracts`:
+
+- one JSON Schema-validated registry for 23 authoritative mutable-state machines;
+- one exact launch platform registry with 34 uncertified/unadvertised profiles and a complete 16-case failure matrix per profile;
+- endpoint-specific OpenAPI resources with authorization, recent-auth, durable idempotency, typed rate limits and bounded VibeProof CBOR input;
+- PostgreSQL 16 ownership/constraint contract with canonical friendship pairs, membership-owned board authority, token families, lineage, appraisal, receipts, ranking views, typed social state, deletion effects and release trust;
+- closed social/integrity Protobuf event union;
+- typed signed release-set, immutable ranking-view and export-manifest schemas;
+- enriched reason-code and policy lifecycle authority;
+- normative OAuth/session/DPoP, ranked-identity, API, ranking, social, native lifecycle, privileged supervision and update/release contract.
+
+Candidate validation must pass on the exact head before the status can transition.
 
 Deliverables:
 
