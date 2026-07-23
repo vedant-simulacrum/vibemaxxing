@@ -6,6 +6,32 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const read = relative => fs.readFileSync(path.join(root, relative), "utf8");
 const failures = [];
+const assetManifest = JSON.parse(read("assets/manifest.json"));
+for (const collection of assetManifest.collections ?? []) {
+  if (!fs.existsSync(path.join(root, collection.path))) failures.push(`Missing asset collection: ${collection.path}`);
+  if (!fs.existsSync(path.join(root, collection.manifest))) failures.push(`Missing asset manifest: ${collection.manifest}`);
+}
+const fixtureManifest = JSON.parse(read("assets/ui/fixtures/manifest.json"));
+for (const asset of fixtureManifest.assets ?? []) {
+  for (const file of asset.files ?? [asset.file]) {
+    if (!fs.existsSync(path.join(root, "assets/ui/fixtures", file))) failures.push(`Missing governed UI fixture: ${file}`);
+  }
+}
+const referenceManifest = JSON.parse(read("assets/ui/references/manifest.json"));
+for (const reference of referenceManifest.references ?? []) {
+  for (const file of [reference.mockup, reference.render]) {
+    if (!fs.existsSync(path.join(root, "assets/ui/references", file))) failures.push(`Missing governed UI reference: ${file}`);
+  }
+}
+for (const evidence of referenceManifest.supportingEvidence ?? []) {
+  if (!fs.existsSync(path.join(root, "assets/ui/references", evidence.file))) failures.push(`Missing governed UI reference evidence: ${evidence.file}`);
+}
+const assetCatalogue = read("packages/ui/src/foundations/asset-library.stories.tsx");
+for (const required of ["assetRegistry.brand", "providerLogoRegistry", "assetRegistry.fixtures", "iconNames", "ConsumptionContract"]) {
+  if (!assetCatalogue.includes(required)) failures.push(`Storybook asset catalogue is missing ${required}.`);
+}
+const assetRegistry = read("packages/ui/src/assets.ts");
+if (/https?:\/\//.test(assetRegistry)) failures.push("The asset registry must not hotlink remote files.");
 
 const tokenCheck = spawnSync(process.execPath, ["scripts/generate-tokens.mjs", "--check"], { cwd: path.join(root, "packages/ui"), encoding: "utf8" });
 if (tokenCheck.status !== 0) failures.push(tokenCheck.stderr || tokenCheck.stdout || "Token generation check failed.");
@@ -53,4 +79,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("UI system checks passed: generated tokens, raw colors, component reuse, Storybook coverage, accessibility configuration, and /style-guide role parity.");
+console.log("UI system checks passed: generated tokens, governed assets and references, raw colors, component reuse, Storybook coverage, accessibility configuration, and /style-guide role parity.");

@@ -1,4 +1,6 @@
 import type { Preview } from "@storybook/react-vite";
+import "@fontsource-variable/inter";
+import "./tailwind.css";
 import "../src/tokens.css";
 import "../src/components.css";
 import "./preview.css";
@@ -17,7 +19,7 @@ const preview: Preview = {
     layout: "centered",
     options: {
       storySort: {
-        order: ["Approved baseline", "Foundations", "Primitives", "Components", "Product patterns", "Archive"],
+        order: ["Approved baseline", ["Leaderboard first"], "Foundations", "Primitives", "Components", "Product patterns", "Archive"],
       },
     },
   },
