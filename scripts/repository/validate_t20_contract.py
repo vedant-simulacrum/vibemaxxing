@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the T20 golden-path planning contract without claiming implementation evidence."""
+"""Validate the provisional D-046 T20 candidate artifacts without making launch claims."""
 from __future__ import annotations
 
 import json
@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MODELS = ROOT / "conformance" / "models"
 CONTRACT = ROOT / "docs" / "integrations" / "T20_MODEL_HARDENING_CONTRACT.md"
 SPEC = ROOT / "docs" / "integrations" / "T20_CERTIFICATION_AND_SELECTION_SPEC.md"
+DECISIONS = ROOT / "docs" / "planning" / "DECISION_REGISTER.md"
 FIXTURES = MODELS / "fixtures"
 
 
@@ -38,17 +39,12 @@ def main() -> int:
     invalid_fixture_path = FIXTURES / "t20-optimization-evidence.invalid-pass.json"
 
     required_paths = (
-        registry_schema_path,
-        registry_path,
-        optimization_schema_path,
-        valid_fixture_path,
-        invalid_fixture_path,
-        CONTRACT,
-        SPEC,
+        registry_schema_path, registry_path, optimization_schema_path,
+        valid_fixture_path, invalid_fixture_path, CONTRACT, SPEC, DECISIONS,
     )
     for path in required_paths:
         if not path.is_file():
-            fail(f"missing T20 artifact: {path.relative_to(ROOT)}")
+            fail(f"missing T20 candidate artifact: {path.relative_to(ROOT)}")
 
     registry_schema = load_json(registry_schema_path)
     optimization_schema = load_json(optimization_schema_path)
@@ -58,11 +54,9 @@ def main() -> int:
 
     Draft202012Validator.check_schema(registry_schema)
     Draft202012Validator.check_schema(optimization_schema)
-
     errors = schema_errors(registry_schema, registry)
     if errors:
         fail("T20 registry failed schema validation: " + "; ".join(error.message for error in errors[:8]))
-
     if schema_errors(optimization_schema, valid_fixture):
         fail("valid T20 optimization fixture failed schema validation")
     if not schema_errors(optimization_schema, invalid_fixture):
@@ -74,80 +68,52 @@ def main() -> int:
     if accounting["fidelity_percent"] != 100:
         fail("valid fixture does not demonstrate exact accounting fidelity")
     if valid_fixture["coverage_depth"]["material_usage_coverage"] < 0.90:
-        fail("valid fixture is below the T20 family material-usage threshold")
+        fail("valid fixture is below the candidate material-usage threshold")
 
-    slots = registry["slots"]
-    ranks = [slot["rank"] for slot in slots]
-    families = [slot["family_id"] for slot in slots]
-    if len(ranks) != len(set(ranks)):
-        fail("T20 registry has duplicate ranks")
-    if len(families) != len(set(families)):
-        fail("T20 registry has duplicate model families")
+    if registry["selection_status"] != "prelaunch-pending":
+        fail("D-046 remains provisional, so the registry must remain prelaunch-pending")
+    if registry["slots"] or registry["selection_runs"] or registry["accounting_profiles"]:
+        fail("provisional registry must not contain invented selection or certification evidence")
 
-    status = registry["selection_status"]
-    if status == "prelaunch-pending":
-        if slots or registry["selection_runs"] or registry["accounting_profiles"]:
-            fail("prelaunch-pending registry must not contain invented selection or certification evidence")
-    elif status == "active":
-        if len(slots) != 20 or sorted(ranks) != list(range(1, 21)):
-            fail("active T20 registry must contain exactly ranks 1 through 20")
-        if not registry["selection_runs"]:
-            fail("active T20 registry requires an approved selection run")
-        for slot in slots:
-            if slot["status"] != "hardened":
-                fail(f"active T20 slot is not hardened: {slot['family_id']}")
-            if not slot["certifications"]:
-                fail(f"active T20 slot lacks certification: {slot['family_id']}")
-            if not slot["coverage_matrix"]:
-                fail(f"active T20 slot lacks coverage matrix: {slot['family_id']}")
+    decision_line = next(
+        (line for line in DECISIONS.read_text(encoding="utf-8").splitlines() if line.startswith("| D-046 |")),
+        "",
+    )
+    if "| provisional |" not in decision_line:
+        fail("decision register must keep D-046 provisional")
 
     contract = CONTRACT.read_text(encoding="utf-8")
-    contract_phrases = (
-        "T20 is the product's **golden path**",
-        "Models outside T20 may still be supported",
-        "minimum practical collection and synchronization overhead",
-        "automatic detection, zero manual mapping",
-        "Optimization evidence gates",
-        "A slot cannot pass the T20 launch gate using only qualitative claims",
-        "every slot passes the optimization evidence gates",
-    )
-    missing = [phrase for phrase in contract_phrases if phrase not in contract]
-    if missing:
-        fail(f"T20 contract missing golden-path requirements: {missing}")
+    for phrase in (
+        "D-046 is provisional", "not a public-launch dependency", "Exact certification tuple",
+        "Source binding", "Device-key continuity", "Optimization evidence",
+    ):
+        if phrase.lower() not in contract.lower():
+            fail(f"T20 candidate contract lacks {phrase!r}")
 
     spec = SPEC.read_text(encoding="utf-8")
-    spec_phrases = (
+    for phrase in (
+        "provisional candidate specification",
         "model family × provider model ID × exact model version",
-        "E1-provider-signed",
-        "E6 can never enter active competition",
-        "0.40 × usage + 0.30 × agent/coding relevance",
+        "E1-provider-signed", "E6 can never enter active competition",
         "Missing usage is zero, never imputed from popularity",
-        "Source precedence within one duplicate domain",
-        "totals are not averaged",
+        "Source precedence within one duplicate domain", "totals are not averaged",
         "Passing these checks proves planning consistency only",
-    )
-    missing = [phrase for phrase in spec_phrases if phrase not in spec]
-    if missing:
-        fail(f"T20 certification/selection specification is incomplete: {missing}")
+    ):
+        if phrase not in spec:
+            fail(f"T20 candidate specification lacks {phrase!r}")
 
-    evidence_required = {
-        "accounting",
-        "performance",
-        "reliability",
-        "coverage_depth",
-        "user_experience",
-        "maintenance",
-        "result",
+    required_evidence = {
+        "accounting", "performance", "reliability", "coverage_depth",
+        "user_experience", "maintenance", "result",
     }
     declared = set(optimization_schema.get("required", []))
-    if not evidence_required <= declared:
-        fail(f"optimization evidence schema is incomplete: {sorted(evidence_required - declared)}")
+    if not required_evidence <= declared:
+        fail(f"optimization evidence schema is incomplete: {sorted(required_evidence - declared)}")
 
-    print("T20 golden-path planning validation: PASS")
-    print(f"selection status: {status}")
-    print(f"declared slots: {len(slots)}")
-    print("P-1130A..E planning artifacts: complete")
-    print("implementation evidence claimed: no")
+    print("T20 provisional planning validation: PASS")
+    print("decision status: D-046 provisional")
+    print("selection status: prelaunch-pending")
+    print("implementation or launch evidence claimed: no")
     return 0
 
 
@@ -155,5 +121,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except Exception as exc:
-        print(f"T20 golden-path planning validation: FAIL: {exc}", file=sys.stderr)
+        print(f"T20 provisional planning validation: FAIL: {exc}", file=sys.stderr)
         raise SystemExit(1)
