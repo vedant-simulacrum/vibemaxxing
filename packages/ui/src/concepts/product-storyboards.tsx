@@ -60,7 +60,7 @@ export function PublicProfileStoryboard() {
 
 export function RivalComparisonStoryboard() {
   return <ProductShell active="Leaderboard"><main className="vm-sb-content rival-page">
-    <div className="page-title"><ArrowLeft/><h1>Rival comparison</h1><button className="rival-select"><Avatar id={0} size={30}/><Avatar id={1} size={30}/>Vedant vs Sam Rivera<ChevronDown size={17}/></button><ProductButton tone="danger">Remove rival</ProductButton><button className="icon-only"><Ellipsis/></button></div>
+    <div className="page-title"><ArrowLeft/><h1>Rival comparison</h1><button className="rival-select"><Avatar id={0} size={30}/><Avatar id={1} size={30}/>Vedant vs Sam Rivera<ChevronDown size={17}/></button><ProductButton tone="danger">Remove rival</ProductButton><button className="icon-only" type="button" aria-label="More rival actions"><Ellipsis aria-hidden="true"/></button></div>
     <Panel className="duel-hero"><div className="duelist"><Avatar id={0} size={96} online/><div><h2>Vedant</h2><p>#07　·　86.4M</p></div></div><div className="duel-score"><b>5.3M <span>lead</span></b><small><i/> Ahead by 6.5%</small></div><div className="duelist right"><div><h2>Sam Rivera</h2><p>#08　·　81.1M</p></div><Avatar id={1} size={96}/></div></Panel>
     <div className="vm-sb-grid rival-grid"><div className="vm-sb-stack">
       <Panel className="compare-chart"><header><h2>Token Burn <span>(30 days)</span></h2><Tabs labels={["Today","7 days","30 days","Season"]} active="30 days"/></header><div className="legend"><i/>Vedant <i className="grey"/>Sam Rivera</div><ProductTrendChart compare label="Vedant and Sam Rivera Token Burn comparison" /></Panel>
