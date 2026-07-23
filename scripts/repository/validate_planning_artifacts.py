@@ -231,10 +231,129 @@ def validate_openapi_file() -> None:
         raise ValidationFailure(f"OpenAPI missing planning-critical paths: {sorted(missing)}")
     if "/countries" in paths:
         raise ValidationFailure("country route remains in launch OpenAPI despite D-052")
+    schemas = spec["components"]["schemas"]
+    for forbidden in ("Resource", "Collection"):
+        if forbidden in schemas:
+            raise ValidationFailure(f"generic OpenAPI schema remains: {forbidden}")
+    if any(schema.get("additionalProperties") is True for schema in schemas.values() if isinstance(schema, dict)):
+        raise ValidationFailure("OpenAPI permits arbitrary object properties")
+    problem_details = schemas["Problem"]["properties"]["details"]
+    if problem_details.get("type") != "array":
+        raise ValidationFailure("Problem details must be a typed array")
+    exceptions = {
+        ("/auth/github/start", "post"), ("/auth/x/start", "post"),
+        ("/auth/device/start", "post"), ("/auth/device/poll", "post"),
+        ("/auth/device/exchange", "post"), ("/claim-challenges", "post"),
+    }
     for path, operations in spec["paths"].items():
         for method, operation in operations.items():
-            if method.lower() in {"get", "post", "put", "patch", "delete"} and "responses" not in operation:
+            method = method.lower()
+            if method not in {"get", "post", "put", "patch", "delete"}:
+                continue
+            if "responses" not in operation:
                 raise ValidationFailure(f"OpenAPI operation lacks responses: {method.upper()} {path}")
+            if "x-authorization" not in operation or "x-recent-auth" not in operation or "x-idempotency" not in operation:
+                raise ValidationFailure(f"OpenAPI operation lacks authority metadata: {method.upper()} {path}")
+            rate = operation["responses"].get("429")
+            if rate != {"$ref": "#/components/responses/RateLimited"}:
+                raise ValidationFailure(f"OpenAPI operation lacks typed rate-limit response: {method.upper()} {path}")
+            if method in {"post", "put", "patch", "delete"} and (path, method) not in exceptions:
+                refs = [p.get("$ref") for p in operation.get("parameters", []) if isinstance(p, dict)]
+                if "#/components/parameters/IdempotencyKey" not in refs:
+                    raise ValidationFailure(f"mutating operation lacks durable idempotency key: {method.upper()} {path}")
+    batch_content = spec["paths"]["/claim-batches"]["post"]["requestBody"]["content"]
+    if set(batch_content) != {"application/vibemaxxing-claim-batch+cbor"}:
+        raise ValidationFailure("claim-batches must accept only the registered bounded CBOR media type")
+
+
+def validate_p1140d_contracts() -> None:
+    state_schema = validate_schema_file(SCHEMAS / "state-machine-registry-v1.schema.json")
+    state_registry = load_json(SCHEMAS / "state-machine-registry-v1.json")
+    validate_instance(state_schema, state_registry, "state-machine registry")
+    machines = state_registry["machines"]
+    machine_ids = [machine["machine_id"] for machine in machines]
+    assert_unique(machine_ids, "state-machine IDs")
+    required_machines = {
+        "oauth-transaction", "web-session-family", "native-session-family", "ranked-identity",
+        "idempotency-record", "ranking-projection", "model-alias", "friendship", "rivalry",
+        "board-membership", "board-invitation", "presence-lease", "notification",
+        "moderation-case", "appeal", "export-job", "server-deletion", "local-deletion",
+        "daemon-runtime", "privileged-supervisor", "update-lifecycle", "release-trust",
+        "platform-certification",
+    }
+    if set(machine_ids) != required_machines:
+        raise ValidationFailure(f"state-machine set mismatch: missing={sorted(required_machines - set(machine_ids))}")
+    for machine in machines:
+        states = set(machine["states"])
+        if machine["initial_state"] not in states or not set(machine["terminal_states"]) <= states:
+            raise ValidationFailure(f"invalid state declaration: {machine['machine_id']}")
+        transition_ids = [item["transition_id"] for item in machine["transitions"]]
+        assert_unique(transition_ids, f"{machine['machine_id']} transition IDs")
+        for transition in machine["transitions"]:
+            if not set(transition["from"]) <= states or transition["to"] not in states:
+                raise ValidationFailure(f"transition references unknown state: {transition['transition_id']}")
+            for field in ("authentication", "idempotency", "audit_event", "reversal", "transaction_boundary"):
+                if not transition.get(field):
+                    raise ValidationFailure(f"transition lacks {field}: {transition['transition_id']}")
+
+    platform_schema = validate_schema_file(SCHEMAS / "platform-profile-registry-v1.schema.json")
+    platform_registry = load_json(SCHEMAS / "platform-profile-registry-v1.json")
+    validate_instance(platform_schema, platform_registry, "platform-profile registry")
+    profiles = platform_registry["profiles"]
+    profile_ids = [profile["profile_id"] for profile in profiles]
+    assert_unique(profile_ids, "platform-profile IDs")
+    if len(profiles) < 30:
+        raise ValidationFailure("launch platform matrix is not explicit enough")
+    if any(profile["advertised"] for profile in profiles):
+        raise ValidationFailure("uncertified platform profile is advertised")
+    required_failures = {
+        "install", "service-start", "service-crash-loop", "shell-close", "login-logout",
+        "reboot", "sleep-resume", "key-denied-or-reset", "ipc-cross-user",
+        "permission-revoked", "disk-full", "network-offline", "update-interrupted",
+        "rollback", "uninstall", "privacy-canary",
+    }
+    for profile in profiles:
+        cases = {case["case_id"] for case in profile["failure_matrix"]}
+        if cases != required_failures:
+            raise ValidationFailure(f"platform failure matrix mismatch: {profile['profile_id']}")
+    if {"android", "ios", "ipados", "chromeos"} & {profile["os_family"] for profile in profiles}:
+        raise ValidationFailure("out-of-scope native mobile profile is advertised")
+
+    for name in ("release-set-v1.schema.json", "ranking-view-v1.schema.json", "export-manifest-v1.schema.json"):
+        validate_schema_file(SCHEMAS / name)
+
+    reasons = load_json(SCHEMAS / "reason-codes-v1.json")
+    required_reason_fields = {
+        "subsystem", "class", "default_outcome", "retryable", "public_message_key",
+        "internal_visibility", "severity", "appealability", "state_machine",
+        "introduced_in", "deprecated_in",
+    }
+    for item in reasons["codes"]:
+        missing_fields = required_reason_fields - set(item)
+        if missing_fields:
+            raise ValidationFailure(f"reason code lacks authority fields: {item['code']}: {sorted(missing_fields)}")
+
+    policies = load_json(SCHEMAS / "policy-defaults-v1.json")
+    required_policy_fields = {
+        "value_type", "unit", "effective_at", "change_scope", "rebuild_required",
+        "notice_required", "emergency_override", "fixture_refs",
+    }
+    for key, item in policies["policies"].items():
+        missing_fields = required_policy_fields - set(item)
+        if missing_fields:
+            raise ValidationFailure(f"policy lacks lifecycle fields: {key}: {sorted(missing_fields)}")
+
+    proto = (SCHEMAS / "social-integrity-events-v1.proto").read_text(encoding="utf-8")
+    for required in (
+        "oneof event", "FriendshipEvent", "BlockEvent", "RivalEvent",
+        "BoardMembershipEvent", "PresenceEvent", "NotificationEvent",
+        "ModerationEffectEvent", "AppealDecisionEvent", "RetractionEvent",
+    ):
+        if required not in proto:
+            raise ValidationFailure(f"social integrity proto lacks {required}")
+    for forbidden in ("json", "payload", "map<"):
+        if forbidden in proto.lower():
+            raise ValidationFailure(f"social integrity proto retains opaque field: {forbidden}")
 
 
 def validate_cddl_file() -> None:
@@ -320,8 +439,14 @@ def validate_protobuf_files() -> None:
 
 def validate_postgres_ddl(database_url: str) -> None:
     sql = (SCHEMAS / "planning-schema.sql").read_text(encoding="utf-8")
-    if "BLOCKED STRUCTURAL PLANNING PLACEHOLDER" not in sql:
-        raise ValidationFailure("planning SQL must declare its blocked structural maturity")
+    if "P-1140D REPAIRED PLANNING MIGRATION CONTRACT" not in sql:
+        raise ValidationFailure("planning SQL lacks repaired P-1140D maturity marker")
+    if re.search(r"(?i)\\bjsonb\\b", sql):
+        raise ValidationFailure("planning SQL retains untyped jsonb")
+    if re.search(r"create table boards \\([^;]*owner_account_id", sql, flags=re.IGNORECASE | re.DOTALL):
+        raise ValidationFailure("board ownership is duplicated outside membership authority")
+    if "board_one_active_owner" not in sql or "check (account_id_a < account_id_b)" not in sql:
+        raise ValidationFailure("social SQL lacks canonical pair or single-owner constraints")
     if re.search(r"(?im)^create\s+table\s+country_assertions\b", sql):
         raise ValidationFailure("country_assertions remains in launch SQL")
     if re.search(r"board_type\s+in\s*\([^)]*'country'", sql, flags=re.IGNORECASE | re.DOTALL):
@@ -354,6 +479,7 @@ def main() -> int:
         ("JSON schemas, examples, and registries", validate_json_schemas_and_examples),
         ("policy and observability artifacts", validate_policy_and_observability),
         ("OpenAPI", validate_openapi_file),
+        ("P-1140D state and platform contracts", validate_p1140d_contracts),
         ("CDDL", validate_cddl_file),
         ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),
         ("Protobuf", validate_protobuf_files),
