@@ -191,11 +191,11 @@ Acceptance:
 
 ### P-1140E — cross-contract planning validation
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140B, P-1140C and P-1140D.
 
-Candidate planning-validation set:
+Completed planning-validation set:
 
 - schema-validated matrix binding all 69 decisions, every OpenAPI operation, 23 state machines, 34 exact platform profiles and 18 validation domains;
 - positive and invalid-transition fixtures for every state machine;
@@ -205,7 +205,7 @@ Candidate planning-validation set:
 - final contradiction audit with zero open P0/P1 planning findings;
 - a dedicated validator in the clean-checkout planning workflow.
 
-Candidate validation must pass on one exact pull-request head before the status can transition.
+Validation: Planning checks run #239 passed on exact candidate head `7b2a4225f3407f3c8c0097a8017d71d3aa9c5aa3`. The gate-transition head must also pass before merge.
 
 Deliverables:
 
@@ -251,4 +251,4 @@ Acceptance:
 
 ## Current conclusion
 
-P-1140A through P-1140D are complete. P-1140E is active. Platform scope is frozen under D-062 through D-069. P-1104 remains blocked until P-1140E exact-head validation passes and the user explicitly authorizes implementation.
+P-1140A through P-1140E are complete-planning. Platform scope is frozen under D-062 through D-069. P-1104 is the sole implementation entrance decision and remains `blocked-approval` until the user explicitly authorizes implementation.
