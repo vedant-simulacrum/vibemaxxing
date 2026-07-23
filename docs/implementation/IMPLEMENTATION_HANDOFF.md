@@ -1,14 +1,33 @@
 # VibeMaxxing Implementation Handoff
 
 Status: normative future implementation handoff; inactive until P-1140B–E pass and the user explicitly authorizes implementation.
-Version: 6
-Updated: 2026-07-23
+Version: 7
+Updated: 2026-07-24
 
 ## Purpose
 
 This is the single build-order contract. It incorporates the repository alignment audit, machine-contract repair specification, D-001..D-069 traceability, frozen cross-platform audit, launch decisions, privacy boundary, anti-cheat architecture, optional privileged supervision and mandatory automatic updates.
 
 It does not authorize implementation. Reviewable units live in `PR_SIZED_WORK_BREAKDOWN.md`; current/future paths are distinguished in `REPOSITORY_LAYOUT.md`; execution-thread generation is governed by `ISSUE_GENERATION.md`.
+
+## Current handoff health
+
+This document is structurally comprehensive but **not implementation-ready**. It describes the intended build order; it does not prove that the contracts consumed by that build order are coherent.
+
+| Layer | Current state | Handoff consequence |
+|---|---|---|
+| Product authority and launch scope | Accepted and consolidated | Bind implementation to current decisions; do not revive country launch scope, mandatory proxying, kernel anti-cheat or a launch SLM |
+| Evidence, privacy and accounting | P-1140B active | Claim/appraisal ownership, typed local stages, accounting profiles, time, lineage, pricing and egress schemas must be repaired first |
+| VibeProof wire protocol | P-1140C blocked by P-1140B | Current CDDL and prose cannot generate production codecs |
+| Identity, API, SQL, ranking, social, native and release state | P-1140D dependency-blocked | Current OpenAPI, planning SQL and state prose are implementation inputs, not executable contracts |
+| Cross-contract validation | P-1140E dependency-blocked | No current clean-checkout result can certify the future implementation handoff |
+| Product code | Prototype/seeds only | Hosted fixture UI is a runnable prototype; API, Rust core, protocol, database, collectors, packaging and operations are not implemented |
+
+Before P-1104 can be proposed, maintainers must reconcile this file and `PR_SIZED_WORK_BREAKDOWN.md` against the final repaired schemas and state machines, remove or reclassify stale completion claims, attach clean-checkout validation to the exact final head, and record any remaining P0/P1 contradiction as blocking.
+
+### Concurrent branch handoff rule
+
+Branch-local work is not canonical handoff state. The ADR-014 repair is merged through PR #31; the UI application-lockdown branch must now be updated onto that baseline, preserve the stricter workflow boundary and repository-doctor invariants, and rerun checks on the reconciled exact head. The authoritative status is updated only after merge.
 
 ## Mandatory pre-read
 
