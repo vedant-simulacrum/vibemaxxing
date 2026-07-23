@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "profile_registry_id": "accounting-profiles-v1",
+  "cases": [
+    {
+      "case_id": "separate-cache-no-double-count",
+      "profile_id": "cloud-separate-cache-v1",
+      "source": {
+        "input_tokens": "100",
+        "output_tokens": "40",
+        "cache_read_tokens": "60",
+        "cache_write_tokens": "10"
+      },
+      "expected": {
+        "input_uncached": "100",
+        "output_visible": "40",
+        "cache_read": "60",
+        "cache_write": "10",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0",
+        "token_burn_total": "210"
+      }
+    },
+    {
+      "case_id": "inclusive-input-subtract-cache",
+      "profile_id": "cloud-inclusive-total-v1",
+      "source": {
+        "input_total": "100",
+        "cached_input": "60",
+        "output_total": "50",
+        "reasoning_output": "20"
+      },
+      "expected": {
+        "input_uncached": "40",
+        "output_visible": "30",
+        "cache_read": "60",
+        "cache_write": "0",
+        "reasoning": "20",
+        "multimodal_input": "0",
+        "multimodal_output": "0",
+        "token_burn_total": "150"
+      }
+    },
+    {
+      "case_id": "retry-distinct-execution",
+      "profile_id": "cloud-separate-cache-v1",
+      "source": {
+        "attempts": [
+          {
+            "input_tokens": "10",
+            "output_tokens": "0",
+            "cache_read_tokens": "0",
+            "cache_write_tokens": "0"
+          },
+          {
+            "input_tokens": "10",
+            "output_tokens": "5",
+            "cache_read_tokens": "0",
+            "cache_write_tokens": "0"
+          }
+        ]
+      },
+      "expected": {
+        "token_burn_total": "25",
+        "executions": "2"
+      }
+    },
+    {
+      "case_id": "cancelled-known-consumption",
+      "profile_id": "cloud-separate-cache-v1",
+      "source": {
+        "input_tokens": "12",
+        "output_tokens": "3",
+        "cache_read_tokens": "0",
+        "cache_write_tokens": "0",
+        "outcome": "cancelled-after-consumption"
+      },
+      "expected": {
+        "token_burn_total": "15",
+        "disposition": "competitive-if-other-gates-pass"
+      }
+    },
+    {
+      "case_id": "local-token-ids",
+      "profile_id": "local-exact-tokenizer-v1",
+      "source": {
+        "prompt_token_ids_count": "80",
+        "output_token_ids_count": "20"
+      },
+      "expected": {
+        "input_uncached": "80",
+        "output_visible": "20",
+        "token_burn_total": "100"
+      }
+    },
+    {
+      "case_id": "contradictory-contained-counts",
+      "profile_id": "cloud-inclusive-total-v1",
+      "source": {
+        "input_total": "20",
+        "cached_input": "30",
+        "output_total": "5",
+        "reasoning_output": "0"
+      },
+      "expected": {
+        "disposition": "reject",
+        "reason_code": "accounting-containment-contradiction"
+      }
+    }
+  ]
+}
