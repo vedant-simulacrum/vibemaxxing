@@ -9,12 +9,23 @@ import {
   MetricValue,
   PresenceIndicator,
   Progress,
+  ProductAvatar,
+  ProductButton,
+  ProductModel,
+  ProductMovement,
+  ProductPanel,
+  ProductShell,
+  ProductStateBoundary,
+  ProductTabs,
+  ProviderLogo,
   RankMovement,
   Wordmark,
+  providerLogoRegistry,
   type AvatarTint,
   type IconName,
   type LedgerPerson,
 } from "@vibemaxxing/ui";
+import "./concepts/product-storyboards.css";
 
 const meta = {
   title: "Foundations/Current component inventory",
@@ -50,6 +61,20 @@ export const BrandAndIconSet: Story = {
     <div className="showcase-stage row">
       <Wordmark />
       {iconNames.map((name) => <Icon key={name} name={name} />)}
+    </div>
+  ),
+};
+
+export const ProviderAndModelLogos: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="showcase-stage" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(144px, 1fr))", gap: 12, maxWidth: 960 }}>
+      {(Object.keys(providerLogoRegistry) as Array<keyof typeof providerLogoRegistry>).map((provider) => (
+        <div key={provider} style={{ minHeight: 64, display: "flex", alignItems: "center", gap: 12, padding: 16, border: "1px solid var(--vm-color-row-line)", borderRadius: 9, background: "var(--vm-color-surface)" }}>
+          <ProviderLogo provider={provider} size={24} />
+          <span style={{ fontSize: 13, fontWeight: 500 }}>{providerLogoRegistry[provider].label}</span>
+        </div>
+      ))}
     </div>
   ),
 };
@@ -114,5 +139,43 @@ export const LedgerRowStates: Story = {
       <LedgerRow person={{ ...person, rank: 2, name: "Leon Park", handle: "leonp", initials: "LP", change: -1, evidence: "Standard", active: undefined, tint: "sand" }} metric="cash" />
       <LedgerRow person={{ ...person, rank: 12, name: "A builder with a deliberately long display name", handle: "long-content-state", initials: "AB", change: 0, evidence: "Imported", active: undefined, tint: "blue" }} metric="tokens" />
     </div>
+  ),
+};
+
+export const ProductSystemPrimitives: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <ProductPanel label="Product component contract">
+      <div className="showcase-stage row">
+        <ProductAvatar id={0} size={48} online label="Vedant, online" />
+        <ProductButton>Secondary action</ProductButton>
+        <ProductButton tone="primary">Primary action</ProductButton>
+        <ProductButton tone="danger">Destructive action</ProductButton>
+        <ProductMovement value={3} />
+        <ProductMovement value={-2} />
+        <ProductModel name="GPT-5.4" />
+        <ProductTabs labels={["Today", "7 days", "Season"]} active="7 days" />
+      </div>
+    </ProductPanel>
+  ),
+};
+
+export const ProductShellContract: Story = {
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <ProductShell active="Leaderboard">
+      <main className="vm-sb-content">
+        <ProductPanel label="Shell content"><div className="showcase-stage">Routes compose content here.</div></ProductPanel>
+      </main>
+    </ProductShell>
+  ),
+};
+
+export const ProductStateContract: Story = {
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <ProductStateBoundary state="offline">
+      <ProductShell active="Activity"><main className="vm-sb-content" /></ProductShell>
+    </ProductStateBoundary>
   ),
 };

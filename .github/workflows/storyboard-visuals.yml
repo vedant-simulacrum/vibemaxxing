@@ -27,7 +27,7 @@ env:
 
 jobs:
   capture:
-    name: Build and capture synthetic Storybook fixtures
+    name: Build, compare, and capture synthetic Storybook fixtures
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -62,12 +62,17 @@ jobs:
           done
           cat /tmp/vibemaxxing-storybook.log
           exit 1
-      - name: Capture locked synthetic storyboards
+      - name: Capture locked synthetic storyboards at all governed breakpoints
         run: node scripts/capture-product-storyboards.mjs storybook-captures
-      - name: Upload prototype visual-review artifacts
+      - name: Compare desktop captures with governed baselines
+        run: node scripts/compare-product-storyboards.mjs storybook-captures storybook-diffs
+      - name: Upload prototype visual-review artifacts and diffs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: prototype-storyboards-1536x1024
-          path: packages/ui/storybook-captures/*.png
+          name: prototype-storyboards-responsive-and-diffs
+          path: |
+            packages/ui/storybook-captures/*.png
+            packages/ui/storybook-diffs/*
           if-no-files-found: error
           retention-days: 30

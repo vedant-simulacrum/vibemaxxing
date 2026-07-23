@@ -15,7 +15,17 @@ The executable state catalogue lives in Storybook under `packages/ui`; the curat
 | `MetricValue` | Token Burn or Estimated Cash Burn is displayed | Unrelated currency or generic metrics are shown | Metric-specific formatting and explicit estimated label |
 | `Progress` | A bounded value from 0–100 is meaningful | The value is indeterminate | Clamps input and exposes native progressbar values |
 | `LedgerRow` | A public leaderboard record is displayed | A generic data table row is sufficient | Composes rank, identity, presence, evidence, metric, and action |
+| `ProductShell` | A hosted product surface needs the canonical header and navigation | A standalone marketing or native surface is being composed | Owns wordmark, primary navigation, search, and account trigger |
+| `ProductAvatar` | Governed people fixtures or future identity images are shown | Initial-only fallback is sufficient | Resolves only through `assetRegistry`; supports presence and accessible labels |
+| `ProductButton` | A product action uses neutral, primary, or danger emphasis | An icon-only control is appropriate | One tone contract, native disabled behavior, stable dimensions |
+| `ProductPanel` | A purpose-named product region needs the canonical surface treatment | A decorative generic card would be created | Semantic `section` with an optional accessible label |
+| `ProductTabs` | Distinct panels share a local view switcher | A finite non-navigation choice is being made | Tablist/tab semantics and controlled selection |
+| `ProductMovement` | Product screens show rank movement | A generic percentage change is shown | Direction and magnitude remain non-color-readable |
+| `ProductModel` | A model name and governed provider mark appear together | Provider identity is unknown | Provider marks resolve only through `ProviderLogo` |
+| `ProductStateBoundary` | A product surface is loading, empty, failed, offline, stale, private, blocked, restricted, or quarantined | The ready surface is shown | Shared copy, status semantics, privacy-safe explanations, and recovery actions |
 
 ## Shared state coverage
 
-Storybook renders default, selected, disabled, positive, negative, neutral, Hardened, Standard, Imported, present, absent, token, cash, zero, complete, long-content, and ledger states. Loading, empty, error, offline, restricted, and quarantined states remain pattern-level work because the current implementation does not yet expose those product states.
+Storybook renders default, selected, disabled, positive, negative, neutral, Hardened, Standard, Imported, present, absent, token, cash, zero, complete, long-content, and ledger states. The product catalogue also executes loading, empty, error, offline, stale, private, blocked, restricted, and quarantined states.
+
+Every approved product screen has desktop and mobile stories, with a shared 1024px tablet contract. CI captures all three breakpoints and compares the desktop output with the governed committed render baseline.

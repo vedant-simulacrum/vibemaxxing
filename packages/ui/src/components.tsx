@@ -1,25 +1,43 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ComponentType, SVGProps } from "react";
+import { assetRegistry } from "./assets";
+import { ArrowRight, Bell, ChevronRight, Copy, Globe2, Menu, Search, Shield, Users } from "./ui/product-icons";
+
+export { ProviderLogo, providerLogoRegistry, type ProviderLogoName } from "./ui/provider-logo";
+export {
+  ProductAvatar,
+  ProductButton,
+  ProductModel,
+  ProductMovement,
+  ProductPanel,
+  ProductShell,
+  ProductStateBoundary,
+  ProductTabs,
+  type FixtureAvatarId,
+  type ProductNav,
+  type ProductState,
+} from "./patterns/product-system";
 
 export type IconName = "bell" | "search" | "chevron" | "arrow" | "shield" | "copy" | "users" | "globe" | "menu";
 
-const iconPaths: Record<IconName, ReactNode> = {
-  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></>,
-  search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>,
-  chevron: <path d="m9 18 6-6-6-6"/>,
-  arrow: <><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></>,
-  shield: <path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/>,
-  copy: <><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
-  users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></>,
-  globe: <><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></>,
-  menu: <><path d="M4 7h16M4 12h16M4 17h16"/></>,
+const iconComponents: Record<IconName, ComponentType<SVGProps<SVGSVGElement>>> = {
+  bell: Bell,
+  search: Search,
+  chevron: ChevronRight,
+  arrow: ArrowRight,
+  shield: Shield,
+  copy: Copy,
+  users: Users,
+  globe: Globe2,
+  menu: Menu,
 };
 
 export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
-  return <svg aria-hidden="true" className="icon" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{iconPaths[name]}</svg>;
+  const Glyph = iconComponents[name];
+  return <Glyph aria-hidden="true" className="icon" width={size} height={size} strokeWidth={1.8} />;
 }
 
 export function Wordmark({ href = "#", reverse = false }: { href?: string; reverse?: boolean }) {
-  return <a className="wordmark" href={href} aria-label="vibemaxxing home"><img src={reverse ? "/brand/wordmark-reverse.svg" : "/brand/wordmark.svg"} alt="vibemaxxing"/></a>;
+  return <a className="wordmark" href={href} aria-label="vibemaxxing home"><img src={reverse ? assetRegistry.brand.wordmarks.reverse : assetRegistry.brand.wordmark} alt="vibemaxxing"/></a>;
 }
 
 export function IconButton({ label, icon, className = "", onClick, expanded, disabled = false }: { label: string; icon: IconName; className?: string; onClick?: () => void; expanded?: boolean; disabled?: boolean }) {
