@@ -8,7 +8,8 @@ const failures = [];
 
 try {
   for (const story of stories) {
-    const page = await browser.newPage({ viewport: { width: 1536, height: 1024 } });
+    const context = await browser.newContext({ viewport: { width: 1536, height: 1024 } });
+    const page = await context.newPage();
     await page.goto(`${baseUrl}/iframe.html?id=approved-baseline-product-screens--${story}&viewMode=story`, { waitUntil: "networkidle" });
     await page.waitForSelector(".vm-sb-page");
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
@@ -22,7 +23,7 @@ try {
     if (!await page.getByRole("dialog", { name: "Search VibeMaxxing" }).isVisible()) failures.push(`${story}: search dialog did not open`);
     await page.keyboard.press("Escape");
     if (await page.getByRole("dialog", { name: "Search VibeMaxxing" }).count()) failures.push(`${story}: search dialog did not close with Escape`);
-    await page.close();
+    await context.close();
   }
 } finally {
   await browser.close();
