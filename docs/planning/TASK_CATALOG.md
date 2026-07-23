@@ -132,11 +132,11 @@ Acceptance:
 
 ### P-1140D — identity, API, ranking, social, native and release state machines
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140B; protocol-facing work also depends on P-1140C.
 
-Candidate contract set on `agent/p1140d-state-platform-contracts`:
+Completed planning contract set:
 
 - one JSON Schema-validated registry for 23 authoritative mutable-state machines;
 - one exact launch platform registry with 34 uncertified/unadvertised profiles and a complete 16-case failure matrix per profile;
@@ -147,7 +147,7 @@ Candidate contract set on `agent/p1140d-state-platform-contracts`:
 - enriched reason-code and policy lifecycle authority;
 - normative OAuth/session/device-bound proof, ranked-identity, API, ranking, social, native lifecycle, privileged supervision and update/release contract.
 
-Candidate validation must pass on the exact pull-request head before the status can transition; branch-local success is not canonical evidence.
+Validation: Planning checks run #234 passed on exact candidate head `366691f8e1f06c03915652209dc83adb3a40af0c`. The gate-transition head must also pass before merge.
 
 Deliverables:
 
@@ -191,7 +191,7 @@ Acceptance:
 
 ### P-1140E — cross-contract planning validation
 
-Status: `blocked-planning`
+Status: `in-progress-planning`
 
 Dependencies: P-1140B, P-1140C and P-1140D.
 
