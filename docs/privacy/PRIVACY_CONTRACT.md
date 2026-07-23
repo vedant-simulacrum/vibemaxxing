@@ -1,7 +1,7 @@
 # Privacy Contract
 
 Updated: 2026-07-23
-Status: normative planning contract; implementation blocked by P-1140B–E
+Status: normative planning contract; P-1140B egress contract frozen, implementation blocked by P-1140C–E
 
 ## Absolute server boundary
 
@@ -150,6 +150,8 @@ Every outbound field must have:
 - positive and privacy-negative fixture.
 
 A field absent from the allowlist is forbidden.
+
+The registry schema is `packages/schemas/egress-allowlist-v1.schema.json`; the only current claim registry is `packages/schemas/egress-allowlist-v1.json`. Each entry fixes wire type, maximum encoded bytes, semantic owner, source process, destination, retention policy, user explanation and positive/negative fixture IDs. Boundary canaries are enumerated in `conformance/privacy/p1140b-boundary-canaries-v1.json`.
 
 The egress filter runs after all optional detector and adapter processing, immediately before canonical serialization and signing. The user-facing privacy preview renders the exact serialized safe structure, not a hand-written approximation.
 
