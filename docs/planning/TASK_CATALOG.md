@@ -147,7 +147,7 @@ Candidate contract set on `agent/p1140d-state-platform-contracts`:
 - enriched reason-code and policy lifecycle authority;
 - normative OAuth/session/DPoP, ranked-identity, API, ranking, social, native lifecycle, privileged supervision and update/release contract.
 
-Candidate validation must pass on the exact head before the status can transition.
+Candidate validation must pass on the exact pull-request head before the status can transition; branch-local success is not canonical evidence.
 
 Deliverables:
 
