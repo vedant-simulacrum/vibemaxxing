@@ -1,0 +1,9 @@
+{
+  "name": "@vibemaxxing/prototype-playwright-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Locked browser runtime used only by ADR-014 prototype visual validation.",
+  "dependencies": {
+    "playwright": "1.61.1"
+  }
+}
