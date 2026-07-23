@@ -13,7 +13,10 @@ try {
     await page.goto(`${baseUrl}/iframe.html?id=approved-baseline-product-screens--${story}&viewMode=story`, { waitUntil: "networkidle" });
     await page.waitForSelector(".vm-sb-page");
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
-    for (const violation of results.violations) {\n      const nodes = violation.nodes.map((node) => `${node.target.join(" ")}: ${node.failureSummary ?? node.html}`).join(" | ");\n      failures.push(`${story}: ${violation.id} — ${violation.help} — ${nodes}`);\n    }
+    for (const violation of results.violations) {
+      const nodes = violation.nodes.map((node) => `${node.target.join(" ")}: ${node.failureSummary ?? node.html}`).join(" | ");
+      failures.push(`${story}: ${violation.id} — ${violation.help} — ${nodes}`);
+    }
 
     await page.keyboard.press("Tab");
     const firstFocus = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent?.trim());
@@ -30,7 +33,8 @@ try {
 }
 
 if (failures.length) {
-  console.error(failures.map((failure) => `- ${failure}`).join("\n"));
+  console.error(failures.map((failure) => `- ${failure}`).join("
+"));
   process.exit(1);
 }
 console.log(`Accessibility and keyboard interaction audit passed for ${stories.length} approved product screens.`);
