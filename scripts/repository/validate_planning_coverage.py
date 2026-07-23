@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Validate planning coverage beyond parser-level correctness."""
+"""Validate current planning-placeholder coverage and repaired launch scope.
+
+This is structural planning validation only. It deliberately does not claim that the
+blocked OpenAPI or PostgreSQL placeholders are implementation-ready.
+"""
 from __future__ import annotations
 
 import re
@@ -19,7 +23,7 @@ REQUIRED_PATHS = {
     "/claim-challenges", "/claim-batches", "/claims/{id}",
     "/leaderboards/{scope}/{period}", "/rank/me", "/profiles/{handle}", "/me",
     "/friends", "/friend-requests", "/blocks", "/rivals",
-    "/boards", "/boards/{id}/invitations", "/organizations", "/communities", "/countries",
+    "/boards", "/boards/{id}/invitations", "/organizations", "/communities",
     "/presence", "/notifications", "/moderation/cases", "/appeals",
     "/exports", "/deletion-requests", "/pricing-datasets", "/compatibility",
 }
@@ -33,15 +37,28 @@ REQUIRED_TABLES = {
     "minute_scores", "period_scores", "score_snapshots", "ranking_corrections",
     "pricing_datasets", "pricing_entries", "cost_interpretations", "profiles", "friend_requests",
     "friend_edges", "blocks", "rival_edges", "organizations", "communities", "boards",
-    "board_memberships", "board_invites", "country_assertions", "presence_leases", "notifications",
+    "board_memberships", "board_invites", "presence_leases", "notifications",
     "notification_preferences", "outbox_events", "worker_checkpoints", "audit_events", "exports",
     "deletion_jobs", "feature_flags", "schema_migrations",
 }
+
+FORBIDDEN_LAUNCH_PATHS = {"/countries"}
+FORBIDDEN_LAUNCH_TABLES = {"country_assertions"}
 
 IDEMPOTENCY_EXCEPTIONS = {
     ("/auth/github/start", "post"), ("/auth/x/start", "post"),
     ("/auth/device/start", "post"), ("/auth/device/poll", "post"),
     ("/auth/device/exchange", "post"), ("/claim-challenges", "post"),
+}
+
+REPAIR_TARGETS = {
+    "VerifierAppraisal": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "VerifierAppraisal"),
+    "CheckpointReceipt": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "CheckpointReceipt"),
+    "refresh-token families": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "refresh token families"),
+    "durable idempotency ledger": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "idempotency ledger"),
+    "immutable ranking view identity": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "ranking_view_id"),
+    "exact platform support profiles": ("docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md", "support profile"),
+    "mandatory automatic updates": ("docs/decisions/ADR-013-MANDATORY_AUTOMATIC_UPDATES.md", "mandatory automatic updates"),
 }
 
 
@@ -57,9 +74,13 @@ def main() -> None:
     errors: list[str] = []
     spec = yaml.safe_load((SCHEMAS / "openapi-v1.yaml").read_text(encoding="utf-8"))
     paths = spec.get("paths", {})
+
     missing_paths = sorted(REQUIRED_PATHS - set(paths))
     if missing_paths:
-        errors.append(f"missing API paths: {missing_paths}")
+        errors.append(f"missing current planning API paths: {missing_paths}")
+    forbidden_paths = sorted(FORBIDDEN_LAUNCH_PATHS & set(paths))
+    if forbidden_paths:
+        errors.append(f"post-launch country paths remain in the launch API placeholder: {forbidden_paths}")
 
     operation_ids: list[str] = []
     for path, item in paths.items():
@@ -85,10 +106,25 @@ def main() -> None:
     tables = set(re.findall(r"(?im)^create\s+table\s+([a-z_][a-z0-9_]*)\s*\(", sql))
     missing_tables = sorted(REQUIRED_TABLES - tables)
     if missing_tables:
-        errors.append(f"missing PostgreSQL tables: {missing_tables}")
+        errors.append(f"missing current planning PostgreSQL tables: {missing_tables}")
+    forbidden_tables = sorted(FORBIDDEN_LAUNCH_TABLES & tables)
+    if forbidden_tables:
+        errors.append(f"post-launch country tables remain in the launch SQL placeholder: {forbidden_tables}")
+    if re.search(r"board_type\s+in\s*\([^)]*'country'", sql, flags=re.IGNORECASE | re.DOTALL):
+        errors.append("country remains an allowed launch board_type")
+
+    for label, (relative_path, marker) in REPAIR_TARGETS.items():
+        text = (ROOT / relative_path).read_text(encoding="utf-8")
+        if marker.lower() not in text.lower():
+            errors.append(f"missing P-1140 repair target for {label}: {relative_path} lacks {marker!r}")
 
     fail(errors)
-    print(f"planning coverage: PASS ({len(REQUIRED_PATHS)} API paths, {len(REQUIRED_TABLES)} tables)")
+    print(
+        "planning coverage: PASS "
+        f"({len(REQUIRED_PATHS)} current API paths, {len(REQUIRED_TABLES)} current tables, "
+        f"{len(REPAIR_TARGETS)} deferred repair targets)"
+    )
+    print("artifact maturity: blocked planning placeholders; not implementation evidence")
 
 
 if __name__ == "__main__":
