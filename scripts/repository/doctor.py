@@ -434,7 +434,7 @@ def main() -> None:
     structural = {
         "packages/schemas/vibeproof-claim-v1.cddl": "vibeproof-claim-v1",
         "packages/schemas/local-control-v1.proto": 'syntax = "proto3"',
-        "packages/schemas/openapi-v1.yaml": "openapi: 3.1.0",
+        'packages/schemas/openapi-v1.yaml': '"openapi": "3.1.0"',
         "packages/schemas/planning-schema.sql": "create table claims",
         "packages/schemas/observability-allowlist-v1.yaml": "policy: deny-by-default",
         "docs/integrations/T20_MODEL_HARDENING_CONTRACT.md": "D-046 is provisional",
