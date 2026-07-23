@@ -10,6 +10,7 @@ These rules are written for coding agents and apply to every UI change.
 4. Identify any missing state or variant before proposing a new component.
 5. Add or update Storybook stories for every affected public component.
 6. Stop for visual approval when the work introduces or materially changes a component appearance or page composition.
+7. Use `PRODUCT_SURFACE_CONTRACTS.md` to resolve the canonical export, route, fixture boundary, and approval status.
 
 ## Generation constraints
 
@@ -24,6 +25,7 @@ These rules are written for coding agents and apply to every UI change.
 - Do not claim a component exists because it is listed as proposed.
 - Do not use `/style-guide` coverage as a substitute for isolated Storybook stories.
 - Do not implement a second component inside a story or `/style-guide`; both must import the package public API.
+- Do not move a story from `Candidate batch/*` to `Approved baseline/*`, add governed baseline images, or describe it as approved without explicit human visual approval.
 
 ## Reuse decision
 

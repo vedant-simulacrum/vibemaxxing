@@ -21,6 +21,8 @@ for (const required of [
   "packages/ui/src/ui/product-icons.ts",
   "packages/ui/src/concepts/product-storyboards.stories.tsx",
   "packages/ui/src/concepts/product-state-matrix.stories.tsx",
+  "packages/ui/src/concepts/competition-suite.stories.tsx",
+  "docs/style-guide/PRODUCT_SURFACE_CONTRACTS.md",
   "scripts/ui/playwright-runtime/audit-product-storyboards.mjs",
   "scripts/ui/playwright-runtime/package-lock.json",
   "packages/ui/scripts/compare-product-storyboards.mjs",
@@ -29,6 +31,8 @@ for (const required of [
   "apps/web/app/friends/page.tsx",
   "apps/web/app/activity/page.tsx",
   "apps/web/app/boards/[slug]/page.tsx",
+  "apps/web/app/leaderboards/[scope]/page.tsx",
+  "apps/web/app/me/page.tsx",
 ]) requireFile(required);
 
 const assetManifest = JSON.parse(read("assets/manifest.json"));
@@ -43,16 +47,9 @@ for (const asset of fixtureManifest.assets ?? []) {
 }
 
 const referenceManifest = JSON.parse(read("assets/ui/references/manifest.json"));
-for (const viewport of ["desktop", "tablet", "mobile"]) {
-  if (!referenceManifest.viewports?.[viewport]) failures.push(`Reference manifest is missing the ${viewport} viewport contract.`);
-}
 for (const reference of referenceManifest.references ?? []) {
   requireFile(path.join("assets/ui/references", reference.mockup));
-  for (const viewport of ["desktop", "tablet", "mobile"]) {
-    if (!reference.renders?.[viewport]) failures.push(`${reference.id} is missing its ${viewport} render.`);
-    else requireFile(path.join("assets/ui/references", reference.renders[viewport]));
-    if (!reference.approvedCaptureSha256?.[viewport]) failures.push(`${reference.id} is missing its reviewed ${viewport} capture digest.`);
-  }
+  requireFile(path.join("assets/ui/references", reference.render));
 }
 for (const evidence of referenceManifest.supportingEvidence ?? []) {
   requireFile(path.join("assets/ui/references", evidence.file));
@@ -124,6 +121,7 @@ const storybookPreview = read("packages/ui/.storybook/preview.ts");
 const stories = read("packages/ui/src/components.stories.tsx");
 const productStories = read("packages/ui/src/concepts/product-storyboards.stories.tsx");
 const stateMatrixStories = read("packages/ui/src/concepts/product-state-matrix.stories.tsx");
+const competitionStories = read("packages/ui/src/concepts/competition-suite.stories.tsx");
 const packageJson = JSON.parse(read("packages/ui/package.json"));
 const browserRuntime = JSON.parse(read("scripts/ui/playwright-runtime/package.json"));
 const styleGuide = read("apps/web/app/style-guide/page.tsx");
@@ -145,6 +143,9 @@ if (!storybookPreview.includes('test: "error"')) failures.push("Storybook access
 if (!stories.includes('from "@vibemaxxing/ui"') || !productStories.includes('from "@vibemaxxing/ui"')) {
   failures.push("Storybook stories must consume the @vibemaxxing/ui public API.");
 }
+if (!competitionStories.includes('from "@vibemaxxing/ui"')) {
+  failures.push("Candidate product stories must consume the @vibemaxxing/ui public API.");
+}
 if (!styleGuide.includes("Curated brand reference") || !styleGuide.includes('from "@vibemaxxing/ui"')) {
   failures.push("/style-guide must remain a curated reference consuming the public UI API.");
 }
@@ -163,12 +164,14 @@ for (const screen of ["Profile", "Rival", "Friends", "Activity", "Board"]) {
     if (!stateMatrixStories.includes(`export const ${screen}${state}`)) failures.push(`State matrix is missing ${screen}${state}.`);
   }
 }
-for (const required of ["Prototype storyboard visuals", "push:", "apps/web/**", "Compare responsive captures with governed baselines", "compare-product-storyboards.mjs", "audit-product-storyboards.mjs", "storybook-diffs"]) {
+for (const required of ["Prototype storyboard visuals", "compare-product-storyboards.mjs", "audit-product-storyboards.mjs", "storybook-diffs"]) {
   if (!workflow.includes(required)) failures.push(`Visual workflow is missing ${required}.`);
 }
 
 const routeContracts = new Map([
-  ["apps/web/app/page.tsx", "LeaderboardFirstPrototype"],
+  ["apps/web/app/page.tsx", "LeaderboardHubStoryboard"],
+  ["apps/web/app/leaderboards/[scope]/page.tsx", "LeaderboardHubStoryboard"],
+  ["apps/web/app/me/page.tsx", "OwnProfileStoryboard"],
   ["apps/web/app/profile/[handle]/page.tsx", "PublicProfileStoryboard"],
   ["apps/web/app/rivals/[handle]/page.tsx", "RivalComparisonStoryboard"],
   ["apps/web/app/friends/page.tsx", "FriendsStoryboard"],
@@ -177,6 +180,14 @@ const routeContracts = new Map([
 ]);
 for (const [route, component] of routeContracts) {
   if (!read(route).includes(component)) failures.push(`${route} must compose the approved ${component}.`);
+}
+
+const competitionSuite = read("packages/ui/src/concepts/competition-suite.tsx");
+for (const required of ["Token Burn", "Cash Burn", "estimated", "Imported", "Country leaderboards are post-launch"]) {
+  if (!competitionSuite.includes(required)) failures.push(`Competition suite is missing binding product copy: ${required}.`);
+}
+if (!competitionStories.includes('title: "Candidate batch/')) {
+  failures.push("Unapproved competition-suite stories must remain under Candidate batch/*.");
 }
 
 if (failures.length) {

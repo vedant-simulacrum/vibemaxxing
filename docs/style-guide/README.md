@@ -11,12 +11,14 @@ This directory is the entry point for every product-UI decision. It exists to ke
 | Brand identity, logo, palette, voice | `docs/design/BRAND.md` |
 | Product layout and interaction foundations | `docs/design/UI_FOUNDATIONS.md` |
 | Font provenance and licensing | `assets/brand/FONT_PROVENANCE.md` |
+| AI provider/model logo registry and provenance | `assets/providers/` |
 | Machine-readable CSS and TypeScript tokens | `packages/ui/src/` |
 | Isolated component states, controls, and accessibility checks | `packages/ui/.storybook/` and `*.stories.tsx` |
 | Component ownership and composition | `ARCHITECTURE.md` |
 | Definition of a reusable component | `COMPONENT_STANDARD.md` |
 | AI/vibe-coding rules | `AI_UI_RULES.md` |
 | Approved, proposed, and deprecated UI | `COMPONENT_INVENTORY.md` |
+| Product-screen exports, route ownership, fixture boundaries, and approval state | `PRODUCT_SURFACE_CONTRACTS.md` |
 | Implemented component usage contracts | `COMPONENTS.md` |
 | Curated brand and product-system reference | `/style-guide` |
 | Research and source rationale | `RESEARCH.md` |

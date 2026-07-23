@@ -27,6 +27,16 @@ export {
   type ProductNav,
   type ProductState,
 } from "./patterns/product-system";
+export {
+  LeaderboardHubStoryboard,
+  OwnProfileStoryboard,
+  leaderboardPeriods,
+  leaderboardScopes,
+  ownProfileSections,
+  type LeaderboardPeriod,
+  type LeaderboardScope,
+  type OwnProfileSection,
+} from "./concepts/competition-suite";
 
 export type IconName = "bell" | "search" | "chevron" | "arrow" | "shield" | "copy" | "users" | "globe" | "menu";
 

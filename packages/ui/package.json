@@ -20,6 +20,8 @@
     "./leaderboard.css": "./src/concepts/leaderboard-first.css",
     "./product-screens": "./src/concepts/product-storyboards.tsx",
     "./product-screens.css": "./src/concepts/product-storyboards.css",
+    "./competition-suite": "./src/concepts/competition-suite.tsx",
+    "./competition-suite.css": "./src/concepts/competition-suite.css",
     "./tokens.css": "./src/tokens.css",
     "./tokens": "./src/tokens.ts"
   },

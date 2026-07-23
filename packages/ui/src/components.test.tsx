@@ -6,7 +6,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   ChoiceGroup,
   EvidenceBadge,
+  LeaderboardHubStoryboard,
   LedgerRow,
+  OwnProfileStoryboard,
   ProductAvatar,
   ProductButton,
   ProductShell,
@@ -92,6 +94,22 @@ test("difficult product states preserve explicit user-facing meaning", () => {
   const quarantined = renderToStaticMarkup(<ProductStateBoundary state="quarantined"><main>Ledger</main></ProductStateBoundary>);
   assert.match(quarantined, /Score under review/);
   assert.doesNotMatch(quarantined, /cheat-proof/i);
+});
+
+test("leaderboard family preserves ranking, estimate, evidence, and post-launch boundaries", () => {
+  const html = renderToStaticMarkup(<LeaderboardHubStoryboard initialScope="Global" initialPeriod="Seasonal" />);
+  for (const expected of ["Global leaderboard", "Token Burn", "Cash Burn", "estimated", "Standard", "Hardened", "Imported history", "Countries"]) {
+    assert.match(html, new RegExp(expected));
+  }
+  assert.match(html, /Country leaderboards are post-launch/);
+  assert.match(html, /disabled=""/);
+});
+
+test("own profile separates private imports and documents the device privacy boundary", () => {
+  const analytics = renderToStaticMarkup(<OwnProfileStoryboard initialSection="Analytics" />);
+  for (const expected of ["Private analytics only", "Imported history", "Never enters competition"]) assert.match(analytics, new RegExp(expected));
+  const connections = renderToStaticMarkup(<OwnProfileStoryboard initialSection="Connections" />);
+  for (const expected of ["Connected agents", "Only fixed-schema aggregate accounting leaves this device", "Prompts, code, filenames"]) assert.match(connections, new RegExp(expected));
 });
 
 test("deprecated bento fixture remains renderable as design history", () => {

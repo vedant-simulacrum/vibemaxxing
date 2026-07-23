@@ -36,6 +36,22 @@ Not allowed until explicit implementation authorization:
 - activation of product CI, fuzz, dependency, security, evaluation, signing or release workflows;
 - claims of certified support, production hardening or launch readiness.
 
+## Bounded UI prototype
+
+The hosted-web code is an authorized, fixture-backed UI prototype. It is executable design evidence, not evidence of production data, security, privacy, ranking, identity or adapter implementation.
+
+Before changing UI:
+
+1. Read `docs/style-guide/README.md`, `AI_UI_RULES.md`, `COMPONENT_INVENTORY.md`, and `PRODUCT_SURFACE_CONTRACTS.md`.
+2. Search the public `@vibemaxxing/ui` exports before creating anything.
+3. Reuse `ProductShell`, product patterns, `assetRegistry`, `ProviderLogo`, and the semantic icon gateway.
+4. Put reusable behavior and appearance in `packages/ui`; application routes may only compose exported screens and supply route/data boundaries.
+5. Add Storybook coverage, responsive states, accessibility/interaction checks, and governed visual baselines before moving a candidate screen into the approved baseline.
+6. Keep candidate visuals under `Candidate batch/*`; an agent must not rename them `Approved baseline/*` without explicit human visual approval.
+7. Preserve fixture and maturity labels. Never replace synthetic fixtures with inferred backend behavior.
+
+Canonical current UI routes and imports are recorded in `docs/style-guide/PRODUCT_SURFACE_CONTRACTS.md`. Country leaderboards remain post-launch. The human-uniqueness verification vendor and method remain unresolved; UI must stay vendor-neutral.
+
 ## Binding product rules
 
 - Servers never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project/repository names, credentials, embeddings, summaries, classifications or personal insights.

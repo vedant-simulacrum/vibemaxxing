@@ -32,8 +32,8 @@ This file is the human-readable registry for the UI system. It distinguishes cur
 | Component | ProductAvatar | Implemented | Governed people imagery and presence |
 | Component | ProductModel | Implemented | Model identity composed with a governed provider mark |
 | Component | ProductStateBoundary | Implemented | Loading, empty, error, offline, stale, privacy, restriction, and quarantine states |
-| Component | Notice | Proposed | Informational, warning, error, and privacy messages |
-| Component | Dialog | Proposed | Focus-managed modal tasks |
+| Component | Notice | Implemented | Informational, warning, error, and privacy messages |
+| Component | Dialog | Implemented | Focus-managed modal tasks |
 | Product pattern | RankMovement | Implemented | Direction, magnitude, label, and non-color meaning |
 | Product pattern | PresenceIndicator | Implemented | Privacy-safe active-agent presence |
 | Product pattern | LedgerRow | Implemented | Responsive leaderboard record hierarchy |
@@ -46,6 +46,7 @@ This file is the human-readable registry for the UI system. It distinguishes cur
 |---|---|---|---|
 | Leaderboard First baseline | Approved fidelity prototype | `packages/ui/src/concepts/leaderboard-first.stories.tsx`, `references/leaderboard-first-browser-approved.png`, and `references/leaderboard-first-storybook-approved.png` | Canonical desktop Storybook recreation; production extraction remains intentionally separate |
 | Public profile, rival comparison, friends, activity, board standings | Implemented prototype | `packages/ui/src/concepts/product-storyboards.stories.tsx` | Shared product patterns, governed assets, responsive stories, difficult states, and visual baselines; non-production under P-1104 |
+| Leaderboard family and own profile | Candidate visual batch | `packages/ui/src/concepts/competition-suite.stories.tsx` | Global/friends/boards/organizations scopes and own-profile overview/analytics/connections/privacy; must receive explicit visual approval before baseline promotion |
 | Leaderboard bento prototype | Deprecated | `packages/ui/src/concepts/leaderboard-bento.stories.tsx` | Superseded fixture-only prototype; must not drive new implementation |
 
 The earlier Competition Slice directions are rejected exploration artifacts and are not approved sources for product implementation.
