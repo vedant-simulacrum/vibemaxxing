@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "root": "assets",
+  "policy": "single-source",
+  "collections": [
+    {
+      "id": "brand",
+      "path": "assets/brand",
+      "manifest": "assets/brand/manifest.json",
+      "consumer": "assetRegistry.brand"
+    },
+    {
+      "id": "providers",
+      "path": "assets/providers",
+      "manifest": "assets/providers/manifest.json",
+      "consumer": "ProviderLogo"
+    },
+    {
+      "id": "ui-fixtures",
+      "path": "assets/ui/fixtures",
+      "manifest": "assets/ui/fixtures/manifest.json",
+      "consumer": "assetRegistry.fixtures"
+    }
+  ],
+  "externalSystems": {
+    "interfaceIcons": {
+      "package": "lucide-react",
+      "rule": "Use the pinned package; do not vendor individual Lucide SVGs."
+    },
+    "dataVisualizations": {
+      "rule": "Charts are code-native and must not be stored as static artwork."
+    }
+  }
+}
