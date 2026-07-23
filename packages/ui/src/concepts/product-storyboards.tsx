@@ -6,6 +6,7 @@ import {
   Search, Shield, ShieldCheck, Sparkles, Swords, Trophy, UserPlus, Users,
 } from "lucide-react";
 import { ProviderLogo } from "../ui/provider-logo";
+import { assetRegistry } from "../assets";
 import "./product-storyboards.css";
 
 type Nav = "Leaderboard" | "Activity" | "Friends";
@@ -25,13 +26,13 @@ const people: Person[] = [
 ];
 
 function Avatar({ id, size = 44, online = false }: { id: AvatarId; size?: number; online?: boolean }) {
-  if (id === 0) return <span className="vm-sb-avatar" style={{ width: size, height: size }}><img src="/brand-assets/ui/fixtures/vedant-avatar.png" alt="" />{online && <i />}</span>;
-  return <span className="vm-sb-avatar" style={{ width: size, height: size }}><img src={`/brand-assets/ui/fixtures/storyboard-avatars/${id}.svg`} alt="" />{online && <i />}</span>;
+  if (id === 0) return <span className="vm-sb-avatar" style={{ width: size, height: size }}><img src={assetRegistry.fixtures.currentUser} alt="" />{online && <i />}</span>;
+  return <span className="vm-sb-avatar" style={{ width: size, height: size }}><img src={assetRegistry.fixtures.storyboardAvatar(id)} alt="" />{online && <i />}</span>;
 }
 
 function ProductShell({ active, children }: { active: Nav; children: ReactNode }) {
   return <div className="vm-sb-page">
-    <header className="vm-sb-header"><a className="vm-sb-wordmark" href="#"><img src="/brand-assets/brand/source/wordmark-no-rule.svg" alt="vibemaxxing" /></a>
+    <header className="vm-sb-header"><a className="vm-sb-wordmark" href="#"><img src={assetRegistry.brand.wordmark} alt="vibemaxxing" /></a>
       <nav>{(["Leaderboard", "Activity", "Friends"] as Nav[]).map(item => <a key={item} className={active === item ? "active" : ""} href="#">{item}</a>)}</nav>
       <button className="vm-sb-search"><Search size={19} /><span>Search</span></button>
       <button className="vm-sb-account" aria-label="Open account"><Avatar id={0} size={50} /><ChevronDown size={17} /></button>
