@@ -1709,11 +1709,6 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "opaque"
-      },
-      "dpopAuth": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "DPoP"
       }
     },
     "parameters": {
@@ -2112,14 +2107,14 @@
         "additionalProperties": false,
         "required": [
           "device_code",
-          "dpop_proof"
+          "device_proof"
         ],
         "properties": {
           "device_code": {
             "type": "string",
             "pattern": "^[0-9a-f]{64}$"
           },
-          "dpop_proof": {
+          "device_proof": {
             "type": "string",
             "minLength": 40,
             "maxLength": 4096
@@ -2134,7 +2129,7 @@
           "token_type",
           "access_token",
           "expires_at",
-          "dpop_key_thumbprint"
+          "device_key_thumbprint"
         ],
         "properties": {
           "session_id": {
@@ -2143,7 +2138,7 @@
           },
           "token_type": {
             "enum": [
-              "DPoP"
+              "Device-Bound"
             ]
           },
           "access_token": {
@@ -2155,7 +2150,7 @@
             "type": "string",
             "format": "date-time"
           },
-          "dpop_key_thumbprint": {
+          "device_key_thumbprint": {
             "type": "string",
             "pattern": "^[0-9a-f]{64}$"
           }
