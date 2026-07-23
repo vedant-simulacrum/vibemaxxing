@@ -21,7 +21,7 @@ Run `python3 scripts/repository/doctor.py` before relying on repository state.
 
 ## Current authority note
 
-The repository is in planning contract repair. P-1140A through P-1140D are complete and P-1140E is active.
+The planning contract repair is complete: P-1140A through P-1140E are complete-planning. P-1104 remains blocked until explicit user authorization.
 
 Historical reports that declare planning complete or platform scope unresolved do not override current project authority, D-062 through D-069, ADR-011 through ADR-014, decision traceability or the frozen cross-platform audit.
 
@@ -112,6 +112,9 @@ No generated production types should be based on a blocked schema.
 - T20 optimization evidence: `conformance/models/t20-optimization-evidence-v1.schema.json`.
 - T20 planning fixtures: `conformance/models/fixtures/`.
 - T20 planning validator: `scripts/repository/validate_t20_contract.py`.
+- Final cross-contract matrix and plans: `conformance/p1140e/`.
+- Final cross-contract validator: `scripts/repository/validate_p1140e_contracts.py`.
+- Final P0/P1 audit: `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`.
 
 An empty certification list means no product-level support claim. Certification must ultimately bind artifact digest, provenance, source version, exact platform tuple, mode and immutable result bundle.
 
