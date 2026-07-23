@@ -415,3 +415,139 @@ create table schema_migrations (
   checksum bytea not null,
   applied_at timestamptz not null
 );
+
+
+-- Repaired append-only authority, identity, verification, ranking, and social tables.
+create table idempotency_records (
+  actor_account_id uuid not null references accounts(account_id),
+  idempotency_key uuid not null,
+  operation_id text not null,
+  request_digest bytea not null check (octet_length(request_digest) = 32),
+  response_digest bytea,
+  state text not null check (state in ('reserved','committed','failed')),
+  expires_at timestamptz not null,
+  primary key (actor_account_id, idempotency_key)
+);
+
+create table session_families (
+  token_family_id uuid primary key,
+  account_id uuid not null references accounts(account_id),
+  state text not null check (state in ('active','revoked','compromised','expired')),
+  created_at timestamptz not null,
+  revoked_at timestamptz
+);
+
+create table native_sessions (
+  native_session_id uuid primary key,
+  token_family_id uuid not null references session_families(token_family_id),
+  device_id uuid not null references devices(device_id),
+  dpop_key_thumbprint bytea not null check (octet_length(dpop_key_thumbprint) = 32),
+  state text not null check (state in ('active','rotated','revoked','expired')),
+  expires_at timestamptz not null
+);
+
+create table device_lineages (
+  lineage_id uuid primary key,
+  account_id uuid not null references accounts(account_id),
+  root_installation_id uuid not null,
+  continuity_state text not null check (continuity_state in ('continuous','gap-declared','broken','revoked')),
+  revision bigint not null check (revision >= 0)
+);
+
+create table device_key_events (
+  device_key_event_id uuid primary key,
+  device_id uuid not null references devices(device_id),
+  previous_key_id text,
+  next_key_id text not null,
+  action text not null check (action in ('enrolled','rotated','revoked','recovered')),
+  continuity_signature bytea,
+  occurred_at timestamptz not null
+);
+
+create table verifier_appraisals (
+  appraisal_id uuid primary key,
+  claim_id uuid not null references claims(claim_id),
+  evidence_profile_id text not null,
+  provenance_state text not null,
+  continuity_state text not null,
+  integrity_state text not null,
+  reason_codes text[] not null default '{}',
+  policy_digest bytea not null check (octet_length(policy_digest) = 32),
+  created_at timestamptz not null
+);
+
+create table checkpoint_receipts (
+  checkpoint_receipt_id uuid primary key,
+  device_id uuid not null references devices(device_id),
+  first_sequence bigint not null check (first_sequence >= 0),
+  last_sequence bigint not null check (last_sequence >= first_sequence),
+  batch_digest bytea not null check (octet_length(batch_digest) = 32),
+  previous_receipt_digest bytea,
+  signed_receipt bytea not null,
+  created_at timestamptz not null
+);
+
+create table ranking_views (
+  ranking_view_id text primary key check (ranking_view_id ~ '^[0-9a-f]{64}$'),
+  period_id uuid not null references periods(period_id),
+  scope text not null check (scope in ('global','friends','rivals','board')),
+  board_id uuid references boards(board_id),
+  rules_digest bytea not null check (octet_length(rules_digest) = 32),
+  pricing_dataset_digest bytea not null check (octet_length(pricing_dataset_digest) = 32),
+  evidence_policy_digest bytea not null check (octet_length(evidence_policy_digest) = 32),
+  source_checkpoint_digest bytea not null check (octet_length(source_checkpoint_digest) = 32),
+  projection_generation bigint not null check (projection_generation >= 0),
+  created_at timestamptz not null,
+  check ((scope = 'board') = (board_id is not null))
+);
+
+create table ranking_projection_generations (
+  ranking_view_id text not null references ranking_views(ranking_view_id),
+  generation bigint not null check (generation >= 0),
+  state text not null check (state in ('building','published','superseded','failed')),
+  source_revision bigint not null check (source_revision >= 0),
+  published_at timestamptz,
+  primary key (ranking_view_id, generation)
+);
+
+create table model_alias_facts (
+  model_alias_id text not null,
+  provider text not null,
+  canonical_model_id text not null,
+  effective_at timestamptz not null,
+  superseded_at timestamptz,
+  source_digest bytea not null check (octet_length(source_digest) = 32),
+  primary key (model_alias_id, effective_at)
+);
+
+create table social_integrity_events (
+  event_id uuid primary key,
+  aggregate_id uuid not null,
+  aggregate_revision bigint not null check (aggregate_revision >= 0),
+  event_type text not null,
+  actor_account_id uuid references accounts(account_id),
+  idempotency_key uuid,
+  reason_code text not null,
+  policy_version_digest bytea not null check (octet_length(policy_version_digest) = 32),
+  event_bytes bytea not null,
+  occurred_at timestamptz not null,
+  unique (aggregate_id, aggregate_revision)
+);
+
+create table moderation_effects (
+  moderation_effect_id uuid primary key,
+  case_id uuid not null references moderation_cases(case_id),
+  target_id uuid not null,
+  effect text not null,
+  effective_at timestamptz not null,
+  review_at timestamptz,
+  retracted_at timestamptz
+);
+
+create table appeal_decisions (
+  appeal_decision_id uuid primary key,
+  appeal_id uuid not null references appeals(appeal_id),
+  decision text not null check (decision in ('needs_information','upheld','partially_upheld','reversed','expired')),
+  decision_digest bytea not null check (octet_length(decision_digest) = 32),
+  decided_at timestamptz not null
+);
