@@ -75,6 +75,12 @@ def assert_unique(values: list[str], label: str) -> None:
 def validate_json_schemas_and_examples() -> None:
     adapter_schema = validate_schema_file(SCHEMAS / "adapter-manifest.schema.json")
     event_schema = validate_schema_file(SCHEMAS / "normalized-event.schema.json")
+    source_observation_schema = validate_schema_file(SCHEMAS / "source-observation.schema.json")
+    detector_schema = validate_schema_file(SCHEMAS / "local-detector-result.schema.json")
+    accounting_profile_schema = validate_schema_file(SCHEMAS / "accounting-profile.schema.json")
+    device_lineage_schema = validate_schema_file(SCHEMAS / "device-lineage.schema.json")
+    pricing_schema = validate_schema_file(SCHEMAS / "pricing-interpretation.schema.json")
+    egress_schema = validate_schema_file(SCHEMAS / "egress-allowlist-v1.schema.json")
     agent_schema = validate_schema_file(CONFORMANCE / "adapters" / "agent-registry-v1.schema.json")
     anti_schema = validate_schema_file(CONFORMANCE / "adversarial" / "anti-cheat-registry-v1.schema.json")
 
@@ -85,6 +91,54 @@ def validate_json_schemas_and_examples() -> None:
         load_json(SCHEMAS / "examples" / "normalized-event.invalid-forbidden-field.json"),
         "forbidden normalized-event field",
     )
+
+    accounting_registry = load_json(CONFORMANCE / "accounting" / "accounting-profiles-v1.json")
+    accounting_cases = load_json(CONFORMANCE / "accounting" / "p1140b-accounting-cases-v1.json")
+    privacy_cases = load_json(CONFORMANCE / "privacy" / "p1140b-boundary-canaries-v1.json")
+    egress_registry = load_json(SCHEMAS / "egress-allowlist-v1.json")
+    evidence_policy = load_json(SCHEMAS / "evidence-profile-policy-v1.json")
+
+    validate_instance(egress_schema, egress_registry, "egress registry")
+    for profile in accounting_registry["profiles"]:
+        validate_instance(accounting_profile_schema, profile, f"accounting profile {profile['profile_id']}")
+    assert_unique([profile["profile_id"] for profile in accounting_registry["profiles"]], "accounting profile IDs")
+    assert_unique([case["case_id"] for case in accounting_cases["cases"]], "P-1140B accounting case IDs")
+    required_accounting_cases = {
+        "separate-cache-no-double-count", "inclusive-input-subtract-cache", "retry-distinct-execution",
+        "cancelled-known-consumption", "local-token-ids", "contradictory-contained-counts",
+    }
+    missing_accounting = required_accounting_cases - {case["case_id"] for case in accounting_cases["cases"]}
+    if missing_accounting:
+        raise ValidationFailure(f"missing P-1140B accounting cases: {sorted(missing_accounting)}")
+
+    required_privacy_boundaries = {
+        "adapter", "ipc", "local-store", "detector", "claim", "http",
+        "telemetry", "notification", "moderation", "export",
+    }
+    covered_boundaries = {case["boundary"] for case in privacy_cases["cases"]}
+    if covered_boundaries != required_privacy_boundaries:
+        raise ValidationFailure(
+            f"privacy boundary coverage mismatch: missing={sorted(required_privacy_boundaries - covered_boundaries)}, "
+            f"extra={sorted(covered_boundaries - required_privacy_boundaries)}"
+        )
+    for boundary in required_privacy_boundaries:
+        outcomes = {case["expected"] for case in privacy_cases["cases"] if case["boundary"] == boundary}
+        if not {"accept", "reject-before-egress"} <= outcomes:
+            raise ValidationFailure(f"privacy boundary lacks positive/negative pair: {boundary}")
+
+    if evidence_policy.get("authority") != "server-verifier":
+        raise ValidationFailure("evidence profile policy must be server-owned")
+    if evidence_policy.get("downgrade_order") != [
+        "hardened-source-bound-v1", "standard-competitive-v1", "private-analytics"
+    ]:
+        raise ValidationFailure("evidence profile downgrade order is not deterministic")
+
+    # Referencing these variables keeps schema structural validation explicit even before
+    # P-1140C/D provide instances for their network/server records.
+    if not all(isinstance(schema, dict) for schema in (
+        source_observation_schema, detector_schema, device_lineage_schema, pricing_schema
+    )):
+        raise ValidationFailure("P-1140B schemas did not load as objects")
 
     agent_registry = load_json(CONFORMANCE / "adapters" / "agent-registry-v1.json")
     anti_registry = load_json(CONFORMANCE / "adversarial" / "anti-cheat-registry-v1.json")
@@ -189,6 +243,17 @@ def validate_cddl_file() -> None:
 
 
 def validate_protobuf_files() -> None:
+    local_control = (SCHEMAS / "local-control-v1.proto").read_text(encoding="utf-8")
+    for forbidden in ("normalized_event_json", "bytes payload", "string correlation_id"):
+        if forbidden in local_control:
+            raise ValidationFailure(f"opaque or unbounded local IPC remains: {forbidden}")
+    for required in (
+        "SourceObservationSubmission", "NormalizedEventAcknowledgement", "ClaimConstructionRequest",
+        "QueueSummaryResponse", "ReceiptSummaryResponse", "LocalExportRequest", "LocalDeletionRequest",
+        "ProcessRole sender_role", "monotonic_message_sequence", "deadline_monotonic_ns",
+    ):
+        if required not in local_control:
+            raise ValidationFailure(f"typed local IPC is missing {required}")
     files = [SCHEMAS / "local-control-v1.proto", SCHEMAS / "social-integrity-events-v1.proto"]
     with tempfile.TemporaryDirectory() as temp_dir:
         result = subprocess.run(
