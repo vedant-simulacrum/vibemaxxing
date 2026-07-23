@@ -4,15 +4,26 @@ import { ArrowRight, Bell, ChevronRight, Copy, Globe2, Menu, Search, Shield, Use
 
 export { ProviderLogo, providerLogoRegistry, type ProviderLogoName } from "./ui/provider-logo";
 export {
+  ProductActivityEventRow,
   ProductAvatar,
+  ProductBoardStandingRow,
   ProductButton,
+  ProductDialog,
+  ProductFriendRow,
+  ProductIconButton,
   ProductModel,
   ProductMovement,
+  ProductNotice,
   ProductPanel,
+  ProductRankChart,
   ProductShell,
+  ProductSparkline,
   ProductStateBoundary,
   ProductTabs,
+  ProductTrendChart,
+  ProductUserIdentity,
   type FixtureAvatarId,
+  type ProductPerson,
   type ProductNav,
   type ProductState,
 } from "./patterns/product-system";

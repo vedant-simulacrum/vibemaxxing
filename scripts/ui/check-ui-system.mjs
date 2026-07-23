@@ -20,7 +20,15 @@ for (const required of [
   "packages/ui/src/patterns/product-system.tsx",
   "packages/ui/src/ui/product-icons.ts",
   "packages/ui/src/concepts/product-storyboards.stories.tsx",
+  "packages/ui/src/concepts/product-state-matrix.stories.tsx",
+  "scripts/ui/playwright-runtime/audit-product-storyboards.mjs",
+  "scripts/ui/playwright-runtime/package-lock.json",
   "packages/ui/scripts/compare-product-storyboards.mjs",
+  "apps/web/app/profile/[handle]/page.tsx",
+  "apps/web/app/rivals/[handle]/page.tsx",
+  "apps/web/app/friends/page.tsx",
+  "apps/web/app/activity/page.tsx",
+  "apps/web/app/boards/[slug]/page.tsx",
 ]) requireFile(required);
 
 const assetManifest = JSON.parse(read("assets/manifest.json"));
@@ -74,7 +82,6 @@ const frozenVisualCss = new Set([
   "packages/ui/src/concepts/competition-slice.css",
   "packages/ui/src/concepts/leaderboard-bento.css",
   "packages/ui/src/concepts/leaderboard-first.css",
-  "packages/ui/src/concepts/product-storyboards.css",
 ]);
 for (const file of uiSource.filter(file => file.endsWith(".css") && !frozenVisualCss.has(file))) {
   if (/#[0-9a-f]{3,8}\b|rgba?\(/i.test(read(file))) failures.push(`${file} contains a raw color; add a canonical token.`);
@@ -91,7 +98,7 @@ for (const file of uiSource.filter(file => file.endsWith(".tsx"))) {
 }
 
 const storyboardSource = read("packages/ui/src/concepts/product-storyboards.tsx");
-for (const name of ["Avatar", "ProductShell", "Panel", "Button", "Movement", "Model", "Tabs"]) {
+for (const name of ["Avatar", "ProductShell", "Panel", "Button", "Movement", "Model", "Tabs", "Trend", "FriendRow", "MiniSpark", "MiniRankChart"]) {
   if (new RegExp(`function\\s+${name}\\b`).test(storyboardSource)) {
     failures.push(`Product storyboards recreate shared ${name}.`);
   }
@@ -109,12 +116,17 @@ const storybookMain = read("packages/ui/.storybook/main.ts");
 const storybookPreview = read("packages/ui/.storybook/preview.ts");
 const stories = read("packages/ui/src/components.stories.tsx");
 const productStories = read("packages/ui/src/concepts/product-storyboards.stories.tsx");
+const stateMatrixStories = read("packages/ui/src/concepts/product-state-matrix.stories.tsx");
 const packageJson = JSON.parse(read("packages/ui/package.json"));
+const browserRuntime = JSON.parse(read("scripts/ui/playwright-runtime/package.json"));
 const styleGuide = read("apps/web/app/style-guide/page.tsx");
 const workflow = read(".github/workflows/storyboard-visuals.yml");
 
 for (const dependency of ["storybook", "@storybook/react-vite", "@storybook/addon-docs", "@storybook/addon-a11y", "pixelmatch", "pngjs"]) {
   if (!packageJson.devDependencies?.[dependency]) failures.push(`UI dependency ${dependency} is required.`);
+}
+for (const dependency of ["playwright", "@axe-core/playwright"]) {
+  if (!browserRuntime.dependencies?.[dependency]) failures.push(`Locked prototype browser runtime is missing ${dependency}.`);
 }
 for (const script of ["storybook", "storybook:build", "storybook:compare"]) {
   if (!packageJson.scripts?.[script]) failures.push(`packages/ui is missing the ${script} script.`);
@@ -139,8 +151,25 @@ for (const state of ["Loading", "Empty", "Error", "Offline", "Stale", "Private",
 for (const viewport of ["vmDesktop", "vmTablet", "vmMobile"]) {
   if (!productStories.includes(viewport)) failures.push(`Storybook is missing the ${viewport} viewport.`);
 }
-for (const required of ["Prototype storyboard visuals", "compare-product-storyboards.mjs", "storybook-diffs"]) {
+for (const screen of ["Profile", "Rival", "Friends", "Activity", "Board"]) {
+  for (const state of ["Loading", "Empty", "Error", "Offline", "Stale", "Private", "Blocked", "Restricted", "Quarantined"]) {
+    if (!stateMatrixStories.includes(`export const ${screen}${state}`)) failures.push(`State matrix is missing ${screen}${state}.`);
+  }
+}
+for (const required of ["Prototype storyboard visuals", "compare-product-storyboards.mjs", "audit-product-storyboards.mjs", "storybook-diffs"]) {
   if (!workflow.includes(required)) failures.push(`Visual workflow is missing ${required}.`);
+}
+
+const routeContracts = new Map([
+  ["apps/web/app/page.tsx", "LeaderboardFirstPrototype"],
+  ["apps/web/app/profile/[handle]/page.tsx", "PublicProfileStoryboard"],
+  ["apps/web/app/rivals/[handle]/page.tsx", "RivalComparisonStoryboard"],
+  ["apps/web/app/friends/page.tsx", "FriendsStoryboard"],
+  ["apps/web/app/activity/page.tsx", "ActivityStoryboard"],
+  ["apps/web/app/boards/[slug]/page.tsx", "BoardStandingsStoryboard"],
+]);
+for (const [route, component] of routeContracts) {
+  if (!read(route).includes(component)) failures.push(`${route} must compose the approved ${component}.`);
 }
 
 if (failures.length) {

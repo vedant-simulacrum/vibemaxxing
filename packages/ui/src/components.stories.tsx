@@ -10,13 +10,23 @@ import {
   PresenceIndicator,
   Progress,
   ProductAvatar,
+  ProductActivityEventRow,
+  ProductBoardStandingRow,
   ProductButton,
+  ProductDialog,
+  ProductFriendRow,
+  ProductIconButton,
   ProductModel,
   ProductMovement,
+  ProductNotice,
   ProductPanel,
+  ProductRankChart,
   ProductShell,
+  ProductSparkline,
   ProductStateBoundary,
   ProductTabs,
+  ProductTrendChart,
+  ProductUserIdentity,
   ProviderLogo,
   RankMovement,
   Wordmark,
@@ -157,6 +167,32 @@ export const ProductSystemPrimitives: Story = {
         <ProductTabs labels={["Today", "7 days", "Season"]} active="7 days" />
       </div>
     </ProductPanel>
+  ),
+};
+
+export const ProductScreenPatterns: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <div className="showcase-stage">
+      <ProductNotice title="Fixture contract">This catalogue uses synthetic people and usage data.</ProductNotice>
+      <ProductUserIdentity name="Vedant" handle="vedant" avatar={0} online />
+      <ProductFriendRow person={{ name: "Maya Patel", handle: "mayapatel", avatar: 6, rank: 2, burn: "112.3M", week: "565.9M", change: 2, model: "Claude 3.7" }} active />
+      <ProductBoardStandingRow person={{ name: "Vedant", handle: "vedant", avatar: 0, rank: 4, burn: "86.4M", week: "498.7M", change: 2, model: "GPT-5.4" }} current />
+      <ProductActivityEventRow icon={<Icon name="arrow" />} avatar={0} title="You reclaimed #07" detail="Moved up 3 spots" trailing={<time>45m ago</time>} unread />
+      <ProductTrendChart label="Example Token Burn trend" />
+      <ProductSparkline label="Example rising trend" />
+      <ProductRankChart />
+      <ProductIconButton label="Example compact action"><Icon name="bell" /></ProductIconButton>
+    </div>
+  ),
+};
+
+export const ProductDialogContract: Story = {
+  parameters: { layout: "padded" },
+  render: () => (
+    <ProductDialog title="Search VibeMaxxing" onClose={() => undefined}>
+      <ProductNotice title="Dialog contract">Focus remains inside until the dialog closes.</ProductNotice>
+    </ProductDialog>
   ),
 };
 

@@ -68,6 +68,9 @@ jobs:
           done
           cat /tmp/vibemaxxing-storybook.log
           exit 1
+      - name: Audit keyboard interactions and browser accessibility
+        working-directory: .
+        run: node scripts/ui/playwright-runtime/audit-product-storyboards.mjs
       - name: Capture locked synthetic storyboards at governed responsive breakpoints
         run: node scripts/capture-product-storyboards.mjs storybook-captures
       - name: Compare desktop captures with governed baselines

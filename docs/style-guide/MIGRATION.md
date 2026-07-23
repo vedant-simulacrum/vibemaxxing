@@ -31,14 +31,13 @@ Status: first reference-page migration completed; not approval to redesign the p
 5. Added canonical token generation, mandatory Storybook stories, and the curated `/style-guide` reference.
 6. Added automated architectural and catalogue-parity checks and retained build/type/lint validation.
 
-## Remaining future gates
+## Current enforcement
 
-The following controls become appropriate as the component library and team grow:
+- Approved screens are composed as hosted application routes without changing their synthetic-fixture maturity.
+- Shared screen-level rows, identity, charts, icon controls, notices, dialogs, shell, and exceptional states live in `@vibemaxxing/ui`.
+- Browser checks exercise keyboard entry, search-dialog behavior, Escape dismissal, and WCAG A/AA rules.
+- The state matrix covers all nine exceptional states on all five approved screens.
+- The UI checker scans active application and UI source for raw colors, direct assets, direct Lucide imports, private component recreation, missing routes, missing states, and missing workflow gates.
+- The pull-request template requires reuse, asset, responsive, state, accessibility, and baseline review.
 
-- AST-based lint rules replacing the current focused source checks;
-- browser interaction tests for stateful components beyond the current static-state stories;
-- automated browser accessibility scans;
-- approved visual-regression baseline;
-- duplicate-component review in the pull-request template.
-
-The current enforcement is real but deliberately proportional to the implemented surface. These future gates are not presented as completed.
+AST-backed linting can replace focused repository checks when the implementation toolchain owns a canonical lint package. This is an enforcement-strength improvement, not a missing product behavior.

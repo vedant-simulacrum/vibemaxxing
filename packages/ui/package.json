@@ -16,6 +16,10 @@
   "exports": {
     ".": "./src/components.tsx",
     "./components.css": "./src/components.css",
+    "./leaderboard": "./src/concepts/leaderboard-first.tsx",
+    "./leaderboard.css": "./src/concepts/leaderboard-first.css",
+    "./product-screens": "./src/concepts/product-storyboards.tsx",
+    "./product-screens.css": "./src/concepts/product-storyboards.css",
     "./tokens.css": "./src/tokens.css",
     "./tokens": "./src/tokens.ts"
   },

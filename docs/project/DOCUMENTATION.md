@@ -107,7 +107,7 @@ An empty certification list means no product-level support claim. Certification 
 - Complete D-001..D-069 traceability: `docs/planning/decision-traceability/`
 - Frozen platform baseline: `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`
 - Consolidated findings: `docs/planning/CONSOLIDATED_AUDIT_2026-07-23.md`
-- Launch decisions: `docs/planning/PUBLIC_LAUNCH_POLICY_DECISIONS_2026-07-23.md`
+- Launch decisions: `docs/planning/LAUNCH_POLICY_DECISIONS_2026-07-23.md`
 - Anti-cheat implementation input: `docs/planning/ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`
 - Historical traceability audit: `docs/planning/TRACEABILITY_AND_DRY_RUN_AUDIT.md`
 - Schema inventory: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
