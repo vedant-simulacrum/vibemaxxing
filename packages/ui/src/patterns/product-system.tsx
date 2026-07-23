@@ -200,7 +200,7 @@ export function ProductButton({
 export function ProductMovement({ value }: { value: number }) {
   const direction = value === 0 ? "flat" : value > 0 ? "up" : "down";
   return (
-    <span className={`vm-sb-${direction}`} aria-label={value === 0 ? "No rank change" : `${Math.abs(value)} places ${direction}`}>
+    <span className={`vm-sb-${direction}`} role="img" aria-label={value === 0 ? "No rank change" : `${Math.abs(value)} places ${direction}`}>
       {value > 0 ? <ArrowUp size={18} aria-hidden="true" /> : value < 0 ? <ArrowDown size={18} aria-hidden="true" /> : "—"}
       {value === 0 ? "" : Math.abs(value)}
     </span>
@@ -325,7 +325,7 @@ export function ProductActivityEventRow({
       {avatar !== undefined && <ProductAvatar id={avatar} size={compact ? 40 : 44} />}
       <div><b>{title}</b><small>{detail}</small></div>
       {trailing}
-      {unread && <i className="unread" aria-label="Unread" />}
+      {unread && <i className="unread" role="img" aria-label="Unread" />}
     </div>
   );
 }
