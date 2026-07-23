@@ -20,9 +20,24 @@ Public launch targets:
 - notifications;
 - moderation, restrictions and appeals;
 - Token Burn and Estimated Cash Burn;
-- native local UX, hosted web and broad tiered agent compatibility.
+- native local UX, hosted web and broad tiered agent compatibility;
+- complete launch support for macOS, Windows, Linux, WSL, containers and CI under exact exercised profiles.
 
 Country leaderboards are explicitly post-launch. Internal implementation may be staged but must not silently redefine the public-launch target.
+
+## Platform authority
+
+Under ADR-011 and D-062 through D-066:
+
+- macOS launch support includes Apple silicon `arm64` and Intel `x86_64`;
+- Windows launch support includes native `x64` and native `ARM64` on maintained desktop and applicable Server profiles;
+- Linux launch support spans maintained desktop, headless and remote profiles through exact distribution/package/architecture certification;
+- WSL, containers and CI/ephemeral runners are globally competitive by default at the verifier-awarded evidence level;
+- boards may impose stronger environment or evidence minimums;
+- Android, iOS, iPadOS and ChromeOS have no native collector, companion, control or launch application scope;
+- hosted web remains usable as an ordinary browser surface without creating native-platform support claims.
+
+“All platforms” means all accepted platform families through a rolling exact-profile registry, not unsupported historical releases or untested derivatives.
 
 ## Non-negotiable privacy and integrity
 
@@ -50,16 +65,33 @@ Country leaderboards are explicitly post-launch. Internal implementation may be 
 - Closing or crashing the menu-bar/tray shell never stops the daemon, collector or pending synchronization.
 - Pausing collection or synchronization changes only that function; the daemon remains resident for health, recovery, privacy inspection, export, update, rollback and uninstall.
 - Offline, authentication-required, permission-required, disk-full, corrupt-state, security-hold and update-failure conditions place the daemon in an explicit degraded or recovery state rather than causing it to exit.
-- The product must never silently expose an ordinary “quit daemon” action.
+- The product never silently exposes an ordinary “quit daemon” action.
 - Users and the operating system retain the ability to disable or uninstall the background service. VibeMaxxing detects and visibly reports that state instead of bypassing user control.
 - “Always-on” applies only while the machine is powered on, the OS can schedule the applicable service context, and the service remains installed and enabled.
-- Session-bound platform limitations are disclosed honestly. A per-user service is not described as running while the user is logged out unless the platform mode actually supports that behavior.
+- WSL, containers and CI disclose host/orchestrator/job lifecycle limitations honestly.
+
+## Privilege model
+
+The default runtime is unprivileged and per-user.
+
+ADR-012 and D-067 allow optional machine-wide privileged supervision only as a separately consented lifecycle profile. A privileged supervisor may register, start, monitor, update and recover approved services, but may not inspect source content, hold ordinary user claim keys, intercept provider traffic, install kernel anti-cheat, bypass cross-user isolation or open remote-control ports.
+
+Privileged profiles require independent packaging, least-privilege review, cross-user tests, privacy canaries and platform-specific release evidence. Enabling privilege never self-awards Hardened evidence.
+
+## Mandatory automatic updates
+
+Under ADR-013 and D-068, automatic updates are mandatory for competitive profiles.
+
+- Users may select supported release channels and bounded maintenance timing but may not permanently disable required security or compatibility updates while continuing competitive submission.
+- Updates are signed, provenance-bound, release-set compatible and rollback/freeze resistant.
+- Active work reaches a safe durable checkpoint before ordinary restart.
+- Emergency privacy or integrity updates may stop unsafe collection immediately.
+- Blocked versions retain update, export, diagnostics and uninstall where safely possible.
+- Containers update through immutable image replacement; CI uses current pinned tool artifacts rather than a persistent updater.
 
 ## Product topology and identity
 
 The local product has separate adapter, collector, deterministic validation, local commitment, device-key, sync, always-on daemon/control, CLI, menu-bar/tray, privacy/audit and updater responsibilities. A process capable of reading content does not receive network access. The daemon owns supervision and lifecycle; the shell is only a replaceable control surface.
-
-The default runtime is unprivileged and per-user. Privileged helpers require a separate accepted capability, privacy and platform decision.
 
 Primary launch identity paths are:
 
@@ -100,15 +132,17 @@ Kernel anti-cheat and mandatory provider proxying are rejected.
 
 Do not add Kubernetes, Kafka, GraphQL, service mesh, workflow engines, vector databases or ORM-heavy persistence without an evidence-backed ADR.
 
+## Planning automation boundary
+
+ADR-014 and D-069 permit the existing Storybook workflow only as read-only prototype/design-system validation using synthetic fixtures. It is not product CI, security evidence, production build evidence, deployment automation or launch evidence. All other product automation remains governed by D-034 until P-1104.
+
 ## Planning and evidence boundary
 
-The July 23 repository audit reopened planning because current prose and machine contracts disagree on evidence authority, accounting containment, offline continuity, protocol batching, rotation, identity, ranking views, social state machines and release integrity.
-
-P-1140A–E must repair and validate those contracts before implementation may begin. Current schemas and registries are planning inputs and must not be treated as implementation-ready where the audit marks them inconsistent.
+P-1140A–E must repair and validate current contracts before implementation may begin. Current schemas and registries are planning inputs and must not be treated as implementation-ready where the audit marks them inconsistent.
 
 Implementation requires explicit user approval under P-1104 after P-1140A–E and clean planning validation complete.
 
-Planning artifacts are not working code, cryptographic interoperability evidence, certified adapters, performance evidence, packages, deployments, security hardening or launch readiness.
+Planning artifacts and prototype workflows are not working code, cryptographic interoperability evidence, certified adapters, performance evidence, packages, deployments, security hardening or launch readiness.
 
 The repository remains private during planning and must become public open source before public launch.
 
