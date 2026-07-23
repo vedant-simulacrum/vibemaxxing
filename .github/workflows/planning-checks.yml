@@ -13,10 +13,12 @@ on:
       - 'requirements-planning.txt'
       - '.github/CODEOWNERS'
       - '.github/workflows/planning-checks.yml'
+      - '.github/workflows/storyboard-visuals.yml'
       - 'docs/**'
       - 'packages/schemas/**'
       - 'conformance/**'
       - 'scripts/repository/**'
+      - 'scripts/ui/playwright-runtime/**'
       - 'scripts/ci/repository_policy.py'
   pull_request:
     paths:
@@ -28,10 +30,12 @@ on:
       - 'requirements-planning.txt'
       - '.github/CODEOWNERS'
       - '.github/workflows/planning-checks.yml'
+      - '.github/workflows/storyboard-visuals.yml'
       - 'docs/**'
       - 'packages/schemas/**'
       - 'conformance/**'
       - 'scripts/repository/**'
+      - 'scripts/ui/playwright-runtime/**'
       - 'scripts/ci/repository_policy.py'
 
 permissions:
@@ -67,21 +71,28 @@ jobs:
         run: python3 scripts/repository/doctor.py
       - name: Validate schemas, registries, examples, protocols, API, and SQL
         run: python3 scripts/repository/validate_planning_artifacts.py
-      - name: Validate T20 golden-path contract and evidence schema
+      - name: Validate provisional T20 candidate artifacts
         run: python3 scripts/repository/validate_t20_contract.py
-      - name: Validate launch-critical API and SQL coverage
+      - name: Validate current launch API, SQL, and deferred repair coverage
         run: python3 scripts/repository/validate_planning_coverage.py
-      - name: Validate deterministic issue-plan generation
+      - name: Validate deterministic stable work-unit generation
         run: |
-          python3 scripts/repository/generate_issue_plan.py
+          python3 scripts/repository/generate_issue_plan.py --output /tmp/vibemaxxing-issue-plan.json
           python3 - <<'PY'
           import json
+          import re
           from pathlib import Path
-          data = json.loads(Path('artifacts/repository/issue-plan.json').read_text())
-          assert len(data['issues']) == 52
-          assert data['issues'][0]['key'] == 'IMP-001'
-          assert data['issues'][-1]['key'] == 'IMP-052'
-          print('issue plan: pass')
+
+          data = json.loads(Path('/tmp/vibemaxxing-issue-plan.json').read_text())
+          issues = data['issues']
+          keys = [issue['key'] for issue in issues]
+          assert data['schema_version'] == 2
+          assert data['issue_count'] == len(issues)
+          assert len(keys) == len(set(keys))
+          assert all(re.fullmatch(r'[A-Z][A-Z0-9]*-\d{2}', key) for key in keys)
+          assert 'F-01' in keys and 'N-18' in keys and 'O-30' in keys
+          assert not any(key.startswith('IMP-') for key in keys)
+          print(f'issue plan: pass ({len(keys)} stable work units)')
           PY
 
 # This workflow validates planning artifacts only. It does not build or implement the product.
