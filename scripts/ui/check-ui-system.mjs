@@ -26,6 +26,10 @@ for (const reference of referenceManifest.references ?? []) {
 for (const evidence of referenceManifest.supportingEvidence ?? []) {
   if (!fs.existsSync(path.join(root, "assets/ui/references", evidence.file))) failures.push(`Missing governed UI reference evidence: ${evidence.file}`);
 }
+const assetCatalogue = read("packages/ui/src/foundations/asset-library.stories.tsx");
+for (const required of ["assetRegistry.brand", "providerLogoRegistry", "assetRegistry.fixtures", "iconNames", "ConsumptionContract"]) {
+  if (!assetCatalogue.includes(required)) failures.push(`Storybook asset catalogue is missing ${required}.`);
+}
 const assetRegistry = read("packages/ui/src/assets.ts");
 if (/https?:\/\//.test(assetRegistry)) failures.push("The asset registry must not hotlink remote files.");
 

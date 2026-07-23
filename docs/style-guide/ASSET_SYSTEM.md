@@ -84,3 +84,16 @@ Every asset change must:
 6. Review licensing/provenance when the asset came from outside VibeMaxxing.
 
 Feature-local asset folders are prohibited. Temporary exploration files stay outside product source and are either promoted into `assets/` with governance or discarded.
+
+
+## Storybook asset catalogue
+
+`Foundations/Asset library` is the executable entry point for AI and human contributors. It must render:
+
+- canonical brand marks and wordmarks through `assetRegistry.brand`;
+- every provider/model mark through `ProviderLogo`;
+- governed fixture people through `assetRegistry.fixtures`;
+- the complete semantic interface-icon set through `Icon`; and
+- the asset consumption contract, including the prohibition on screenshot-based implementation.
+
+The catalogue is not a duplicate asset store. Every story consumes the same registry/component used by product composition, so missing files, broken mappings, and unauthorized substitutions are visible immediately.
