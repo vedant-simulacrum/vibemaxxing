@@ -108,18 +108,19 @@ Status: `in-progress-planning`
 
 Dependencies: P-1140B.
 
-Deliverables:
+Candidate deliverables present on `agent/p1140c-vibeproof-v1`:
 
-- normative `EvidenceClaim`, `VerifierAppraisal`, `CheckpointReceipt`, `KeyRotationTransition`, `GapDeclaration` and `CorrectionRecord`;
-- exact deterministic CBOR and complete COSE profile;
-- separate local commitment and server checkpoint state;
-- offline precommitment/reconnect semantics;
-- atomic batch, challenge, retry and replay-result state machine;
-- dual-authorized rotation and lost-key recovery;
-- server-authorized corrections;
-- no generic extension map;
-- checked numeric/time ranges across Rust, Go, TypeScript and PostgreSQL;
-- exact-byte vectors and malformed/resource corpus.
+- closed integer-label CDDL for EvidenceClaim, VerifierAppraisal, CheckpointReceipt, Challenge, atomic batch/result, KeyRotationTransition, GapDeclaration and CorrectionRecord;
+- exact deterministic CBOR rules, numeric/time/size/depth/allocation limits and no extension map;
+- mandatory COSE tag 18, exact protected headers, empty unprotected map, Ed25519 COSE_Key, external AAD and Sig_structure;
+- separate local commitment and server checkpoint state with offline/reconnect semantics;
+- one atomic challenge/batch/idempotency/replay transaction;
+- dual-signature rotation, lost-key recovery, clone/fork quarantine and gap policy;
+- append-only server-authorized corrections;
+- fixed claim and receipt exact-byte Ed25519 vectors plus malformed/resource/transaction corpus;
+- validator checks for CDDL coverage, prohibited client authority, digests, lengths and cryptographic signatures.
+
+Remaining gate work before `complete-planning`: pass exact-head Planning checks, repair validator findings, reconcile current `main`, and transition P-1140D to active without claiming runtime interoperability.
 
 Acceptance:
 
