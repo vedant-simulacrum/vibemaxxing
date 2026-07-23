@@ -1,90 +1,93 @@
 # Adapter and VibeProof Implementation Contract
 
-Status: normative planning contract
-Version: 1
+Status: normative planning contract; P-1140B data boundaries frozen, P-1140C wire protocol pending
+Version: 2
+Updated: 2026-07-24
 
-## Adapter registry
+## Authority split
 
-Each adapter manifest is signed and contains: `adapter_id`, semantic version, maintainer, source agent IDs/versions, supported platforms/modes, capture mechanism, required permissions, token categories, model-identity quality, source authority, evidence ceiling, privacy risks, duplicate domains, capability probe, conformance suite version, emergency-disable status, and sunset date.
+Adapters observe source facts. The collector applies a digest-addressed accounting profile, produces mutually exclusive canonical token components, applies deterministic local rules and runs the privacy gate. A device signs facts and commitments only. The server verifier alone creates a `VerifierAppraisal`, awards a public evidence profile, determines ranking eligibility, interprets pricing and authorizes corrections.
 
-Lifecycle: `experimental -> community-certified -> competitive-certified -> hardened-certified`; any state may transition to `degraded`, `suspended`, `retired`, or `unsupported`.
+A client field can never select Standard, Hardened, Imported, estimated price, eligibility, correction, or moderation outcome.
 
-Unknown source versions fail closed for Hardened evidence and downgrade to the highest exercised compatible tier for Standard evidence. Marketing support pages are generated from the exercised registry.
+## Typed local stages
 
-## Normalized agent event
+### SourceObservation
 
-Required fields:
+`packages/schemas/source-observation.schema.json` owns adapter-to-collector input. It is L0, ephemeral, local-only and never network serializable. Each observation binds the exact adapter artifact and manifest digests, registered source/version/platform/mode, source cursor and runtime generation, a non-content source-local reference, bounded wall-time observation, monotonic clock domain/generation, a typed token-observation variant, outcome/retry facts and an explicit L0 sensitivity marker.
 
-- `schema_version`, `event_id` UUIDv7, `session_id`, optional `parent_event_id`;
-- adapter/source IDs and versions;
-- provider/model canonical IDs plus raw aliases;
-- execution mode and platform;
-- monotonic start/end counters plus wall-clock observations;
-- token categories and count quality;
-- source authority and capture mechanism;
-- request outcome, retry ordinal, cache/modality metadata;
-- privacy classification and forbidden-field scan result;
-- stable local dedup fingerprint; never transcript content.
+An adapter may inspect raw source data only inside the non-networked source process. Raw data is discarded after normalization or the shortest configured diagnostic window. No raw alias, provider request ID, prompt, output, path, repository name, tool content or content-derived hash may enter the next stage.
 
-Event IDs are generated at first live observation. Adapters cannot accept caller-supplied competitive event IDs. Raw transcript text, paths, repos, prompts, outputs, tool bodies, and secrets are forbidden in normalized events.
+### NormalizedAccountingEvent
 
-## Source reconciliation
+`packages/schemas/normalized-event.schema.json` owns the collector-local durable L1 fact. Event and session IDs are collector-generated UUIDv7 values. The event binds exact adapter/certification/accounting-profile digests; registered source/provider/model IDs; monotonic and bounded wall-time observations; mutually exclusive canonical components; source-observed categories with containment labels; count authority; retry/outcome semantics; duplicate-domain scope; keyed local fingerprint; deterministic rule result and privacy policy result.
 
-Authority order: provider-authenticated receipt > native source event > official structured hook/telemetry > protocol proxy > live source-bound observation > reconstruction > historical import.
+The event is not directly network serializable. `network_eligible=false` is a schema invariant. Unknown values are absent or explicitly enumerated; zero never means unknown.
 
-When multiple sources describe the same model execution, only the highest-authority compatible record contributes tokens. Dedup uses provider request IDs where safe, otherwise keyed local fingerprints over non-content structural fields. Conflicts quarantine the event rather than averaging counts.
+### LocalDetectorResult
 
-## VibeProof claim envelope
+`packages/schemas/local-detector-result.schema.json` owns the optional L1 advisory result. It contains only bundle/runtime digests, feature version, input mode, fixed anomaly enums, confidence bucket, execution status, bounded resource buckets and deterministic precheck ID. It contains no prose, embedding, explanation, network address or authority over counts/evidence. Only its digest may be committed in a claim.
 
-Canonical top-level fields:
+### IPC direction and retention
 
-- protocol version;
-- claim ID UUIDv7;
-- account pseudonym and revocable device-key ID;
-- device sequence and previous accepted-claim hash;
-- challenge ID/nonce and challenge expiry;
-- source event-time range and server-independent monotonic duration;
-- adapter/source/provider/model identifiers;
-- normalized token categories, count quality, and estimated-pricing dataset ID;
-- evidence capture/environment dimensions and consumer evidence state;
-- privacy scan version/result;
-- batch metadata when used;
-- correction/supersession reference when applicable.
+| Stage | Producer → consumer | Storage | Default retention | Network access |
+|---|---|---|---|---|
+| SourceObservation | adapter → collector | ephemeral adapter/collector memory | until normalization; never backup | forbidden |
+| NormalizedAccountingEvent | collector → claim builder | encrypted local event store | user-configurable; excluded from sync store | forbidden as an object |
+| LocalDetectorResult | detector sandbox → collector | encrypted local advisory store | aligned to contributing event | forbidden |
+| EvidenceClaim | claim builder → sync/verifier | encrypted claim queue and outbound audit ledger | policy-bound | exact allowlist only |
 
-No free text is permitted.
+`packages/schemas/local-control-v1.proto` is the sole local IPC envelope. It uses typed bodies for observation, acknowledgement, claim construction, queue/receipt summaries and local export/deletion. Opaque JSON, opaque serialized domain bytes and arbitrary metadata are prohibited. Peer role, ACL, connection nonce, monotonic message sequence, body limit, rate and deadline are checked before body materialization.
 
-## Encoding and signing
+## Adapter artifact and capability contract
 
-- Deterministic CBOR following RFC 8949 deterministic encoding requirements and a project-owned stricter profile.
-- Definite lengths only; shortest integers; sorted map keys by encoded-byte order; no floats, duplicate keys, undefined values, or unapproved tags.
-- CDDL is normative for structure; semantic invariants are normative in prose and conformance code.
-- COSE_Sign1 signs exact protected-header and payload bytes.
-- Initial algorithm: Ed25519/EdDSA. Algorithm ID is protected and pinned; `none`, ambiguity, and unprotected substitution are rejected.
-- Protected headers include algorithm, protocol version, key ID, and content type.
-- Maximum single claim: 64 KiB encoded. Maximum batch: 1 MiB, 500 claims. Decompressed limits are enforced before allocation.
+`packages/schemas/adapter-manifest.schema.json` binds:
 
-## Key and sequence lifecycle
+- adapter artifact, manifest payload, source commit, build provenance and SBOM digests;
+- exact source product/version, platform, capture mode and permissions;
+- observed source categories and applicable accounting profiles;
+- certification bundle, suite, source version and platform profile;
+- a capability-derived maximum public profile;
+- duplicate domains, lifecycle and emergency disable state.
 
-Device keys are generated in OS-backed credential storage when available. Server stores public keys, status, enrollment account, creation, rotation, revocation, and attestation metadata.
+The manifest digest covers the canonical manifest payload with the digest field omitted. Marketing or registry presence never raises the exercised ceiling. Unknown source versions, expired certification, artifact mismatch or missing profile fail closed to the highest lower explicitly allowed state.
 
-Sequence starts at 1 and increases exactly once per locally committed claim. A claim includes the previous claim hash. Server accepts only the expected sequence/hash or an exact idempotent replay. Gaps require a signed gap declaration with local audit evidence; forks quarantine the device. Rotation requires signatures from old and new keys when the old key exists. Lost-key recovery revokes the old device identity and starts a new chain; old claims remain attributable.
+## Accounting authority
 
-## Challenge and transport
+`packages/schemas/accounting-profile.schema.json` and `conformance/accounting/accounting-profiles-v1.json` define immutable profile identity, source fields/units/authority, containment graph, mutually exclusive outputs, source-total authority, cache/reasoning/modality semantics, retry/cancellation/nested-execution policy, exact reconstruction and evidence ceiling.
 
-Challenges are account/device bound, random 256-bit values, single-use, and expire after 15 minutes. Offline collection stores unsigned normalized events; claims are finalized when a fresh challenge is available. Event-time lateness rules remain applicable.
+Token Burn is the checked sum of a profile's mutually exclusive outputs. A source total or parent total that contains a subcategory is never added to that subcategory. Contradictions reject, quarantine or become private analytics exactly as the profile declares. Representative cloud-inclusive, cloud-exclusive, retry, cancellation and exact local-runtime cases live in `conformance/accounting/p1140b-accounting-cases-v1.json`.
 
-Batches are independently verifiable ordered claim arrays; each claim retains its own sequence and signature. Transport compression may use zstd only after encoded-size and decompressed-size limits; signed payloads are compressed after signing.
+## Time and delayed synchronization
 
-## Acceptance outcomes
+Every event records a monotonic clock domain UUID, generation, start/end counters, bounded wall-time observation and uncertainty. Suspend, restore, reboot or rollback that invalidates monotonic continuity starts a new generation and is represented explicitly.
 
-`accepted`, `accepted_idempotent`, `rejected_invalid`, `rejected_replay`, `rejected_privacy`, `rejected_unsupported`, `downgraded`, `quarantined`, or `retryable`.
+The server anchors accepted intervals to challenge, receipt and prior checkpoint state. Maximum delayed-sync age is a versioned policy of the exact source/accounting/platform profile; there is no universal 24-hour rule. Activity beyond the applicable bound is private analytics unless a named policy and continuity class explicitly admit it. Client wall time alone never selects a ranking period.
 
-Stable reason codes cover parser, canonicalization, signature, key, challenge, sequence, clock, duplicate, accounting, adapter, privacy, eligibility, rate, and internal failures. Unknown errors default to rejection without exposing sensitive internals.
+## Device lineage and source trust
 
-## Compatibility
+`packages/schemas/device-lineage.schema.json` defines enrollment, dual-authorized rotation, lost-key recovery, restore/clone detection, retirement and requalification. Concurrent successors quarantine the lineage. A restored state older than the accepted checkpoint cannot silently continue. Lost-key recovery resets continuity; a new or recovered lineage does not inherit Hardened.
 
-Major protocol changes require a new major version. Readers support current and previous major during a published migration window. Unknown mandatory fields reject; unknown extension fields are allowed only inside a signed, size-bounded extension map with registered numeric keys. Server never reinterprets old accepted claims under new semantics; corrections are explicit records.
+Every support/evidence claim binds exact artifact, provenance, certification and platform-profile digests. `packages/schemas/evidence-profile-policy-v1.json` keeps source, capture, accounting, key, continuity, environment and freshness dimensions independent and applies an explicit downgrade order.
 
-## Conformance
+## Pricing authority
 
-Required suites: exact-byte golden vectors, independent Rust/Go/TypeScript decoders, duplicate keys, non-minimal integers, malformed protected headers, algorithm confusion, deep nesting, allocation bombs, truncation, mutation, fuzzing, differential parsing, signature alteration, sequence forks, replay storms, batch partial failure, clock rollback, key rotation, lost state, and privacy canaries.
+Claims contain token facts and registered model IDs only. They never contain a pricing dataset, price, currency, cost estimate or correction authority.
+
+`packages/schemas/pricing-interpretation.schema.json` owns the immutable server-side event-time alias resolution, pricing dataset/rule digest, typed category line items, quantity/unit/denominator, region/tier/mode conditions, rounding, canonical currency/scale and priced/unpriced result. Every value remains explicitly Estimated in product presentation.
+
+## Privacy egress contract
+
+`packages/schemas/egress-allowlist-v1.schema.json` validates the registry at `packages/schemas/egress-allowlist-v1.json`. A field absent from that registry is denied. The registry records type, encoded-size ceiling, semantic owner, L2 classification, source process, destination, retention policy and positive/negative fixture identifiers.
+
+The privacy gate runs after normalization and optional detector work, immediately before canonical claim serialization and signing. `conformance/privacy/p1140b-boundary-canaries-v1.json` covers adapter, IPC, local store, detector, claim, HTTP, telemetry, notification, moderation and export boundaries. Forbidden content or an unregistered field rejects before egress.
+
+## Evidence appraisal
+
+The server evaluates the independent dimensions and named minimums in `packages/schemas/evidence-profile-policy-v1.json`. Any fatal privacy, artifact, accounting or continuity contradiction rejects or quarantines. Failure to meet Hardened evaluates Standard; failure to meet Standard becomes private analytics. E5 remains Imported/private only.
+
+The signed claim carries facts and commitments. P-1140C will freeze its deterministic CBOR/COSE representation, checkpoint, replay, batch, rotation, gap and correction records. Until then, `packages/schemas/vibeproof-claim-v1.cddl` remains blocked and must not generate codecs.
+
+## P-1140C boundary
+
+P-1140C must not change the P-1140B authority split or reintroduce client-owned evidence/pricing, raw aliases, request IDs, arbitrary extensions, opaque IPC payloads, overlapping token totals or universal lateness. It owns only the mutually complete wire/state representation and exact protocol vectors.
