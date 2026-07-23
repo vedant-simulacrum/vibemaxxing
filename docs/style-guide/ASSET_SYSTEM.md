@@ -20,6 +20,7 @@ flowchart TD
 | Product brand | `assets/brand/` | `assetRegistry.brand` |
 | AI provider/model marks | `assets/providers/` | `ProviderLogo` |
 | Synthetic UI people | `assets/ui/fixtures/` | `assetRegistry.fixtures` |
+| Approved UI references | `assets/ui/references/` | Design review and visual regression only |
 | Future illustrations | `assets/illustrations/` | An illustration registry/component |
 | Future flags | `assets/flags/` | A country-flag component |
 
@@ -35,8 +36,9 @@ Two categories deliberately do not become copied repository assets:
 3. **Registry/component** — the only supported runtime reference.
 4. **Storybook** — the executable inventory of sizes, states, contrast, and composition.
 5. **Style guide** — the human-readable usage rules and examples.
+6. **UI references** — approved mock-ups paired with browser renders for visual review; never runtime implementation.
 
-This prevents route code from inventing provider symbols, downloading profile imagery, or diverging through near-identical copies.
+This prevents route code from inventing provider symbols, downloading profile imagery, diverging through near-identical copies, or substituting screenshots for real UI.
 
 ## Naming
 
@@ -61,6 +63,14 @@ This prevents route code from inventing provider symbols, downloading profile im
 - Meaningful marks receive the registry label through their component.
 - Never depend on a logo alone when the provider/model name is important.
 - Do not put critical text inside an image.
+
+## Reference-image rules
+
+- Store only approved references and reproducible final renders.
+- Pair each mock-up and render in `assets/ui/references/manifest.json`.
+- Keep rejected generations and intermediate captures out of Git history.
+- Never import a UI reference image into product source.
+- Treat the mock-up as the visual target and the Storybook capture as evidence, not as proof of fidelity by itself.
 
 ## Governance
 

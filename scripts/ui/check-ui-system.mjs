@@ -17,6 +17,15 @@ for (const asset of fixtureManifest.assets ?? []) {
     if (!fs.existsSync(path.join(root, "assets/ui/fixtures", file))) failures.push(`Missing governed UI fixture: ${file}`);
   }
 }
+const referenceManifest = JSON.parse(read("assets/ui/references/manifest.json"));
+for (const reference of referenceManifest.references ?? []) {
+  for (const file of [reference.mockup, reference.render]) {
+    if (!fs.existsSync(path.join(root, "assets/ui/references", file))) failures.push(`Missing governed UI reference: ${file}`);
+  }
+}
+for (const evidence of referenceManifest.supportingEvidence ?? []) {
+  if (!fs.existsSync(path.join(root, "assets/ui/references", evidence.file))) failures.push(`Missing governed UI reference evidence: ${evidence.file}`);
+}
 const assetRegistry = read("packages/ui/src/assets.ts");
 if (/https?:\/\//.test(assetRegistry)) failures.push("The asset registry must not hotlink remote files.");
 
@@ -66,4 +75,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("UI system checks passed: generated tokens, governed assets, raw colors, component reuse, Storybook coverage, accessibility configuration, and /style-guide role parity.");
+console.log("UI system checks passed: generated tokens, governed assets and references, raw colors, component reuse, Storybook coverage, accessibility configuration, and /style-guide role parity.");

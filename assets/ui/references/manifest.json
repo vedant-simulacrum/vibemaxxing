@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Frozen high-fidelity mockups and reproducible Storybook browser renders",
+  "viewport": {
+    "width": 1536,
+    "height": 1024,
+    "deviceScaleFactor": 1
+  },
+  "references": [
+    {
+      "id": "public-profile",
+      "label": "Public profile",
+      "mockup": "product-storyboards/mockups/public-profile.png",
+      "render": "product-storyboards/renders/public-profile.png",
+      "status": "review-baseline"
+    },
+    {
+      "id": "rival-comparison",
+      "label": "Rival comparison",
+      "mockup": "product-storyboards/mockups/rival-comparison.png",
+      "render": "product-storyboards/renders/rival-comparison.png",
+      "status": "review-baseline"
+    },
+    {
+      "id": "friends",
+      "label": "Friends",
+      "mockup": "product-storyboards/mockups/friends.png",
+      "render": "product-storyboards/renders/friends.png",
+      "status": "review-baseline"
+    },
+    {
+      "id": "activity-and-notifications",
+      "label": "Activity and notifications",
+      "mockup": "product-storyboards/mockups/activity-and-notifications.png",
+      "render": "product-storyboards/renders/activity-and-notifications.png",
+      "status": "review-baseline"
+    },
+    {
+      "id": "board-standings",
+      "label": "Board standings",
+      "mockup": "product-storyboards/mockups/board-standings.png",
+      "render": "product-storyboards/renders/board-standings.png",
+      "status": "review-baseline"
+    }
+  ],
+  "supportingEvidence": [
+    {
+      "id": "product-storyboards-contact-sheet",
+      "file": "product-storyboards/renders/contact-sheet.jpg"
+    }
+  ],
+  "policy": {
+    "runtimeUse": false,
+    "sourceOfTruth": "mockup",
+    "generatedRender": "evidence",
+    "rejectedIterations": "Do not commit; promote only approved references."
+  }
+}

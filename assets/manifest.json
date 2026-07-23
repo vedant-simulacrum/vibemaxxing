@@ -20,6 +20,12 @@
       "path": "assets/ui/fixtures",
       "manifest": "assets/ui/fixtures/manifest.json",
       "consumer": "assetRegistry.fixtures"
+    },
+    {
+      "id": "ui-references",
+      "path": "assets/ui/references",
+      "manifest": "assets/ui/references/manifest.json",
+      "consumer": "design review and visual regression"
     }
   ],
   "externalSystems": {

@@ -9,6 +9,7 @@
 | `brand/` | Brand system | Wordmarks, marks, favicons, app icons, social exports, font provenance | `assetRegistry.brand` |
 | `providers/` | UI system | Governed AI-provider and model-family marks, provenance, trademark rules | `ProviderLogo` |
 | `ui/fixtures/` | UI system | Synthetic people and demo imagery used by Storybook and visual tests | `assetRegistry.fixtures` |
+| `ui/references/` | Design system | Approved mock-ups and reproducible Storybook review renders | Design review and visual regression only |
 
 Add future shared collections here (`illustrations/`, `media/`, `flags/`), not inside route or component folders.
 
@@ -21,6 +22,7 @@ Add future shared collections here (`illustrations/`, `media/`, `flags/`), not i
 5. Every collection needs a manifest, provenance/licensing notes, an owner, and replacement rules.
 6. Fixture people are synthetic demo data. They are never customer identities, testimonials, or production defaults.
 7. Static artwork belongs here. Data charts remain code-native; interface icons come from the one pinned Lucide dependency.
+8. UI reference screenshots are review evidence and must never be rendered as product implementation.
 
 ## Change workflow
 
