@@ -1,6 +1,6 @@
 # VibeMaxxing Decision Register
 
-Updated: 2026-07-19
+Updated: 2026-07-23
 
 Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `rejected`, `superseded`.
 
@@ -25,7 +25,7 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-017 | Append-only claim ledger + transactional outbox + idempotent aggregates | accepted | benchmark or correctness failure |
 | D-018 | Competition ranking uses SQL `rank()` gaps, with stable display tie-breakers | accepted | user testing or simulation demonstrates material harm |
 | D-019 | Pricing uses immutable versioned datasets with provenance and effective dates | accepted | evidence-backed ADR |
-| D-020 | Country boards use user assertions, change cooldowns, optional stronger evidence and minimum-cohort privacy thresholds | accepted | privacy or integrity evidence requires revision |
+| D-020 | Country boards are part of launch scope | superseded | replaced by D-052 |
 | D-021 | Integrity enforcement is progressive, appealable and does not require identity documents by default | accepted | severe integrity evidence |
 | D-022 | Public support claims are generated from an exercised adapter registry | accepted | none |
 | D-023 | Three named CLI adapters are the complete launch scope | superseded | replaced by D-030 |
@@ -40,7 +40,7 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-032 | Genuine but intentionally wasteful usage counts when authentic and non-duplicated | accepted | explicit product-policy change |
 | D-033 | Repository is private during planning and becomes public open source before public launch | accepted | explicit user change |
 | D-034 | Product CI, eval, dependency, security and release automation remains manual-only during planning; read-only planning validation is allowed | accepted | implementation phase begins |
-| D-035 | An SLM is conditional residual-risk detection and may not rewrite totals or permanently ban users | accepted | measured detector bakeoff |
+| D-035 | An SLM is conditional residual-risk detection and may not rewrite totals or permanently ban users | superseded | replaced by D-053 |
 | D-036 | GitHub uses a GitHub App with web/device authorization; X uses OAuth 2.0 Authorization Code with PKCE | accepted | provider capability or security changes |
 | D-037 | Raw Token Burn remains unnormalized across model capability; filters and disclosures provide context | accepted | explicit new metric ADR |
 | D-038 | Technical planning contracts were previously declared complete | superseded | replaced by D-042 after audit found missing schemas and contradictions |
@@ -48,12 +48,24 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-040 | Apache-2.0 for original code, CC BY 4.0 for docs/specs, DCO without CLA initially | accepted | ADR-009; final dependency/counsel review remains release evidence |
 | D-041 | `AGENTS.md` is the sole initialization manual; `docs/project/` owns project authority/status/navigation; implementation planning is limited to one handoff plus one PR work breakdown; research is indexed only through `docs/research/README.md` | accepted | explicit repository-governance change |
 | D-042 | Repository remains in planning-hardening until draft schemas, validation, governance and protocol edge semantics pass | superseded | replaced by D-045 after P-1120 through P-1128 passed |
-| D-043 | Protocol v1 uses one challenge per atomic batch; partial acceptance is prohibited; bounded signed gap declarations downgrade continuity | accepted | ADR-007 or protocol-major revision |
+| D-043 | Protocol v1 uses one challenge per atomic batch; partial acceptance is prohibited; bounded signed gap declarations downgrade continuity | provisional | reopened by P-1140C because the current batch, checkpoint and sequence contracts conflict |
 | D-044 | Handle normalization uses Unicode 16.0 NFKC/full case fold/confusable skeleton rules; configurable defaults live in a versioned policy registry | accepted | ADR-008 or proven internationalization failure |
-| D-045 | Technical planning is complete at validated contract level; implementation remains inactive until explicit P-1104 approval | accepted | a new P0/P1 contradiction, requirement change or failed planning validation reopens hardening |
-| D-046 | T20 is the rolling golden-path engineering cohort; each active slot requires exact multidimensional certification plus quantitative optimization evidence, while non-T20 models may use lower honest support tiers | accepted | explicit product reversal or validated evidence that the selection/certification contract systematically misses material competitive usage |
+| D-045 | Technical planning is complete at validated contract level; implementation remains inactive until explicit P-1104 approval | superseded | replaced by D-049 after the July 23 audit found cross-contract P0/P1 contradictions |
+| D-046 | T20 is the rolling golden-path engineering cohort; each active slot requires exact multidimensional certification plus quantitative optimization evidence, while non-T20 models may use lower honest support tiers | provisional | reconcile T20 launch value with capability-based adapter rollout and real usage evidence under P-1140B/E |
 | D-047 | Repository artifacts are classified as specification, mock, runnable prototype, production implementation, or executable evidence; the existing fixture-backed web app is a bounded runnable prototype and does not authorize further implementation | accepted | explicit phase change or artifact evidence changes |
 | D-048 | Light-mode leaderboard bento is the approved first-screen visual baseline; dark mode and the Signal Ledger, Trackside, and Duel directions are rejected | accepted | explicit visual-direction change after rendered frontend review |
+| D-049 | Repository phase is planning alignment and contract repair under P-1140A–E; P-1104 remains blocked afterward until explicit approval | accepted | P-1140A–E complete, clean validation passes and user explicitly opens implementation |
+| D-050 | Client claims contain evidence facts only; a server verifier creates the authoritative appraisal and public Standard/Hardened state | accepted | protocol/security evidence requires revision |
+| D-051 | Deterministically captured local-model and delayed offline usage may compete; Standard and Hardened both count globally, while Imported never counts | accepted | explicit competition-policy change or material integrity evidence |
+| D-052 | Country leaderboards are postponed until post-launch and are removed from launch requirements, routes and readiness gates | accepted | explicit user reversal after country semantics, privacy and moderation contracts mature |
+| D-053 | The SLM detector is post-launch research only: local, sandboxed, advisory, non-authoritative and promoted only after measured lift over simpler baselines | accepted | reproducible bakeoff and explicit launch-scope change |
+| D-054 | Launch identity strongly enforces one active ranked identity per detected/resolved person without claiming mathematically verified unique humans or requiring government ID/biometrics by default | accepted | severe integrity failure or explicit privacy/identity change |
+| D-055 | GitHub and X are the launch authentication providers; Google is deferred until auth, API, persistence, recovery and policy contracts add it coherently | accepted | provider availability or explicit scope change |
+| D-056 | VibeProof v1 may be rewritten incompatibly before implementation; no draft field has compatibility protection | accepted | production protocol ships |
+| D-057 | Kernel anti-cheat and mandatory VibeMaxxing inference proxying are rejected for the default product | accepted | explicit product/privacy reversal supported by evidence |
+| D-058 | Adapter, collector, detector and release trust is digest-addressed and provenance-bound; mutable names or versions alone never establish official identity | accepted | supply-chain evidence requires revision |
+| D-059 | Public launch targets the complete core social product except countries; internal staging does not permit weak or placeholder launch behavior | accepted | explicit user scope change |
+| D-060 | Open PR #17 is superseded by the July 23 audit, launch decisions, privacy and anti-cheat work and must not be merged unchanged | accepted | none |
 
 ## Register rules
 
@@ -62,4 +74,5 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 - `provisional` and `research-required` items cannot be presented as production-proven.
 - A planning decision may be complete while implementation evidence remains pending.
 - `superseded` decisions remain for history and identify their replacement.
-- Reopening an accepted decision requires the stated condition, an ADR where material, and updates to dependent specifications and tasks.
+- Reopening an accepted decision requires the stated condition, an ADR where material and updates to dependent specifications, schemas and tasks.
+- A completed planning validator proves only its declared structural checks; it does not override a later cross-contract audit.
