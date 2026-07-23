@@ -57,6 +57,7 @@ export function ProductAvatar({
     <span
       className="vm-sb-avatar"
       style={{ "--vm-avatar-size": `${size}px` } as CSSProperties}
+      role={label ? "img" : undefined}
       aria-label={label || undefined}
       aria-hidden={label ? undefined : true}
     >
