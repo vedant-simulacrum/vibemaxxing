@@ -8,7 +8,7 @@ The repository is in **planning contract repair**.
 
 P-1140A is complete. P-1140B is active. Product implementation remains unauthorized.
 
-The repository now has complete planning traceability for D-001 through D-069 and accepted platform baselines for macOS, Windows, Linux, WSL, containers and CI.
+The repository has planning traceability for D-001 through D-069 and accepted platform baselines for macOS, Windows, Linux, WSL, containers and CI.
 
 One bounded fixture-backed hosted-web/Storybook slice exists and is classified as a **runnable prototype**. It is not production implementation, backend integration, launch evidence or authorization to continue product implementation.
 
@@ -20,6 +20,7 @@ One bounded fixture-backed hosted-web/Storybook slice exists and is classified a
 - Global leaderboards: accepted Standard and Hardened claims both count; Imported records never count.
 - Ranked identity: one active ranked identity per detected/resolved person, strongly enforced without claiming mathematically verified humanity.
 - SLM: post-launch research only; not a launch dependency or authority.
+- T20: provisional candidate engineering cohort under D-046; not a launch dependency and not current support evidence.
 - Daemon lifecycle: D-061 and ADR-010 require an always-on OS-supervised background service that auto-starts, auto-restarts, survives shell closure and remains resident through paused/offline/degraded/recovery states within the declared platform lifecycle context.
 - macOS: Apple silicon and Intel are launch requirements under rolling exact-profile certification.
 - Windows: native x64 and ARM64 are launch requirements across maintained desktop and applicable Server profiles.
@@ -30,11 +31,16 @@ One bounded fixture-backed hosted-web/Storybook slice exists and is classified a
 - Automatic updates: mandatory for competitive profiles with bounded deferral, signed release-set verification and rollback.
 - Storybook automation: permitted only as prototype/design validation and cannot satisfy product, security or launch gates.
 - Decision traceability: every registered decision has a normative owner, implementation work unit, state/schema owner where applicable, platform scope and executable evidence requirement.
+- Planning tooling: doctor, coverage validation, artifact validation, provisional T20 validation, stable work-unit generation and prototype workflow dependency controls are aligned to D-001 through D-069.
+- Historical planning-complete reports are explicitly non-authoritative.
 - Exact machine-contract repair requirements are recorded in `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`.
-- Current CDDL, JSON Schema, Protobuf, OpenAPI, SQL, reason codes and policy defaults remain planning placeholders blocked from implementation where they conflict with P-1140.
+- Current CDDL, JSON Schema, Protobuf, OpenAPI, SQL, reason codes and policy defaults remain planning placeholders blocked from implementation where P-1140 has not repaired their semantics.
+- The SQL file is an explicitly blocked structural inventory, not a migration design.
 - Backend, collector, protocol runtime, identity service, ranking service, production storage, installers, updater, deployment and operational systems are not implemented.
 - No collector platform is currently production-complete or exercised.
 - Competitive beta and public launch remain no-go pending implementation and executable evidence.
+
+The repaired planning checks have been committed, but no clean-checkout workflow result is currently attached to the latest head. Do not treat the repair as an executed P-1140E pass until that result exists.
 
 ## Active planning gates
 
