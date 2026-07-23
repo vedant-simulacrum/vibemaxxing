@@ -48,7 +48,7 @@ A connector-backed audit of current `main`, open pull requests, issues, authorit
 - the implementation handoff and PR-sized breakdown are broad and dependency ordered, but they cannot be treated as executable handoff authority while P-1140B through P-1140E remain incomplete;
 - the July 19 schema/interface inventory and traceability dry-run still used current-sounding `validated`, `normative` and `complete` language even though later audits reopened their assumptions;
 - open PR #30 contains the active UI application-lockdown work: 49 changed files and 24 branch commits, but it is two commits behind `main`, currently non-mergeable, and overlaps workflow/governance files changed by PR #31;
-- open draft PR #31 is the ADR-014 workflow-boundary repair: five files, mergeable at audit time, with planning checks passing on its exact head while its prototype workflow was still running.
+- PR #31, the five-file ADR-014 workflow-boundary repair, completed exact-head planning and prototype validation and merged to `main` as `45125e89d53c3aafc34bb3ba90734964f4b0bc78` during this audit.
 
 ### Consolidation disposition
 
@@ -59,8 +59,8 @@ A connector-backed audit of current `main`, open pull requests, issues, authorit
 
 ### Concurrent-work merge safety
 
-1. Complete and merge PR #31 only after its exact-head planning and prototype checks finish successfully.
-2. Update PR #30 onto the resulting `main`.
+1. Treat merged PR #31 and ADR-014 as the current workflow/governance baseline.
+2. Update PR #30 onto `45125e89d53c3aafc34bb3ba90734964f4b0bc78` or later.
 3. Resolve its workflow, documentation-map and UI-checker overlaps in favor of ADR-014 and the repaired repository doctor.
 4. Re-run planning and scoped prototype validation on the reconciled UI head.
 5. Refresh canonical status/alignment only from the merged state; never infer completion from a branch or a pre-merge run.
