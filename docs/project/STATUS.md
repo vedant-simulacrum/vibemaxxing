@@ -6,7 +6,7 @@ Updated: 2026-07-24
 
 The repository is in **planning contract repair**.
 
-P-1140A and P-1140B are complete. P-1140C is active. Product implementation remains unauthorized.
+P-1140A through P-1140C are complete. P-1140D is active. Product implementation remains unauthorized.
 
 The repository has planning traceability for D-001 through D-069 and accepted platform baselines for macOS, Windows, Linux, WSL, containers and CI.
 
@@ -58,7 +58,7 @@ Candidate contract set now present:
 
 Planning checks run #211 passed on the exact P-1140B candidate head. The gate-transition head must also pass before merge. Product implementation remains unauthorized.
 
-### Active P-1140C — VibeProof v1 protocol rewrite
+### Completed P-1140C — VibeProof v1 protocol rewrite
 
 Candidate contract set now present:
 
@@ -67,13 +67,16 @@ Candidate contract set now present:
 - separate local/server continuity, atomic idempotency/replay and recovery state;
 - fixed Ed25519 claim/receipt vectors plus malformed/resource/transaction cases.
 
-P-1140C remains active until exact-head Planning checks pass and the branch is reconciled with current `main`.
+Planning checks run #219 passed on the exact P-1140C candidate head. The gate-transition head must also pass before merge.
 
 Active work is the deterministic CBOR/COSE claim, appraisal, checkpoint, batch, continuity, gap, rotation, correction and replay state contract. It must preserve the P-1140B authority and privacy boundaries.
 
+### Active P-1140D — identity, API, ranking, social, native and release state machines
+
+P-1140D now owns OAuth/session, ranked identity, API/idempotency, SQL, ranking views, pricing persistence, social/presence/notification/moderation state, export/deletion, native platform lifecycle, privileged supervision, mandatory updates and release trust.
+
 ### Following gates
 
- - **P-1140D:** OAuth/session, identity, API, SQL, ranking, social, native, always-on daemon, complete platform packaging, optional privileged supervision, mandatory updater and release state machines.
 - **P-1140E:** cross-contract fixtures, D-001..D-069 traceability validation, exact platform-profile validation, clean-checkout planning validation and final P0/P1 review.
 
 P-1104 remains blocked until P-1140B–E complete, all planning-only validation passes from a clean checkout, no P0/P1 contradiction remains and the user explicitly authorizes implementation.
@@ -116,4 +119,4 @@ Read-only planning validation may run. ADR-014 permits narrowly scoped Storybook
 
 ## Current gate
 
-P-1140A–B are complete. P-1140C is active; P-1140D–E follow in dependency order. P-1131 and comprehensive launch review remain blocked until real implementation and exercised evidence exist.
+P-1140A–C are complete. P-1140D is active; P-1140E follows. P-1131 and comprehensive launch review remain blocked until real implementation and exercised evidence exist.
