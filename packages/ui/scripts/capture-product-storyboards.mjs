@@ -19,6 +19,17 @@ try {
     const page = await browser.newPage({ viewport: { width: 1536, height: 1024 }, deviceScaleFactor: 1 });
     await page.goto(`${baseUrl}/iframe.html?id=approved-baseline-product-screens--${story}&viewMode=story`, { waitUntil: "networkidle" });
     await page.evaluate(() => document.fonts.ready);
+    await page.waitForSelector(".vm-sb-page .vm-sb-header .vm-sb-search", { state: "visible" });
+    await page.evaluate(async () => {
+      await Promise.all([...document.images].map(image => image.complete
+        ? image.decode().catch(() => undefined)
+        : new Promise(resolve => {
+            image.addEventListener("load", resolve, { once: true });
+            image.addEventListener("error", resolve, { once: true });
+          })));
+      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame);
+    });
     if (!await page.evaluate(() => document.fonts.check("14px InterVariable"))) {
       throw new Error(`InterVariable failed to load for ${story}`);
     }
