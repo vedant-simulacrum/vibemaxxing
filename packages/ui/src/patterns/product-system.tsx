@@ -133,7 +133,7 @@ export function ProductShell({ active, children }: { active: ProductNav; childre
             </a>
           ))}
         </nav>
-        <button className="vm-sb-search" type="button" aria-expanded={searchOpen} aria-controls={searchId} onClick={() => setSearchOpen(true)}>
+        <button className="vm-sb-search" type="button" aria-label="Search" aria-expanded={searchOpen} aria-controls={searchId} onClick={() => setSearchOpen(true)}>
           <Search size={19} aria-hidden="true" />
           <span>Search</span>
         </button>
@@ -417,7 +417,7 @@ export function ProductStateBoundary({ state, children }: { state: ProductState;
   const copy = stateCopy[state];
   return (
     <div className={`vm-product-state state-${state}`}>
-      <div aria-hidden={state !== "loading"} className="vm-product-state-context">{children}</div>
+      <div aria-hidden="true" inert className="vm-product-state-context">{children}</div>
       <section className="vm-product-state-message" role={state === "error" || state === "offline" ? "alert" : "status"} aria-live="polite">
         {state === "loading" && <span className="vm-product-state-spinner" aria-hidden="true" />}
         <p>{state.replace("-", " ")}</p>
