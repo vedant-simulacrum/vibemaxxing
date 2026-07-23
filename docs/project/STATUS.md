@@ -40,7 +40,7 @@ One bounded fixture-backed hosted-web/Storybook slice exists and is classified a
 - No collector platform is currently production-complete or exercised.
 - Competitive beta and public launch remain no-go pending implementation and executable evidence.
 
-The repaired planning checks have been committed, but no clean-checkout workflow result is currently attached to the latest head. Do not treat the repair as an executed P-1140E pass until that result exists.
+Clean-checkout planning and prototype validation passed on the exact PR heads merged through PR #28 and PR #29. Those successful runs validate only the planning/tooling and synthetic prototype changes they exercised; they are not a completed P-1140E pass, production evidence or launch evidence. The squash commits on `main` do not have separate post-merge runs attached.
 
 ## Active planning gates
 
