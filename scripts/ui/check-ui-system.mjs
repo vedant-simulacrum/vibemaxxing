@@ -163,9 +163,11 @@ for (const screen of ["Profile", "Rival", "Friends", "Activity", "Board"]) {
     if (!stateMatrixStories.includes(`export const ${screen}${state}`)) failures.push(`State matrix is missing ${screen}${state}.`);
   }
 }
-for (const required of ["Prototype storyboard visuals", "push:", "apps/web/**", "Compare responsive captures with governed baselines", "compare-product-storyboards.mjs", "audit-product-storyboards.mjs", "storybook-diffs"]) {
+for (const required of ["Prototype storyboard visuals", "workflow_dispatch:", "pull_request:", "Compare responsive captures with governed baselines", "compare-product-storyboards.mjs", "audit-product-storyboards.mjs", "storybook-diffs"]) {
   if (!workflow.includes(required)) failures.push(`Visual workflow is missing ${required}.`);
 }
+if (/^\s{2}push:/m.test(workflow)) failures.push("Visual workflow must not run on push under ADR-014.");
+if (workflow.includes('"apps/web/**"') || workflow.includes("'apps/web/**'")) failures.push("Visual workflow must not include apps/web/** under ADR-014.");
 
 const routeContracts = new Map([
   ["apps/web/app/page.tsx", "LeaderboardFirstPrototype"],
@@ -183,4 +185,4 @@ if (failures.length) {
   console.error(failures.map(item => `- ${item.trim()}`).join("\n"));
   process.exit(1);
 }
-console.log("UI system checks passed: shared product components, governed assets, one icon gateway, required states, responsive viewports, Storybook coverage, accessibility configuration, and visual regression wiring.");
+console.log("UI system checks passed: shared product components, governed assets, one icon gateway, required states, responsive viewports, Storybook coverage, accessibility configuration, ADR-014 workflow scope, and visual regression wiring.");
