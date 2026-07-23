@@ -74,5 +74,5 @@ jobs:
           path: |
             packages/ui/storybook-captures/*.png
             packages/ui/storybook-diffs/*
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30

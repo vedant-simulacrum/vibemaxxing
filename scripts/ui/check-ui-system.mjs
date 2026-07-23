@@ -70,6 +70,7 @@ const archivedConcepts = new Set([
 ]);
 
 const frozenVisualCss = new Set([
+  "packages/ui/src/tokens.css",
   "packages/ui/src/concepts/competition-slice.css",
   "packages/ui/src/concepts/leaderboard-bento.css",
   "packages/ui/src/concepts/leaderboard-first.css",
