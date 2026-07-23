@@ -1,78 +1,64 @@
-# Planning Hardening Validation Report
+# Historical Planning Hardening Validation Report
 
-Status: passed; technical planning complete at validated contract level
-Date: 2026-07-19
+Status: historical evidence; superseded as current authority
+Original date: 2026-07-19
+Reclassified: 2026-07-23
 
-## Scope
+## Authority warning
 
-This report closes the validation-only planning-hardening cycle. No product code, deployment, release, signing, production security automation or compatibility certification was created.
+This document records a successful validation run against an older planning state. It does **not** describe the current repository phase and must not be used as an implementation entrance signal.
 
-## Final clean-checkout evidence
+The July 23 cross-contract audit superseded its former conclusions:
 
-The complete planning workflow ran in a fresh GitHub-hosted checkout after the canonical authority was changed from planning-hardening to planning complete.
+- D-045 is superseded by D-049;
+- D-046 is provisional rather than an accepted launch gate;
+- P-1140B is active and P-1140C through P-1140E remain blocked in dependency order;
+- P-1104 is not the only remaining gate;
+- country leaderboards are post-launch under D-052;
+- implementation remains unauthorized.
 
-- Workflow: `Planning checks`
-- Final run ID: `29666765188`
-- Final run number: `21`
-- Validation head: `093aab79c64582507e9c2a1f95b8e819b91231df`
-- Base main commit: `5c51c6da43d03ce12c2b067cf64d63e2c5d420ce`
-- Result: `success`
-- Trigger PR: #10, closed unmerged
+## Historical clean-checkout evidence
 
-An earlier complete artifact run, `29666625336`, also passed before the final authority transition. Both validation PRs contained only temporary trigger documents and were intentionally not merged.
+The older `Planning checks` workflow passed in a fresh GitHub-hosted checkout:
 
-## Pinned validator set
+- run ID: `29666765188`;
+- run number: `21`;
+- validation head: `093aab79c64582507e9c2a1f95b8e819b91231df`;
+- base main commit: `5c51c6da43d03ce12c2b067cf64d63e2c5d420ce`;
+- result: success;
+- trigger PR: #10, closed unmerged.
 
-`requirements-planning.txt` pins:
+That run demonstrated that the then-current documents and placeholders were syntactically parseable and internally linked. It did not prove their future correctness.
 
-- `jsonschema==4.26.0`
-- `PyYAML==6.0.3`
-- `openapi-spec-validator==0.9.0`
-- `grpcio-tools==1.82.1`
-- `cddlparser==0.6.0`
-- `psycopg[binary]==3.3.4`
+## Historical checks
 
-The workflow used PostgreSQL 16 and a pinned `actions/checkout` commit.
+The run covered:
 
-## Checks executed and passed
+- repository paths and references;
+- JSON Schema fixtures and registries;
+- CDDL parsing;
+- Protobuf compilation;
+- OpenAPI syntax and operation coverage;
+- structural PostgreSQL loading;
+- policy and observability consistency;
+- the former numbered issue-plan generator;
+- the former phase assertions.
 
-1. Repository doctor: canonical files, phase hierarchy, removed duplicates, references, task/decision IDs, governance, licensing and registry linkage.
-2. JSON Schema: four schemas meta-validated; valid fixtures accepted; forbidden-field fixture rejected; registries validated.
-3. Cross-registry semantics: unique IDs, valid family/tier references, resolved actions/reason codes and no support inferred from empty certifications.
-4. CDDL: VibeProof grammar parsed; claim, token, batch and gap rules present.
-5. Protobuf: local-control and social/integrity event contracts compiled.
-6. OpenAPI 3.1: parsed; every launch-critical API family present; operation IDs unique; responses present; planned idempotency rules enforced.
-7. PostgreSQL: full planning DDL loaded into a disposable database; every launch-critical logical entity group present.
-8. Policy and observability: defaults ranged and owned; deny-by-default allowlist parsed; retention matched policy; prohibited classes absent.
-9. Issue generation: exactly `IMP-001` through `IMP-052` generated deterministically.
-10. Final authority state: D-045, closed P-1120/P-1126/P-1128 and P-1104-only implementation gating passed the repository doctor.
+Several of those assumptions were later invalidated. In particular, the fixed `IMP-001` through `IMP-052` plan, country launch coverage and the D-045 planning-complete state are obsolete.
 
-## Defects found and repaired
+## Current replacement
 
-- unconstrained certification and target tiers;
-- duplicate-capable registry collections;
-- unconstrained adversarial expected actions;
-- unconstrained normalized-event capture modes;
-- empty token objects;
-- a license-wording doctor false positive;
-- incomplete OpenAPI launch-family coverage;
-- incomplete PostgreSQL logical-schema coverage;
-- stale authority statements after the phase transition.
+Current structural validation is owned by:
 
-## Context-free handoff re-audit
+- `scripts/repository/doctor.py`;
+- `scripts/repository/validate_planning_artifacts.py`;
+- `scripts/repository/validate_planning_coverage.py`;
+- `scripts/repository/validate_t20_contract.py`;
+- `scripts/repository/generate_issue_plan.py`;
+- `.github/workflows/planning-checks.yml`.
 
-A fresh read beginning at `AGENTS.md`, without chat history, produces one unambiguous interpretation:
-
-- current phase: planning complete, implementation not authorized;
-- authority: project/status/documentation map, decision register, task catalog, ADRs, schemas and subsystem contracts;
-- schema source of truth: `packages/schemas/` and adjacent registry schemas;
-- current versus future repository paths: separated by `docs/implementation/REPOSITORY_LAYOUT.md`;
-- implementation entrance: explicit user approval under P-1104;
-- first future implementation work: validated contract workspaces, then the synthetic secure spine;
-- planning evidence is not product completion.
-
-No remaining P0/P1 planning contradiction was found in the authority, schema, registry, protocol, governance or execution-thread layers.
+Those checks validate the current repair phase, D-001 through D-069 traceability, D-052 country removal, provisional D-046 status, stable work-unit IDs and blocked-placeholder maturity.
 
 ## Evidence boundary
 
-This pass proves the planning artifacts are internally parseable, cross-referenced and sufficiently complete to hand off. It does not prove runtime correctness, cryptographic interoperability, adapter compatibility, performance, platform isolation, packaging, deployment, security hardening, operational recovery or launch readiness. Those remain implementation and launch evidence gates.
+Historical success is not current success. A new clean-checkout run is required after the repaired validators land. Even a passing current run proves only structural planning consistency—not runtime correctness, cryptographic interoperability, source compatibility, packaging, deployment, security hardening or launch readiness.
