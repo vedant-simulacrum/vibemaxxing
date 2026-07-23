@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/p1140e-validation-matrix-v1.schema.json",
+  "title": "P-1140E cross-contract validation matrix",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "maturity",
+    "decision_bindings",
+    "api_operations",
+    "state_machines",
+    "platform_profiles",
+    "validation_domains"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "maturity": {
+      "const": "planning-validation-only"
+    },
+    "decision_bindings": {
+      "type": "array",
+      "minItems": 69,
+      "maxItems": 69,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "decision_id",
+          "decision_status",
+          "active",
+          "normative_owner",
+          "work_unit",
+          "schema_or_state_owner",
+          "platform_scope",
+          "fixture_path"
+        ],
+        "properties": {
+          "decision_id": {
+            "type": "string",
+            "pattern": "^D-[0-9]{3}$"
+          },
+          "decision_status": {
+            "enum": [
+              "accepted",
+              "provisional",
+              "research-required",
+              "deferred",
+              "rejected",
+              "superseded"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "normative_owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "work_unit": {
+            "type": "string",
+            "minLength": 1
+          },
+          "schema_or_state_owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "platform_scope": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fixture_path": {
+            "type": "string",
+            "pattern": "^(docs|packages|conformance|scripts)/"
+          }
+        }
+      }
+    },
+    "api_operations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "state_machines": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "platform_profiles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "validation_domains": {
+      "type": "array",
+      "minItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "domain_id",
+          "authorities",
+          "fixtures",
+          "expected",
+          "execution_state"
+        ],
+        "properties": {
+          "domain_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "authorities": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^(docs|packages|conformance|scripts)/"
+            }
+          },
+          "fixtures": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^(docs|packages|conformance|scripts)/"
+            }
+          },
+          "expected": {
+            "type": "string",
+            "minLength": 1
+          },
+          "execution_state": {
+            "enum": [
+              "planning-validated",
+              "planned-runtime-evidence"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
