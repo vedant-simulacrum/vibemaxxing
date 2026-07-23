@@ -25,7 +25,6 @@ import {
   type ProductPerson as Person,
 } from "../patterns/product-system";
 import "./product-storyboards.css";
-import "./product-accessibility-overrides.css";
 
 const people: Person[] = [
   { name: "Alex Chen", handle: "alexchen", avatar: 5, rank: 1, burn: "124.7M", week: "612.3M", change: 5, model: "GPT-5.4" },
