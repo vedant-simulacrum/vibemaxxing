@@ -54,8 +54,8 @@ IDEMPOTENCY_EXCEPTIONS = {
 REPAIR_TARGETS = {
     "VerifierAppraisal": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "VerifierAppraisal"),
     "CheckpointReceipt": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "CheckpointReceipt"),
-    "refresh-token families": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "refresh token families"),
-    "durable idempotency ledger": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "idempotency ledger"),
+    "refresh-token families": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "refresh-token family"),
+    "durable idempotency ownership": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "idempotency uniqueness"),
     "immutable ranking view identity": ("docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md", "ranking_view_id"),
     "exact platform support profiles": ("docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md", "support profile"),
     "mandatory automatic updates": ("docs/decisions/ADR-013-MANDATORY_AUTOMATIC_UPDATES.md", "mandatory automatic updates"),
