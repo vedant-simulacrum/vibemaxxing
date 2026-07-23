@@ -21,7 +21,7 @@ Run `python3 scripts/repository/doctor.py` before relying on repository state.
 
 ## Current authority note
 
-The repository is in planning contract repair. P-1140A through P-1140C are complete and P-1140D is active.
+The repository is in planning contract repair. P-1140A through P-1140D are complete and P-1140E is active.
 
 Historical reports that declare planning complete or platform scope unresolved do not override current project authority, D-062 through D-069, ADR-011 through ADR-014, decision traceability or the frozen cross-platform audit.
 
