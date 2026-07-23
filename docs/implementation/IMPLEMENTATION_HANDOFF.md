@@ -1,7 +1,7 @@
 # VibeMaxxing Implementation Handoff
 
-Status: normative future implementation handoff; inactive until P-1140B–E pass and the user explicitly authorizes implementation.
-Version: 8
+Status: planning-ready implementation handoff; inactive until the user explicitly authorizes P-1104.
+Version: 9
 Updated: 2026-07-24
 
 ## Purpose
@@ -12,7 +12,7 @@ It does not authorize implementation. Reviewable units live in `PR_SIZED_WORK_BR
 
 ## Current handoff health
 
-This document is structurally comprehensive but **not implementation-ready**. It describes the intended build order; it does not prove that the contracts consumed by that build order are coherent.
+This handoff is **planning-ready but inactive**. P-1140B–E establish a coherent contract and clean-checkout planning-validation set; they do not prove runtime behavior, platform support, security, deployment or launch readiness.
 
 | Layer | Current state | Handoff consequence |
 |---|---|---|
@@ -20,10 +20,10 @@ This document is structurally comprehensive but **not implementation-ready**. It
 | Evidence, privacy and accounting | P-1140B complete-planning | Typed local stages, accounting profiles, appraisal authority, lineage, pricing and egress boundaries are frozen planning inputs; no implementation evidence is claimed |
 | VibeProof wire protocol | P-1140C complete-planning | Closed CDDL, deterministic CBOR/COSE, continuity/replay state and fixed vectors are frozen planning inputs; independent codecs remain P-1140E work |
 | Identity, API, SQL, ranking, social, native and release state | P-1140D complete-planning | The authoritative state/platform registry, endpoint-specific OpenAPI, repaired SQL, typed social events and release/ranking/export schemas are frozen planning inputs; no implementation evidence is claimed |
-| Cross-contract validation | P-1140E active | Final traceability, cross-contract fixtures, platform matrix, clean-checkout result and P0/P1 contradiction review remain required |
+| Cross-contract validation | P-1140E complete-planning | All 69 decisions, API operations, state machines, exact platform profiles and planning fixtures cross-resolve; run #239 passed and the final transition head remains required before merge |
 | Product code | Prototype/seeds only | Hosted fixture UI is a runnable prototype; API, Rust core, protocol, database, collectors, packaging and operations are not implemented |
 
-Before P-1104 can be proposed, maintainers must reconcile this file and `PR_SIZED_WORK_BREAKDOWN.md` against the final repaired schemas and state machines, remove or reclassify stale completion claims, attach clean-checkout validation to the exact final head, and record any remaining P0/P1 contradiction as blocking.
+P-1104 is now the sole entrance decision. This file and `PR_SIZED_WORK_BREAKDOWN.md` are reconciled to the repaired authority; the final audit has zero open P0/P1 planning contradictions. No agent may treat that as authorization: the user must explicitly open implementation.
 
 ### Concurrent branch handoff rule
 
