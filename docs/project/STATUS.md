@@ -60,6 +60,15 @@ Planning checks run #211 passed on the exact P-1140B candidate head. The gate-tr
 
 ### Active P-1140C — VibeProof v1 protocol rewrite
 
+Candidate contract set now present:
+
+- closed CDDL for claim, appraisal, checkpoint, challenge, atomic batch/result, gap, rotation and correction;
+- deterministic CBOR and strict COSE_Sign1 profile with bounded resources;
+- separate local/server continuity, atomic idempotency/replay and recovery state;
+- fixed Ed25519 claim/receipt vectors plus malformed/resource/transaction cases.
+
+P-1140C remains active until exact-head Planning checks pass and the branch is reconciled with current `main`.
+
 Active work is the deterministic CBOR/COSE claim, appraisal, checkpoint, batch, continuity, gap, rotation, correction and replay state contract. It must preserve the P-1140B authority and privacy boundaries.
 
 ### Following gates
