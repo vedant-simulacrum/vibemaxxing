@@ -67,9 +67,7 @@ Candidate contract set now present:
 - separate local/server continuity, atomic idempotency/replay and recovery state;
 - fixed Ed25519 claim/receipt vectors plus malformed/resource/transaction cases.
 
-Planning checks run #219 passed on the exact P-1140C candidate head. The gate-transition head must also pass before merge.
-
-The VibeProof contract is frozen as planning input to P-1140D/E. Independent runtime interoperability remains unproven.
+Planning checks run #219 passed on the exact P-1140C candidate head. The gate-transition head must also pass before merge. P-1140C is complete-planning; follow-on implementation and interoperability evidence remain blocked.
 
 ### Active P-1140D — identity, API, ranking, social, native and release state machines
 
