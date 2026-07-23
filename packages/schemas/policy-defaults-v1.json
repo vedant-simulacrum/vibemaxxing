@@ -1,23 +1,279 @@
 {
   "schema_version": 1,
-  "policy_version": "1.1.0-planning",
+  "policy_version": "1.2.0-p1140d",
   "change_rule": "Prospective changes require decision-register entry; retroactive changes require explicit rebuild/correction policy and user-visible notice.",
   "policies": {
-    "overtake_notification_hysteresis_hours": {"value":6,"min":1,"max":24,"owner":"product-integrity","retroactive":false},
-    "overtake_material_lead_tokens": {"value":1000,"min":0,"max":1000000000,"owner":"product-integrity","retroactive":false},
-    "friend_request_expiry_days": {"value":30,"min":1,"max":90,"owner":"social","retroactive":false},
-    "handle_rename_cooldown_days": {"value":30,"min":1,"max":365,"owner":"identity","retroactive":false},
-    "old_handle_redirect_days": {"value":90,"min":0,"max":365,"owner":"identity","retroactive":false},
-    "presence_heartbeat_seconds": {"value":30,"min":15,"max":60,"owner":"platform","retroactive":false},
-    "presence_lease_expiry_seconds": {"value":90,"min":45,"max":180,"owner":"platform","retroactive":false},
-    "presence_idle_after_seconds": {"value":300,"min":60,"max":1800,"owner":"product","retroactive":false},
-    "standard_claim_lateness_seconds": {"value":86400,"min":3600,"max":604800,"owner":"accounting-integrity","retroactive":true},
-    "challenge_expiry_seconds": {"value":900,"min":120,"max":3600,"owner":"protocol-security","retroactive":false},
-    "batch_max_claims": {"value":500,"min":1,"max":500,"owner":"protocol-security","retroactive":false},
-    "batch_max_encoded_bytes": {"value":1048576,"min":65536,"max":1048576,"owner":"protocol-security","retroactive":false},
-    "public_cache_stale_seconds": {"value":60,"min":0,"max":300,"owner":"server","retroactive":false},
-    "moderation_ordinary_review_target_hours": {"value":72,"min":1,"max":168,"owner":"trust-safety","retroactive":false},
-    "security_audit_retention_days": {"value":365,"min":90,"max":2555,"owner":"security-privacy","retroactive":false},
-    "operational_telemetry_retention_days": {"value":30,"min":7,"max":90,"owner":"operations-privacy","retroactive":false}
+    "overtake_notification_hysteresis_hours": {
+      "value": 6,
+      "min": 1,
+      "max": 24,
+      "owner": "product-integrity",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "hours",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "overtake_material_lead_tokens": {
+      "value": 1000,
+      "min": 0,
+      "max": 1000000000,
+      "owner": "product-integrity",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "tokens",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "friend_request_expiry_days": {
+      "value": 30,
+      "min": 1,
+      "max": 90,
+      "owner": "social",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "handle_rename_cooldown_days": {
+      "value": 30,
+      "min": 1,
+      "max": 365,
+      "owner": "identity",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "old_handle_redirect_days": {
+      "value": 90,
+      "min": 0,
+      "max": 365,
+      "owner": "identity",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "presence_heartbeat_seconds": {
+      "value": 30,
+      "min": 15,
+      "max": 60,
+      "owner": "platform",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "seconds",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "presence_lease_expiry_seconds": {
+      "value": 90,
+      "min": 45,
+      "max": 180,
+      "owner": "platform",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "seconds",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "presence_idle_after_seconds": {
+      "value": 300,
+      "min": 60,
+      "max": 1800,
+      "owner": "product",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "seconds",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "standard_claim_lateness_seconds": {
+      "value": 86400,
+      "min": 3600,
+      "max": 604800,
+      "owner": "accounting-integrity",
+      "retroactive": true,
+      "value_type": "integer",
+      "unit": "seconds",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-with-explicit-rebuild",
+      "rebuild_required": true,
+      "notice_required": true,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "challenge_expiry_seconds": {
+      "value": 900,
+      "min": 120,
+      "max": 3600,
+      "owner": "protocol-security",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "seconds",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "batch_max_claims": {
+      "value": 500,
+      "min": 1,
+      "max": 500,
+      "owner": "protocol-security",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "claims",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "batch_max_encoded_bytes": {
+      "value": 1048576,
+      "min": 65536,
+      "max": 1048576,
+      "owner": "protocol-security",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "bytes",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "public_cache_stale_seconds": {
+      "value": 60,
+      "min": 0,
+      "max": 300,
+      "owner": "server",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "seconds",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "moderation_ordinary_review_target_hours": {
+      "value": 72,
+      "min": 1,
+      "max": 168,
+      "owner": "trust-safety",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "hours",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "security_audit_retention_days": {
+      "value": 365,
+      "min": 90,
+      "max": 2555,
+      "owner": "security-privacy",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": true,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    },
+    "operational_telemetry_retention_days": {
+      "value": 30,
+      "min": 7,
+      "max": 90,
+      "owner": "operations-privacy",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-07-24T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": true,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
+      ]
+    }
   }
 }
