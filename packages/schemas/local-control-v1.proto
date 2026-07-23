@@ -2,65 +2,109 @@ syntax = "proto3";
 
 package vibemaxxing.local.v1;
 
+// Every bytes field below has a fixed semantic and runtime size limit. No body
+// contains JSON, CBOR, an opaque domain object, or caller-defined metadata.
 message Envelope {
   uint32 protocol_major = 1;
   uint32 protocol_minor = 2;
-  bytes message_id = 3;
-  uint64 sent_at_unix_ms = 4;
-  bytes process_nonce = 5;
-  bytes challenge_response = 6;
-  string correlation_id = 7;
+  bytes message_id_uuid7 = 3;              // exactly 16 bytes
+  bytes correlation_id_uuid7 = 4;          // exactly 16 bytes
+  ProcessRole sender_role = 5;
+  bytes connection_nonce = 6;              // exactly 32 bytes
+  uint64 monotonic_message_sequence = 7;
+  uint64 deadline_monotonic_ns = 8;
+  bytes authenticated_challenge_response = 9; // exactly 32 bytes
   oneof body {
     HealthRequest health_request = 20;
     HealthResponse health_response = 21;
     LifecycleRequest lifecycle_request = 22;
     LifecycleResponse lifecycle_response = 23;
-    NormalizedEventSubmission event_submission = 24;
-    ClaimQueueRequest claim_queue_request = 25;
-    ClaimQueueResponse claim_queue_response = 26;
+    SourceObservationSubmission source_observation_submission = 24;
+    NormalizedEventAcknowledgement normalized_event_acknowledgement = 25;
+    ClaimConstructionRequest claim_construction_request = 26;
+    ClaimConstructionResult claim_construction_result = 27;
+    QueueSummaryRequest queue_summary_request = 28;
+    QueueSummaryResponse queue_summary_response = 29;
+    ReceiptSummaryRequest receipt_summary_request = 30;
+    ReceiptSummaryResponse receipt_summary_response = 31;
+    LocalExportRequest local_export_request = 32;
+    LocalDeletionRequest local_deletion_request = 33;
+    LocalOperationResult local_operation_result = 34;
   }
 }
+
+enum ProcessRole { PROCESS_ROLE_UNSPECIFIED = 0; SHELL = 1; DAEMON = 2; ADAPTER = 3; COLLECTOR = 4; SYNC = 5; PRIVILEGED_SUPERVISOR = 6; }
+enum Platform { PLATFORM_UNSPECIFIED = 0; MACOS = 1; WINDOWS = 2; LINUX = 3; WSL = 4; CONTAINER = 5; CI = 6; REMOTE = 7; }
+enum ExecutionMode { EXECUTION_MODE_UNSPECIFIED = 0; NATIVE_EVENT = 1; EXTENSION_API = 2; OFFICIAL_HOOK = 3; OTEL = 4; PROXY = 5; WRAPPER = 6; LIVE_LOG = 7; LOCAL_RUNTIME = 8; }
+enum Outcome { OUTCOME_UNSPECIFIED = 0; SUCCESS = 1; FAILED_AFTER_CONSUMPTION = 2; CANCELLED_AFTER_CONSUMPTION = 3; ABORTED_KNOWN = 4; QUARANTINED_UNKNOWN = 5; }
+
+message RegisteredId { string value = 1; }
+message Digest32 { bytes value = 1; }
+message Uuid7 { bytes value = 1; }
+message TokenComponents {
+  uint64 input_uncached = 1;
+  uint64 output_visible = 2;
+  uint64 cache_read = 3;
+  uint64 cache_write = 4;
+  uint64 reasoning = 5;
+  uint64 multimodal_input = 6;
+  uint64 multimodal_output = 7;
+}
+message MonotonicInterval { Uuid7 domain_id = 1; uint64 generation = 2; uint64 start_ns = 3; uint64 end_ns = 4; }
+message WallTimeObservation { uint64 starts_at_unix_ms = 1; uint64 ends_at_unix_ms = 2; uint64 uncertainty_ms = 3; }
 
 message HealthRequest {}
 message HealthResponse {
   enum State { STATE_UNSPECIFIED = 0; HEALTHY = 1; DEGRADED = 2; RECOVERY = 3; STOPPED = 4; }
   State state = 1;
-  string build_version = 2;
-  repeated string reason_codes = 3;
+  RegisteredId build_version = 2;
+  repeated RegisteredId reason_codes = 3;
 }
-
 message LifecycleRequest {
   enum Action { ACTION_UNSPECIFIED = 0; START = 1; STOP = 2; PAUSE = 3; RESUME = 4; SYNC = 5; UPDATE = 6; ROLLBACK = 7; EXPORT = 8; DELETE = 9; UNINSTALL = 10; }
+  enum Scope { SCOPE_UNSPECIFIED = 0; CURRENT_USER = 1; CURRENT_DEVICE = 2; LOCAL_HISTORY = 3; ALL_LOCAL_DATA = 4; }
   Action action = 1;
-  bool dry_run = 2;
-  string scope_code = 3;
-  bytes signed_noninteractive_policy = 4;
+  Scope scope = 2;
+  bool dry_run = 3;
+  Digest32 signed_noninteractive_policy_digest = 4;
 }
+message LifecycleResponse { bool accepted = 1; Uuid7 operation_id = 2; RegisteredId reason_code = 3; }
 
-message LifecycleResponse {
-  bool accepted = 1;
-  string operation_id = 2;
-  string reason_code = 3;
+message SourceObservationSubmission {
+  uint32 observation_schema_version = 1;
+  RegisteredId adapter_id = 2;
+  Digest32 adapter_artifact_sha256 = 3;
+  Digest32 adapter_manifest_sha256 = 4;
+  RegisteredId source_product_id = 5;
+  RegisteredId source_version = 6;
+  Platform platform = 7;
+  ExecutionMode execution_mode = 8;
+  RegisteredId source_cursor_domain = 9;
+  uint64 source_cursor_generation = 10;
+  uint64 source_cursor_ordinal = 11;
+  RegisteredId source_event_ref = 12;
+  MonotonicInterval monotonic_interval = 13;
+  WallTimeObservation wall_time = 14;
+  oneof token_observation {
+    SourceTotalObservation source_total = 20;
+    CategoryObservation categories = 21;
+    TokenizerObservation tokenizer = 22;
+  }
+  Outcome outcome = 23;
 }
+message SourceTotalObservation { uint64 total = 1; enum Semantics { SEMANTICS_UNSPECIFIED = 0; EXCLUSIVE_TOTAL = 1; CONTAINS_DECLARED_CATEGORIES = 2; } Semantics semantics = 2; }
+message CategoryObservation { optional uint64 input = 1; optional uint64 output = 2; optional uint64 cache_read = 3; optional uint64 cache_write = 4; optional uint64 reasoning = 5; optional uint64 multimodal_input = 6; optional uint64 multimodal_output = 7; }
+message TokenizerObservation { RegisteredId tokenizer_id = 1; uint64 token_ids_count = 2; }
 
-message NormalizedEventSubmission {
-  bytes normalized_event_json = 1;
-  bytes schema_sha256 = 2;
-}
-
-message ClaimQueueRequest {
-  uint32 limit = 1;
-  bytes after_claim_id = 2;
-}
-
-message ClaimQueueResponse {
-  repeated ClaimSummary claims = 1;
-}
-
-message ClaimSummary {
-  bytes claim_id = 1;
-  uint64 sequence = 2;
-  string state = 3;
-  string reason_code = 4;
-  uint64 encoded_bytes = 5;
-}
+message NormalizedEventAcknowledgement { Uuid7 event_id = 1; enum Disposition { DISPOSITION_UNSPECIFIED = 0; ACCEPTED_LOCAL = 1; QUARANTINED_LOCAL = 2; PRIVATE_ANALYTICS = 3; REJECTED_PRIVACY = 4; } Disposition disposition = 2; repeated RegisteredId reason_codes = 3; }
+message ClaimConstructionRequest { repeated Uuid7 event_ids = 1; RegisteredId accounting_profile_id = 2; Digest32 accounting_profile_sha256 = 3; Uuid7 challenge_id = 4; bytes challenge_nonce = 5; }
+message ClaimConstructionResult { Uuid7 claim_id = 1; Digest32 canonical_claim_sha256 = 2; uint64 encoded_bytes = 3; enum State { STATE_UNSPECIFIED = 0; QUEUED = 1; BLOCKED = 2; REJECTED_PRIVACY = 3; } State state = 4; repeated RegisteredId reason_codes = 5; }
+message QueueSummaryRequest { uint32 limit = 1; optional Uuid7 after_claim_id = 2; }
+message QueueSummaryResponse { repeated ClaimSummary claims = 1; }
+message ClaimSummary { Uuid7 claim_id = 1; uint64 sequence = 2; enum State { STATE_UNSPECIFIED = 0; QUEUED = 1; IN_FLIGHT = 2; ACCEPTED = 3; REJECTED = 4; QUARANTINED = 5; } State state = 3; RegisteredId reason_code = 4; uint64 encoded_bytes = 5; }
+message ReceiptSummaryRequest { optional Uuid7 after_receipt_id = 1; uint32 limit = 2; }
+message ReceiptSummaryResponse { repeated ReceiptSummary receipts = 1; }
+message ReceiptSummary { Uuid7 receipt_id = 1; uint64 accepted_through_sequence = 2; Digest32 accepted_commitment_head = 3; uint64 issued_at_unix_ms = 4; }
+message LocalExportRequest { Uuid7 operation_id = 1; enum Scope { SCOPE_UNSPECIFIED = 0; ACCOUNTING = 1; CLAIMS = 2; RECEIPTS = 3; AUDIT_LEDGER = 4; ALL = 5; } Scope scope = 2; }
+message LocalDeletionRequest { Uuid7 operation_id = 1; enum Scope { SCOPE_UNSPECIFIED = 0; SOURCE_OBSERVATIONS = 1; ACCOUNTING_EVENTS = 2; CLAIM_QUEUE = 3; AUDIT_LEDGER = 4; ALL_LOCAL = 5; } Scope scope = 2; }
+message LocalOperationResult { Uuid7 operation_id = 1; enum State { STATE_UNSPECIFIED = 0; ACCEPTED = 1; RUNNING = 2; COMPLETE = 3; FAILED = 4; } State state = 2; RegisteredId reason_code = 3; Digest32 receipt_sha256 = 4; }
