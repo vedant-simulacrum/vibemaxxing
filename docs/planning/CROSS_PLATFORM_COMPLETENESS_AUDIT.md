@@ -16,7 +16,7 @@ The accepted launch platform families are:
 
 Android, iOS, iPadOS and ChromeOS are out of scope. There is no native collector, companion, control or launch application for those operating systems. Hosted web remains an ordinary browser surface and does not create a native-platform support claim.
 
-“Supported” means an exact exercised platform tuple is published in the support registry. It does not mean every historical OS release, arbitrary derivative distribution or custom kernel is supported.
+Each exact exercised platform tuple is a **support profile** published in the support registry. “Supported” means that profile is published as supported. It does not mean every historical OS release, arbitrary derivative distribution or custom kernel is supported.
 
 ## Exact platform-profile identity
 
