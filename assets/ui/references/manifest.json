@@ -1,50 +1,105 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "purpose": "Frozen high-fidelity mockups and reproducible Storybook browser renders",
-  "viewport": {
-    "width": 1536,
-    "height": 1024,
-    "deviceScaleFactor": 1
+  "viewports": {
+    "desktop": {
+      "width": 1536,
+      "height": 1024,
+      "deviceScaleFactor": 1,
+      "captureSuffix": ""
+    },
+    "tablet": {
+      "width": 1024,
+      "height": 1366,
+      "deviceScaleFactor": 1,
+      "captureSuffix": "-tablet"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "captureSuffix": "-mobile"
+    }
   },
   "references": [
     {
       "id": "public-profile",
       "label": "Public profile",
       "mockup": "product-storyboards/mockups/public-profile.png",
-      "render": "product-storyboards/renders/public-profile.png",
-      "approvedCaptureSha256": "50340a9b69d7aa4d46fa7cce45595bfda91b7893736eea92b5a30cf5fd4ce3a4",
+      "renders": {
+        "desktop": "product-storyboards/renders/public-profile.png",
+        "tablet": "product-storyboards/renders/public-profile-tablet.png",
+        "mobile": "product-storyboards/renders/public-profile-mobile.png"
+      },
+      "approvedCaptureSha256": {
+        "desktop": "50340a9b69d7aa4d46fa7cce45595bfda91b7893736eea92b5a30cf5fd4ce3a4",
+        "tablet": "7af7c87c957ee134442940c32400ec76e95196f8dfafdab517bfc4642c0c22b7",
+        "mobile": "c7b59613593fb4167a0ddb77d766854bbc224750c989dee39e3e3dbaccac0b9f"
+      },
       "status": "review-baseline"
     },
     {
       "id": "rival-comparison",
       "label": "Rival comparison",
       "mockup": "product-storyboards/mockups/rival-comparison.png",
-      "render": "product-storyboards/renders/rival-comparison.png",
-      "approvedCaptureSha256": "f7c00c2393edd88ed811c30f045e7a2bcb5dc9447d882fc76951d1575dd767be",
+      "renders": {
+        "desktop": "product-storyboards/renders/rival-comparison.png",
+        "tablet": "product-storyboards/renders/rival-comparison-tablet.png",
+        "mobile": "product-storyboards/renders/rival-comparison-mobile.png"
+      },
+      "approvedCaptureSha256": {
+        "desktop": "f7c00c2393edd88ed811c30f045e7a2bcb5dc9447d882fc76951d1575dd767be",
+        "tablet": "95fe1ccef75433db69a32a5afecc33d8c27a4b8167a0a2a48dee7c5608806bf4",
+        "mobile": "830f15e7f75b3f8351c80bcf4a3ed86c7a133e17fe272e8b14c79f85f3ad0140"
+      },
       "status": "review-baseline"
     },
     {
       "id": "friends",
       "label": "Friends",
       "mockup": "product-storyboards/mockups/friends.png",
-      "render": "product-storyboards/renders/friends.png",
-      "approvedCaptureSha256": "6719dd3138e82fc53f3f37f95c06fd9b86c42f2d66bd3f124e5dc91191c0df8f",
+      "renders": {
+        "desktop": "product-storyboards/renders/friends.png",
+        "tablet": "product-storyboards/renders/friends-tablet.png",
+        "mobile": "product-storyboards/renders/friends-mobile.png"
+      },
+      "approvedCaptureSha256": {
+        "desktop": "6719dd3138e82fc53f3f37f95c06fd9b86c42f2d66bd3f124e5dc91191c0df8f",
+        "tablet": "bb01615fad243679dedb18581701173191c1897f79d01dac808f3931c15e8c02",
+        "mobile": "7ae9ef11b84e5083d81ba2c131d6600d33295a5e91c55c02283c7df80279f87f"
+      },
       "status": "review-baseline"
     },
     {
       "id": "activity-and-notifications",
       "label": "Activity and notifications",
       "mockup": "product-storyboards/mockups/activity-and-notifications.png",
-      "render": "product-storyboards/renders/activity-and-notifications.png",
-      "approvedCaptureSha256": "8b50f75f5f33aa5c2b0f1298fdf88c9aec0a422612de827a879c9ef94b619061",
+      "renders": {
+        "desktop": "product-storyboards/renders/activity-and-notifications.png",
+        "tablet": "product-storyboards/renders/activity-and-notifications-tablet.png",
+        "mobile": "product-storyboards/renders/activity-and-notifications-mobile.png"
+      },
+      "approvedCaptureSha256": {
+        "desktop": "8b50f75f5f33aa5c2b0f1298fdf88c9aec0a422612de827a879c9ef94b619061",
+        "tablet": "229fa935341279c49a593d26fb41fe93a11c81738f1895ecc0855479f7e820b9",
+        "mobile": "5e1747a747c11ea2adfe07d6fcc372a387d2b3d74842af4624c70384ed295f20"
+      },
       "status": "review-baseline"
     },
     {
       "id": "board-standings",
       "label": "Board standings",
       "mockup": "product-storyboards/mockups/board-standings.png",
-      "render": "product-storyboards/renders/board-standings.png",
-      "approvedCaptureSha256": "0ec77b6303e172e7069dfe0beec837ef88ebf6dbcef87b659f05928ad23a39f5",
+      "renders": {
+        "desktop": "product-storyboards/renders/board-standings.png",
+        "tablet": "product-storyboards/renders/board-standings-tablet.png",
+        "mobile": "product-storyboards/renders/board-standings-mobile.png"
+      },
+      "approvedCaptureSha256": {
+        "desktop": "0ec77b6303e172e7069dfe0beec837ef88ebf6dbcef87b659f05928ad23a39f5",
+        "tablet": "c739d20b9301403a85ce25fc04a0b8d3bd1b139a67ec07a78a87c5daedfde8ed",
+        "mobile": "bd8a6669a4bc52bd919cc07f57cfe5f9ae5c0cf11d7faaea99493f104e2886fc"
+      },
       "status": "review-baseline"
     }
   ],
@@ -58,7 +113,8 @@
     "runtimeUse": false,
     "sourceOfTruth": "mockup",
     "generatedRender": "evidence",
-    "captureApproval": "An exact SHA-256 may record a visually reviewed deterministic prototype render; unrecognized captures fall back to pixel comparison against the frozen render.",
+    "captureApproval": "Every governed viewport stores an exact reviewed SHA-256. Unrecognized captures fall back to pixel comparison against that viewport's committed render.",
+    "baselineUpdates": "Desktop, tablet, and mobile baselines may change only after visual review of the workflow artifact.",
     "rejectedIterations": "Do not commit; promote only approved references."
   }
 }
