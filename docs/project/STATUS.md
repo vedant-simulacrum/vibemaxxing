@@ -6,7 +6,7 @@ Updated: 2026-07-24
 
 The repository is in **planning contract repair**.
 
-P-1140A through P-1140D are complete. P-1140E is active. Product implementation remains unauthorized.
+P-1140A through P-1140E are complete-planning. P-1104 awaits explicit user authorization. Product implementation remains unauthorized.
 
 The repository has planning traceability for D-001 through D-069 and accepted platform baselines for macOS, Windows, Linux, WSL, containers and CI.
 
@@ -34,7 +34,7 @@ One bounded fixture-backed hosted-web/Storybook slice exists and is classified a
 - Planning tooling: doctor, coverage validation, artifact validation, provisional T20 validation, stable work-unit generation and prototype workflow dependency controls are aligned to D-001 through D-069.
 - Historical planning-complete reports are explicitly non-authoritative.
 - Exact machine-contract repair requirements are recorded in `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`.
-- P-1140B through P-1140D contracts are complete-planning; P-1140E now owns final cross-contract fixtures, traceability and clean-checkout validation.
+- P-1140B through P-1140E are complete-planning; the repaired handoff has cross-contract fixtures, exact traceability, a clean-checkout validation path and zero open P0/P1 planning contradictions.
 - The SQL file is a repaired PostgreSQL 16 planning migration contract; it is not a deployed migration history or implementation evidence.
 - Backend, collector, protocol runtime, identity service, ranking service, production storage, installers, updater, deployment and operational systems are not implemented.
 - No collector platform is currently production-complete or exercised.
@@ -75,13 +75,13 @@ P-1140D now owns OAuth/session, ranked identity, API/idempotency, SQL, ranking v
 
 Candidate artifacts now encode 23 authoritative state machines, 34 exact launch platform profiles, endpoint-specific OpenAPI resources, the repaired PostgreSQL ownership/constraint model, a closed social event union, signed release sets, immutable ranking views, typed exports and enriched reason/policy lifecycle fields. All profiles remain uncertified and unadvertised. Planning checks run #234 passed on the exact candidate head; a separate gate-transition check is required before merge.
 
-### Active P-1140E — cross-contract planning validation
+### Completed P-1140E — cross-contract planning validation
 
 P-1140E owns cross-contract fixtures, D-001..D-069 traceability validation, exact platform-profile validation, clean-checkout planning validation and the final P0/P1 review.
 
-The candidate matrix binds 69 decisions, all API operations, 23 state machines, 34 profiles and 18 validation domains. It includes state transition fixtures, PostgreSQL race plans, per-profile runtime evidence plans, reference closure and a final audit recording zero open P0/P1 planning contradictions. These are planning artifacts; runtime evidence remains absent.
+The final matrix binds 69 decisions, all API operations, 23 state machines, 34 profiles and 18 validation domains. It includes state transition fixtures, PostgreSQL race plans, per-profile runtime evidence plans, reference closure and a final audit recording zero open P0/P1 planning contradictions. Planning checks run #239 passed on the exact candidate head; the gate-transition head must also pass before merge. These are planning artifacts; runtime evidence remains absent.
 
-P-1104 remains blocked until P-1140B–E complete, all planning-only validation passes from a clean checkout, no P0/P1 contradiction remains and the user explicitly authorizes implementation.
+P-1104 remains `blocked-approval`. All planning prerequisites are complete; implementation may begin only after the user explicitly authorizes it.
 
 ## Artifact maturity
 
