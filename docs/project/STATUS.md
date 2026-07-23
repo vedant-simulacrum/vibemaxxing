@@ -1,6 +1,6 @@
 # VibeMaxxing Status
 
-Updated: 2026-07-23
+Updated: 2026-07-24
 
 ## Phase
 
@@ -45,6 +45,18 @@ Clean-checkout planning and prototype validation passed on the exact PR heads me
 ## Active planning gates
 
 ### P-1140B — core trust, privacy and accounting contracts
+
+Candidate contract set now present:
+
+- typed SourceObservation, NormalizedAccountingEvent and LocalDetectorResult schemas;
+- typed local IPC with no opaque normalized-event JSON;
+- digest/provenance/certification-bound adapter manifests and device-lineage transitions;
+- immutable accounting-profile schema/registry and representative cloud/local containment fixtures;
+- independent server appraisal policy and capability ceilings;
+- server-owned pricing interpretation with immutable event-time alias resolution;
+- deny-by-default claim-egress registry and positive/negative canaries for every required boundary.
+
+P-1140B remains active until clean exact-head planning validation passes and the branch is reconciled with current `main`. Product implementation remains unauthorized.
 
 Active work:
 
