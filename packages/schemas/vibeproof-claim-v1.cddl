@@ -1,70 +1,205 @@
-; VibeProof claim v1 planning-grade structural schema.
-; Semantic invariants remain normative in ADAPTER_AND_VIBEPROOF_CONTRACT.md.
+; VibeProof protocol v1 — normative planning CDDL for P-1140C.
+; Maps are closed: integer labels not listed here are invalid.
+; Deterministic encoding is RFC 8949 core deterministic encoding plus the
+; stricter limits in docs/architecture/VIBEPROOF_V1_PROTOCOL.md.
 
-vibeproof-claim-v1 = {
-  1: 1,                         ; protocol_version
-  2: bstr .size 16,             ; claim_id UUID bytes
-  3: bstr .size 32,             ; account_pseudonym
-  4: tstr .size (1..80),        ; device_key_id
-  5: uint .gt 0,                ; device_sequence
-  6: bstr .size 32 / null,      ; previous_claim_hash
-  7: tstr .size (1..80),        ; challenge_id
-  8: bstr .size 32,             ; challenge_nonce
-  9: uint,                      ; challenge_expires_at epoch seconds
-  10: uint,                     ; source_event_start epoch seconds
-  11: uint,                     ; source_event_end epoch seconds
-  12: uint,                     ; monotonic_duration_ns
-  13: tstr .size (1..80),       ; adapter_id
-  14: tstr .size (1..40),       ; adapter_version
-  15: tstr .size (1..80),       ; source_id
-  16: tstr .size (1..80),       ; source_version
-  17: tstr .size (1..80),       ; provider_id
-  18: tstr .size (1..160),      ; model_id
-  19: token-categories,
-  20: count-quality,
-  21: tstr .size (1..80) / null,; pricing_dataset_id
-  22: evidence-state,
-  23: tstr .size (1..80),       ; platform_capability_code
-  24: tstr .size (1..40),       ; privacy_scan_version
-  25: 0,                        ; privacy_scan_result: pass only
-  26: uint,                     ; issued_at
-  27: uint,                     ; expires_at
-  ? 28: batch-context,
-  ? 29: correction-context,
-  ? 30: gap-declaration,
-  ? 1000: { * uint => bstr .size (0..1024) }
-}
+uint64 = 0..18446744073709551615
+uint32 = 0..4294967295
+epoch-ms = 0..253402300799999
+uuid7 = bytes .size 16
+digest32 = bytes .size 32
+nonce32 = bytes .size 32
+signature64 = bytes .size 64
+registered-id = uint32
+reason-code = uint32
 
 token-categories = {
-  ? 1: uint, ? 2: uint, ? 3: uint, ? 4: uint,
-  ? 5: uint, ? 6: uint, ? 7: uint
+  0: uint64, ; input_uncached
+  1: uint64, ; output_visible
+  2: uint64, ; cache_read
+  3: uint64, ; cache_write
+  4: uint64, ; reasoning
+  5: uint64, ; multimodal_input
+  6: uint64  ; multimodal_output
 }
 
-count-quality = 0 / 1 / 2 / 3
-; 0 provider-reported, 1 source-reported, 2 reconstructed, 3 estimated
+vibeproof-claim-v1 = {
+  0: 1,                    ; protocol_major
+  1: 0..65535,             ; protocol_minor
+  2: uuid7,                ; claim_id
+  3: digest32,             ; account_pseudonym
+  4: uuid7,                ; device_lineage_id
+  5: uuid7,                ; active_key_id
+  6: uint64,               ; claim_sequence
+  7: digest32,             ; previous_local_commitment_head
+  8: digest32,             ; current_local_commitment_head
+  9: uuid7 / nil,          ; previous_checkpoint_receipt_id
+  10: uuid7,               ; challenge_id
+  11: nonce32,             ; challenge_nonce
+  12: epoch-ms,            ; event_interval_start_ms
+  13: epoch-ms,            ; event_interval_end_ms
+  14: uint64,              ; time_uncertainty_ms
+  15: uint64,              ; monotonic_duration_ns
+  16: digest32,            ; adapter_artifact_sha256
+  17: digest32,            ; collector_artifact_sha256
+  18: digest32,            ; certification_bundle_sha256
+  19: registered-id,       ; source_id
+  20: registered-id,       ; provider_id
+  21: registered-id,       ; model_id
+  22: registered-id,       ; accounting_profile_id
+  23: digest32,            ; accounting_profile_sha256
+  24: token-categories,
+  25: digest32,            ; duplicate_domain_commitment
+  26: registered-id,       ; deterministic_rule_bundle_id
+  27: [* reason-code],     ; compact deterministic result codes
+  28: registered-id,       ; privacy_policy_id
+  29: true,                ; privacy_pass (false claims never serialize)
+  30: digest32 / nil       ; optional local detector result commitment
+}
 
-evidence-state = 0 / 1
-; 0 Standard, 1 Hardened. Imported records are not competitive claims.
+verifier-appraisal-v1 = {
+  0: 1,
+  1: uuid7,                ; appraisal_id
+  2: uuid7,                ; claim_id
+  3: digest32,             ; canonical_claim_sha256
+  4: registered-id,       ; verifier_policy_id
+  5: digest32,             ; verifier_implementation_sha256
+  6: 0..7,                 ; acceptance_outcome
+  7: 0..5,                 ; source_class
+  8: 0..4,                 ; capture_class
+  9: 0..4,                 ; accounting_class
+  10: 0..6,                ; device_key_class
+  11: 0..4,                ; continuity_class
+  12: 0..4,                ; environment_class
+  13: 0..3,                ; freshness_class
+  14: registered-id / nil, ; awarded public profile
+  15: 0..5,                ; ranking eligibility
+  16: [* reason-code],
+  17: 0..4,                ; anomaly disposition
+  18: digest32,            ; certification bundle evaluated
+  19: digest32,            ; policy bundle evaluated
+  20: epoch-ms,
+  21: epoch-ms / nil,
+  22: registered-id / nil  ; re-evaluation trigger
+}
+
+checkpoint-receipt-v1 = {
+  0: 1,
+  1: uuid7,                ; receipt_id
+  2: digest32,             ; account_pseudonym
+  3: uuid7,                ; device_lineage_id
+  4: uint64,               ; accepted_through_claim_sequence
+  5: digest32,             ; accepted_local_commitment_head
+  6: digest32,             ; last_accepted_claim_sha256
+  7: uint64,               ; server_receipt_sequence
+  8: registered-id,       ; verifier_policy_id
+  9: epoch-ms,             ; issued_at
+  10: epoch-ms,            ; expires_at
+  11: uuid7                ; server_signing_key_id
+}
+
+challenge-v1 = {
+  0: 1,
+  1: uuid7,
+  2: digest32,             ; account_pseudonym
+  3: uuid7,                ; device_lineage_id
+  4: nonce32,
+  5: uint64,               ; expected next sequence
+  6: digest32,             ; expected local head
+  7: uuid7 / nil,          ; expected checkpoint
+  8: epoch-ms,
+  9: epoch-ms,
+  10: uint32               ; max batch claims
+}
 
 batch-context = {
-  1: bstr .size 16,             ; batch_id
-  2: uint,                      ; index, zero based
-  3: uint .gt 0,                ; count
-  4: bstr .size 32              ; batch_challenge_nonce
+  0: 1,
+  1: uuid7,                ; batch_id
+  2: digest32,             ; idempotency request fingerprint
+  3: uuid7,                ; challenge_id
+  4: [1*256 cose-sign1-claim-v1]
 }
 
-correction-context = {
-  1: bstr .size 16,             ; superseded_claim_id
-  2: tstr .size (1..80)         ; registered reason code
+atomic-batch-result-v1 = {
+  0: 1,
+  1: uuid7,
+  2: 0..5,                 ; committed/idempotent/conflict/rejected/quarantined/retryable
+  3: digest32,             ; exact request fingerprint
+  4: [* claim-result-v1],
+  5: [* cose-sign1-receipt-v1],
+  6: bytes .size (0..1048576)
 }
+claim-result-v1 = { 0: uuid7, 1: 0..7, 2: [* reason-code], 3: uuid7 / nil }
 
 gap-declaration = {
-  1: uint .gt 0,                ; first_missing_sequence
-  2: uint .gt 0,                ; last_missing_sequence
-  3: gap-reason,
-  4: bstr .size 32,             ; local audit commitment
-  5: uint                       ; declared_at
+  0: 1,
+  1: uuid7,
+  2: uuid7,                ; lineage
+  3: uint64,               ; sequence before gap
+  4: uint64,               ; sequence after gap
+  5: digest32,             ; head before
+  6: digest32,             ; head after
+  7: 0..5,                 ; registered gap cause
+  8: digest32,             ; local audit commitment
+  9: epoch-ms
 }
 
-gap-reason = 0 / 1 / 2 / 3
-; 0 local-corruption, 1 acknowledged-state-loss, 2 interrupted-migration, 3 key-recovery
+key-rotation-transition-v1 = {
+  0: 1,
+  1: uuid7,
+  2: uuid7,
+  3: uuid7,                ; old key
+  4: uuid7,                ; new key
+  5: bytes .size 32,       ; new Ed25519 public key
+  6: uint64,
+  7: digest32,
+  8: uuid7 / nil,
+  9: epoch-ms,
+  10: 0..3                 ; rotate / recover / retire / requalify
+}
+dual-authorized-rotation-v1 = [cose-sign1-rotation-v1, cose-sign1-rotation-v1]
+
+correction-record-v1 = {
+  0: 1,
+  1: uuid7,
+  2: uuid7,                ; affected claim
+  3: uuid7,                ; affected appraisal
+  4: registered-id,       ; correction policy
+  5: 0..5,                 ; exclude / restore / replace appraisal / pricing-only / period-only / no-op
+  6: [* reason-code],
+  7: digest32,             ; authorizing action digest
+  8: epoch-ms,
+  9: uuid7 / nil           ; reverses correction
+}
+
+protected-headers-claim-v1 = {
+  1: -8,                   ; alg = EdDSA
+  3: "application/vibemaxxing-claim+cbor",
+  4: uuid7,                ; kid, raw UUID bytes
+  1001: 1                  ; VibeProof protocol major
+}
+protected-headers-receipt-v1 = {
+  1: -8,
+  3: "application/vibemaxxing-receipt+cbor",
+  4: uuid7,
+  1001: 1
+}
+
+cose-sign1-claim-v1 = #6.18([
+  protected: bytes,
+  unprotected: {},
+  payload: bytes,
+  signature: signature64
+])
+cose-sign1-receipt-v1 = #6.18([
+  protected: bytes,
+  unprotected: {},
+  payload: bytes,
+  signature: signature64
+])
+cose-sign1-rotation-v1 = #6.18([
+  protected: bytes,
+  unprotected: {},
+  payload: bytes,
+  signature: signature64
+])
