@@ -10,10 +10,12 @@ This is the sole canonical map. Do not create competing indexes, start prompts, 
 4. this file
 5. `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`
 6. `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`
-7. `docs/planning/DECISION_REGISTER.md`
-8. `docs/planning/TASK_CATALOG.md`
-9. relevant ADRs, contracts and schemas
-10. implementation handoff only for implementation planning or after explicit approval
+7. `docs/planning/decision-traceability/README.md`
+8. `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`
+9. `docs/planning/DECISION_REGISTER.md`
+10. `docs/planning/TASK_CATALOG.md`
+11. relevant ADRs, contracts and schemas
+12. implementation handoff only for implementation planning or after explicit approval
 
 Run `python3 scripts/repository/doctor.py` before relying on repository state.
 
@@ -21,7 +23,7 @@ Run `python3 scripts/repository/doctor.py` before relying on repository state.
 
 The repository is in planning contract repair. P-1140A is complete and P-1140B is active.
 
-Historical reports that declare planning complete are retained as history and do not override the July 23 status, decision register, alignment audit or machine-contract repair specification.
+Historical reports that declare planning complete are retained as history and do not override the July 23 status, decision register, alignment audit, machine-contract repair specification, decision traceability or platform completeness audit.
 
 Where a contract conflicts with an accepted July 23 decision, the decision is authoritative and the dependent contract/schema is blocked until its P-1140 repair task closes.
 
@@ -30,13 +32,15 @@ Where a contract conflicts with an accepted July 23 decision, the decision is au
 - Project authority and phase: `docs/project/PROJECT.md`, `docs/project/STATUS.md`
 - Repository reconciliation: `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`
 - Exact machine-contract target: `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`
+- Decision-to-code/platform/evidence mapping: `docs/planning/decision-traceability/`
+- Cross-platform capability and release gates: `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`
 - Scope/product: `docs/planning/PRODUCT_SCOPE_FREEZE.md`, `docs/product/PRODUCT_SPEC.md`, subject to D-052 country removal
 - Accounting/time/pricing: `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`, blocked for P-1140B/D repairs
 - Social/integrity/UX: `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, blocked for P-1140D repairs and country removal
 - Adapter and VibeProof: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`, blocked for P-1140B/C rewrite
 - Universal compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`, blocked where certification is not digest/provenance bound
 - T20 planning: `docs/integrations/T20_MODEL_HARDENING_CONTRACT.md`, `docs/integrations/T20_CERTIFICATION_AND_SELECTION_SPEC.md`; D-046 is provisional pending P-1140B/E
-- Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, blocked for typed IPC, lineage, updater and platform-state repairs
+- Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, ADR-010, blocked for typed IPC, lineage, updater and exercised platform-state evidence
 - Server/data/ranking: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, blocked for P-1140C/D
 - Privacy: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md`
 - Security: `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`
@@ -48,6 +52,7 @@ Important edge decisions:
 - `ADR-007-BATCH_CHALLENGE_AND_SEQUENCE_RECOVERY.md` is provisional in effect where P-1140C finds contradictions.
 - `ADR-008-HANDLE_NORMALIZATION_AND_POLICY_REGISTRY.md` remains accepted.
 - `ADR-009-LICENSING_AND_CONTRIBUTION_MODEL.md` remains accepted.
+- `ADR-010-ALWAYS_ON_DAEMON_LIFECYCLE.md` is accepted and owns D-061.
 
 ## Authoritative planning-grade schemas
 
@@ -94,10 +99,12 @@ An empty certification list means no product-level support claim. Registry statu
 - Tasks and gates: `docs/planning/TASK_CATALOG.md`
 - Alignment audit: `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`
 - Machine-contract target: `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`
+- Complete decision traceability: `docs/planning/decision-traceability/`
+- Cross-platform completeness and open scope questions: `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`
 - Consolidated findings: `docs/planning/CONSOLIDATED_AUDIT_2026-07-23.md`
 - Launch policy decisions: `docs/planning/PUBLIC_LAUNCH_POLICY_DECISIONS_2026-07-23.md`
 - Anti-cheat implementation input: `docs/planning/ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`
-- Traceability: `docs/planning/TRACEABILITY_AND_DRY_RUN_AUDIT.md`
+- Historical traceability audit: `docs/planning/TRACEABILITY_AND_DRY_RUN_AUDIT.md`
 - Schema inventory: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
 - Defaults/reversal: `docs/planning/PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`
 - Historical completion records: retained as evidence of prior work but superseded where current status/audits conflict.
@@ -111,7 +118,7 @@ Only these are canonical for future build execution:
 - `docs/implementation/REPOSITORY_LAYOUT.md`
 - `docs/implementation/ISSUE_GENERATION.md`
 
-The standalone anti-cheat implementation plan is a subsystem input and must be incorporated into the canonical handoff/work breakdown. Do not create another roadmap or build plan.
+The anti-cheat implementation plan, decision traceability and cross-platform completeness audit are normative inputs to the canonical handoff/work breakdown. Do not create another roadmap or build plan.
 
 ## Research
 
