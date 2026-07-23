@@ -86,7 +86,7 @@ These are not implemented or production-proven artifacts.
 Until P-1140B–E close:
 
 - adapter manifest, typed local stages, accounting profiles, device lineage, pricing interpretation, evidence policy and claim-egress registry are repaired P-1140B planning contracts; P-1140C owns wire binding and P-1140E owns final cross-validation;
-- VibeProof v1 CDDL/protocol and exact-byte/malformed conformance artifacts are P-1140C candidates pending exact-head validation;
+- VibeProof v1 CDDL/protocol and exact-byte/malformed conformance artifacts are repaired P-1140C planning contracts; P-1140E still requires independent codecs and cross-contract validation;
 - local Protobuf retains blocked opaque transport and missing process/deadline semantics;
 - OpenAPI retains blocked generic resources plus unresolved presence, deletion and authorization semantics;
 - planning SQL lacks complete token families, lineages, appraisals, receipts, idempotency, ranking views, typed social and release/update state;
