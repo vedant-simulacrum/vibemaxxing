@@ -441,9 +441,9 @@ def validate_postgres_ddl(database_url: str) -> None:
     sql = (SCHEMAS / "planning-schema.sql").read_text(encoding="utf-8")
     if "P-1140D REPAIRED PLANNING MIGRATION CONTRACT" not in sql:
         raise ValidationFailure("planning SQL lacks repaired P-1140D maturity marker")
-    if re.search(r"(?i)\\bjsonb\\b", sql):
+    if re.search(r"(?i)\bjsonb\b", sql):
         raise ValidationFailure("planning SQL retains untyped jsonb")
-    if re.search(r"create table boards \\([^;]*owner_account_id", sql, flags=re.IGNORECASE | re.DOTALL):
+    if re.search(r"create table boards \([^;]*owner_account_id", sql, flags=re.IGNORECASE | re.DOTALL):
         raise ValidationFailure("board ownership is duplicated outside membership authority")
     if "board_one_active_owner" not in sql or "check (account_id_a < account_id_b)" not in sql:
         raise ValidationFailure("social SQL lacks canonical pair or single-owner constraints")
