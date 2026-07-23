@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/platform-profile-registry-v1.json",
+  "title": "Exact Platform Profile Registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_id",
+    "verified_on",
+    "sources",
+    "profiles",
+    "explicitly_unsupported_native"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "registry_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 180
+    },
+    "verified_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "url",
+          "authority"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 180
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authority": {
+            "enum": [
+              "vendor",
+              "distribution-project",
+              "project-policy"
+            ]
+          }
+        }
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile_id",
+          "advertised",
+          "certification_state",
+          "os_family",
+          "os_release",
+          "architecture",
+          "distribution",
+          "package_profile",
+          "environment_kind",
+          "desktop_environment",
+          "init_or_supervisor",
+          "lifecycle_mode",
+          "key_backend",
+          "ipc_transport",
+          "update_mechanism",
+          "default_evidence_ceiling",
+          "duplicate_domain",
+          "capabilities",
+          "failure_matrix",
+          "source_ids"
+        ],
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 180
+          },
+          "advertised": {
+            "const": false
+          },
+          "certification_state": {
+            "const": "planned-validation-required"
+          },
+          "os_family": {
+            "enum": [
+              "macos",
+              "windows",
+              "linux",
+              "wsl",
+              "container",
+              "ci"
+            ]
+          },
+          "os_release": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "architecture": {
+            "enum": [
+              "arm64",
+              "aarch64",
+              "x86-64"
+            ]
+          },
+          "distribution": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 180
+          },
+          "package_profile": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 180
+          },
+          "environment_kind": {
+            "enum": [
+              "desktop",
+              "server",
+              "headless",
+              "wsl-guest",
+              "container",
+              "ci-ephemeral"
+            ]
+          },
+          "desktop_environment": {
+            "enum": [
+              "none",
+              "aqua",
+              "windows-shell",
+              "gnome-wayland",
+              "gnome-x11",
+              "kde-wayland",
+              "kde-x11",
+              "xfce-x11",
+              "cinnamon-x11",
+              "mate-x11",
+              "lxqt-x11"
+            ]
+          },
+          "init_or_supervisor": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 180
+          },
+          "lifecycle_mode": {
+            "enum": [
+              "per-user-always-on",
+              "optional-machine-wide",
+              "orchestrator-lifetime",
+              "job-lifetime"
+            ]
+          },
+          "key_backend": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 180
+          },
+          "ipc_transport": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 180
+          },
+          "update_mechanism": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 180
+          },
+          "default_evidence_ceiling": {
+            "enum": [
+              "private-analytics",
+              "standard-competitive",
+              "capability-derived"
+            ]
+          },
+          "duplicate_domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 180
+          },
+          "capabilities": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "install",
+              "autostart",
+              "autorestart",
+              "shell-independent",
+              "offline-collection",
+              "signed-update",
+              "rollback",
+              "export",
+              "local-delete",
+              "uninstall"
+            ],
+            "properties": {
+              "install": {
+                "type": "boolean"
+              },
+              "autostart": {
+                "type": "boolean"
+              },
+              "autorestart": {
+                "type": "boolean"
+              },
+              "shell-independent": {
+                "type": "boolean"
+              },
+              "offline-collection": {
+                "type": "boolean"
+              },
+              "signed-update": {
+                "type": "boolean"
+              },
+              "rollback": {
+                "type": "boolean"
+              },
+              "export": {
+                "type": "boolean"
+              },
+              "local-delete": {
+                "type": "boolean"
+              },
+              "uninstall": {
+                "type": "boolean"
+              }
+            }
+          },
+          "failure_matrix": {
+            "type": "array",
+            "minItems": 12,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "case_id",
+                "applicability",
+                "expected"
+              ],
+              "properties": {
+                "case_id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+                  "maxLength": 180
+                },
+                "applicability": {
+                  "enum": [
+                    "required",
+                    "not-applicable"
+                  ]
+                },
+                "expected": {
+                  "enum": [
+                    "recover",
+                    "degrade-visible",
+                    "fail-closed",
+                    "preserve-update-export-uninstall",
+                    "terminate-explicitly"
+                  ]
+                }
+              }
+            }
+          },
+          "source_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+              "maxLength": 180
+            }
+          }
+        }
+      }
+    },
+    "explicitly_unsupported_native": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "android",
+          "ios",
+          "ipados",
+          "chromeos"
+        ]
+      }
+    }
+  }
+}
