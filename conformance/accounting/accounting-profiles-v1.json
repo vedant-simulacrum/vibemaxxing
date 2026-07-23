@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "registry_id": "accounting-profiles-v1",
+  "digest_scope": "canonical profile object excluding content_sha256",
+  "profiles": [
+    {
+      "schema_version": 1,
+      "profile_id": "cloud-separate-cache-v1",
+      "semantic_version": "1.0.0",
+      "content_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "provider_or_runtime_id": "registered-cloud-api",
+      "api_mode": "messages",
+      "source_version_range": ">=1 <2",
+      "model_or_tokenizer_id": "registered-model-family",
+      "platforms": [
+        "macos",
+        "windows",
+        "linux",
+        "wsl",
+        "container",
+        "ci",
+        "remote"
+      ],
+      "effective_interval": {
+        "starts_at": "2026-01-01T00:00:00Z",
+        "ends_at": null
+      },
+      "source_fields": [
+        {
+          "field_id": "input-tokens",
+          "unit": "tokens",
+          "authority": "provider-reported"
+        },
+        {
+          "field_id": "output-tokens",
+          "unit": "tokens",
+          "authority": "provider-reported"
+        },
+        {
+          "field_id": "cache-read-tokens",
+          "unit": "tokens",
+          "authority": "provider-reported"
+        },
+        {
+          "field_id": "cache-write-tokens",
+          "unit": "tokens",
+          "authority": "provider-reported"
+        }
+      ],
+      "containment_edges": [],
+      "canonical_outputs": [
+        "input_uncached",
+        "output_visible",
+        "cache_read",
+        "cache_write"
+      ],
+      "source_total_authority": "absent",
+      "cache_semantics": "separate-read-write",
+      "reasoning_semantics": "unavailable",
+      "modality_semantics": "unavailable",
+      "retry_policy": "each-model-execution",
+      "cancellation_policy": "count-reported-consumption",
+      "nested_execution_policy": "independent-with-dedup-domain",
+      "reconstruction": {
+        "method": "none",
+        "artifact_sha256": null
+      },
+      "evidence_ceiling": "standard-competitive",
+      "contradiction_policy": "quarantine"
+    },
+    {
+      "schema_version": 1,
+      "profile_id": "cloud-inclusive-total-v1",
+      "semantic_version": "1.0.0",
+      "content_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "provider_or_runtime_id": "registered-cloud-api",
+      "api_mode": "responses",
+      "source_version_range": ">=1 <2",
+      "model_or_tokenizer_id": "registered-model-family",
+      "platforms": [
+        "macos",
+        "windows",
+        "linux",
+        "wsl",
+        "container",
+        "ci",
+        "remote"
+      ],
+      "effective_interval": {
+        "starts_at": "2026-01-01T00:00:00Z",
+        "ends_at": null
+      },
+      "source_fields": [
+        {
+          "field_id": "input-total",
+          "unit": "tokens",
+          "authority": "provider-reported"
+        },
+        {
+          "field_id": "cached-input",
+          "unit": "tokens",
+          "authority": "provider-reported"
+        },
+        {
+          "field_id": "output-total",
+          "unit": "tokens",
+          "authority": "provider-reported"
+        },
+        {
+          "field_id": "reasoning-output",
+          "unit": "tokens",
+          "authority": "provider-reported"
+        }
+      ],
+      "containment_edges": [
+        {
+          "container": "input-total",
+          "member": "cached-input"
+        },
+        {
+          "container": "output-total",
+          "member": "reasoning-output"
+        }
+      ],
+      "canonical_outputs": [
+        "input_uncached",
+        "output_visible",
+        "cache_read",
+        "reasoning"
+      ],
+      "source_total_authority": "diagnostic-only",
+      "cache_semantics": "read-contained-in-input",
+      "reasoning_semantics": "contained-in-output",
+      "modality_semantics": "unavailable",
+      "retry_policy": "each-model-execution",
+      "cancellation_policy": "count-terminal-total",
+      "nested_execution_policy": "parent-total-contains-children",
+      "reconstruction": {
+        "method": "none",
+        "artifact_sha256": null
+      },
+      "evidence_ceiling": "standard-competitive",
+      "contradiction_policy": "reject"
+    },
+    {
+      "schema_version": 1,
+      "profile_id": "local-exact-tokenizer-v1",
+      "semantic_version": "1.0.0",
+      "content_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "provider_or_runtime_id": "registered-local-runtime",
+      "api_mode": "token-id-stream",
+      "source_version_range": ">=1 <2",
+      "model_or_tokenizer_id": "registered-tokenizer",
+      "platforms": [
+        "macos",
+        "windows",
+        "linux",
+        "wsl",
+        "container",
+        "ci"
+      ],
+      "effective_interval": {
+        "starts_at": "2026-01-01T00:00:00Z",
+        "ends_at": null
+      },
+      "source_fields": [
+        {
+          "field_id": "prompt-token-ids",
+          "unit": "tokens",
+          "authority": "reconstructed"
+        },
+        {
+          "field_id": "output-token-ids",
+          "unit": "tokens",
+          "authority": "reconstructed"
+        }
+      ],
+      "containment_edges": [],
+      "canonical_outputs": [
+        "input_uncached",
+        "output_visible"
+      ],
+      "source_total_authority": "absent",
+      "cache_semantics": "unavailable",
+      "reasoning_semantics": "unavailable",
+      "modality_semantics": "unavailable",
+      "retry_policy": "each-model-execution",
+      "cancellation_policy": "count-reported-consumption",
+      "nested_execution_policy": "independent-with-dedup-domain",
+      "reconstruction": {
+        "method": "runtime-token-ids",
+        "artifact_sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "evidence_ceiling": "hardened-source-bound",
+      "contradiction_policy": "quarantine"
+    }
+  ]
+}

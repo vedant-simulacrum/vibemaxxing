@@ -44,6 +44,14 @@ REQUIRED = [
     "docs/decisions/ADR-014-PROTOTYPE_VISUAL_VALIDATION_AUTOMATION.md",
     "packages/schemas/adapter-manifest.schema.json",
     "packages/schemas/normalized-event.schema.json",
+    "packages/schemas/source-observation.schema.json",
+    "packages/schemas/local-detector-result.schema.json",
+    "packages/schemas/accounting-profile.schema.json",
+    "packages/schemas/device-lineage.schema.json",
+    "packages/schemas/pricing-interpretation.schema.json",
+    "packages/schemas/evidence-profile-policy-v1.json",
+    "packages/schemas/egress-allowlist-v1.schema.json",
+    "packages/schemas/egress-allowlist-v1.json",
     "packages/schemas/vibeproof-claim-v1.cddl",
     "packages/schemas/local-control-v1.proto",
     "packages/schemas/social-integrity-events-v1.proto",
@@ -52,6 +60,9 @@ REQUIRED = [
     "packages/schemas/reason-codes-v1.json",
     "packages/schemas/policy-defaults-v1.json",
     "packages/schemas/observability-allowlist-v1.yaml",
+    "conformance/accounting/accounting-profiles-v1.json",
+    "conformance/accounting/p1140b-accounting-cases-v1.json",
+    "conformance/privacy/p1140b-boundary-canaries-v1.json",
     "conformance/adapters/agent-registry-v1.json",
     "conformance/adapters/agent-registry-v1.schema.json",
     "conformance/adversarial/anti-cheat-registry-v1.json",
@@ -343,8 +354,8 @@ def main() -> None:
     status_lower = status.lower()
     if "planning contract repair" not in status_lower:
         errors.append("status must state the current planning contract repair phase")
-    if "p-1140b is active" not in status_lower:
-        errors.append("status must identify P-1140B as active")
+    if "p-1140c is active" not in status_lower:
+        errors.append("status must identify P-1140C as active")
     if "product implementation remains unauthorized" not in status_lower:
         errors.append("status must state that product implementation remains unauthorized")
     if "phase: planning complete" in status_lower or "technical planning, including the targeted t20" in status_lower:
@@ -352,8 +363,8 @@ def main() -> None:
 
     expected_task_statuses = {
         "P-1140A": "complete-planning",
-        "P-1140B": "in-progress-planning",
-        "P-1140C": "blocked-planning",
+        "P-1140B": "complete-planning",
+        "P-1140C": "in-progress-planning",
         "P-1140D": "blocked-planning",
         "P-1140E": "blocked-planning",
         "P-1104": "blocked-approval",

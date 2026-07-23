@@ -47,7 +47,7 @@ Completed outputs:
 
 ### P-1140B — core trust, privacy and accounting contracts
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140A complete.
 
@@ -65,37 +65,33 @@ Completed planning inputs:
 - accepted ADR-014 prototype visual-validation automation;
 - issue #26 platform questions resolved.
 
-Remaining deliverables:
+Candidate deliverables present on `agent/p1140b-core-contracts`:
 
 1. **Evidence/appraisal separation**
-   - revise evidence-profile and adapter/VibeProof prose;
-   - replace client-owned evidence state with source facts, deterministic local result and server appraisal;
-   - define dimensional policy and downgrade tables.
-2. **Typed local data stages**
-   - draft schemas for `SourceObservation`, `NormalizedAccountingEvent` and `LocalDetectorResult`;
-   - define retention, process role and IPC direction for each;
-   - remove opaque JSON/byte transport.
+   - server-owned dimensional policy, named minimums, fatal conditions and deterministic downgrade order;
+   - adapter/device claims bind facts, capability ceilings and digests without selecting public state.
+2. **Typed local data stages and IPC**
+   - closed schemas for `SourceObservation`, `NormalizedAccountingEvent` and `LocalDetectorResult`;
+   - typed Protobuf observation, acknowledgement, claim, queue, receipt, export and deletion bodies;
+   - process role, nonce, sequence and deadline in every envelope; opaque domain payloads removed.
 3. **Accounting profiles**
-   - add immutable profile schema and registry;
-   - define provider/runtime/API-mode category containment;
-   - define canonical mutually exclusive Token Burn outputs;
-   - cover cache, reasoning, modality, retry, cancellation and nested execution.
+   - immutable schema and representative registry;
+   - category containment and mutually exclusive canonical outputs;
+   - cloud-exclusive, cloud-inclusive, local-tokenizer, cache, reasoning, retry, cancellation, nested and contradiction semantics.
 4. **Time and delayed sync**
-   - define server-anchored interval and uncertainty;
-   - define monotonic clock domain/generation/reset;
-   - replace universal 24-hour lateness with profile policy.
+   - bounded wall observation plus monotonic domain/generation;
+   - server/checkpoint anchoring and profile-specific delayed-sync policy; universal 24-hour rule removed.
 5. **Device and source trust**
-   - define lineage, enrollment, rotation, recovery, restore and requalification objects;
-   - bind exact artifact, provenance and certification digests;
-   - define capability-based evidence ceiling.
+   - enrollment, rotation, recovery, restore, clone, retirement and requalification transitions;
+   - adapter artifact, manifest, build provenance, SBOM, certification and platform-profile binding.
 6. **Pricing authority**
-   - remove pricing authority from claims;
-   - define immutable event-time alias resolution;
-   - define typed pricing rules and line items.
+   - claims carry no pricing authority;
+   - server-owned immutable event-time alias resolution, typed line items, rounding and unpriced reasons.
 7. **Privacy machine contract**
-   - create fixed egress allowlist schema;
-   - create privacy-negative fixtures for every local/network boundary;
-   - ensure no raw alias, request ID, unrestricted metadata or content-derived hash crosses.
+   - schema-validated deny-by-default claim-egress registry;
+   - positive/negative canaries across adapter, IPC, local store, detector, claim, HTTP, telemetry, notification, moderation and export.
+
+Validation: Planning checks run #211 passed on exact candidate head `9165fcb38ea2a4c26c8e539ff15de97fa59f59c2`; the gate-transition head must also pass before merge. The artifacts remain planning contracts, not implementation or executable security evidence.
 
 P-1140B acceptance:
 
@@ -108,7 +104,7 @@ P-1140B acceptance:
 
 ### P-1140C — VibeProof v1 protocol rewrite
 
-Status: `blocked-planning`
+Status: `in-progress-planning`
 
 Dependencies: P-1140B.
 

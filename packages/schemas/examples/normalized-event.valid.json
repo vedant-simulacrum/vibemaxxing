@@ -3,22 +3,82 @@
   "event_id": "018f6e50-8f4a-7cc0-9f6c-010203040506",
   "session_id": "018f6e50-8f4a-7cc0-9f6c-010203040507",
   "parent_event_id": null,
-  "adapter": {"id": "synthetic-agent", "version": "1.0.0"},
-  "source": {"id": "synthetic-agent", "version": "1.0.0"},
-  "provider": "synthetic",
-  "model": {"canonical_id": "synthetic-model-v1", "raw_alias": "synthetic-model-v1"},
-  "platform": "linux",
-  "mode": "native-event",
-  "monotonic_start_ns": 1000000,
-  "monotonic_end_ns": 2000000,
-  "wall_start": "2026-07-19T00:00:00Z",
-  "wall_end": "2026-07-19T00:00:01Z",
-  "tokens": {"input": 100, "output": 50, "cache_read": null, "cache_write": null, "reasoning": 25},
-  "count_quality": "source-reported",
-  "source_authority": "native-source-event",
+  "adapter": {
+    "adapter_id": "synthetic-agent",
+    "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "manifest_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "certification": {
+    "bundle_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "platform_profile_id": "linux-x64-native",
+    "capture_mode": "native-event"
+  },
+  "source_id": "synthetic-agent",
+  "provider_id": "synthetic",
+  "model_id": "synthetic-model-v1",
+  "accounting_profile": {
+    "profile_id": "cloud-separate-cache-v1",
+    "content_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "monotonic_interval": {
+    "domain_id": "018f6e50-8f4a-7cc0-9f6c-010203040508",
+    "generation": "1",
+    "start_ns": "1000000",
+    "end_ns": "2000000"
+  },
+  "wall_time_observation": {
+    "starts_at": "2026-07-19T00:00:00Z",
+    "ends_at": "2026-07-19T00:00:01Z",
+    "uncertainty_ms": "100"
+  },
+  "canonical_tokens": {
+    "input_uncached": "100",
+    "output_visible": "50",
+    "cache_read": "0",
+    "cache_write": "0",
+    "reasoning": "25",
+    "multimodal_input": "0",
+    "multimodal_output": "0"
+  },
+  "source_observed_categories": [
+    {
+      "category_id": "input-tokens",
+      "count": "100",
+      "containment": "exclusive"
+    },
+    {
+      "category_id": "output-tokens",
+      "count": "50",
+      "containment": "exclusive"
+    },
+    {
+      "category_id": "reasoning-tokens",
+      "count": "25",
+      "containment": "exclusive"
+    }
+  ],
+  "count_authority": "source-reported",
+  "reconstruction_method": "none",
   "outcome": "success",
-  "retry_ordinal": 0,
-  "modality": ["text"],
-  "privacy_scan": {"version": "1.0.0", "result": "pass"},
-  "dedup_fingerprint": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  "retry": {
+    "scope": "none",
+    "ordinal": "0",
+    "distinct_execution": false
+  },
+  "duplicate_domain": {
+    "domain_id": "synthetic-request",
+    "scope": "device-lineage"
+  },
+  "local_fingerprint": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "rule_result": {
+    "bundle_id": "deterministic-rules-v1",
+    "disposition": "accept-local",
+    "reason_codes": []
+  },
+  "privacy_scan": {
+    "policy_id": "claim-egress-v1",
+    "result": "pass"
+  },
+  "local_detector_commitment": null,
+  "network_eligible": false
 }

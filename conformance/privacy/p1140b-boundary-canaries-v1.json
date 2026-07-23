@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "policy_id": "claim-egress-v1",
+  "cases": [
+    {
+      "case_id": "adapter-positive-safe-fields",
+      "boundary": "adapter",
+      "input": {
+        "registered_id": "registered-model",
+        "count": "42",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "accept"
+    },
+    {
+      "case_id": "adapter-negative-forbidden-content",
+      "boundary": "adapter",
+      "input": {
+        "forbidden_field": "prompt",
+        "canary": "VMX-PRIVACY-CANARY-01"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    },
+    {
+      "case_id": "ipc-positive-safe-fields",
+      "boundary": "ipc",
+      "input": {
+        "registered_id": "registered-model",
+        "count": "42",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "accept"
+    },
+    {
+      "case_id": "ipc-negative-forbidden-content",
+      "boundary": "ipc",
+      "input": {
+        "forbidden_field": "path",
+        "canary": "VMX-PRIVACY-CANARY-02"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    },
+    {
+      "case_id": "local-store-positive-safe-fields",
+      "boundary": "local-store",
+      "input": {
+        "registered_id": "registered-model",
+        "count": "42",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "accept"
+    },
+    {
+      "case_id": "local-store-negative-forbidden-content",
+      "boundary": "local-store",
+      "input": {
+        "forbidden_field": "request_id",
+        "canary": "VMX-PRIVACY-CANARY-03"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    },
+    {
+      "case_id": "detector-positive-safe-fields",
+      "boundary": "detector",
+      "input": {
+        "registered_id": "registered-model",
+        "count": "42",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "accept"
+    },
+    {
+      "case_id": "detector-negative-forbidden-content",
+      "boundary": "detector",
+      "input": {
+        "forbidden_field": "content_hash",
+        "canary": "VMX-PRIVACY-CANARY-04"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    },
+    {
+      "case_id": "claim-positive-safe-fields",
+      "boundary": "claim",
+      "input": {
+        "registered_id": "registered-model",
+        "count": "42",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "accept"
+    },
+    {
+      "case_id": "claim-negative-forbidden-content",
+      "boundary": "claim",
+      "input": {
+        "forbidden_field": "prompt",
+        "canary": "VMX-PRIVACY-CANARY-05"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    },
+    {
+      "case_id": "http-positive-safe-fields",
+      "boundary": "http",
+      "input": {
+        "registered_id": "registered-model",
+        "count": "42",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "accept"
+    },
+    {
+      "case_id": "http-negative-forbidden-content",
+      "boundary": "http",
+      "input": {
+        "forbidden_field": "path",
+        "canary": "VMX-PRIVACY-CANARY-06"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    },
+    {
+      "case_id": "telemetry-positive-safe-fields",
+      "boundary": "telemetry",
+      "input": {
+        "registered_id": "registered-model",
+        "count": "42",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "accept"
+    },
+    {
+      "case_id": "telemetry-negative-forbidden-content",
+      "boundary": "telemetry",
+      "input": {
+        "forbidden_field": "request_id",
+        "canary": "VMX-PRIVACY-CANARY-07"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    },
+    {
+      "case_id": "notification-positive-safe-fields",
+      "boundary": "notification",
+      "input": {
+        "registered_id": "registered-model",
+        "count": "42",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "accept"
+    },
+    {
+      "case_id": "notification-negative-forbidden-content",
+      "boundary": "notification",
+      "input": {
+        "forbidden_field": "content_hash",
+        "canary": "VMX-PRIVACY-CANARY-08"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    },
+    {
+      "case_id": "moderation-positive-safe-fields",
+      "boundary": "moderation",
+      "input": {
+        "registered_id": "registered-model",
+        "count": "42",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "accept"
+    },
+    {
+      "case_id": "moderation-negative-forbidden-content",
+      "boundary": "moderation",
+      "input": {
+        "forbidden_field": "prompt",
+        "canary": "VMX-PRIVACY-CANARY-09"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    },
+    {
+      "case_id": "export-positive-safe-fields",
+      "boundary": "export",
+      "input": {
+        "registered_id": "registered-model",
+        "count": "42",
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "accept"
+    },
+    {
+      "case_id": "export-negative-forbidden-content",
+      "boundary": "export",
+      "input": {
+        "forbidden_field": "path",
+        "canary": "VMX-PRIVACY-CANARY-10"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    }
+  ]
+}

@@ -1,79 +1,406 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vibemaxxing.dev/schemas/normalized-event-v1.json",
-  "title": "Normalized Agent Event v1",
+  "$id": "https://vibemaxxing.dev/schemas/normalized-accounting-event-v1.json",
+  "title": "NormalizedAccountingEvent v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "event_id", "session_id", "adapter", "source", "provider", "model", "platform", "mode", "monotonic_start_ns", "monotonic_end_ns", "tokens", "count_quality", "source_authority", "outcome", "retry_ordinal", "privacy_scan", "dedup_fingerprint"],
+  "required": [
+    "schema_version",
+    "event_id",
+    "session_id",
+    "adapter",
+    "certification",
+    "source_id",
+    "provider_id",
+    "model_id",
+    "accounting_profile",
+    "monotonic_interval",
+    "wall_time_observation",
+    "canonical_tokens",
+    "source_observed_categories",
+    "count_authority",
+    "reconstruction_method",
+    "outcome",
+    "retry",
+    "duplicate_domain",
+    "local_fingerprint",
+    "rule_result",
+    "privacy_scan",
+    "network_eligible"
+  ],
   "properties": {
-    "schema_version": {"const": 1},
-    "event_id": {"type": "string", "format": "uuid"},
-    "session_id": {"type": "string", "format": "uuid"},
-    "parent_event_id": {"type": ["string", "null"], "format": "uuid"},
-    "adapter": {"$ref": "#/$defs/versionedId"},
-    "source": {"$ref": "#/$defs/versionedId"},
-    "provider": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
-    "model": {
+    "schema_version": {
+      "const": 1
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "parent_event_id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "adapter": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["canonical_id", "raw_alias"],
+      "required": [
+        "adapter_id",
+        "artifact_sha256",
+        "manifest_sha256"
+      ],
       "properties": {
-        "canonical_id": {"type": "string", "minLength": 1, "maxLength": 160},
-        "raw_alias": {"type": "string", "minLength": 1, "maxLength": 160}
+        "adapter_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
       }
     },
-    "platform": {"enum": ["macos", "windows", "linux", "wsl", "container", "ci", "remote"]},
-    "mode": {"enum": ["native-event", "extension-api", "official-hook", "otel", "proxy", "wrapper", "live-log", "provider-receipt", "import"]},
-    "monotonic_start_ns": {"type": "integer", "minimum": 0},
-    "monotonic_end_ns": {"type": "integer", "minimum": 0},
-    "wall_start": {"type": ["string", "null"], "format": "date-time"},
-    "wall_end": {"type": ["string", "null"], "format": "date-time"},
-    "tokens": {"$ref": "#/$defs/tokens"},
-    "count_quality": {"enum": ["provider-reported", "source-reported", "reconstructed", "estimated"]},
-    "source_authority": {"enum": ["provider-receipt", "native-source-event", "official-structured-hook", "protocol-proxy", "live-source-observation", "reconstruction", "historical-import"]},
-    "outcome": {"enum": ["success", "failed", "aborted", "unknown"]},
-    "retry_ordinal": {"type": "integer", "minimum": 0},
-    "cache_metadata": {"type": "object"},
-    "modality": {"type": "array", "uniqueItems": true, "items": {"enum": ["text", "image", "audio", "video"]}},
+    "certification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundle_sha256",
+        "platform_profile_id",
+        "capture_mode"
+      ],
+      "properties": {
+        "bundle_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "platform_profile_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "capture_mode": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        }
+      }
+    },
+    "source_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "provider_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "model_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "accounting_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "content_sha256"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "monotonic_interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain_id",
+        "generation",
+        "start_ns",
+        "end_ns"
+      ],
+      "properties": {
+        "domain_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "generation": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "start_ns": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "end_ns": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "wall_time_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "starts_at",
+        "ends_at",
+        "uncertainty_ms"
+      ],
+      "properties": {
+        "starts_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ends_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "uncertainty_ms": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "canonical_tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_uncached",
+        "output_visible",
+        "cache_read",
+        "cache_write",
+        "reasoning",
+        "multimodal_input",
+        "multimodal_output"
+      ],
+      "properties": {
+        "input_uncached": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "output_visible": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "cache_read": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "cache_write": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "reasoning": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "multimodal_input": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "multimodal_output": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "source_observed_categories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category_id",
+          "count",
+          "containment"
+        ],
+        "properties": {
+          "category_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 128
+          },
+          "count": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "containment": {
+            "enum": [
+              "exclusive",
+              "contains-other-categories",
+              "contained-by-other-category",
+              "diagnostic-total"
+            ]
+          }
+        }
+      }
+    },
+    "count_authority": {
+      "enum": [
+        "provider-reported",
+        "runtime-reported",
+        "source-reported",
+        "exact-reconstruction"
+      ]
+    },
+    "reconstruction_method": {
+      "enum": [
+        "none",
+        "exact-tokenizer",
+        "runtime-token-ids"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "success",
+        "failed-after-consumption",
+        "cancelled-after-consumption",
+        "aborted-known",
+        "quarantined-unknown"
+      ]
+    },
+    "retry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "ordinal",
+        "distinct_execution"
+      ],
+      "properties": {
+        "scope": {
+          "enum": [
+            "none",
+            "caller",
+            "runtime",
+            "provider"
+          ]
+        },
+        "ordinal": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "distinct_execution": {
+          "type": "boolean"
+        }
+      }
+    },
+    "duplicate_domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain_id",
+        "scope"
+      ],
+      "properties": {
+        "domain_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "scope": {
+          "enum": [
+            "account",
+            "device-lineage",
+            "source-runtime"
+          ]
+        }
+      }
+    },
+    "local_fingerprint": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{43}$"
+    },
+    "rule_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundle_id",
+        "disposition",
+        "reason_codes"
+      ],
+      "properties": {
+        "bundle_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "disposition": {
+          "enum": [
+            "accept-local",
+            "quarantine-local",
+            "private-analytics"
+          ]
+        },
+        "reason_codes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 128
+          }
+        }
+      }
+    },
     "privacy_scan": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["version", "result"],
+      "required": [
+        "policy_id",
+        "result"
+      ],
       "properties": {
-        "version": {"type": "string", "minLength": 1},
-        "result": {"enum": ["pass", "reject"]}
+        "policy_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "result": {
+          "enum": [
+            "pass",
+            "reject"
+          ]
+        }
       }
     },
-    "dedup_fingerprint": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32,128}$"}
-  },
-  "$defs": {
-    "versionedId": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "version"],
-      "properties": {
-        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
-        "version": {"type": "string", "minLength": 1, "maxLength": 80}
-      }
+    "local_detector_commitment": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
-    "tokens": {
-      "type": "object",
-      "additionalProperties": false,
-      "minProperties": 1,
-      "properties": {
-        "input": {"type": ["integer", "null"], "minimum": 0},
-        "output": {"type": ["integer", "null"], "minimum": 0},
-        "cache_read": {"type": ["integer", "null"], "minimum": 0},
-        "cache_write": {"type": ["integer", "null"], "minimum": 0},
-        "reasoning": {"type": ["integer", "null"], "minimum": 0},
-        "multimodal_input": {"type": ["integer", "null"], "minimum": 0},
-        "multimodal_output": {"type": ["integer", "null"], "minimum": 0},
-        "source_total": {"type": ["integer", "null"], "minimum": 0},
-        "source_total_includes_subcategories": {"type": ["boolean", "null"]}
-      }
+    "network_eligible": {
+      "const": false
     }
-  },
-  "allOf": [
-    {"if": {"properties": {"monotonic_start_ns": {"type": "integer"}, "monotonic_end_ns": {"type": "integer"}}}, "then": {}}
-  ]
+  }
 }

@@ -1,22 +1,59 @@
 {
   "schema_version": 1,
   "adapter_id": "synthetic-agent",
-  "version": "1.0.0",
-  "maintainer": {"kind": "project", "id": "vibemaxxing"},
-  "source_products": ["synthetic-agent"],
+  "semantic_version": "1.0.0",
+  "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "manifest_payload_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "provenance": {
+    "source_commit": "cccccccccccccccccccccccccccccccccccccccc",
+    "build_provenance_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "sbom_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "maintainer_kind": "project",
+    "maintainer_id": "vibemaxxing"
+  },
+  "source_products": [
+    "synthetic-agent"
+  ],
   "source_version_range": ">=1.0.0 <2.0.0",
-  "platforms": ["macos", "windows", "linux"],
-  "modes": ["native-event"],
-  "capture_mechanism": "synthetic structured event source",
-  "required_permissions": [],
-  "token_categories": ["input", "output", "cache_read", "cache_write", "reasoning"],
-  "model_identity_quality": "source-reported",
-  "source_authority": "native-source-event",
-  "evidence_ceiling": "competitive-certified",
-  "privacy_risks": [],
-  "duplicate_domains": ["synthetic-request"],
-  "capability_probe": "synthetic-v1",
-  "conformance_suite_version": "1.0.0",
+  "platforms": [
+    "macos",
+    "windows",
+    "linux"
+  ],
+  "modes": [
+    "native-event"
+  ],
+  "capture_mechanism": "structured-event",
+  "required_permissions": [
+    "none"
+  ],
+  "observed_token_categories": [
+    "input",
+    "output",
+    "cache_read",
+    "cache_write",
+    "reasoning"
+  ],
+  "source_authority": "runtime-structured",
+  "accounting_profile_ids": [
+    "cloud-separate-cache-v1"
+  ],
+  "certification": {
+    "bundle_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "suite_version": "1.0.0",
+    "source_version": "1.0.0",
+    "platform_profile_id": "linux-x64-native",
+    "mode": "native-event"
+  },
+  "capability_ceiling": {
+    "max_public_profile": "standard-competitive",
+    "requires_official_build": true,
+    "requires_live_observation": true,
+    "reason_codes": []
+  },
+  "duplicate_domains": [
+    "synthetic-request"
+  ],
   "lifecycle": "experimental",
   "emergency_disable": false,
   "sunset_at": null

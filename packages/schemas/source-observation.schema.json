@@ -1,0 +1,316 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/source-observation-v1.json",
+  "title": "SourceObservation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "observation_schema_version",
+    "adapter_id",
+    "adapter_artifact_sha256",
+    "adapter_manifest_sha256",
+    "source_product_id",
+    "source_version",
+    "platform",
+    "execution_mode",
+    "source_cursor",
+    "runtime_generation",
+    "source_event_ref",
+    "local_wall_time",
+    "monotonic_clock",
+    "token_observation",
+    "outcome",
+    "sensitivity"
+  ],
+  "properties": {
+    "observation_schema_version": {
+      "const": 1
+    },
+    "adapter_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "adapter_artifact_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "adapter_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "source_product_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "source_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "platform": {
+      "enum": [
+        "macos",
+        "windows",
+        "linux",
+        "wsl",
+        "container",
+        "ci",
+        "remote"
+      ]
+    },
+    "execution_mode": {
+      "enum": [
+        "native-event",
+        "extension-api",
+        "official-hook",
+        "otel",
+        "proxy",
+        "wrapper",
+        "live-log",
+        "local-runtime"
+      ]
+    },
+    "source_cursor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "generation",
+        "ordinal"
+      ],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "generation": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "ordinal": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "runtime_generation": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "source_event_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{16,128}$"
+    },
+    "local_wall_time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed_at",
+        "uncertainty_ms"
+      ],
+      "properties": {
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "uncertainty_ms": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "monotonic_clock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain_id",
+        "generation",
+        "start_ns",
+        "end_ns"
+      ],
+      "properties": {
+        "domain_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "generation": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "start_ns": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "end_ns": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "token_observation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "source_total",
+            "total_semantics"
+          ],
+          "properties": {
+            "kind": {
+              "const": "source-total"
+            },
+            "source_total": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "total_semantics": {
+              "enum": [
+                "exclusive-total",
+                "contains-declared-categories"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "categories"
+          ],
+          "properties": {
+            "kind": {
+              "const": "category-counts"
+            },
+            "categories": {
+              "type": "object",
+              "additionalProperties": false,
+              "minProperties": 1,
+              "properties": {
+                "input": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "output": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "cache_read": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "cache_write": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "reasoning": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "multimodal_input": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "multimodal_output": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "tokenizer_id",
+            "token_ids_count"
+          ],
+          "properties": {
+            "kind": {
+              "const": "tokenizer-reconstruction"
+            },
+            "tokenizer_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+              "maxLength": 128
+            },
+            "token_ids_count": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          }
+        }
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "success",
+        "failed-after-consumption",
+        "cancelled-after-consumption",
+        "aborted-unknown",
+        "unknown"
+      ]
+    },
+    "retry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "ordinal"
+      ],
+      "properties": {
+        "scope": {
+          "enum": [
+            "none",
+            "caller",
+            "runtime",
+            "provider"
+          ]
+        },
+        "ordinal": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "modality": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "text",
+          "image",
+          "audio",
+          "video"
+        ]
+      }
+    },
+    "sensitivity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "contains_raw_content",
+        "network_eligible"
+      ],
+      "properties": {
+        "classification": {
+          "const": "L0"
+        },
+        "contains_raw_content": {
+          "type": "boolean"
+        },
+        "network_eligible": {
+          "const": false
+        }
+      }
+    }
+  }
+}

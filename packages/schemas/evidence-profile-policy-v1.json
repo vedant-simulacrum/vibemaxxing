@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "policy_id": "evidence-profile-policy-v1",
+  "authority": "server-verifier",
+  "dimensions": {
+    "source": [
+      "E1",
+      "E2",
+      "E3",
+      "E4",
+      "E5"
+    ],
+    "capture": [
+      "certified-structured",
+      "certified-gateway",
+      "certified-reconstruction",
+      "uncertified"
+    ],
+    "accounting": [
+      "authoritative-profile",
+      "exact-reconstruction",
+      "approximate",
+      "contradictory"
+    ],
+    "device_key": [
+      "K1",
+      "K2",
+      "K3",
+      "K4",
+      "K5",
+      "KU"
+    ],
+    "continuity": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "environment": [
+      "A0",
+      "A1",
+      "A2",
+      "A3",
+      "A4"
+    ],
+    "freshness": [
+      "anchored",
+      "bounded-delayed",
+      "unbounded",
+      "contradictory"
+    ]
+  },
+  "profiles": [
+    {
+      "profile_id": "standard-competitive-v1",
+      "public_state": "standard",
+      "minimum": {
+        "source": [
+          "E2",
+          "E3",
+          "E4"
+        ],
+        "accounting": [
+          "authoritative-profile",
+          "exact-reconstruction"
+        ],
+        "device_key": [
+          "K1",
+          "K2",
+          "K3",
+          "K4"
+        ],
+        "continuity": [
+          "C2",
+          "C3",
+          "C4"
+        ],
+        "environment": [
+          "A1",
+          "A2",
+          "A3",
+          "A4"
+        ],
+        "freshness": [
+          "anchored",
+          "bounded-delayed"
+        ]
+      },
+      "fatal": [
+        "privacy-reject",
+        "artifact-mismatch",
+        "category-contradiction",
+        "sequence-fork"
+      ]
+    },
+    {
+      "profile_id": "hardened-source-bound-v1",
+      "public_state": "hardened",
+      "minimum": {
+        "source": [
+          "E1",
+          "E2",
+          "E4"
+        ],
+        "accounting": [
+          "authoritative-profile"
+        ],
+        "device_key": [
+          "K1",
+          "K2"
+        ],
+        "continuity": [
+          "C3",
+          "C4"
+        ],
+        "environment": [
+          "A2",
+          "A3",
+          "A4"
+        ],
+        "freshness": [
+          "anchored"
+        ]
+      },
+      "fatal": [
+        "privacy-reject",
+        "artifact-mismatch",
+        "category-contradiction",
+        "sequence-fork",
+        "certification-expired",
+        "observation-gap"
+      ]
+    },
+    {
+      "profile_id": "imported-v1",
+      "public_state": "imported",
+      "minimum": {
+        "source": [
+          "E5"
+        ],
+        "accounting": [
+          "approximate"
+        ],
+        "device_key": [
+          "KU"
+        ],
+        "continuity": [
+          "C0"
+        ],
+        "environment": [
+          "A0"
+        ],
+        "freshness": [
+          "unbounded"
+        ]
+      },
+      "fatal": []
+    }
+  ],
+  "downgrade_order": [
+    "hardened-source-bound-v1",
+    "standard-competitive-v1",
+    "private-analytics"
+  ],
+  "rules": [
+    {
+      "when": "any-fatal",
+      "result": "reject-or-quarantine"
+    },
+    {
+      "when": "source-E5",
+      "result": "imported-private-only"
+    },
+    {
+      "when": "approximate-accounting",
+      "result": "private-analytics"
+    },
+    {
+      "when": "missing-required-dimension",
+      "result": "evaluate-next-lower-profile"
+    },
+    {
+      "when": "client-requested-public-state",
+      "result": "ignore-client-field"
+    }
+  ]
+}

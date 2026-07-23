@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/device-lineage-v1.json",
+  "title": "DeviceLineageTransition v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "transition_id",
+    "lineage_id",
+    "transition_type",
+    "previous_key_id",
+    "new_key_id",
+    "authorization",
+    "continuity_disposition",
+    "requalification",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "transition_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "lineage_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "transition_type": {
+      "enum": [
+        "enroll",
+        "rotate",
+        "recover-lost-key",
+        "restore-detected",
+        "clone-detected",
+        "retire",
+        "requalify"
+      ]
+    },
+    "previous_key_id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "new_key_id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "account_recent_auth",
+        "old_key_signature",
+        "recovery_approval"
+      ],
+      "properties": {
+        "account_recent_auth": {
+          "type": "boolean"
+        },
+        "old_key_signature": {
+          "type": "boolean"
+        },
+        "recovery_approval": {
+          "enum": [
+            "not-required",
+            "pending",
+            "approved",
+            "denied"
+          ]
+        }
+      }
+    },
+    "continuity_disposition": {
+      "enum": [
+        "new-lineage",
+        "preserved",
+        "quarantined-fork",
+        "reset-after-recovery",
+        "retired"
+      ]
+    },
+    "requalification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "target_ceiling"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "target_ceiling": {
+          "enum": [
+            "private-analytics",
+            "standard-competitive",
+            "hardened-source-bound"
+          ]
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
