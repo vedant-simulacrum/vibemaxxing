@@ -116,7 +116,7 @@ def validate_json_schemas_and_examples() -> None:
 
     required_privacy_boundaries = {
         "adapter", "ipc", "local-store", "detector", "claim", "http",
-        "telemetry", "notification", "moderation", "export",
+        "telemetry", "notification-delivery", "moderation", "export",
     }
     covered_boundaries = {case["boundary"] for case in privacy_cases["cases"]}
     if covered_boundaries != required_privacy_boundaries:
@@ -274,11 +274,11 @@ def validate_p1140d_contracts() -> None:
     machine_ids = [machine["machine_id"] for machine in machines]
     assert_unique(machine_ids, "state-machine IDs")
     required_machines = {
-        "oauth-transaction", "web-session-family", "native-session-family", "ranked-identity",
-        "idempotency-record", "ranking-projection", "model-alias", "friendship", "rivalry",
+        "oauth-transaction", "web-session-family", "native-session-family", "ranked-identity-eligibility",
+        "idempotency-ledger", "ranking-projection", "model-alias-resolution", "friendship", "rivalry",
         "board-membership", "board-invitation", "presence-lease", "notification",
-        "moderation-case", "appeal", "export-job", "server-deletion", "local-deletion",
-        "daemon-runtime", "privileged-supervisor", "update-lifecycle", "release-trust",
+        "moderation-case", "appeal", "export-job", "server-deletion", "local-deletion-command",
+        "daemon-lifecycle", "privileged-supervisor", "update-lifecycle", "release-trust",
         "platform-certification",
     }
     if set(machine_ids) != required_machines:
