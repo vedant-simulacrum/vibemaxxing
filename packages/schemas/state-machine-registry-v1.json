@@ -1,0 +1,2150 @@
+{
+  "schema_version": 1,
+  "registry_id": "authoritative-state-machines-v1",
+  "machines": [
+    {
+      "machine_id": "oauth-transaction",
+      "semantic_owner": "authentication",
+      "persistence_owner": [
+        "oauth-transactions",
+        "oauth-authorization-events"
+      ],
+      "aggregate_key": "oauth-transaction-id",
+      "initial_state": "created",
+      "states": [
+        "created",
+        "redirected",
+        "callback-received",
+        "consumed",
+        "expired",
+        "failed"
+      ],
+      "terminal_states": [
+        "consumed",
+        "expired",
+        "failed"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "oauth-begin",
+          "from": [
+            "created"
+          ],
+          "action": "issue-redirect",
+          "to": "redirected",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "not-applicable",
+          "audit_event": "oauth-begin.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "oauth-callback",
+          "from": [
+            "redirected"
+          ],
+          "action": "verify-issuer-state-pkce-redirect",
+          "to": "callback-received",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "oauth-callback.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "oauth-consume",
+          "from": [
+            "callback-received"
+          ],
+          "action": "bind-session-or-provider",
+          "to": "consumed",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "oauth-consume.audit",
+          "reversal": "none",
+          "transaction_boundary": "oauth-and-session"
+        },
+        {
+          "transition_id": "oauth-expire",
+          "from": [
+            "created",
+            "redirected"
+          ],
+          "action": "expire",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "oauth-expire.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "web-session-family",
+      "semantic_owner": "authentication",
+      "persistence_owner": [
+        "session-families",
+        "session-tokens",
+        "web-sessions"
+      ],
+      "aggregate_key": "token-family-id",
+      "initial_state": "active",
+      "states": [
+        "active",
+        "rotating",
+        "replay-detected",
+        "revoked",
+        "expired"
+      ],
+      "terminal_states": [
+        "revoked",
+        "expired"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "web-refresh-rotate",
+          "from": [
+            "active"
+          ],
+          "action": "rotate-refresh-token",
+          "to": "active",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "web-refresh-rotate.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        },
+        {
+          "transition_id": "web-refresh-replay",
+          "from": [
+            "active"
+          ],
+          "action": "detect-parent-reuse",
+          "to": "replay-detected",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "web-refresh-replay.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        },
+        {
+          "transition_id": "web-family-revoke",
+          "from": [
+            "active",
+            "rotating",
+            "replay-detected"
+          ],
+          "action": "revoke-family",
+          "to": "revoked",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "web-family-revoke.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        }
+      ]
+    },
+    {
+      "machine_id": "native-session-family",
+      "semantic_owner": "authentication",
+      "persistence_owner": [
+        "session-families",
+        "session-tokens",
+        "native-sessions"
+      ],
+      "aggregate_key": "token-family-id",
+      "initial_state": "active",
+      "states": [
+        "active",
+        "rotating",
+        "replay-detected",
+        "device-revoked",
+        "revoked",
+        "expired"
+      ],
+      "terminal_states": [
+        "device-revoked",
+        "revoked",
+        "expired"
+      ],
+      "privacy_boundary": "integrity-private",
+      "transitions": [
+        {
+          "transition_id": "native-refresh-rotate",
+          "from": [
+            "active"
+          ],
+          "action": "rotate-bound-refresh-token",
+          "to": "active",
+          "actor": "native-device",
+          "authentication": "native-session",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "native-refresh-rotate.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        },
+        {
+          "transition_id": "native-refresh-replay",
+          "from": [
+            "active"
+          ],
+          "action": "detect-parent-reuse",
+          "to": "replay-detected",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "native-refresh-replay.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        },
+        {
+          "transition_id": "native-device-revoke",
+          "from": [
+            "active",
+            "rotating",
+            "replay-detected"
+          ],
+          "action": "revoke-with-device",
+          "to": "device-revoked",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "native-device-revoke.audit",
+          "reversal": "none",
+          "transaction_boundary": "device-and-token-family"
+        }
+      ]
+    },
+    {
+      "machine_id": "ranked-identity-eligibility",
+      "semantic_owner": "ranked-identity",
+      "persistence_owner": [
+        "ranked-identities",
+        "identity-investigations",
+        "identity-events"
+      ],
+      "aggregate_key": "ranked-identity-id",
+      "initial_state": "unverified",
+      "states": [
+        "unverified",
+        "eligible",
+        "investigating",
+        "restricted",
+        "consolidating",
+        "appealed",
+        "reversed",
+        "retired"
+      ],
+      "terminal_states": [
+        "retired"
+      ],
+      "privacy_boundary": "integrity-private",
+      "transitions": [
+        {
+          "transition_id": "identity-qualify",
+          "from": [
+            "unverified"
+          ],
+          "action": "qualify",
+          "to": "eligible",
+          "actor": "server-verifier",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "identity-qualify.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "identity-investigate",
+          "from": [
+            "eligible"
+          ],
+          "action": "open-investigation",
+          "to": "investigating",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "identity-investigate.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "identity-restrict",
+          "from": [
+            "eligible",
+            "investigating"
+          ],
+          "action": "restrict",
+          "to": "restricted",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "identity-restrict.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "identity-and-ranking-effects"
+        },
+        {
+          "transition_id": "identity-appeal",
+          "from": [
+            "restricted"
+          ],
+          "action": "appeal",
+          "to": "appealed",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "identity-appeal.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "identity-reverse",
+          "from": [
+            "restricted",
+            "appealed"
+          ],
+          "action": "reverse-restriction",
+          "to": "reversed",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "identity-reverse.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "identity-and-ranking-effects"
+        }
+      ]
+    },
+    {
+      "machine_id": "idempotency-ledger",
+      "semantic_owner": "api-platform",
+      "persistence_owner": [
+        "idempotency-records"
+      ],
+      "aggregate_key": "principal-route-key",
+      "initial_state": "reserved",
+      "states": [
+        "reserved",
+        "committed",
+        "conflict",
+        "expired"
+      ],
+      "terminal_states": [
+        "committed",
+        "conflict",
+        "expired"
+      ],
+      "privacy_boundary": "integrity-private",
+      "transitions": [
+        {
+          "transition_id": "idempotency-commit",
+          "from": [
+            "reserved"
+          ],
+          "action": "store-exact-response",
+          "to": "committed",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "idempotency-commit.audit",
+          "reversal": "none",
+          "transaction_boundary": "business-transaction"
+        },
+        {
+          "transition_id": "idempotency-conflict",
+          "from": [
+            "reserved"
+          ],
+          "action": "different-request-fingerprint",
+          "to": "conflict",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "idempotency-conflict.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "idempotency-expire",
+          "from": [
+            "reserved",
+            "committed"
+          ],
+          "action": "expire-after-policy",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "idempotency-expire.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "ranking-projection",
+      "semantic_owner": "ranking",
+      "persistence_owner": [
+        "ranking-views",
+        "projection-generations",
+        "period-scores",
+        "score-snapshots",
+        "ranking-events"
+      ],
+      "aggregate_key": "ranking-view-id",
+      "initial_state": "building",
+      "states": [
+        "building",
+        "validating",
+        "active",
+        "superseded",
+        "failed"
+      ],
+      "terminal_states": [
+        "superseded",
+        "failed"
+      ],
+      "privacy_boundary": "public-safe",
+      "transitions": [
+        {
+          "transition_id": "projection-validate",
+          "from": [
+            "building"
+          ],
+          "action": "validate-generation",
+          "to": "validating",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "projection-validate.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "projection-promote",
+          "from": [
+            "validating"
+          ],
+          "action": "atomic-promote",
+          "to": "active",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "projection-promote.audit",
+          "reversal": "projection-rebuild",
+          "transaction_boundary": "projection-promotion"
+        },
+        {
+          "transition_id": "projection-supersede",
+          "from": [
+            "active"
+          ],
+          "action": "promote-successor",
+          "to": "superseded",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "projection-supersede.audit",
+          "reversal": "projection-rebuild",
+          "transaction_boundary": "projection-promotion"
+        }
+      ]
+    },
+    {
+      "machine_id": "model-alias-resolution",
+      "semantic_owner": "pricing",
+      "persistence_owner": [
+        "model-alias-facts",
+        "pricing-interpretations"
+      ],
+      "aggregate_key": "model-alias-fact-id",
+      "initial_state": "active",
+      "states": [
+        "active",
+        "superseded",
+        "revoked"
+      ],
+      "terminal_states": [
+        "superseded",
+        "revoked"
+      ],
+      "privacy_boundary": "integrity-private",
+      "transitions": [
+        {
+          "transition_id": "alias-supersede",
+          "from": [
+            "active"
+          ],
+          "action": "append-new-effective-resolution",
+          "to": "superseded",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "alias-supersede.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "pricing-facts"
+        },
+        {
+          "transition_id": "alias-revoke",
+          "from": [
+            "active"
+          ],
+          "action": "revoke-contradictory-alias",
+          "to": "revoked",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "alias-revoke.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "pricing-facts"
+        }
+      ]
+    },
+    {
+      "machine_id": "friendship",
+      "semantic_owner": "social",
+      "persistence_owner": [
+        "friend-requests",
+        "friend-edges",
+        "social-events"
+      ],
+      "aggregate_key": "canonical-account-pair",
+      "initial_state": "none",
+      "states": [
+        "none",
+        "pending-a-to-b",
+        "pending-b-to-a",
+        "active",
+        "blocked",
+        "ended"
+      ],
+      "terminal_states": [
+        "blocked",
+        "ended"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "friend-request-a",
+          "from": [
+            "none"
+          ],
+          "action": "request-a-to-b",
+          "to": "pending-a-to-b",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "friend-request-a.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "friend-request-b",
+          "from": [
+            "none"
+          ],
+          "action": "request-b-to-a",
+          "to": "pending-b-to-a",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "friend-request-b.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "friend-cross-accept",
+          "from": [
+            "pending-a-to-b",
+            "pending-b-to-a"
+          ],
+          "action": "crossed-request",
+          "to": "active",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "friend-cross-accept.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "canonical-pair"
+        },
+        {
+          "transition_id": "friend-accept",
+          "from": [
+            "pending-a-to-b",
+            "pending-b-to-a"
+          ],
+          "action": "accept",
+          "to": "active",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "friend-accept.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "canonical-pair"
+        },
+        {
+          "transition_id": "friend-block",
+          "from": [
+            "none",
+            "pending-a-to-b",
+            "pending-b-to-a",
+            "active"
+          ],
+          "action": "block",
+          "to": "blocked",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "friend-block.audit",
+          "reversal": "none",
+          "transaction_boundary": "social-pair-cascade"
+        },
+        {
+          "transition_id": "friend-remove",
+          "from": [
+            "active"
+          ],
+          "action": "remove",
+          "to": "ended",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "friend-remove.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "rivalry",
+      "semantic_owner": "social",
+      "persistence_owner": [
+        "rival-edges",
+        "social-events"
+      ],
+      "aggregate_key": "directed-account-pair",
+      "initial_state": "none",
+      "states": [
+        "none",
+        "active",
+        "ended",
+        "blocked"
+      ],
+      "terminal_states": [
+        "ended",
+        "blocked"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "rival-add",
+          "from": [
+            "none"
+          ],
+          "action": "add",
+          "to": "active",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "rival-add.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "rival-remove",
+          "from": [
+            "active"
+          ],
+          "action": "remove",
+          "to": "ended",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "rival-remove.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "rival-block",
+          "from": [
+            "active"
+          ],
+          "action": "block-cascade",
+          "to": "blocked",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "rival-block.audit",
+          "reversal": "none",
+          "transaction_boundary": "social-pair-cascade"
+        }
+      ]
+    },
+    {
+      "machine_id": "board-membership",
+      "semantic_owner": "boards",
+      "persistence_owner": [
+        "boards",
+        "board-memberships",
+        "board-membership-events"
+      ],
+      "aggregate_key": "board-account-pair",
+      "initial_state": "invited",
+      "states": [
+        "invited",
+        "active-member",
+        "active-admin",
+        "active-owner",
+        "left",
+        "removed",
+        "blocked"
+      ],
+      "terminal_states": [
+        "left",
+        "removed",
+        "blocked"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "board-join",
+          "from": [
+            "invited"
+          ],
+          "action": "accept-invite",
+          "to": "active-member",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "board-join.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "board-promote-admin",
+          "from": [
+            "active-member"
+          ],
+          "action": "promote-admin",
+          "to": "active-admin",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "board-promote-admin.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "board-membership"
+        },
+        {
+          "transition_id": "board-transfer-owner",
+          "from": [
+            "active-admin"
+          ],
+          "action": "transfer-ownership",
+          "to": "active-owner",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "board-transfer-owner.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "board-owner-transfer"
+        },
+        {
+          "transition_id": "board-owner-leave",
+          "from": [
+            "active-owner"
+          ],
+          "action": "leave-with-successor",
+          "to": "left",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "board-owner-leave.audit",
+          "reversal": "none",
+          "transaction_boundary": "board-owner-transfer"
+        },
+        {
+          "transition_id": "board-remove",
+          "from": [
+            "active-member",
+            "active-admin"
+          ],
+          "action": "remove",
+          "to": "removed",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "board-remove.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "board-invitation",
+      "semantic_owner": "boards",
+      "persistence_owner": [
+        "board-invites"
+      ],
+      "aggregate_key": "board-invite-id",
+      "initial_state": "pending",
+      "states": [
+        "pending",
+        "accepted",
+        "declined",
+        "expired",
+        "revoked",
+        "invalidated-by-block"
+      ],
+      "terminal_states": [
+        "accepted",
+        "declined",
+        "expired",
+        "revoked",
+        "invalidated-by-block"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "invite-accept",
+          "from": [
+            "pending"
+          ],
+          "action": "accept",
+          "to": "accepted",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "invite-accept.audit",
+          "reversal": "none",
+          "transaction_boundary": "invite-and-membership"
+        },
+        {
+          "transition_id": "invite-decline",
+          "from": [
+            "pending"
+          ],
+          "action": "decline",
+          "to": "declined",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "invite-decline.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "invite-expire",
+          "from": [
+            "pending"
+          ],
+          "action": "expire",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "invite-expire.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "invite-block-invalidate",
+          "from": [
+            "pending"
+          ],
+          "action": "block-cascade",
+          "to": "invalidated-by-block",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "invite-block-invalidate.audit",
+          "reversal": "none",
+          "transaction_boundary": "social-pair-cascade"
+        }
+      ]
+    },
+    {
+      "machine_id": "presence-lease",
+      "semantic_owner": "presence",
+      "persistence_owner": [
+        "presence-leases",
+        "presence-events"
+      ],
+      "aggregate_key": "account-device-pair",
+      "initial_state": "absent",
+      "states": [
+        "absent",
+        "active",
+        "idle",
+        "expired",
+        "revoked"
+      ],
+      "terminal_states": [
+        "expired",
+        "revoked"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "presence-renew",
+          "from": [
+            "absent",
+            "active",
+            "idle"
+          ],
+          "action": "renew-from-qualifying-native-activity",
+          "to": "active",
+          "actor": "native-device",
+          "authentication": "native-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "presence-renew.audit",
+          "reversal": "none",
+          "transaction_boundary": "presence-lease"
+        },
+        {
+          "transition_id": "presence-idle",
+          "from": [
+            "active"
+          ],
+          "action": "idle-timeout",
+          "to": "idle",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "presence-idle.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "presence-expire",
+          "from": [
+            "active",
+            "idle"
+          ],
+          "action": "lease-expiry",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "presence-expire.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "presence-revoke",
+          "from": [
+            "active",
+            "idle"
+          ],
+          "action": "privacy-block-device-revoke",
+          "to": "revoked",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "presence-revoke.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "notification-delivery",
+      "semantic_owner": "notifications",
+      "persistence_owner": [
+        "notification-events",
+        "notification-deliveries",
+        "notification-preferences"
+      ],
+      "aggregate_key": "notification-delivery-id",
+      "initial_state": "created",
+      "states": [
+        "created",
+        "grouped",
+        "suppressed",
+        "ready",
+        "delivered",
+        "read",
+        "retracted",
+        "expired"
+      ],
+      "terminal_states": [
+        "read",
+        "retracted",
+        "expired"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "notification-group",
+          "from": [
+            "created"
+          ],
+          "action": "apply-dedup-hysteresis",
+          "to": "grouped",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "notification-group.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "notification-authorize",
+          "from": [
+            "grouped"
+          ],
+          "action": "visibility-and-preference-recheck",
+          "to": "ready",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "notification-authorize.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "notification-suppress",
+          "from": [
+            "grouped"
+          ],
+          "action": "quiet-hours-or-disabled",
+          "to": "suppressed",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "notification-suppress.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "notification-deliver",
+          "from": [
+            "ready"
+          ],
+          "action": "deliver",
+          "to": "delivered",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "notification-deliver.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "notification-retract",
+          "from": [
+            "ready",
+            "delivered"
+          ],
+          "action": "underlying-state-invalidated",
+          "to": "retracted",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "notification-retract.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "moderation-case",
+      "semantic_owner": "moderation",
+      "persistence_owner": [
+        "moderation-cases",
+        "moderation-actions",
+        "moderation-effects"
+      ],
+      "aggregate_key": "case-id",
+      "initial_state": "open",
+      "states": [
+        "open",
+        "investigating",
+        "actioned",
+        "awaiting-appeal",
+        "reversed",
+        "closed"
+      ],
+      "terminal_states": [
+        "reversed",
+        "closed"
+      ],
+      "privacy_boundary": "integrity-private",
+      "transitions": [
+        {
+          "transition_id": "case-investigate",
+          "from": [
+            "open"
+          ],
+          "action": "assign-review",
+          "to": "investigating",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "case-investigate.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "case-action",
+          "from": [
+            "investigating"
+          ],
+          "action": "append-action-and-effects",
+          "to": "actioned",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "case-action.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "moderation-and-ranking-effects"
+        },
+        {
+          "transition_id": "case-appealable",
+          "from": [
+            "actioned"
+          ],
+          "action": "open-appeal-window",
+          "to": "awaiting-appeal",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "case-appealable.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "case-reverse",
+          "from": [
+            "actioned",
+            "awaiting-appeal"
+          ],
+          "action": "append-reversal",
+          "to": "reversed",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "case-reverse.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "moderation-and-ranking-effects"
+        }
+      ]
+    },
+    {
+      "machine_id": "appeal",
+      "semantic_owner": "moderation",
+      "persistence_owner": [
+        "appeals",
+        "appeal-decisions"
+      ],
+      "aggregate_key": "appeal-id",
+      "initial_state": "submitted",
+      "states": [
+        "submitted",
+        "screening",
+        "reviewing",
+        "approved",
+        "denied",
+        "withdrawn"
+      ],
+      "terminal_states": [
+        "approved",
+        "denied",
+        "withdrawn"
+      ],
+      "privacy_boundary": "integrity-private",
+      "transitions": [
+        {
+          "transition_id": "appeal-screen",
+          "from": [
+            "submitted"
+          ],
+          "action": "screen",
+          "to": "screening",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "appeal-screen.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "appeal-review",
+          "from": [
+            "screening"
+          ],
+          "action": "assign-human",
+          "to": "reviewing",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "appeal-review.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "appeal-approve",
+          "from": [
+            "reviewing"
+          ],
+          "action": "approve-and-restore-effects",
+          "to": "approved",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "appeal-approve.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "appeal-and-ranking-effects"
+        },
+        {
+          "transition_id": "appeal-deny",
+          "from": [
+            "reviewing"
+          ],
+          "action": "deny",
+          "to": "denied",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "appeal-deny.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "export-job",
+      "semantic_owner": "data-rights",
+      "persistence_owner": [
+        "exports",
+        "export-artifacts",
+        "export-download-grants"
+      ],
+      "aggregate_key": "export-id",
+      "initial_state": "requested",
+      "states": [
+        "requested",
+        "snapshotting",
+        "encrypting",
+        "ready",
+        "downloaded",
+        "purged",
+        "failed"
+      ],
+      "terminal_states": [
+        "purged",
+        "failed"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "export-start",
+          "from": [
+            "requested"
+          ],
+          "action": "authorize-recent-auth-and-snapshot",
+          "to": "snapshotting",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "export-start.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "export-encrypt",
+          "from": [
+            "snapshotting"
+          ],
+          "action": "manifest-checksum-encrypt",
+          "to": "encrypting",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "export-encrypt.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "export-ready",
+          "from": [
+            "encrypting"
+          ],
+          "action": "issue-short-lived-grant",
+          "to": "ready",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "export-ready.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "export-download",
+          "from": [
+            "ready"
+          ],
+          "action": "download",
+          "to": "downloaded",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "exact-request-replay",
+          "audit_event": "export-download.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "export-purge",
+          "from": [
+            "ready",
+            "downloaded"
+          ],
+          "action": "expire-and-purge",
+          "to": "purged",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "export-purge.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "server-deletion",
+      "semantic_owner": "data-rights",
+      "persistence_owner": [
+        "deletion-jobs",
+        "deletion-effects",
+        "deletion-tombstones"
+      ],
+      "aggregate_key": "deletion-job-id",
+      "initial_state": "requested",
+      "states": [
+        "requested",
+        "recent-auth-verified",
+        "processing",
+        "rebuilding-projections",
+        "complete",
+        "failed"
+      ],
+      "terminal_states": [
+        "complete",
+        "failed"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "deletion-authorize",
+          "from": [
+            "requested"
+          ],
+          "action": "verify-recent-auth-and-scope",
+          "to": "recent-auth-verified",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "deletion-authorize.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "deletion-process",
+          "from": [
+            "recent-auth-verified"
+          ],
+          "action": "apply-hosted-effects-and-tombstone",
+          "to": "processing",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "deletion-process.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "deletion-transaction"
+        },
+        {
+          "transition_id": "deletion-rebuild",
+          "from": [
+            "processing"
+          ],
+          "action": "rebuild-projections",
+          "to": "rebuilding-projections",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "deletion-rebuild.audit",
+          "reversal": "projection-rebuild",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "deletion-complete",
+          "from": [
+            "rebuilding-projections"
+          ],
+          "action": "complete",
+          "to": "complete",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "deletion-complete.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "local-deletion-command",
+      "semantic_owner": "data-rights",
+      "persistence_owner": [
+        "local-deletion-commands",
+        "local-deletion-receipts"
+      ],
+      "aggregate_key": "device-command-id",
+      "initial_state": "issued",
+      "states": [
+        "issued",
+        "acknowledged",
+        "executing",
+        "complete",
+        "expired",
+        "failed"
+      ],
+      "terminal_states": [
+        "complete",
+        "expired",
+        "failed"
+      ],
+      "privacy_boundary": "integrity-private",
+      "transitions": [
+        {
+          "transition_id": "local-delete-ack",
+          "from": [
+            "issued"
+          ],
+          "action": "device-acknowledge",
+          "to": "acknowledged",
+          "actor": "native-device",
+          "authentication": "device-signature",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "local-delete-ack.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "local-delete-run",
+          "from": [
+            "acknowledged"
+          ],
+          "action": "delete-local-scope",
+          "to": "executing",
+          "actor": "native-device",
+          "authentication": "device-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "local-delete-run.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "local-delete-complete",
+          "from": [
+            "executing"
+          ],
+          "action": "sign-local-receipt",
+          "to": "complete",
+          "actor": "native-device",
+          "authentication": "device-signature",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "local-delete-complete.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "daemon-lifecycle",
+      "semantic_owner": "native-runtime",
+      "persistence_owner": [
+        "service-instances",
+        "service-events"
+      ],
+      "aggregate_key": "service-instance-id",
+      "initial_state": "unregistered",
+      "states": [
+        "unregistered",
+        "registered",
+        "starting",
+        "healthy",
+        "paused",
+        "offline",
+        "degraded",
+        "recovery",
+        "stopping",
+        "stopped",
+        "uninstalled"
+      ],
+      "terminal_states": [
+        "uninstalled"
+      ],
+      "privacy_boundary": "local-only",
+      "transitions": [
+        {
+          "transition_id": "daemon-register",
+          "from": [
+            "unregistered"
+          ],
+          "action": "register-with-os-supervisor",
+          "to": "registered",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-register.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "daemon-start",
+          "from": [
+            "registered",
+            "stopped"
+          ],
+          "action": "start",
+          "to": "starting",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-start.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "daemon-healthy",
+          "from": [
+            "starting",
+            "recovery",
+            "degraded",
+            "offline"
+          ],
+          "action": "health-pass",
+          "to": "healthy",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-healthy.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "daemon-pause",
+          "from": [
+            "healthy"
+          ],
+          "action": "pause-collection",
+          "to": "paused",
+          "actor": "user",
+          "authentication": "native-session",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-pause.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "daemon-crash",
+          "from": [
+            "healthy"
+          ],
+          "action": "crash-detected",
+          "to": "recovery",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-crash.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "daemon-uninstall",
+          "from": [
+            "registered",
+            "stopped"
+          ],
+          "action": "uninstall",
+          "to": "uninstalled",
+          "actor": "user",
+          "authentication": "native-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-uninstall.audit",
+          "reversal": "none",
+          "transaction_boundary": "uninstall-transaction"
+        }
+      ]
+    },
+    {
+      "machine_id": "privileged-supervisor",
+      "semantic_owner": "native-runtime",
+      "persistence_owner": [
+        "privileged-supervisor-instances",
+        "privileged-consents",
+        "service-events"
+      ],
+      "aggregate_key": "supervisor-instance-id",
+      "initial_state": "absent",
+      "states": [
+        "absent",
+        "consent-pending",
+        "installing",
+        "active",
+        "degraded",
+        "removing",
+        "removed"
+      ],
+      "terminal_states": [
+        "removed"
+      ],
+      "privacy_boundary": "local-only",
+      "transitions": [
+        {
+          "transition_id": "supervisor-consent",
+          "from": [
+            "absent"
+          ],
+          "action": "request-explicit-consent",
+          "to": "consent-pending",
+          "actor": "user",
+          "authentication": "native-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "supervisor-consent.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "supervisor-install",
+          "from": [
+            "consent-pending"
+          ],
+          "action": "install-least-privilege-service",
+          "to": "installing",
+          "actor": "user",
+          "authentication": "native-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "supervisor-install.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "supervisor-active",
+          "from": [
+            "installing"
+          ],
+          "action": "verify-identity-acl-capabilities",
+          "to": "active",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "supervisor-active.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "supervisor-remove",
+          "from": [
+            "active",
+            "degraded"
+          ],
+          "action": "remove-without-user-state-merge",
+          "to": "removing",
+          "actor": "user",
+          "authentication": "native-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "supervisor-remove.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "supervisor-removed",
+          "from": [
+            "removing"
+          ],
+          "action": "verify-removal",
+          "to": "removed",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "supervisor-removed.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "update-lifecycle",
+      "semantic_owner": "release",
+      "persistence_owner": [
+        "update-policies",
+        "update-installations",
+        "release-sets"
+      ],
+      "aggregate_key": "installation-update-id",
+      "initial_state": "current",
+      "states": [
+        "current",
+        "available",
+        "deferred",
+        "deadline",
+        "downloading",
+        "staged",
+        "installing",
+        "health-check",
+        "rolled-back",
+        "complete",
+        "blocked-version",
+        "failed"
+      ],
+      "terminal_states": [
+        "rolled-back",
+        "complete",
+        "blocked-version",
+        "failed"
+      ],
+      "privacy_boundary": "release-public",
+      "transitions": [
+        {
+          "transition_id": "update-offer",
+          "from": [
+            "current"
+          ],
+          "action": "verified-update-available",
+          "to": "available",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-offer.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "update-defer",
+          "from": [
+            "available"
+          ],
+          "action": "bounded-deferral",
+          "to": "deferred",
+          "actor": "user",
+          "authentication": "native-session",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-defer.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "update-deadline",
+          "from": [
+            "available",
+            "deferred"
+          ],
+          "action": "deadline-reached",
+          "to": "deadline",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-deadline.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "update-stage",
+          "from": [
+            "available",
+            "deferred",
+            "deadline"
+          ],
+          "action": "download-verify-stage",
+          "to": "staged",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "update-stage.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "update-install",
+          "from": [
+            "staged"
+          ],
+          "action": "atomic-install",
+          "to": "installing",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-install.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "release-set-install"
+        },
+        {
+          "transition_id": "update-health",
+          "from": [
+            "installing"
+          ],
+          "action": "bounded-health-check",
+          "to": "health-check",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-health.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "update-complete",
+          "from": [
+            "health-check"
+          ],
+          "action": "promote",
+          "to": "complete",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-complete.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "release-set-install"
+        },
+        {
+          "transition_id": "update-rollback",
+          "from": [
+            "installing",
+            "health-check",
+            "failed"
+          ],
+          "action": "rollback",
+          "to": "rolled-back",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-rollback.audit",
+          "reversal": "none",
+          "transaction_boundary": "release-set-install"
+        },
+        {
+          "transition_id": "update-block",
+          "from": [
+            "deadline"
+          ],
+          "action": "enforce-blocked-version",
+          "to": "blocked-version",
+          "actor": "server-verifier",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-block.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "release-trust",
+      "semantic_owner": "release",
+      "persistence_owner": [
+        "tuf-roots",
+        "tuf-metadata",
+        "release-sets",
+        "release-transparency-events"
+      ],
+      "aggregate_key": "release-set-id",
+      "initial_state": "draft",
+      "states": [
+        "draft",
+        "threshold-signed",
+        "published",
+        "active",
+        "superseded",
+        "revoked",
+        "expired"
+      ],
+      "terminal_states": [
+        "superseded",
+        "revoked",
+        "expired"
+      ],
+      "privacy_boundary": "release-public",
+      "transitions": [
+        {
+          "transition_id": "release-sign",
+          "from": [
+            "draft"
+          ],
+          "action": "threshold-sign",
+          "to": "threshold-signed",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "release-sign.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "release-publish",
+          "from": [
+            "threshold-signed"
+          ],
+          "action": "publish-consistent-snapshot",
+          "to": "published",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "release-publish.audit",
+          "reversal": "none",
+          "transaction_boundary": "release-publish"
+        },
+        {
+          "transition_id": "release-activate",
+          "from": [
+            "published"
+          ],
+          "action": "activate-compatible-set",
+          "to": "active",
+          "actor": "system",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "release-activate.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "release-supersede",
+          "from": [
+            "active"
+          ],
+          "action": "activate-successor",
+          "to": "superseded",
+          "actor": "system",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "release-supersede.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "release-revoke",
+          "from": [
+            "threshold-signed",
+            "published",
+            "active"
+          ],
+          "action": "compromise-revoke",
+          "to": "revoked",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "release-revoke.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "release-revoke"
+        }
+      ]
+    },
+    {
+      "machine_id": "platform-certification",
+      "semantic_owner": "platform",
+      "persistence_owner": [
+        "platform-profiles",
+        "platform-certifications",
+        "certification-results"
+      ],
+      "aggregate_key": "platform-profile-id",
+      "initial_state": "planned",
+      "states": [
+        "planned",
+        "candidate",
+        "exercised",
+        "published",
+        "degraded",
+        "suspended",
+        "retired"
+      ],
+      "terminal_states": [
+        "retired"
+      ],
+      "privacy_boundary": "release-public",
+      "transitions": [
+        {
+          "transition_id": "profile-candidate",
+          "from": [
+            "planned"
+          ],
+          "action": "bind-release-and-test-plan",
+          "to": "candidate",
+          "actor": "system",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "profile-candidate.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "profile-exercise",
+          "from": [
+            "candidate"
+          ],
+          "action": "attach-immutable-results",
+          "to": "exercised",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "profile-exercise.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "profile-publish",
+          "from": [
+            "exercised"
+          ],
+          "action": "publish-support-claim",
+          "to": "published",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "profile-publish.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "profile-degrade",
+          "from": [
+            "published"
+          ],
+          "action": "evidence-expired-or-regression",
+          "to": "degraded",
+          "actor": "system",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "profile-degrade.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "profile-suspend",
+          "from": [
+            "published",
+            "degraded"
+          ],
+          "action": "security-suspend",
+          "to": "suspended",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "profile-suspend.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    }
+  ]
+}
