@@ -20,6 +20,8 @@ One bounded fixture-backed hosted-web/Storybook slice exists and is classified a
 - Global leaderboards: accepted Standard and Hardened claims both count; Imported records never count.
 - Ranked identity: one active ranked identity per detected/resolved person, strongly enforced without claiming mathematically verified humanity.
 - SLM: post-launch research only; not a launch dependency or authority.
+- Daemon lifecycle: D-061 and ADR-010 require an always-on OS-supervised per-user background service that auto-starts, auto-restarts, survives shell closure, and remains resident through paused/offline/degraded/recovery states.
+- Platform lifecycle limitations must be disclosed honestly; “always-on” excludes powered-off hardware, full suspension, disabled/uninstalled service, and unavailable user-service contexts.
 - Repository authority, launch scope, stale PR disposition and implementation entrance gates: aligned.
 - Exact machine-contract repair requirements: recorded in `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`.
 - Canonical privacy and threat models: expanded with process, field, state-machine, transaction, release and validation requirements.
@@ -44,7 +46,7 @@ Active work:
 ### Following gates
 
 - **P-1140C:** VibeProof v1 CDDL/COSE, batch, continuity, rotation, correction and exact-byte protocol rewrite.
-- **P-1140D:** OAuth/session, identity, API, SQL, ranking, social, native, updater and release state machines.
+- **P-1140D:** OAuth/session, identity, API, SQL, ranking, social, native, always-on daemon, updater and release state machines.
 - **P-1140E:** cross-contract fixtures, traceability, clean-checkout planning validation and final P0/P1 review.
 
 P-1104 remains blocked until P-1140B–E complete, all planning-only validation passes from a clean checkout, no P0/P1 contradiction remains and the user explicitly authorizes implementation.
@@ -69,6 +71,7 @@ Planning artifacts and prototypes are not cryptographic interoperability evidenc
 - `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`
 - `docs/planning/DECISION_REGISTER.md`
 - `docs/planning/TASK_CATALOG.md`
+- `docs/decisions/ADR-010-ALWAYS_ON_DAEMON_LIFECYCLE.md`
 - `docs/implementation/IMPLEMENTATION_HANDOFF.md`
 - `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`
 
