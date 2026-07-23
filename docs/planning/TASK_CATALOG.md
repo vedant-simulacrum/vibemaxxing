@@ -195,6 +195,18 @@ Status: `in-progress-planning`
 
 Dependencies: P-1140B, P-1140C and P-1140D.
 
+Candidate planning-validation set:
+
+- schema-validated matrix binding all 69 decisions, every OpenAPI operation, 23 state machines, 34 exact platform profiles and 18 validation domains;
+- positive and invalid-transition fixtures for every state machine;
+- 14 deterministic PostgreSQL transaction/race plans;
+- exact per-profile 16-case runtime evidence plans, all explicitly unexecuted and unadvertised;
+- reason-code authority reference closure;
+- final contradiction audit with zero open P0/P1 planning findings;
+- a dedicated validator in the clean-checkout planning workflow.
+
+Candidate validation must pass on one exact pull-request head before the status can transition.
+
 Deliverables:
 
 - machine-check D-001..D-069 decision-to-owner-to-work-unit-to-schema/state-to-platform-to-fixture traceability;
@@ -239,4 +251,4 @@ Acceptance:
 
 ## Current conclusion
 
-P-1140A through P-1140C are complete. P-1140D is active. P-1140E remains dependency-blocked. Platform scope is frozen under D-062 through D-069. P-1104 remains blocked and is not the next task.
+P-1140A through P-1140D are complete. P-1140E is active. Platform scope is frozen under D-062 through D-069. P-1104 remains blocked until P-1140E exact-head validation passes and the user explicitly authorizes implementation.
