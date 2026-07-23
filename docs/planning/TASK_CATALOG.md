@@ -17,13 +17,13 @@ The following groups produced useful planning artifacts, but later P-1140 findin
 | P-101..105 | accounting, pricing, comparability, periods and corrections | complete-planning | reopened by P-1140B/D |
 | P-201..208 | compatibility, registry and certification governance | complete-planning | digest/provenance binding reopened |
 | P-301..307 | VibeProof fields, encoding, signing, batching and recovery | complete-planning | superseded for implementation by P-1140C |
-| P-401..409 | native topology, storage, IPC, devices and CLI | complete-planning | typed IPC, lineage, always-on lifecycle and updater reopened |
+| P-401..409 | native topology, storage, IPC, devices and CLI | complete-planning | typed IPC, lineage, universal platform, privilege and updater work reopened |
 | P-501..505 | identity, auth, linked accounts and recovery | complete-planning | provider/session state machines reopened |
 | P-601..606 | APIs, SQL, transactions, ranking and recovery | complete-planning | appraisal, idempotency and ranking views reopened |
 | P-701..708 | social, boards, countries, presence, notifications and moderation | complete-planning | country removed; state machines reopened |
 | P-801..808 | anti-cheat, detector and appeal planning | complete-planning | superseded by July 23 research and P-1140 |
 | P-901..905 | routes, states, privacy UX and accessibility | complete-planning | evidence/country/platform corrections required |
-| P-1001..1006 | updater, observability, deployment and governance | complete-planning | release trust graph and platform packaging reopened |
+| P-1001..1006 | updater, observability, deployment and governance | complete-planning | mandatory update and release trust graph reopened |
 | P-1110..1114 | benchmarks, review lenses, decomposition and consolidation | complete-planning | retained as planning evidence |
 | P-1120..1128 | schema hardening and repository doctor | complete-planning | structural validation only |
 | P-1130A..F | T20 certification, selection, fixtures and maturity | complete-planning | D-046 provisional pending P-1140B/E |
@@ -43,25 +43,7 @@ Completed outputs:
 - contradictory machine contracts explicitly blocked;
 - PR #17 closed without merge;
 - implementation handoff and PR-sized work breakdown rebuilt;
-- issue #24 updated as the completed entrance-gate thread.
-
-Evidence:
-
-- `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`;
-- `docs/project/STATUS.md`;
-- `docs/project/DOCUMENTATION.md`;
-- `docs/planning/DECISION_REGISTER.md`;
-- `docs/implementation/IMPLEMENTATION_HANDOFF.md`;
-- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`.
-
-Acceptance achieved:
-
-- all repository entrypoints report planning contract repair;
-- country is post-launch;
-- SLM is post-launch research;
-- GitHub/X launch provider scope and Google deferral are coherent;
-- no top-level document says P-1104 is the only remaining gate;
-- stale PR #17 is closed and superseded.
+- issue #24 closed as the completed entrance-gate thread.
 
 ### P-1140B — core trust, privacy and accounting contracts
 
@@ -75,8 +57,13 @@ Completed planning inputs:
 - expanded canonical privacy contract;
 - expanded canonical threat model;
 - exact blocked-schema inventory and initialization links;
-- D-001 through D-061 implementation/platform/evidence mapping in `docs/planning/decision-traceability/`;
-- cross-platform capability and integration audit in `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`.
+- D-001 through D-069 implementation/platform/evidence mapping in `docs/planning/decision-traceability/`;
+- frozen cross-platform capability and integration audit;
+- accepted ADR-011 universal platform baseline;
+- accepted ADR-012 optional privileged supervision;
+- accepted ADR-013 mandatory automatic updates;
+- accepted ADR-014 prototype visual-validation automation;
+- issue #26 platform questions resolved.
 
 Remaining deliverables:
 
@@ -167,12 +154,16 @@ Deliverables:
 11. Typed export manifest, recent-auth, encrypted delivery and purge receipt.
 12. Separate server and per-device local deletion state machines.
 13. Endpoint-specific API resources, authorization, quotas, concurrency, polling and load shedding.
-14. macOS/Windows/Linux process, privilege, IPC, storage, packaging and recovery state machines.
-15. ADR-010 always-on service registration, OS supervision, child watchdog, crash-loop, pause/degrade, update handoff and uninstall state machines.
-16. WSL, container, CI and remote/headless environment profiles with explicit lifecycle/evidence ceilings.
-17. TUF root/roles, release-set compatibility, rollback/freeze defense, provenance, transparency and compromise recovery.
-18. Resolve and freeze exact launch baselines for CPU architectures, OS versions, Linux distributions/desktops and environment eligibility.
-19. Remove country routes, tasks and launch gates.
+14. macOS Apple-silicon and Intel service, key, IPC, packaging, update and recovery state machines.
+15. Windows native x64/ARM64 desktop/server service, key, IPC, packaging, update and recovery state machines.
+16. Linux distro/package/architecture/desktop/headless/init/key/update state machines.
+17. WSL, container and CI globally eligible profiles with lineage, duplicate, lifecycle and evidence ceilings.
+18. ADR-010 always-on service registration, child watchdog, crash-loop, pause/degrade and uninstall state machines.
+19. ADR-012 optional privileged supervisor identity, ACL, consent, downgrade and uninstall state machines.
+20. ADR-013 mandatory update classes, deadlines, maintenance leases, blocked versions, environment-specific mechanisms and rollback.
+21. TUF root/roles, release-set compatibility, rollback/freeze defense, provenance, transparency and compromise recovery.
+22. Remove country routes/tasks/gates and prohibit Android/iOS/iPadOS/ChromeOS native work under D-066.
+23. Keep Storybook automation constrained to ADR-014 and outside product release evidence.
 
 Acceptance:
 
@@ -181,9 +172,12 @@ Acceptance:
 - presence and notifications cannot leak source content;
 - launch contains no country dependency;
 - every advertised platform has a complete capability profile, implementation owner and failure matrix;
-- weaker platform modes disclose evidence and lifecycle ceilings;
-- daemon/shell/collector/sync lifecycle independence is explicit;
-- platform scope questions in `CROSS_PLATFORM_COMPLETENESS_AUDIT.md` are resolved.
+- native Mac, Windows and Linux release lanes are explicit;
+- WSL/container/CI global eligibility and duplicate controls are explicit;
+- privileged mode cannot inspect source content or merge users;
+- mandatory update deadlines and safe rollback are explicit;
+- no Android, iOS, iPadOS or ChromeOS native implementation path exists;
+- daemon/shell/collector/sync lifecycle independence is explicit.
 
 ### P-1140E — cross-contract planning validation
 
@@ -193,17 +187,19 @@ Dependencies: P-1140B, P-1140C and P-1140D.
 
 Deliverables:
 
-- machine-check D-001..D-061 decision-to-owner-to-work-unit-to-schema/state-to-platform-to-fixture traceability;
+- machine-check D-001..D-069 decision-to-owner-to-work-unit-to-schema/state-to-platform-to-fixture traceability;
 - failure if an accepted implementation-bearing decision lacks any traceability dimension;
 - failure if a superseded decision retains an active implementation path;
+- failure if out-of-scope mobile/ChromeOS native work appears;
 - positive, negative and adversarial fixtures for every repaired invariant;
 - protocol vectors and malformed/resource corpus;
 - SQL constraint, race and transaction plans;
 - OAuth/session/idempotency/social/moderation state-machine fixtures;
-- privacy canaries across adapter, IPC, detector, claim, API, telemetry, notification and review boundaries;
+- privacy canaries across adapter, IPC, detector, claim, API, telemetry, notification, privileged supervisor and review boundaries;
 - complete platform matrix for install/start/supervision/keys/storage/IPC/adapters/offline/update/rollback/uninstall;
-- OS/version/architecture/distribution baseline registry;
-- platform-specific reboot/login/logout/sleep/crash/disk/permission/update evidence plans;
+- exact OS/version/architecture/distribution/environment baseline registry;
+- reboot/login/logout/sleep/crash/disk/permission/update evidence plans;
+- mandatory-update deadline, blocked-version, container and CI expiry fixtures;
 - registry/schema/reference consistency;
 - current/future path validation;
 - clean-checkout repository doctor and validator outputs;
@@ -211,26 +207,26 @@ Deliverables:
 
 Acceptance:
 
-- every D-001..D-061 decision appears exactly once in traceability and has the correct active/superseded state;
+- every D-001..D-069 decision appears exactly once in traceability and has the correct active/superseded state;
 - no contradictory normative owner remains;
 - all references resolve;
 - placeholders are repaired or explicitly deferred;
-- no planning validator is presented as implementation/security evidence;
+- no planning/prototype validator is presented as implementation or security evidence;
 - handoff and work breakdown exactly match repaired contracts;
 - no platform may be advertised before its exact profile and executable release gates are complete;
-- implementation entry cannot proceed while platform scope remains ambiguous.
+- the repository contains no stale open platform-scope question.
 
 ## Future implementation and launch tasks
 
 | ID | Task | Status | Reason |
 |---|---|---|---|
-| P-1007 | Restore product CI, security, dependency, evaluation and release checks | blocked-implementation | requires executable product code |
-| P-1104 | Enter implementation phase | blocked-approval | requires P-1140B–E, resolved platform baselines, clean validation, no P0/P1 contradiction and explicit approval |
-| P-1105 | Public-launch readiness review | blocked-launch-evidence | requires implemented system and executable evidence on every advertised platform |
+| P-1007 | Restore product CI, security, dependency, evaluation and release checks | blocked-implementation | requires executable product code and P-1104 |
+| P-1104 | Enter implementation phase | blocked-approval | requires P-1140B–E, clean validation, no P0/P1 contradiction and explicit approval |
+| P-1105 | Public-launch readiness review | blocked-launch-evidence | requires implemented system and executable evidence on every advertised profile |
 | P-1131 | Select current source/model golden paths and produce non-expired certifications | blocked-launch-evidence | requires real adapters, benchmarks and conformance |
 | P-1150 | Country leaderboard research and planning | blocked-launch-evidence | post-launch only |
 | P-1151 | SLM detector bakeoff | blocked-implementation | post-launch after deterministic baselines and data |
 
 ## Current conclusion
 
-P-1140A is complete. P-1140B is active. P-1140C–E remain dependency-blocked. P-1104 remains blocked and is not the next task. Exact platform launch baselines must be answered and frozen during P-1140D before P-1140E can pass.
+P-1140A is complete. P-1140B is active. P-1140C–E remain dependency-blocked. Platform scope is frozen under D-062 through D-069. P-1104 remains blocked and is not the next task.
