@@ -51,12 +51,12 @@ IDEMPOTENCY_EXCEPTIONS = {
 }
 
 REPAIR_TARGETS = {
-    "VerifierAppraisal": ("packages/schemas/vibeproof-claim-v1.cddl", "VerifierAppraisal"),
-    "CheckpointReceipt": ("packages/schemas/vibeproof-claim-v1.cddl", "CheckpointReceipt"),
+    "VerifierAppraisal": ("packages/schemas/vibeproof-claim-v1.cddl", "verifier-appraisal-v1"),
+    "CheckpointReceipt": ("packages/schemas/vibeproof-claim-v1.cddl", "checkpoint-receipt-v1"),
     "refresh-token families": ("packages/schemas/state-machine-registry-v1.json", "web-session-family"),
     "durable idempotency ownership": ("packages/schemas/planning-schema.sql", "idempotency_records"),
     "immutable ranking view identity": ("packages/schemas/ranking-view-v1.schema.json", "ranking_view_id"),
-    "exact platform support profiles": ("packages/schemas/platform-profile-registry-v1.json", "platform_profile_id"),
+    "exact platform support profiles": ("packages/schemas/platform-profile-registry-v1.json", "profile_id"),
     "mandatory automatic updates": ("packages/schemas/release-set-v1.schema.json", "mandatory_after"),
 }
 
