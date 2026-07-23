@@ -59,7 +59,7 @@ async function assertSearchDialog(page, label) {
   const dialog = page.getByRole("dialog", { name: "Search VibeMaxxing" });
   if (!await dialog.isVisible()) failures.push(`${label}: search dialog did not open`);
   const input = dialog.getByRole("searchbox");
-  if (!await input.isFocused()) failures.push(`${label}: search dialog did not move focus to its search input`);
+  if (!await input.evaluate((element) => element === document.activeElement)) failures.push(`${label}: search dialog did not move focus to its search input`);
   await page.keyboard.press("Escape");
   if (await dialog.count()) failures.push(`${label}: search dialog did not close with Escape`);
 }
