@@ -32,4 +32,5 @@ export {
   Trophy,
   UserPlus,
   Users,
+  X,
 } from "lucide-react";

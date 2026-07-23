@@ -34,6 +34,13 @@ export const FriendsMobile: Story = { parameters: mobile, render: () => <Friends
 export const ActivityAndNotificationsMobile: Story = { parameters: mobile, render: () => <ActivityStoryboard /> };
 export const BoardStandingsMobile: Story = { parameters: mobile, render: () => <BoardStandingsStoryboard /> };
 
+const tablet = { viewport: { defaultViewport: "vmTablet" } };
+export const PublicProfileTablet: Story = { parameters: tablet, render: () => <PublicProfileStoryboard /> };
+export const RivalComparisonTablet: Story = { parameters: tablet, render: () => <RivalComparisonStoryboard /> };
+export const FriendsTablet: Story = { parameters: tablet, render: () => <FriendsStoryboard /> };
+export const ActivityAndNotificationsTablet: Story = { parameters: tablet, render: () => <ActivityStoryboard /> };
+export const BoardStandingsTablet: Story = { parameters: tablet, render: () => <BoardStandingsStoryboard /> };
+
 const stateStory = (state: ProductState): Story => ({
   parameters: { layout: "fullscreen" },
   render: () => <ProductStateBoundary state={state}><PublicProfileStoryboard /></ProductStateBoundary>,

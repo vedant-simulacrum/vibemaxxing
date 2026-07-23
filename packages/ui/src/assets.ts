@@ -21,6 +21,7 @@ export const assetRegistry = {
   },
   fixtures: {
     currentUser: "/brand-assets/ui/fixtures/vedant-avatar.png",
+    leaderboardAvatarSprite: "/brand-assets/ui/fixtures/leaderboard-avatars.png",
     storyboardAvatar: (id: number) => `/brand-assets/ui/fixtures/storyboard-avatars/${id}.svg`,
   },
 } as const;

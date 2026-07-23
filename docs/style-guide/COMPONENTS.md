@@ -23,9 +23,19 @@ The executable state catalogue lives in Storybook under `packages/ui`; the curat
 | `ProductMovement` | Product screens show rank movement | A generic percentage change is shown | Direction and magnitude remain non-color-readable |
 | `ProductModel` | A model name and governed provider mark appear together | Provider identity is unknown | Provider marks resolve only through `ProviderLogo` |
 | `ProductStateBoundary` | A product surface is loading, empty, failed, offline, stale, private, blocked, restricted, or quarantined | The ready surface is shown | Shared copy, status semantics, privacy-safe explanations, and recovery actions |
+| `ProductIconButton` | A compact product action has a familiar icon and accessible name | Visible text is clearer | Requires an accessible label and supports expanded/controls state |
+| `ProductDialog` | Search, confirmation, or another blocking task needs modal focus | A route or inline panel is more appropriate | Modal semantics, focus containment, Escape dismissal |
+| `ProductNotice` | A product state needs persistent contextual explanation | A blocking failure requires `ProductStateBoundary` | Info, warning, and danger tones retain visible text |
+| `ProductUserIdentity` | Name, handle, governed avatar, and presence travel together | Only an avatar or fallback is needed | One identity hierarchy and governed fixture resolution |
+| `ProductFriendRow` | Friends tables show the approved identity, presence, rank, burn, model, and actions | A generic person row is sufficient | Reuses identity, movement, model, and action contracts |
+| `ProductBoardStandingRow` | Board standings show the approved member columns | A non-ranking membership list is shown | Current-user state and rank remain explicit |
+| `ProductActivityEventRow` | Competitive events share the approved ledger rhythm | Arbitrary social feed content is shown | Typed title/detail/trailing structure and unread label |
+| `ProductTrendChart` | Token Burn trend or rival comparison is shown | Exact analytical inspection is required | Accessible summary; code-native data graphic |
+| `ProductSparkline` | A compact rival direction cue supplements exact text | It would be the only data representation | Requires an accessible label |
+| `ProductRankChart` | Weekly rank movement is summarized | Exact point inspection is required | Accessible summary and non-interactive SVG |
 
 ## Shared state coverage
 
 Storybook renders default, selected, disabled, positive, negative, neutral, Hardened, Standard, Imported, present, absent, token, cash, zero, complete, long-content, and ledger states. The product catalogue also executes loading, empty, error, offline, stale, private, blocked, restricted, and quarantined states.
 
-Every approved product screen has desktop and mobile stories, with a shared 1024px tablet contract. CI captures all three breakpoints and compares the desktop output with the governed committed render baseline.
+Every approved product screen has explicit desktop, tablet, and mobile stories. The separate product-state matrix executes all nine exceptional states for all five approved screens. CI captures all three breakpoints, runs browser accessibility and keyboard checks, and compares captures with governed committed render baselines.

@@ -6,6 +6,7 @@
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
     "storybook:compare": "node scripts/compare-product-storyboards.mjs",
+    "storybook:audit": "node scripts/audit-product-storyboards.mjs",
     "tokens:generate": "node scripts/generate-tokens.mjs",
     "tokens:check": "node scripts/generate-tokens.mjs --check",
     "test": "esbuild src/components.test.tsx --bundle --platform=node --format=cjs --jsx=automatic --outfile=/tmp/vibemaxxing-ui.test.cjs && node --test /tmp/vibemaxxing-ui.test.cjs"
@@ -16,6 +17,10 @@
   "exports": {
     ".": "./src/components.tsx",
     "./components.css": "./src/components.css",
+    "./leaderboard": "./src/concepts/leaderboard-first.tsx",
+    "./leaderboard.css": "./src/concepts/leaderboard-first.css",
+    "./product-screens": "./src/concepts/product-storyboards.tsx",
+    "./product-screens.css": "./src/concepts/product-storyboards.css",
     "./tokens.css": "./src/tokens.css",
     "./tokens": "./src/tokens.ts"
   },
@@ -23,6 +28,7 @@
     "react": ">=19"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
     "@storybook/addon-a11y": "^10.5.2",
     "@storybook/addon-docs": "^10.5.2",
     "@storybook/react-vite": "^10.5.2",
@@ -31,6 +37,7 @@
     "@types/react-dom": "^19.0.0",
     "esbuild": "0.28.1",
     "pixelmatch": "7.1.0",
+    "playwright": "1.55.0",
     "pngjs": "7.0.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
