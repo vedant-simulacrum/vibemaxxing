@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "policy_version": "1.0.0-planning",
+  "policy_version": "1.1.0-planning",
   "change_rule": "Prospective changes require decision-register entry; retroactive changes require explicit rebuild/correction policy and user-visible notice.",
   "policies": {
     "overtake_notification_hysteresis_hours": {"value":6,"min":1,"max":24,"owner":"product-integrity","retroactive":false},
@@ -8,8 +8,6 @@
     "friend_request_expiry_days": {"value":30,"min":1,"max":90,"owner":"social","retroactive":false},
     "handle_rename_cooldown_days": {"value":30,"min":1,"max":365,"owner":"identity","retroactive":false},
     "old_handle_redirect_days": {"value":90,"min":0,"max":365,"owner":"identity","retroactive":false},
-    "country_change_cooldown_days": {"value":90,"min":30,"max":365,"owner":"integrity","retroactive":false},
-    "country_public_cohort_minimum": {"value":20,"min":10,"max":100,"owner":"privacy-integrity","retroactive":true},
     "presence_heartbeat_seconds": {"value":30,"min":15,"max":60,"owner":"platform","retroactive":false},
     "presence_lease_expiry_seconds": {"value":90,"min":45,"max":180,"owner":"platform","retroactive":false},
     "presence_idle_after_seconds": {"value":300,"min":60,"max":1800,"owner":"product","retroactive":false},
