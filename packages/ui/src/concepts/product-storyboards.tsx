@@ -26,8 +26,7 @@ const people: Person[] = [
 
 function Avatar({ id, size = 44, online = false }: { id: AvatarId; size?: number; online?: boolean }) {
   if (id === 0) return <span className="vm-sb-avatar" style={{ width: size, height: size }}><img src="/brand-assets/ui/fixtures/vedant-avatar.png" alt="" />{online && <i />}</span>;
-  const col = id % 3, row = Math.floor(id / 3);
-  return <span className="vm-sb-avatar sprite" style={{ width: size, height: size, backgroundImage: 'url("/brand-assets/ui/fixtures/leaderboard-avatars.png")', backgroundPosition: `${col * 50}% ${row * 50}%` }}>{online && <i />}</span>;
+  return <span className="vm-sb-avatar" style={{ width: size, height: size }}><img src={`/brand-assets/ui/fixtures/storyboard-avatars/${id}.svg`} alt="" />{online && <i />}</span>;
 }
 
 function ProductShell({ active, children }: { active: Nav; children: ReactNode }) {
