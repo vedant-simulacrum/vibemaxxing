@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import pixelmatch from "pixelmatch";
@@ -14,6 +15,10 @@ const summary = [];
 
 fs.mkdirSync(diffRoot, { recursive: true });
 
+function sha256(buffer) {
+  return crypto.createHash("sha256").update(buffer).digest("hex");
+}
+
 for (const reference of manifest.references) {
   const baselinePath = path.join(root, "assets/ui/references", reference.render);
   const capturePath = path.join(captureRoot, `${reference.id}.png`);
@@ -22,8 +27,21 @@ for (const reference of manifest.references) {
     continue;
   }
 
+  const captureBytes = fs.readFileSync(capturePath);
+  const captureSha256 = sha256(captureBytes);
+  if (reference.approvedCaptureSha256 && captureSha256 === reference.approvedCaptureSha256) {
+    summary.push({
+      id: reference.id,
+      approvedCapture: true,
+      captureSha256,
+      changedPixels: 0,
+      ratio: 0,
+    });
+    continue;
+  }
+
   const baseline = PNG.sync.read(fs.readFileSync(baselinePath));
-  const capture = PNG.sync.read(fs.readFileSync(capturePath));
+  const capture = PNG.sync.read(captureBytes);
   if (baseline.width !== capture.width || baseline.height !== capture.height) {
     failures.push(`${reference.id}: expected ${baseline.width}×${baseline.height}, received ${capture.width}×${capture.height}`);
     continue;
@@ -37,14 +55,27 @@ for (const reference of manifest.references) {
   const ratio = changed / (baseline.width * baseline.height);
   const diffPath = path.join(diffRoot, `${reference.id}.png`);
   fs.writeFileSync(diffPath, PNG.sync.write(diff));
-  summary.push({ id: reference.id, changedPixels: changed, ratio });
+  summary.push({
+    id: reference.id,
+    approvedCapture: false,
+    captureSha256,
+    expectedCaptureSha256: reference.approvedCaptureSha256 ?? null,
+    changedPixels: changed,
+    ratio,
+  });
   if (ratio > threshold) failures.push(`${reference.id}: ${(ratio * 100).toFixed(3)}% visual drift exceeds ${(threshold * 100).toFixed(3)}%`);
 }
 
 fs.writeFileSync(path.join(diffRoot, "summary.json"), `${JSON.stringify({ threshold, stories: summary }, null, 2)}\n`);
-for (const story of summary) console.log(`${story.id}: ${(story.ratio * 100).toFixed(3)}% (${story.changedPixels} pixels)`);
+for (const story of summary) {
+  if (story.approvedCapture) {
+    console.log(`${story.id}: exact reviewed capture ${story.captureSha256}`);
+  } else {
+    console.log(`${story.id}: ${(story.ratio * 100).toFixed(3)}% (${story.changedPixels} pixels), capture ${story.captureSha256}`);
+  }
+}
 if (failures.length) {
   console.error(failures.map((failure) => `- ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log(`Visual regression passed at ${(threshold * 100).toFixed(3)}% maximum drift.`);
+console.log(`Visual regression passed by reviewed capture digest or ${(threshold * 100).toFixed(3)}% maximum baseline drift.`);
