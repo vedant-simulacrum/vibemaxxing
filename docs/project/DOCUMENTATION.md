@@ -64,7 +64,14 @@ Where a contract conflicts with an accepted decision, the decision is authoritat
 `packages/schemas/` currently owns draft planning interfaces:
 
 - `adapter-manifest.schema.json`
-- `normalized-event.schema.json`
+- `source-observation.schema.json`
+- `normalized-event.schema.json` (`NormalizedAccountingEvent`)
+- `local-detector-result.schema.json`
+- `accounting-profile.schema.json`
+- `device-lineage.schema.json`
+- `pricing-interpretation.schema.json`
+- `evidence-profile-policy-v1.json`
+- `egress-allowlist-v1.schema.json` and `egress-allowlist-v1.json`
 - `vibeproof-claim-v1.cddl`
 - `local-control-v1.proto`
 - `openapi-v1.yaml`
@@ -77,8 +84,7 @@ These are not implemented or production-proven artifacts.
 
 Until P-1140B–E close:
 
-- adapter manifest lacks complete digest/provenance/profile binding;
-- normalized event retains blocked authority, metadata and timing issues;
+- adapter manifest, typed local stages, accounting profiles, device lineage, pricing interpretation, evidence policy and claim-egress registry are P-1140B candidates pending exact-head validation;
 - VibeProof CDDL retains blocked evidence, pricing, checkpoint, batch, correction and rotation issues;
 - local Protobuf retains blocked opaque transport and missing process/deadline semantics;
 - OpenAPI retains blocked generic resources plus unresolved presence, deletion and authorization semantics;
