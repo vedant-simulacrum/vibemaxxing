@@ -73,7 +73,9 @@ jobs:
         run: python3 scripts/repository/validate_planning_artifacts.py
       - name: Validate provisional T20 candidate artifacts
         run: python3 scripts/repository/validate_t20_contract.py
-      - name: Validate current launch API, SQL, and deferred repair coverage
+      - name: Validate P-1140E cross-contract handoff
+        run: python3 scripts/repository/validate_p1140e_contracts.py
+      - name: Validate current launch API, SQL, and repaired authority coverage
         run: python3 scripts/repository/validate_planning_coverage.py
       - name: Validate deterministic stable work-unit generation
         run: |
