@@ -37,7 +37,8 @@ Where a contract conflicts with an accepted decision, the decision is authoritat
 - Scope/product: `docs/planning/PRODUCT_SCOPE_FREEZE.md`, `docs/product/PRODUCT_SPEC.md`, subject to D-052 and D-066
 - Accounting/time/pricing: `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`, blocked for P-1140B/D repairs
 - Social/integrity/UX: `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, blocked for P-1140D repairs and country removal
-- Adapter and VibeProof: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`, blocked for P-1140B/C rewrite
+- Adapter data stages and authority: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
+- VibeProof v1 wire/state protocol: `docs/architecture/VIBEPROOF_V1_PROTOCOL.md` and `packages/schemas/vibeproof-claim-v1.cddl`
 - Universal compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`, blocked where certification is not digest/provenance/profile bound
 - T20 planning: `docs/integrations/T20_MODEL_HARDENING_CONTRACT.md`, `docs/integrations/T20_CERTIFICATION_AND_SELECTION_SPEC.md`; D-046 remains provisional
 - Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, ADR-010 through ADR-013
@@ -85,7 +86,7 @@ These are not implemented or production-proven artifacts.
 Until P-1140B–E close:
 
 - adapter manifest, typed local stages, accounting profiles, device lineage, pricing interpretation, evidence policy and claim-egress registry are repaired P-1140B planning contracts; P-1140C owns wire binding and P-1140E owns final cross-validation;
-- VibeProof CDDL retains blocked evidence, pricing, checkpoint, batch, correction and rotation issues;
+- VibeProof v1 CDDL/protocol and exact-byte/malformed conformance artifacts are repaired P-1140C planning contracts; P-1140E still requires independent codecs and cross-contract validation;
 - local Protobuf retains blocked opaque transport and missing process/deadline semantics;
 - OpenAPI retains blocked generic resources plus unresolved presence, deletion and authorization semantics;
 - planning SQL lacks complete token families, lineages, appraisals, receipts, idempotency, ranking views, typed social and release/update state;

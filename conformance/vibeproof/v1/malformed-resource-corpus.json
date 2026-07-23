@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "protocol_major": 1,
+  "cases": [
+    {
+      "id": "duplicate-map-key",
+      "input_hex": "a200010002",
+      "stage": "canonical-decode",
+      "expected": "reject",
+      "reason_code": "protocol-duplicate-key"
+    },
+    {
+      "id": "non-minimal-integer",
+      "input_hex": "1817",
+      "stage": "canonical-decode",
+      "expected": "reject",
+      "reason_code": "protocol-non-minimal-integer"
+    },
+    {
+      "id": "indefinite-map",
+      "input_hex": "bf0001ff",
+      "stage": "canonical-decode",
+      "expected": "reject",
+      "reason_code": "protocol-indefinite-length"
+    },
+    {
+      "id": "float-value",
+      "input_hex": "f93c00",
+      "stage": "canonical-decode",
+      "expected": "reject",
+      "reason_code": "protocol-float-forbidden"
+    },
+    {
+      "id": "unknown-tag",
+      "input_hex": "d86400",
+      "stage": "canonical-decode",
+      "expected": "reject",
+      "reason_code": "protocol-tag-forbidden"
+    },
+    {
+      "id": "trailing-bytes",
+      "input_hex": "a1000100",
+      "stage": "canonical-decode",
+      "expected": "reject",
+      "reason_code": "protocol-trailing-bytes"
+    },
+    {
+      "id": "unprotected-algorithm",
+      "mutation": "place label 1 in COSE unprotected map",
+      "stage": "cose-profile",
+      "expected": "reject",
+      "reason_code": "cose-unprotected-security-header"
+    },
+    {
+      "id": "wrong-algorithm",
+      "mutation": "replace protected alg -8 with -7",
+      "stage": "cose-profile",
+      "expected": "reject",
+      "reason_code": "cose-algorithm-not-allowed"
+    },
+    {
+      "id": "wrong-content-type",
+      "mutation": "replace registered claim content type",
+      "stage": "cose-profile",
+      "expected": "reject",
+      "reason_code": "cose-content-type-mismatch"
+    },
+    {
+      "id": "wrong-kid-size",
+      "mutation": "replace 16-byte kid with 15 bytes",
+      "stage": "cose-profile",
+      "expected": "reject",
+      "reason_code": "cose-kid-invalid"
+    },
+    {
+      "id": "signature-mutation",
+      "mutation": "flip one signature bit",
+      "stage": "signature",
+      "expected": "reject",
+      "reason_code": "signature-invalid"
+    },
+    {
+      "id": "depth-13",
+      "generator": {
+        "kind": "nested-array",
+        "depth": 13
+      },
+      "stage": "resource-limits",
+      "expected": "reject-before-allocation",
+      "reason_code": "protocol-depth-exceeded"
+    },
+    {
+      "id": "claim-16385-bytes",
+      "generator": {
+        "kind": "claim-padding",
+        "encoded_bytes": 16385
+      },
+      "stage": "resource-limits",
+      "expected": "reject-before-signature",
+      "reason_code": "claim-size-exceeded"
+    },
+    {
+      "id": "batch-257-claims",
+      "generator": {
+        "kind": "batch-count",
+        "claims": 257
+      },
+      "stage": "resource-limits",
+      "expected": "reject-before-claim-loop",
+      "reason_code": "batch-count-exceeded"
+    },
+    {
+      "id": "batch-1048577-bytes",
+      "generator": {
+        "kind": "batch-size",
+        "encoded_bytes": 1048577
+      },
+      "stage": "resource-limits",
+      "expected": "reject-before-decode",
+      "reason_code": "batch-size-exceeded"
+    },
+    {
+      "id": "allocation-ratio",
+      "generator": {
+        "kind": "allocation-ratio",
+        "encoded_bytes": 1024,
+        "requested_bytes": 69633
+      },
+      "stage": "resource-limits",
+      "expected": "reject-before-allocation",
+      "reason_code": "allocation-limit-exceeded"
+    },
+    {
+      "id": "idempotency-conflict",
+      "state": {
+        "same_principal_route_key": true,
+        "same_request_sha256": false
+      },
+      "stage": "transaction",
+      "expected": "conflict",
+      "reason_code": "idempotency-key-conflict"
+    },
+    {
+      "id": "sequence-fork",
+      "state": {
+        "same_lineage": true,
+        "same_sequence": true,
+        "same_claim_sha256": false
+      },
+      "stage": "transaction",
+      "expected": "quarantine-lineage",
+      "reason_code": "continuity-sequence-fork"
+    },
+    {
+      "id": "checkpoint-mismatch",
+      "state": {
+        "expected_checkpoint_matches": false
+      },
+      "stage": "transaction",
+      "expected": "conflict",
+      "reason_code": "continuity-checkpoint-mismatch"
+    },
+    {
+      "id": "rotation-payload-mismatch",
+      "state": {
+        "old_and_new_signature_payloads_identical": false
+      },
+      "stage": "rotation",
+      "expected": "reject",
+      "reason_code": "rotation-payload-mismatch"
+    }
+  ]
+}

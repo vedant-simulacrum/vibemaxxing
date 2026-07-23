@@ -104,22 +104,23 @@ P-1140B acceptance:
 
 ### P-1140C — VibeProof v1 protocol rewrite
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140B.
 
-Deliverables:
+Candidate deliverables present on `agent/p1140c-vibeproof-v1`:
 
-- normative `EvidenceClaim`, `VerifierAppraisal`, `CheckpointReceipt`, `KeyRotationTransition`, `GapDeclaration` and `CorrectionRecord`;
-- exact deterministic CBOR and complete COSE profile;
-- separate local commitment and server checkpoint state;
-- offline precommitment/reconnect semantics;
-- atomic batch, challenge, retry and replay-result state machine;
-- dual-authorized rotation and lost-key recovery;
-- server-authorized corrections;
-- no generic extension map;
-- checked numeric/time ranges across Rust, Go, TypeScript and PostgreSQL;
-- exact-byte vectors and malformed/resource corpus.
+- closed integer-label CDDL for EvidenceClaim, VerifierAppraisal, CheckpointReceipt, Challenge, atomic batch/result, KeyRotationTransition, GapDeclaration and CorrectionRecord;
+- exact deterministic CBOR rules, numeric/time/size/depth/allocation limits and no extension map;
+- mandatory COSE tag 18, exact protected headers, empty unprotected map, Ed25519 COSE_Key, external AAD and Sig_structure;
+- separate local commitment and server checkpoint state with offline/reconnect semantics;
+- one atomic challenge/batch/idempotency/replay transaction;
+- dual-signature rotation, lost-key recovery, clone/fork quarantine and gap policy;
+- append-only server-authorized corrections;
+- fixed claim and receipt exact-byte Ed25519 vectors plus malformed/resource/transaction corpus;
+- validator checks for CDDL coverage, prohibited client authority, digests, lengths and cryptographic signatures.
+
+Validation: Planning checks run #219 passed on exact candidate head `e6f334772f05d4f3806935a7d8a701a2a8bb32d0`; the gate-transition head must also pass before merge. These are planning vectors, not independent runtime interoperability evidence.
 
 Acceptance:
 
@@ -131,7 +132,7 @@ Acceptance:
 
 ### P-1140D — identity, API, ranking, social, native and release state machines
 
-Status: `blocked-planning`
+Status: `in-progress-planning`
 
 Dependencies: P-1140B; protocol-facing work also depends on P-1140C.
 

@@ -7,6 +7,7 @@ blocked planning placeholders implementation-ready or constitute security eviden
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -21,6 +22,8 @@ import yaml
 from cddlparser import parse as parse_cddl
 from jsonschema import Draft202012Validator, FormatChecker
 from openapi_spec_validator import validate as validate_openapi
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS = ROOT / "packages" / "schemas"
@@ -237,9 +240,58 @@ def validate_openapi_file() -> None:
 def validate_cddl_file() -> None:
     text = (SCHEMAS / "vibeproof-claim-v1.cddl").read_text(encoding="utf-8")
     parse_cddl(text)
-    for required_rule in ("vibeproof-claim-v1", "token-categories", "batch-context", "gap-declaration"):
+    for required_rule in ("vibeproof-claim-v1", "verifier-appraisal-v1", "checkpoint-receipt-v1", "token-categories", "batch-context", "gap-declaration", "key-rotation-transition-v1", "correction-record-v1"):
         if f"{required_rule} =" not in text:
             raise ValidationFailure(f"CDDL missing rule: {required_rule}")
+    for forbidden in ("extension-map", "estimated-pricing", "consumer-evidence-state", "raw-request-id"):
+        if forbidden in text:
+            raise ValidationFailure(f"VibeProof CDDL reintroduced forbidden client authority: {forbidden}")
+
+
+def validate_vibeproof_vectors() -> None:
+    vectors = load_json(CONFORMANCE / "vibeproof" / "v1" / "exact-byte-vectors.json")
+    corpus = load_json(CONFORMANCE / "vibeproof" / "v1" / "malformed-resource-corpus.json")
+    if vectors.get("external_aad_hex") != b"VIBEMAXXING/VIBEPROOF/V1".hex():
+        raise ValidationFailure("VibeProof external AAD is not exact")
+
+    seed = bytes.fromhex(vectors["private_seed_hex"])
+    public = bytes.fromhex(vectors["public_key_hex"])
+    derived_public = Ed25519PrivateKey.from_private_bytes(seed).public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    if derived_public != public:
+        raise ValidationFailure("VibeProof fixed seed does not derive declared public key")
+    verifier = Ed25519PublicKey.from_public_bytes(public)
+
+    for kind in ("claim", "receipt"):
+        vector = vectors[kind]
+        payload = bytes.fromhex(vector["canonical_payload_hex"])
+        sig_structure = bytes.fromhex(vector["sig_structure_hex"])
+        signature = bytes.fromhex(vector["signature_hex"])
+        cose = bytes.fromhex(vector["cose_sign1_hex"])
+        if hashlib.sha256(payload).hexdigest() != vector["canonical_payload_sha256"]:
+            raise ValidationFailure(f"{kind} payload digest mismatch")
+        if hashlib.sha256(cose).hexdigest() != vector["cose_sign1_sha256"]:
+            raise ValidationFailure(f"{kind} COSE digest mismatch")
+        if len(cose) != vector["encoded_bytes"]:
+            raise ValidationFailure(f"{kind} encoded byte length mismatch")
+        try:
+            verifier.verify(signature, sig_structure)
+        except Exception as exc:
+            raise ValidationFailure(f"{kind} Ed25519 vector signature invalid: {exc}") from exc
+        if not cose.startswith(bytes.fromhex("d284")):
+            raise ValidationFailure(f"{kind} COSE_Sign1 must carry mandatory tag 18")
+
+    case_ids = [case["id"] for case in corpus["cases"]]
+    assert_unique(case_ids, "VibeProof malformed/resource case IDs")
+    required = {
+        "duplicate-map-key", "non-minimal-integer", "indefinite-map", "float-value", "unknown-tag",
+        "trailing-bytes", "unprotected-algorithm", "wrong-algorithm", "wrong-content-type",
+        "wrong-kid-size", "signature-mutation", "depth-13", "claim-16385-bytes",
+        "batch-257-claims", "batch-1048577-bytes", "allocation-ratio", "idempotency-conflict",
+        "sequence-fork", "checkpoint-mismatch", "rotation-payload-mismatch",
+    }
+    missing = required - set(case_ids)
+    if missing:
+        raise ValidationFailure(f"VibeProof malformed/resource corpus missing: {sorted(missing)}")
 
 
 def validate_protobuf_files() -> None:
@@ -303,6 +355,7 @@ def main() -> int:
         ("policy and observability artifacts", validate_policy_and_observability),
         ("OpenAPI", validate_openapi_file),
         ("CDDL", validate_cddl_file),
+        ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),
         ("Protobuf", validate_protobuf_files),
     ]
     failures: list[str] = []
