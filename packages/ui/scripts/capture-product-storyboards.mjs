@@ -11,30 +11,38 @@ const stories = [
   "activity-and-notifications",
   "board-standings",
 ];
+const viewports = [
+  { name: "desktop", width: 1536, height: 1024 },
+  { name: "tablet", width: 1024, height: 1366 },
+  { name: "mobile", width: 390, height: 844 },
+];
 
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 try {
-  for (const story of stories) {
-    const page = await browser.newPage({ viewport: { width: 1536, height: 1024 }, deviceScaleFactor: 1 });
-    await page.goto(`${baseUrl}/iframe.html?id=approved-baseline-product-screens--${story}&viewMode=story`, { waitUntil: "networkidle" });
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForSelector(".vm-sb-page .vm-sb-header .vm-sb-search", { state: "visible" });
-    await page.evaluate(async () => {
-      await Promise.all([...document.images].map(image => image.complete
-        ? image.decode().catch(() => undefined)
-        : new Promise(resolve => {
-            image.addEventListener("load", resolve, { once: true });
-            image.addEventListener("error", resolve, { once: true });
-          })));
-      await new Promise(requestAnimationFrame);
-      await new Promise(requestAnimationFrame);
-    });
-    if (!await page.evaluate(() => document.fonts.check("14px InterVariable"))) {
-      throw new Error(`InterVariable failed to load for ${story}`);
+  for (const viewport of viewports) {
+    for (const story of stories) {
+      const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: 1 });
+      await page.goto(`${baseUrl}/iframe.html?id=approved-baseline-product-screens--${story}&viewMode=story`, { waitUntil: "networkidle" });
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForSelector(".vm-sb-page .vm-sb-header .vm-sb-search", { state: "visible" });
+      await page.evaluate(async () => {
+        await Promise.all([...document.images].map(image => image.complete
+          ? image.decode().catch(() => undefined)
+          : new Promise(resolve => {
+              image.addEventListener("load", resolve, { once: true });
+              image.addEventListener("error", resolve, { once: true });
+            })));
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+      });
+      if (!await page.evaluate(() => document.fonts.check("14px InterVariable"))) {
+        throw new Error(`InterVariable failed to load for ${story} at ${viewport.name}`);
+      }
+      const suffix = viewport.name === "desktop" ? "" : `-${viewport.name}`;
+      await page.screenshot({ path: resolve(output, `${story}${suffix}.png`), fullPage: viewport.name !== "desktop" });
+      await page.close();
     }
-    await page.screenshot({ path: resolve(output, `${story}.png`) });
-    await page.close();
   }
 } finally {
   await browser.close();
