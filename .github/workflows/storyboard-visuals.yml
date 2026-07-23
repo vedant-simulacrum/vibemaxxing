@@ -8,6 +8,8 @@ on:
     paths:
       - "packages/ui/**"
       - "assets/**"
+      - "scripts/ui/**"
+      - "docs/style-guide/**"
       - ".github/workflows/storyboard-visuals.yml"
 
 permissions:
@@ -28,6 +30,9 @@ jobs:
           cache: npm
           cache-dependency-path: packages/ui/package-lock.json
       - run: npm ci
+      - name: Validate design system and governed assets
+        working-directory: .
+        run: node scripts/ui/check-ui-system.mjs
       - run: npm install --no-save playwright@1.55.0
       - run: npx playwright install --with-deps chromium
       - run: npm run test
