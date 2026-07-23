@@ -1,13 +1,16 @@
 # Accounting, Pricing, and Time Contract
 
 Status: normative planning contract
-Version: 1
+Version: 2
+Updated: 2026-07-24
 
 ## Token Burn
 
-`token_burn_total = input + output + cache_read + cache_write + reasoning + multimodal_input + multimodal_output`.
+Token Burn is the checked sum of the mutually exclusive outputs declared by the exact immutable accounting profile. The canonical output family is `input_uncached`, `output_visible`, `cache_read`, `cache_write`, `reasoning`, `multimodal_input`, and `multimodal_output`, but a profile enables only the components it can produce without overlap.
 
-Each category is stored independently as a non-negative integer. Unknown categories are `null`, never zero. Totals are accepted only when the adapter identifies whether a source total already includes subcategories; reconciliation prevents double addition.
+Source totals and provider categories are observations, not universal addends. The profile containment graph determines whether cache is contained in input, reasoning is contained in output, modality units are separate, or parent totals contain child execution. A contained category is subtracted from its container before both appear as canonical outputs. Unknown categories are absent, never encoded as zero. Contradictory or overflowing containment rejects, quarantines, or becomes private analytics under the profile's fixed policy.
+
+The machine contract is `packages/schemas/accounting-profile.schema.json`; registered planning profiles and representative no-double-count fixtures live under `conformance/accounting/`.
 
 Tool calls are not a separate token category. Tokens consumed by tool definitions, arguments, results, context, compaction, summaries, retries, and subagents are counted in the provider-reported categories that incurred them.
 
@@ -68,9 +71,10 @@ Local-time views may be offered as private analytics but do not change global co
 
 ### Late and offline events
 
-- Claims must include source event time, local monotonic sequence, challenge context, and receipt time.
-- Standard claims may arrive up to 24 hours late; Hardened continuity may use a stricter adapter/platform limit.
-- Claims outside the accepted lateness window remain private analytics and are excluded from active rankings.
+- Claims bind a bounded event interval and uncertainty, monotonic clock domain/generation/duration, challenge, previous checkpoint, and server receipt time.
+- Maximum delayed-sync age is owned by the exact source/accounting/platform policy profile; no universal 24-hour window exists.
+- Reboot, suspend, restore, rollback, or clock-domain reset starts or records a new monotonic generation.
+- Claims outside the applicable profile bound remain private analytics unless a named checkpoint/continuity policy explicitly admits them.
 - Period results remain provisional through the lateness window, then finalize.
 - Appeals and verified server corrections can modify finalized results through explicit correction records and audit events.
 
@@ -85,7 +89,7 @@ Local-time views may be offered as private analytics but do not change global co
 
 ## Accounting event invariants
 
-Every normalized request includes: adapter ID/version, source version, event ID, session ID, optional parent event ID, model/provider identifiers, start/end times, token categories, total quality, source authority, evidence inputs, and privacy classification.
+Every `NormalizedAccountingEvent` binds collector-generated IDs; adapter artifact/manifest and certification digests; registered source/provider/model IDs; accounting-profile ID/digest; monotonic domain/generation and bounded wall-time uncertainty; mutually exclusive canonical components; separately retained source observations with containment labels; count/reconstruction authority; retry/outcome and duplicate-domain semantics; deterministic rule result; and privacy policy result. It is local-only and has `network_eligible=false`.
 
 All integer additions use checked arithmetic. Negative, overflowed, internally inconsistent, or duplicate usage is rejected or quarantined with a stable reason code.
 
