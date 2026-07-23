@@ -1,0 +1,51 @@
+name: Storyboard visuals
+
+on:
+  push:
+    branches:
+      - agent/storyboard-core-product-screens
+  pull_request:
+    paths:
+      - "packages/ui/**"
+      - "assets/**"
+      - ".github/workflows/storyboard-visuals.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: packages/ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/ui/package-lock.json
+      - run: npm ci
+      - run: npm install --no-save playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test
+      - run: npm run storybook:build
+      - name: Serve Storybook
+        run: |
+          python3 -m http.server 4173 -d storybook-static > /tmp/vibemaxxing-storybook.log 2>&1 &
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/iframe.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/vibemaxxing-storybook.log
+          exit 1
+      - name: Capture locked storyboards
+        run: node scripts/capture-product-storyboards.mjs storybook-captures
+      - uses: actions/upload-artifact@v4
+        with:
+          name: product-storyboards-1536x1024
+          path: packages/ui/storybook-captures/*.png
+          if-no-files-found: error
+          retention-days: 30
