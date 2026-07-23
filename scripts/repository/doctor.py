@@ -53,6 +53,14 @@ REQUIRED = [
     "packages/schemas/egress-allowlist-v1.schema.json",
     "packages/schemas/egress-allowlist-v1.json",
     "packages/schemas/vibeproof-claim-v1.cddl",
+    "packages/schemas/state-machine-registry-v1.schema.json",
+    "packages/schemas/state-machine-registry-v1.json",
+    "packages/schemas/platform-profile-registry-v1.schema.json",
+    "packages/schemas/platform-profile-registry-v1.json",
+    "packages/schemas/release-set-v1.schema.json",
+    "packages/schemas/ranking-view-v1.schema.json",
+    "packages/schemas/export-manifest-v1.schema.json",
+    "docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md",
     "docs/architecture/VIBEPROOF_V1_PROTOCOL.md",
     "conformance/vibeproof/v1/exact-byte-vectors.json",
     "conformance/vibeproof/v1/malformed-resource-corpus.json",
@@ -357,8 +365,8 @@ def main() -> None:
     status_lower = status.lower()
     if "planning contract repair" not in status_lower:
         errors.append("status must state the current planning contract repair phase")
-    if "p-1140d is active" not in status_lower:
-        errors.append("status must identify P-1140D as active")
+    if "p-1140e is active" not in status_lower:
+        errors.append("status must identify P-1140E as active")
     if "product implementation remains unauthorized" not in status_lower:
         errors.append("status must state that product implementation remains unauthorized")
     if "phase: planning complete" in status_lower or "technical planning, including the targeted t20" in status_lower:
@@ -368,8 +376,8 @@ def main() -> None:
         "P-1140A": "complete-planning",
         "P-1140B": "complete-planning",
         "P-1140C": "complete-planning",
-        "P-1140D": "in-progress-planning",
-        "P-1140E": "blocked-planning",
+        "P-1140D": "complete-planning",
+        "P-1140E": "in-progress-planning",
         "P-1104": "blocked-approval",
         "P-1131": "blocked-launch-evidence",
     }
@@ -426,7 +434,7 @@ def main() -> None:
     structural = {
         "packages/schemas/vibeproof-claim-v1.cddl": "vibeproof-claim-v1",
         "packages/schemas/local-control-v1.proto": 'syntax = "proto3"',
-        "packages/schemas/openapi-v1.yaml": "openapi: 3.1.0",
+        'packages/schemas/openapi-v1.yaml': '"openapi": "3.1.0"',
         "packages/schemas/planning-schema.sql": "create table claims",
         "packages/schemas/observability-allowlist-v1.yaml": "policy: deny-by-default",
         "docs/integrations/T20_MODEL_HARDENING_CONTRACT.md": "D-046 is provisional",
