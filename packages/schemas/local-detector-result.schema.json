@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/local-detector-result-v1.json",
+  "title": "LocalDetectorResult v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "detector_bundle_sha256",
+    "runtime_sha256",
+    "feature_schema_version",
+    "input_mode",
+    "anomaly_classes",
+    "confidence_bucket",
+    "execution_status",
+    "resource_use",
+    "precheck_bundle_id",
+    "network_eligible"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "detector_bundle_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "runtime_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "feature_schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "input_mode": {
+      "enum": [
+        "structured-features",
+        "raw-local-record-sandbox"
+      ]
+    },
+    "anomaly_classes": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 16,
+      "items": {
+        "enum": [
+          "duplicate-pattern",
+          "sequence-fork",
+          "clock-anomaly",
+          "category-contradiction",
+          "retry-anomaly",
+          "artifact-mismatch",
+          "environment-anomaly"
+        ]
+      }
+    },
+    "confidence_bucket": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "execution_status": {
+      "enum": [
+        "not-run",
+        "passed",
+        "advisory",
+        "failed",
+        "timed-out",
+        "resource-limited"
+      ]
+    },
+    "resource_use": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cpu_ms_bucket",
+        "memory_mib_bucket",
+        "wall_ms_bucket"
+      ],
+      "properties": {
+        "cpu_ms_bucket": {
+          "enum": [
+            "0-10",
+            "11-100",
+            "101-1000",
+            "1001-10000"
+          ]
+        },
+        "memory_mib_bucket": {
+          "enum": [
+            "0-32",
+            "33-128",
+            "129-512",
+            "513-2048"
+          ]
+        },
+        "wall_ms_bucket": {
+          "enum": [
+            "0-10",
+            "11-100",
+            "101-1000",
+            "1001-10000"
+          ]
+        }
+      }
+    },
+    "precheck_bundle_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "network_eligible": {
+      "const": false
+    }
+  }
+}
