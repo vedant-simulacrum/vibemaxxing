@@ -116,7 +116,7 @@ def validate_json_schemas_and_examples() -> None:
 
     required_privacy_boundaries = {
         "adapter", "ipc", "local-store", "detector", "claim", "http",
-        "telemetry", "notification-delivery", "moderation", "export",
+        "telemetry", "notification", "moderation", "export",
     }
     covered_boundaries = {case["boundary"] for case in privacy_cases["cases"]}
     if covered_boundaries != required_privacy_boundaries:
@@ -276,7 +276,7 @@ def validate_p1140d_contracts() -> None:
     required_machines = {
         "oauth-transaction", "web-session-family", "native-session-family", "ranked-identity-eligibility",
         "idempotency-ledger", "ranking-projection", "model-alias-resolution", "friendship", "rivalry",
-        "board-membership", "board-invitation", "presence-lease", "notification",
+        "board-membership", "board-invitation", "presence-lease", "notification-delivery",
         "moderation-case", "appeal", "export-job", "server-deletion", "local-deletion-command",
         "daemon-lifecycle", "privileged-supervisor", "update-lifecycle", "release-trust",
         "platform-certification",
