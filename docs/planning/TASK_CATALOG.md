@@ -47,7 +47,7 @@ Completed outputs:
 
 ### P-1140B — core trust, privacy and accounting contracts
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140A complete.
 
@@ -91,7 +91,7 @@ Candidate deliverables present on `agent/p1140b-core-contracts`:
    - schema-validated deny-by-default claim-egress registry;
    - positive/negative canaries across adapter, IPC, local store, detector, claim, HTTP, telemetry, notification, moderation and export.
 
-Remaining gate work before `complete-planning`: reconcile with current `main`, pass exact-head planning checks, review any validator-discovered contradiction, and update status/inventory from candidate to merged authority.
+Validation: Planning checks run #211 passed on exact candidate head `9165fcb38ea2a4c26c8e539ff15de97fa59f59c2`; the gate-transition head must also pass before merge. The artifacts remain planning contracts, not implementation or executable security evidence.
 
 P-1140B acceptance:
 
@@ -104,7 +104,7 @@ P-1140B acceptance:
 
 ### P-1140C — VibeProof v1 protocol rewrite
 
-Status: `blocked-planning`
+Status: `in-progress-planning`
 
 Dependencies: P-1140B.
 
