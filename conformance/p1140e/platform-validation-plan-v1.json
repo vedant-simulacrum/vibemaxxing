@@ -1,0 +1,3509 @@
+{
+  "schema_version": 1,
+  "maturity": "planning-platform-test-plan-only",
+  "registry_id": "launch-platform-profiles-2026-07-24",
+  "profiles": [
+    {
+      "profile_id": "macos-26-arm64-user-launchd",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "macos-26-x86-64-user-launchd",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "macos-15-arm64-user-launchd",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "macos-15-x86-64-user-launchd",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "macos-14-arm64-user-launchd",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "macos-14-x86-64-user-launchd",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "windows-11-25h2-x86-64-user-service",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "windows-11-25h2-arm64-user-service",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "windows-server-2025-x86-64-service",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "ubuntu-26.04-x86-64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "ubuntu-26.04-x86-64-gnome-wayland",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "ubuntu-26.04-aarch64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "ubuntu-26.04-aarch64-gnome-wayland",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "ubuntu-24.04-x86-64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "ubuntu-24.04-aarch64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "debian-13-x86-64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "debian-13-x86-64-gnome-wayland",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "debian-13-aarch64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "debian-13-aarch64-gnome-wayland",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "fedora-44-x86-64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "fedora-44-x86-64-gnome-wayland",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "fedora-44-aarch64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "fedora-44-aarch64-gnome-wayland",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "alpine-3.23-x86-64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "alpine-3.23-aarch64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "nixos-26.05-x86-64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "nixos-26.05-x86-64-gnome-wayland",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "nixos-26.05-aarch64-headless",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "nixos-26.05-aarch64-gnome-wayland",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "wsl2-ubuntu-26.04-x86-64-systemd",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "oci-linux-x86-64-immutable",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "not-applicable",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "not-applicable",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "oci-linux-aarch64-immutable",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "not-applicable",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "not-applicable",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "ci-linux-x86-64-ephemeral",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "terminate-explicitly",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "not-applicable",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "not-applicable",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "not-applicable",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    },
+    {
+      "profile_id": "ci-linux-aarch64-ephemeral",
+      "certification_state": "planned-validation-required",
+      "advertised": false,
+      "cases": [
+        {
+          "case_id": "install",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-start",
+          "applicability": "required",
+          "expected": "terminate-explicitly",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "service-crash-loop",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "shell-close",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "login-logout",
+          "applicability": "not-applicable",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "reboot",
+          "applicability": "not-applicable",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "sleep-resume",
+          "applicability": "not-applicable",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "key-denied-or-reset",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "ipc-cross-user",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "permission-revoked",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "disk-full",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "network-offline",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "update-interrupted",
+          "applicability": "required",
+          "expected": "preserve-update-export-uninstall",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "rollback",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "uninstall",
+          "applicability": "required",
+          "expected": "recover",
+          "execution_state": "planned-runtime-evidence"
+        },
+        {
+          "case_id": "privacy-canary",
+          "applicability": "required",
+          "expected": "fail-closed",
+          "execution_state": "planned-runtime-evidence"
+        }
+      ]
+    }
+  ]
+}
