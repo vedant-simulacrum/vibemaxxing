@@ -102,8 +102,6 @@ paths:
   /communities:
     get: {operationId: listCommunities, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
     post: {operationId: createCommunity, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'201': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
-  /countries:
-    get: {operationId: listCountries, security: [], responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
   /presence:
     get: {operationId: getPresence, responses: {'200': {$ref: '#/components/responses/Collection'}, default: {$ref: '#/components/responses/Error'}}}
     put: {operationId: renewPresence, parameters: [{$ref: '#/components/parameters/IdempotencyKey'}], responses: {'200': {$ref: '#/components/responses/Resource'}, default: {$ref: '#/components/responses/Error'}}}
