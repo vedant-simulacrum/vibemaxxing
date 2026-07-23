@@ -1,11 +1,24 @@
 # Specification Traceability and Implementation Dry-Run Audit
 
-Status: normative planning evidence
-Updated: 2026-07-19
+Status: historical planning evidence; superseded as current authority
+Original date: 2026-07-19
+Reclassified: 2026-07-24
 
-## Purpose
+## Authority warning
 
-Every launch requirement must map to an authoritative decision, implementation contract, owner, privacy/security control, failure behavior, and planned evidence. Missing links are planning defects.
+This file preserves the July 19 traceability and implementation dry-run snapshot. It is not the current traceability authority and must not be used to open implementation.
+
+The later repository-wide audit found missing or contradictory machine contracts across evidence appraisal, accounting profiles, protocol batching and continuity, device lineage, OAuth/session state, ranking-view identity, social state machines, platform support and release/update behavior. Current authority is:
+
+- `docs/planning/decision-traceability/` for D-001 through D-069 mappings;
+- `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md` for reconciliation;
+- `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md` for required schema/state repairs;
+- `docs/planning/TASK_CATALOG.md` for P-1140B through P-1140E gates;
+- the implementation handoff only after those gates pass and P-1104 is explicitly approved.
+
+## Historical purpose
+
+The July 19 audit attempted to map each launch requirement to a decision, implementation contract, owner, privacy/security control, failure behavior and planned evidence. The table below remains useful as an inventory, but later findings invalidate its former completeness conclusion.
 
 ## Traceability matrix
 
@@ -32,7 +45,7 @@ Every launch requirement must map to an authoritative decision, implementation c
 
 ## Implementation dry-run method
 
-For each subsystem the implementation model must be able to identify: modules to create, authoritative schema, interfaces consumed and produced, persisted state, transaction boundary, retries, idempotency key, privacy classification, logs allowed, migrations, rollback, and tests. The dry run found no missing ownership class after the normative contracts were added.
+For each subsystem the implementation model was asked to identify modules to create, authoritative schema, interfaces consumed and produced, persisted state, transaction boundary, retries, idempotency key, privacy classification, logs allowed, migrations, rollback and tests. The July 19 dry run found no missing ownership class at a coarse level. The July 23 audit later proved that ownership labels alone were insufficient: several authoritative states, schema fields, transaction semantics and evidence gates were contradictory or absent.
 
 ## Dry-run build map
 
@@ -49,8 +62,10 @@ For each subsystem the implementation model must be able to identify: modules to
 
 ## No-invention findings
 
-The implementation model may select minor internal names and refactor private code, but may not invent accounting semantics, public schemas, ranking behavior, evidence meaning, identity recovery, privacy fields, moderation outcomes, or lifecycle behavior. Those are governed by committed contracts.
+After the relevant P-1140 repair closes, an implementation model may select minor internal names and refactor private code but may not invent accounting semantics, public schemas, ranking behavior, evidence meaning, identity recovery, privacy fields, moderation outcomes or lifecycle behavior. Until then, blocked draft contracts are inputs to repair, not permission to guess.
 
-## Closure
+## Historical disposition
 
-All product-level launch requirements have a traceability path. Executable evidence remains an implementation-phase obligation, not a planning gap.
+The former conclusion that all product-level launch requirements had a sufficient traceability path is superseded. P-1140B through P-1140E explicitly track the missing contract, schema, state-machine, platform and validation dimensions.
+
+Keep this file for provenance. Do not add new requirements here. Consolidate durable traceability in the current decision-traceability directory, owning contracts, schemas, task catalog and inactive implementation handoff.
