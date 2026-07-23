@@ -120,6 +120,15 @@ WORKFLOWS_REQUIRING_IMMUTABLE_ACTIONS = [
     ".github/workflows/storyboard-visuals.yml",
 ]
 
+STORYBOARD_ALLOWED_EVENTS = {"workflow_dispatch", "pull_request"}
+STORYBOARD_ALLOWED_PATHS = {
+    "packages/ui/**",
+    "assets/**",
+    "scripts/ui/**",
+    "docs/style-guide/**",
+    ".github/workflows/storyboard-visuals.yml",
+}
+
 PATH_TOKEN = re.compile(r"`((?:\.?\.?/)?[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+)`")
 DECISION = re.compile(r"\bD-\d{3}\b")
 TASK = re.compile(r"\bP-\d{3,4}[A-Z]?\b")
@@ -174,6 +183,78 @@ def validate_action_pins(path: str, errors: list[str]) -> None:
             continue
         if not FULL_SHA_ACTION.fullmatch(reference):
             errors.append(f"workflow action is not pinned to a full commit SHA: {path}:{line_number}: {reference}")
+
+
+def validate_storyboard_workflow(text: str, errors: list[str]) -> None:
+    lines = text.splitlines()
+    try:
+        on_index = lines.index("on:")
+    except ValueError:
+        errors.append("storyboard workflow is missing its event block")
+        return
+
+    event_lines: list[str] = []
+    for line in lines[on_index + 1 :]:
+        if line and not line.startswith(" "):
+            break
+        event_lines.append(line)
+
+    events = {
+        match.group(1)
+        for line in event_lines
+        if (match := re.fullmatch(r"  ([A-Za-z0-9_-]+):\s*", line))
+    }
+    if events != STORYBOARD_ALLOWED_EVENTS:
+        errors.append(
+            "storyboard workflow events must be exactly pull_request and workflow_dispatch under ADR-014; "
+            f"found {sorted(events)}"
+        )
+
+    paths: set[str] = set()
+    in_pull_request = False
+    in_paths = False
+    for line in event_lines:
+        event_match = re.fullmatch(r"  ([A-Za-z0-9_-]+):\s*", line)
+        if event_match:
+            in_pull_request = event_match.group(1) == "pull_request"
+            in_paths = False
+            continue
+        if in_pull_request and line == "    paths:":
+            in_paths = True
+            continue
+        if in_paths:
+            path_match = re.fullmatch(r"      -\s+[\"']?(.+?)[\"']?\s*", line)
+            if path_match:
+                paths.add(path_match.group(1).strip('"\''))
+            elif line.strip() and not line.startswith("      "):
+                in_paths = False
+
+    if paths != STORYBOARD_ALLOWED_PATHS:
+        errors.append(
+            "storyboard pull_request paths must exactly match ADR-014 allowed scope; "
+            f"missing={sorted(STORYBOARD_ALLOWED_PATHS - paths)}, extra={sorted(paths - STORYBOARD_ALLOWED_PATHS)}"
+        )
+
+    required_markers = {
+        "read-only repository permissions": "permissions:\n  contents: read",
+        "non-persisted checkout credentials": "persist-credentials: false",
+        "synthetic-only fixtures": "VIBEMAXXING_FIXTURE_POLICY: synthetic-only",
+        "loopback-only Storybook serving": "--bind 127.0.0.1",
+        "locked Playwright runtime": "scripts/ui/playwright-runtime/package-lock.json",
+        "prototype artifact maturity": "VIBEMAXXING_ARTIFACT_MATURITY: runnable-prototype",
+    }
+    for label, marker in required_markers.items():
+        if marker not in text:
+            errors.append(f"storyboard workflow is missing ADR-014 invariant: {label}")
+
+    if "${{ secrets." in text:
+        errors.append("storyboard workflow must not access repository or environment secrets under ADR-014")
+    if re.search(r"(?m)^\s*retention-days:\s*(\d+)\s*$", text):
+        retention = int(re.search(r"(?m)^\s*retention-days:\s*(\d+)\s*$", text).group(1))
+        if retention > 30:
+            errors.append("storyboard workflow artifact retention must not exceed 30 days under ADR-014")
+    else:
+        errors.append("storyboard workflow must declare bounded artifact retention under ADR-014")
 
 
 def main() -> None:
@@ -345,6 +426,7 @@ def main() -> None:
         validate_action_pins(workflow, errors)
 
     storyboard = (ROOT / ".github/workflows/storyboard-visuals.yml").read_text(encoding="utf-8")
+    validate_storyboard_workflow(storyboard, errors)
     if "npm install --no-save" in storyboard:
         errors.append("storyboard workflow must not install dependencies outside a committed lockfile")
     if "scripts/ui/playwright-runtime" not in storyboard:
