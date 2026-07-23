@@ -31,6 +31,7 @@ import {
   ProductUserIdentity,
   type FixtureAvatarId,
 } from "../patterns/product-system";
+import "./product-storyboards.css";
 import "./competition-suite.css";
 
 export const leaderboardScopes = ["Global", "Friends", "Boards", "Organizations"] as const;
