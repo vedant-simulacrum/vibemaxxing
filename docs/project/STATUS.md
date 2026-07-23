@@ -79,6 +79,8 @@ Candidate artifacts now encode 23 authoritative state machines, 34 exact launch 
 
 P-1140E owns cross-contract fixtures, D-001..D-069 traceability validation, exact platform-profile validation, clean-checkout planning validation and the final P0/P1 review.
 
+The candidate matrix binds 69 decisions, all API operations, 23 state machines, 34 profiles and 18 validation domains. It includes state transition fixtures, PostgreSQL race plans, per-profile runtime evidence plans, reference closure and a final audit recording zero open P0/P1 planning contradictions. These are planning artifacts; runtime evidence remains absent.
+
 P-1104 remains blocked until P-1140B–E complete, all planning-only validation passes from a clean checkout, no P0/P1 contradiction remains and the user explicitly authorizes implementation.
 
 ## Artifact maturity
