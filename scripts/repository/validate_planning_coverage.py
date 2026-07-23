@@ -108,9 +108,15 @@ def main() -> None:
         errors.append(f"missing current planning PostgreSQL tables: {missing_tables}")
     forbidden_tables = sorted(FORBIDDEN_LAUNCH_TABLES & tables)
     if forbidden_tables:
-        errors.append(f"post-launch country tables remain in the launch SQL placeholder: {forbidden_tables}")
+        errors.append(f"post-launch country tables remain in the launch SQL contract: {forbidden_tables}")
     if re.search(r"board_type\s+in\s*\([^)]*'country'", sql, flags=re.IGNORECASE | re.DOTALL):
         errors.append("country remains an allowed launch board_type")
+    if "P-1140D REPAIRED PLANNING MIGRATION CONTRACT" not in sql:
+        errors.append("PostgreSQL contract lacks repaired P-1140D marker")
+    if re.search(r"(?i)\bjsonb\b", sql):
+        errors.append("untyped jsonb remains in the repaired SQL contract")
+    if "board_one_active_owner" not in sql or "check (account_id_a < account_id_b)" not in sql:
+        errors.append("repaired social SQL lacks canonical pair or single-owner constraints")
 
     for label, (relative_path, marker) in REPAIR_TARGETS.items():
         text = (ROOT / relative_path).read_text(encoding="utf-8")
