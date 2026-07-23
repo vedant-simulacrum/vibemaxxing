@@ -1,6 +1,9 @@
-import { chromium } from "playwright";
+import { createRequire } from "node:module";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
+
+const require = createRequire(new URL("../../../scripts/ui/playwright-runtime/package.json", import.meta.url));
+const { chromium } = require("playwright");
 
 const output = resolve(process.argv[2] ?? "storybook-captures");
 const baseUrl = process.env.STORYBOOK_URL ?? "http://127.0.0.1:4173";
