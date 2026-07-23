@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/ranking-view-v1.schema.json",
+  "title": "Immutable ranking view identity v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ranking_view_id",
+    "scope",
+    "period_id",
+    "rules_digest",
+    "pricing_dataset_digest",
+    "evidence_policy_digest",
+    "projection_generation",
+    "source_checkpoint_digest",
+    "created_at"
+  ],
+  "properties": {
+    "ranking_view_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "scope": {
+      "enum": [
+        "global",
+        "friends",
+        "rivals",
+        "board"
+      ]
+    },
+    "period_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "board_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "rules_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "pricing_dataset_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "evidence_policy_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "projection_generation": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source_checkpoint_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "board"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "board_id"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "board_id"
+          ]
+        }
+      }
+    }
+  ]
+}
