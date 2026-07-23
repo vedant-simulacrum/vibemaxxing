@@ -129,7 +129,7 @@
             "uniqueItems": true,
             "items": {
               "type": "string",
-              "pattern": "^(docs|packages|conformance|scripts)/"
+              "pattern": "^(\\.github|docs|packages|conformance|scripts)/"
             }
           },
           "fixtures": {
@@ -138,7 +138,7 @@
             "uniqueItems": true,
             "items": {
               "type": "string",
-              "pattern": "^(docs|packages|conformance|scripts)/"
+              "pattern": "^(\\.github|docs|packages|conformance|scripts)/"
             }
           },
           "expected": {
