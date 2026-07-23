@@ -20,7 +20,6 @@ import {
   type LedgerPerson,
 } from "./components";
 import { LeaderboardBentoPrototype, leaderboardFixture } from "./concepts/leaderboard-bento";
-import { LeaderboardFirstPrototype, leaderboardFirstFixture } from "./concepts/leaderboard-first";
 
 const person: LedgerPerson = { rank: 1, name: "Maya Chen", handle: "mayac", initials: "MC", burn: 148.2, cash: 392.14, change: 2, evidence: "Hardened", active: "Codex", tint: "plum" };
 
@@ -106,21 +105,6 @@ test("deprecated bento fixture remains renderable as design history", () => {
 
   const html = renderToStaticMarkup(<LeaderboardBentoPrototype/>);
   for (const expected of ["Leaderboard", "Sam is 5.3M behind", "Updates every 30s", "Showing top 10 of 2,842 users"]) {
-    assert.match(html, new RegExp(expected));
-  }
-});
-
-test("canonical leaderboard-first story preserves its six-column data contract", () => {
-  const current = leaderboardFirstFixture.find((entry) => entry.handle === "vedant");
-  const rival = leaderboardFirstFixture.find((entry) => entry.handle === "samrivera");
-  assert.equal(current?.rank, 7);
-  assert.equal(current?.burnToday, "86.4M");
-  assert.equal(current?.sevenDayBurn, "498.7M");
-  assert.equal(rival?.rank, 8);
-  assert.equal(rival?.burnToday, "81.1M");
-
-  const html = renderToStaticMarkup(<LeaderboardFirstPrototype />);
-  for (const expected of ["Burn today", "7d burn", "Top model", "Change", "Updates every 30s", "5.3M"]) {
     assert.match(html, new RegExp(expected));
   }
 });
