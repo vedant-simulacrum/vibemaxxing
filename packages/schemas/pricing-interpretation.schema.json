@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/pricing-interpretation-v1.json",
+  "title": "Server PricingInterpretation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "interpretation_id",
+    "event_id",
+    "pricing_dataset_id",
+    "pricing_rule_sha256",
+    "model_alias_resolution",
+    "line_items",
+    "canonical_currency",
+    "canonical_scale",
+    "result",
+    "created_at",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "interpretation_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "pricing_dataset_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "pricing_rule_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "model_alias_resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed_registered_model_id",
+        "resolved_pricing_model_id",
+        "effective_at",
+        "resolution_rule_sha256"
+      ],
+      "properties": {
+        "observed_registered_model_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "resolved_pricing_model_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "effective_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolution_rule_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "quantity",
+          "unit",
+          "denominator",
+          "unit_price_minor",
+          "region",
+          "service_tier",
+          "mode",
+          "rounding",
+          "intermediate_minor"
+        ],
+        "properties": {
+          "category": {
+            "enum": [
+              "input_uncached",
+              "output_visible",
+              "cache_read",
+              "cache_write",
+              "reasoning",
+              "multimodal_input",
+              "multimodal_output"
+            ]
+          },
+          "quantity": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "unit": {
+            "enum": [
+              "tokens",
+              "token-equivalents"
+            ]
+          },
+          "denominator": {
+            "type": "string",
+            "enum": [
+              "1",
+              "1000",
+              "1000000"
+            ]
+          },
+          "unit_price_minor": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "region": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 128
+          },
+          "service_tier": {
+            "enum": [
+              "standard",
+              "priority",
+              "flex",
+              "batch",
+              "reserved",
+              "unknown"
+            ]
+          },
+          "mode": {
+            "enum": [
+              "synchronous",
+              "batch",
+              "cached",
+              "unknown"
+            ]
+          },
+          "rounding": {
+            "enum": [
+              "half-even",
+              "half-up",
+              "floor",
+              "ceiling"
+            ]
+          },
+          "intermediate_minor": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          }
+        }
+      }
+    },
+    "canonical_currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "canonical_scale": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 12
+    },
+    "result": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "amount_minor"
+          ],
+          "properties": {
+            "kind": {
+              "const": "priced"
+            },
+            "amount_minor": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "reason"
+          ],
+          "properties": {
+            "kind": {
+              "const": "unpriced"
+            },
+            "reason": {
+              "enum": [
+                "model-unmapped",
+                "price-unavailable",
+                "unsupported-modality",
+                "local-compute-methodology-absent",
+                "rule-contradiction"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authority": {
+      "const": "server"
+    }
+  }
+}
