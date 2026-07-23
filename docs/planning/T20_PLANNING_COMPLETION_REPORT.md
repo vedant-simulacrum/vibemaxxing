@@ -1,38 +1,44 @@
-# T20 Planning Completion Report
+# Historical T20 Candidate Planning Record
 
-Updated: 2026-07-19
-Status: planning completion record
+Updated: 2026-07-23
+Status: historical evidence; superseded as current authority
 
 ## Conclusion
 
-P-1130A through P-1130E are complete at planning-contract level. The T20 golden-path requirement is now represented by normative prose, machine-readable registries and schemas, positive and negative fixtures, and a dedicated validator wired into planning CI.
+The July 19 work created useful candidate schemas, fixtures and validation logic for a possible rolling T20 cohort. It did not establish a launch requirement, implementation, benchmark result, model selection run or real certification.
 
-No product implementation, adapter, provider integration, benchmark result, model selection run, or real certification was created.
+D-046 is now provisional. T20 is not a public-launch dependency unless a later evidence-backed decision promotes it after P-1140B and P-1140E reconciliation.
 
-## Closed planning questions
+## Preserved candidate artifacts
 
-- Exact certification identity is an immutable multidimensional tuple rather than a family-level marketing claim.
-- Coverage is a usage-weighted matrix across exact model, runtime, mode, capture path, platform, architecture and accounting profile.
-- Evidence classes E1 through E6 have explicit precedence, source-binding requirements, replay controls and downgrade behavior.
-- The rolling T20 selection has a reproducible population, window, dataset precedence, scoring formula, missing-data handling, constraints, confidence and deterministic tie-breaking.
-- Provider/API/version accounting profiles define token categories, retries, streaming, cache/reasoning/tool/multimodal semantics, missing usage and pricing provenance.
-- Duplicate observations are reconciled by source precedence within a declared duplicate domain and are never summed or averaged blindly.
-- “T20 optimized Hardened” requires quantitative accounting, performance, reliability, coverage, UX and maintenance evidence.
+- `docs/integrations/T20_MODEL_HARDENING_CONTRACT.md`;
+- `docs/integrations/T20_CERTIFICATION_AND_SELECTION_SPEC.md`;
+- `conformance/models/t20-model-registry-v1.json`;
+- `conformance/models/t20-model-registry-v1.schema.json`;
+- `conformance/models/t20-optimization-evidence-v1.schema.json`;
+- positive and negative optimization fixtures;
+- `scripts/repository/validate_t20_contract.py`.
 
-## Planning artifacts
+These artifacts preserve exact-tuple certification, evidence classes, source binding, duplicate reconciliation, accounting-profile design, reproducible candidate selection and optimization-evidence structure.
 
-- `docs/integrations/T20_MODEL_HARDENING_CONTRACT.md`
-- `docs/integrations/T20_CERTIFICATION_AND_SELECTION_SPEC.md`
-- `conformance/models/t20-model-registry-v1.json`
-- `conformance/models/t20-model-registry-v1.schema.json`
-- `conformance/models/t20-optimization-evidence-v1.schema.json`
-- `conformance/models/fixtures/t20-optimization-evidence.valid.json`
-- `conformance/models/fixtures/t20-optimization-evidence.invalid-pass.json`
-- `scripts/repository/validate_t20_contract.py`
-- `.github/workflows/planning-checks.yml`
+## Current required state
 
-## Remaining future evidence
+- registry status remains `prelaunch-pending`;
+- slots remain empty;
+- selection runs remain empty;
+- accounting profiles remain empty;
+- no certification or measured coverage claim is permitted;
+- the validator checks provisional consistency only;
+- no launch gate may require exactly twenty active slots.
 
-P-1131 remains blocked until implementation exists. It requires a real approved selection run, exactly twenty current slots, exact accounting profiles, coverage matrices, non-expired certifications and quantitative optimization evidence for all active slots.
+## Future promotion evidence
 
-P-1104 remains the only implementation entrance gate and requires explicit user authorization. Until then, the registry remains honestly `prelaunch-pending` with no slots, selection runs, accounting profiles or certifications.
+A future promotion would require real eligible usage, approved selection data, exact accounting profiles, exercised coverage matrices, non-expired certifications, measured maintenance cost and proof that a T20 cohort adds material value over universal capability-based support.
+
+## Current phase relationship
+
+P-1140B is active. P-1140C through P-1140E remain dependency-blocked. P-1104 remains blocked after those gates until explicit implementation approval. The former statement that P-1104 was the only remaining entrance gate is obsolete.
+
+## Evidence boundary
+
+This record proves only that candidate planning artifacts once existed and were structurally validated. It proves no product support, anti-cheat strength, performance, compatibility or launch readiness.
