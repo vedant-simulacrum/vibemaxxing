@@ -67,9 +67,7 @@ Candidate contract set now present:
 - separate local/server continuity, atomic idempotency/replay and recovery state;
 - fixed Ed25519 claim/receipt vectors plus malformed/resource/transaction cases.
 
-Planning checks run #219 passed on the exact P-1140C candidate head. The gate-transition head must also pass before merge.
-
-Active work is the deterministic CBOR/COSE claim, appraisal, checkpoint, batch, continuity, gap, rotation, correction and replay state contract. It must preserve the P-1140B authority and privacy boundaries.
+Planning checks run #219 passed on the exact P-1140C candidate head. The gate-transition head must also pass before merge. P-1140C is complete-planning; follow-on implementation and interoperability evidence remain blocked.
 
 ### Active P-1140D — identity, API, ranking, social, native and release state machines
 
