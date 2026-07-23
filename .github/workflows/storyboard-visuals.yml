@@ -10,7 +10,6 @@ on:
       - main
     paths:
       - "apps/web/**"
-      - "apps/web/**"
       - "packages/ui/**"
       - "assets/**"
       - "scripts/ui/**"
@@ -18,6 +17,7 @@ on:
       - ".github/workflows/storyboard-visuals.yml"
   pull_request:
     paths:
+      - "apps/web/**"
       - "packages/ui/**"
       - "assets/**"
       - "scripts/ui/**"
