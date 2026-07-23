@@ -21,7 +21,7 @@ Run `python3 scripts/repository/doctor.py` before relying on repository state.
 
 ## Current authority note
 
-The repository is in planning contract repair. P-1140A is complete and P-1140B is active.
+The repository is in planning contract repair. P-1140A through P-1140D are complete and P-1140E is active.
 
 Historical reports that declare planning complete or platform scope unresolved do not override current project authority, D-062 through D-069, ADR-011 through ADR-014, decision traceability or the frozen cross-platform audit.
 
@@ -42,7 +42,8 @@ Where a contract conflicts with an accepted decision, the decision is authoritat
 - Universal compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`, blocked where certification is not digest/provenance/profile bound
 - T20 planning: `docs/integrations/T20_MODEL_HARDENING_CONTRACT.md`, `docs/integrations/T20_CERTIFICATION_AND_SELECTION_SPEC.md`; D-046 remains provisional
 - Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, ADR-010 through ADR-013
-- Server/data/ranking: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, blocked for P-1140C/D
+- Authoritative server/native state and platform contract: `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
+- Server/data/ranking: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, reconciled by the P-1140D authority contract
 - Privacy: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md`
 - Security: `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`
 - Operations/launch: `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, ADR-013, subject to P-1140D release repair
@@ -74,7 +75,13 @@ Where a contract conflicts with an accepted decision, the decision is authoritat
 - `evidence-profile-policy-v1.json`
 - `egress-allowlist-v1.schema.json` and `egress-allowlist-v1.json`
 - `vibeproof-claim-v1.cddl`
+- `state-machine-registry-v1.schema.json` and `state-machine-registry-v1.json`
+- `platform-profile-registry-v1.schema.json` and `platform-profile-registry-v1.json`
+- `release-set-v1.schema.json`
+- `ranking-view-v1.schema.json`
+- `export-manifest-v1.schema.json`
 - `local-control-v1.proto`
+- `social-integrity-events-v1.proto`
 - `openapi-v1.yaml`
 - `planning-schema.sql`
 - `reason-codes-v1.json`
@@ -87,10 +94,11 @@ Until P-1140B–E close:
 
 - adapter manifest, typed local stages, accounting profiles, device lineage, pricing interpretation, evidence policy and claim-egress registry are repaired P-1140B planning contracts; P-1140C owns wire binding and P-1140E owns final cross-validation;
 - VibeProof v1 CDDL/protocol and exact-byte/malformed conformance artifacts are repaired P-1140C planning contracts; P-1140E still requires independent codecs and cross-contract validation;
-- local Protobuf retains blocked opaque transport and missing process/deadline semantics;
-- OpenAPI retains blocked generic resources plus unresolved presence, deletion and authorization semantics;
-- planning SQL lacks complete token families, lineages, appraisals, receipts, idempotency, ranking views, typed social and release/update state;
-- reason codes/defaults remain provisional where state machines are unresolved.
+- local and social Protobuf contracts use closed typed messages; P-1140E owns cross-contract fixture validation;
+- OpenAPI uses endpoint-specific closed resources, authority metadata, durable idempotency and typed rate limits;
+- planning SQL declares the repaired PostgreSQL 16 ownership/constraint model, including session families, lineage, appraisal, receipt, ranking, social and release/update state;
+- state-machine and exact platform-profile registries are the P-1140D candidate authority;
+- reason codes and policy defaults carry lifecycle, appeal, retry, visibility, effective-time and change semantics.
 
 No generated production types should be based on a blocked schema.
 
@@ -98,6 +106,8 @@ No generated production types should be based on a blocked schema.
 
 - Adapter compatibility: `conformance/adapters/agent-registry-v1.json` and adjacent schema.
 - Adversarial cases: `conformance/adversarial/anti-cheat-registry-v1.json` and adjacent schema.
+- Authoritative mutable state: `packages/schemas/state-machine-registry-v1.json` and adjacent schema.
+- Exact launch platform profiles: `packages/schemas/platform-profile-registry-v1.json` and adjacent schema.
 - T20 model registry: `conformance/models/t20-model-registry-v1.json` and adjacent schema.
 - T20 optimization evidence: `conformance/models/t20-optimization-evidence-v1.schema.json`.
 - T20 planning fixtures: `conformance/models/fixtures/`.
