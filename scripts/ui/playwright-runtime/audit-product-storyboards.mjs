@@ -33,8 +33,7 @@ try {
 }
 
 if (failures.length) {
-  console.error(failures.map((failure) => `- ${failure}`).join("
-"));
+  console.error(failures.map((failure) => `- ${failure}`).join("\n"));
   process.exit(1);
 }
 console.log(`Accessibility and keyboard interaction audit passed for ${stories.length} approved product screens.`);
