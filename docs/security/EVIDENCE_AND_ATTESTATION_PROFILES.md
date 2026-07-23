@@ -1,149 +1,179 @@
 # Evidence and Attestation Profiles
 
-Status: normative planning contract
-Updated: 2026-07-19
+Status: normative planning direction; machine-readable policy requires P-1140B/C.
+Updated: 2026-07-23
 
 ## Purpose
 
-VibeProof proves that a registered device key signed a canonical claim and that the server accepted it under defined sequence, challenge, accounting, privacy and compatibility rules. It does not, by itself, prove that a provider issued the usage record, that the local source was uncompromised, or that a user-controlled machine was not cloned.
+VibeProof establishes that a registered device key signed a canonical evidence claim and that the server verifier accepted or rejected it under defined accounting, privacy, compatibility, continuity and policy rules.
 
-Consumer-facing states remain `Standard`, `Hardened`, and `Imported`. `Hardened` is not a generic adjective: it is awarded only through a named, versioned profile whose complete requirements pass for the exact certification tuple.
+It does not by itself prove:
 
-## Independent evidence dimensions
+- that a provider issued a usage record;
+- that the local source was uncompromised;
+- that a user-controlled machine was not cloned;
+- that an OAuth account maps to one unique human.
 
-Every competitive claim records these dimensions independently:
+Consumer-facing states remain Standard, Hardened and Imported. The server verifier awards Standard or Hardened through a named, versioned profile. The client submits facts and cannot select its final state.
 
-1. **Source authority** — who produced or observed the usage fact.
-2. **Capture binding** — how the observation is bound to the source execution.
-3. **Accounting authority** — how token categories and totals were obtained.
-4. **Device-key protection** — how export, cloning and unauthorized signing are resisted.
-5. **Continuity strength** — sequence, prior-hash, local commitment and rollback properties.
-6. **Environment assurance** — signed build, process identity, OS or hardware attestation.
-7. **Freshness** — source event time, local commitment time, challenge time and receipt time.
-8. **Compatibility evidence** — exact runtime, version, mode, platform and conformance result.
+## Independent dimensions
 
-No stronger value in one dimension silently upgrades a weaker value in another.
+Every verifier appraisal records independently:
+
+1. source authority;
+2. capture binding;
+3. accounting authority;
+4. device-key protection;
+5. continuity strength;
+6. environment assurance;
+7. freshness/time uncertainty;
+8. exact compatibility and certification evidence;
+9. deterministic integrity-rule result;
+10. anomaly disposition, when applicable.
+
+No stronger value in one dimension silently upgrades a failed mandatory requirement in another.
 
 ## Source evidence classes
 
-### E1 — Provider-signed or provider-verifiable
+### E1 — provider-signed or provider-verifiable
 
-An independently verifiable artifact is cryptographically signed by the provider or can be verified through a provider-operated verification interface. The verified statement must bind the provider request or execution identifier, exact model/version, usage categories, outcome, issuance time and anti-replay identifier.
+An independently verifiable artifact is cryptographically signed by the provider or verified through a provider-operated interface. It must bind exact model/version, usage categories, outcome, issuance time and anti-replay identity.
 
-Authenticated TLS transport, ordinary JSON usage metadata, request IDs, invoices, screenshots, local logs and bearer-token possession do not qualify by themselves.
+Ordinary JSON usage metadata, request IDs, invoices, screenshots, bearer-token possession, local logs and authenticated TLS do not qualify by themselves.
 
-### E2 — VibeMaxxing-server-observed provider response
+E1 is reserved and unavailable until a provider actually exposes a qualifying artifact or verification interface.
 
-A VibeMaxxing-controlled service observes an authenticated provider response in the request path and binds it to a server-side request record. This is not portable provider-signed evidence and must never be labelled E1. It is permitted only when the product flow explicitly routes the model call through that service and the privacy contract remains satisfied.
+### E2 — trusted local structured source event
 
-### E3 — Trusted local structured event
+An official source hook, SDK callback, local API or runtime-native structured event is observed by an exercised adapter. The event binds an exact source version, capture path and artifact certification tuple.
 
-An official source hook, SDK callback, local API or structured event is observed by an exercised adapter. The event is bound to an exact source version and capture path. Trust remains bounded by the user-controlled device and the source's own integrity.
+This remains bounded by the user-controlled device and source integrity.
 
-### E4 — Gateway or proxy observation
+### E3 — local gateway or protocol observation
 
-A local or user-controlled gateway observes request/response metadata. The evidence ceiling depends on process identity, endpoint binding, duplicate-domain controls and whether encrypted traffic is terminated by the gateway. It never qualifies as provider-signed merely because upstream TLS authenticated the provider during transport.
+A local gateway/wrapper observes approved structural request/response metadata. Its ceiling depends on process identity, endpoint binding, duplicate-domain controls and encrypted-traffic handling.
 
-### E5 — Deterministic derivation
+It never becomes provider-signed evidence merely because upstream TLS authenticated a provider.
 
-Counts are reconstructed from non-content structural facts or an approved tokenizer/accounting algorithm. The exact algorithm and source version are recorded. Estimates are explicitly labelled and cannot satisfy a profile that requires provider-reported accounting.
+### E4 — deterministic derivation
 
-### E6 — Untrusted import
+Counts are reconstructed using approved non-content structural facts, emitted token IDs or an exact tokenizer/accounting algorithm. The algorithm, model/tokenizer identity and source version are recorded.
 
-Historical or caller-supplied records from mutable storage. E6 is private analytics only and never enters active competitive rankings.
+Exact certified derivation may compete at a named profile. Approximate estimates remain private analytics.
+
+### E5 — untrusted import
+
+Historical or caller-supplied records from mutable storage. Private analytics only; never active competition.
+
+## Explicitly excluded launch source class
+
+The launch architecture does not route user model traffic through a VibeMaxxing-controlled inference service merely to observe provider responses. Any future hosted inference product is a separate explicit mode and cannot silently redefine the default privacy contract or become required for competition.
 
 ## Device-key protection classes
 
-- **K1 hardware non-exportable** — key generated and used in hardware-backed secure storage; export is prohibited by the platform API and the key is bound to an attested device or security module.
-- **K2 OS-bound non-exportable** — key is non-exportable through documented OS APIs but lacks a qualifying hardware attestation.
-- **K3 OS credential protected** — export may be possible through account backup, migration, administrator access or credential-store APIs; encryption and ACLs protect ordinary access.
-- **K4 application encrypted** — application-managed encrypted key material with explicit passphrase or OS wrapping.
-- **K5 insecure fallback** — plaintext, weakly protected or operationally clonable storage. K5 cannot produce competitive Hardened evidence.
-- **KU unknown** — protection has not been established; fail closed for Hardened.
+- **K1 hardware non-exportable** — generated and used in qualifying hardware-backed storage; platform API prohibits export and certification covers restore/migration behavior.
+- **K2 OS-bound non-exportable** — documented OS non-exportability without qualifying hardware attestation.
+- **K3 OS credential protected** — protected by OS encryption/ACLs but potentially migratable or recoverable by administrators/accounts.
+- **K4 application encrypted** — application-managed encrypted key material with explicit OS wrapping or passphrase.
+- **K5 insecure fallback** — plaintext, weak or operationally clonable; cannot produce Hardened.
+- **KU unknown** — protection not established; fail closed for Hardened.
 
-Key protection class is determined by exercised platform behavior, not product naming. Backup, sync, migration and restore behavior are part of certification.
+Protection is established by exercised behavior, not product naming. Backup, sync, migration and restore are certification fixtures.
 
 ## Continuity classes
 
 - **C0 none** — no competitive continuity.
-- **C1 server sequence** — server-enforced device sequence and idempotency.
-- **C2 hash continuity** — C1 plus previous accepted-claim hash and fork quarantine.
-- **C3 pre-challenge local commitment** — C2 plus append-only local commitments created before future server challenges are known.
-- **C4 rollback-resistant commitment** — C3 plus platform-backed monotonic or rollback-resistant state with exercised restore/clone tests.
+- **C1 server sequence** — server-enforced sequence and idempotency.
+- **C2 local hash continuity** — C1 plus append-only local commitment and fork quarantine.
+- **C3 checkpoint-anchored continuity** — C2 plus a previous/following signed server checkpoint receipt that anchors the local head.
+- **C4 rollback-resistant continuity** — C3 plus platform-backed rollback-resistant state and exercised clone/restore tests.
 
-A fresh server challenge proves submission freshness only. It does not prove that an offline event existed before the challenge. Claims must expose their continuity class.
+A fresh upload challenge proves submission freshness only. It does not prove an offline event existed before the challenge.
+
+The repaired protocol must distinguish previous local commitment, previous server checkpoint and current challenge.
 
 ## Environment classes
 
-- **A0 unmeasured** — no verified official-build or process evidence.
-- **A1 signed release** — official release signature and version verified.
-- **A2 process bound** — exercised process identity, executable identity and IPC peer controls.
-- **A3 device attested** — current device or OS attestation verified with nonce, freshness, trust chain and policy.
-- **A4 controlled confidential environment** — approved controlled execution with remotely verifiable isolation and measurement.
+- **A0 unmeasured** — no official-build/process evidence.
+- **A1 signed release** — official artifact signature and digest verified.
+- **A2 process bound** — executable identity, IPC peer and privilege controls exercised.
+- **A3 platform/device attested** — current attestation verified with nonce, trust chain, policy, expiry and revocation.
+- **A4 controlled confidential environment** — approved remotely verifiable isolation and measurement.
 
-Attestation is an input, not a blanket truth claim. The verifier records issuer, format, nonce binding, measurement, policy version, verification time, expiry and revocation status.
+Attestation is an input, not a blanket truth claim. It does not independently prove token accounting.
 
 ## Named public profiles
 
-### Standard Live v1
+### Standard Competitive v1
 
-Minimum requirements:
+Minimum direction:
 
-- E3, E4 or E5 source evidence from an exercised adapter;
-- K3 or stronger, unless a documented platform limitation forces K4 and the UI discloses the ceiling;
-- C2 continuity;
-- A1 signed release;
-- exact runtime/version/mode/platform certification is non-expired;
-- deterministic privacy scan and fixed-schema claim;
-- duplicate-domain and accounting-profile rules pass.
+- E2, E3 or certified E4;
+- K3 or stronger, or K4 with an explicit platform ceiling;
+- C2 or stronger;
+- A1 official digest-addressed release;
+- non-expired exact certification tuple;
+- deterministic accounting, privacy, duplicate and compatibility rules pass;
+- no fatal contradiction.
+
+Delayed offline activity may qualify when its local continuity is internally consistent. Lack of checkpoint anchoring may cap it at Standard.
 
 ### Hardened Source-Bound v1
 
-Minimum requirements:
+Minimum direction:
 
-- E1, E2 or an explicitly approved E3 source whose official structured hook and process binding have passed hostile-source tests;
-- provider-reported accounting where the source exposes it; estimates cannot satisfy this profile;
-- K1 or K2;
+- qualifying E1, hostile-tested E2 or specially approved exact E4 local-runtime path;
+- deterministic authoritative accounting for the source;
+- K1 or K2 unless another named profile explicitly proves an equivalent protection path;
 - C3 or C4;
 - A2 or stronger;
-- source version and model endpoint fail closed when unknown;
-- exact certification tuple and all relevant replay, clone, rollback, retry, cancellation, duplicate, privacy and malformed fixtures pass;
-- no unresolved observation gap during the claimed continuity interval.
+- exact source, runtime, model/tokenizer, mode, platform, adapter and collector artifact certification;
+- replay, duplicate, clone, rollback, retry, cancellation, privacy and malformed fixtures pass;
+- no unresolved observation gap for the claimed interval.
+
+Hardened must not depend exclusively on cloud-provider receipts or hardware attestation. Certified local models can qualify under a named local-source profile.
 
 ### Imported v1
 
-- E6 only;
+- E5 only;
 - private analytics;
 - never active competition.
 
-Additional Hardened profiles may be added only by a decision-register entry and machine-readable policy. A claim displays the simple consumer state and exposes its profile ID and dimensional breakdown for inspection.
+Additional profiles require an accepted decision, machine-readable policy and conformance evidence.
 
-## Replay and source binding
+## Replay, source and provenance binding
 
-Every competitive claim binds:
+Every competitive EvidenceClaim must eventually bind:
 
-- account and device key;
-- exact certification tuple;
-- event ID generated at first live observation;
-- source execution identifier when safely available;
-- duplicate domain and local keyed fingerprint;
-- source event interval and monotonic counters;
-- local commitment reference and commitment time when C3/C4 applies;
-- single-use account/device-bound server challenge;
-- device sequence and previous accepted-claim hash;
-- accounting profile and evidence class.
+- account pseudonym and device lineage/key;
+- exact collector and adapter artifact digests;
+- exact source/runtime/model/tokenizer/mode/platform certification tuple;
+- event identity created at first live observation;
+- safe source execution identity when available;
+- duplicate domain and keyed non-content fingerprint;
+- source interval, monotonic clock domain/generation and duration;
+- previous/current local commitment;
+- previous server checkpoint receipt;
+- single-use account/device challenge;
+- local claim sequence;
+- accounting profile and evidence facts;
+- deterministic rule bundle and privacy policy version.
 
-Exact replay is idempotent. Conflicting reuse of an event, request, commitment, challenge, sequence or duplicate-domain identifier rejects or quarantines. Cross-account reuse is never accepted as a new competitive event.
+Exact replay is idempotent. Conflicting reuse of claim, event, sequence, challenge, commitment, checkpoint or duplicate-domain identity rejects or quarantines. Cross-account reuse never creates a new competitive event.
 
-## Device cloning and rollback outcomes
+## Device cloning and recovery
 
-- Concurrent valid successors from one sequence create a fork and quarantine the device.
-- Restored state older than the server checkpoint cannot silently resume; it requires recovery and receives a new device chain.
-- A cloned K3/K4 key cannot retain a Hardened profile after clone or migration uncertainty.
-- Device transfer is explicit key rotation or new enrollment, never file copying.
-- VM snapshots, home-directory restores, credential migration and OS backup/restore are mandatory platform fixtures.
-- Failure to prove rollback resistance lowers the continuity and public evidence profile; it does not fabricate an unsupported guarantee.
+- concurrent valid successors create a fork and quarantine the lineage;
+- restored state older than a checkpoint cannot silently resume;
+- uncertain clone/migration lowers trust and requires requalification;
+- device transfer uses explicit rotation/recovery, never file copying;
+- new lineages do not inherit Hardened automatically;
+- account-level restrictions and appeals persist across device replacement.
 
-## SLM boundary
+## Detector boundary
 
-An SLM is not an evidence source, accounting authority or attestation verifier. It may consume only approved privacy-safe structured features after deterministic validation. It may produce a bounded risk signal, never alter totals, award a stronger profile, or permanently ban a user. Initial launch does not depend on an SLM unless a measured bakeoff demonstrates incremental value over deterministic and classical baselines.
+Deterministic rules and verifier policy are authoritative.
+
+Server anomaly detectors use privacy-safe aggregate features and begin in shadow mode.
+
+The SLM is post-launch research only. It is not an evidence source, accounting authority or attestation verifier. It may produce a bounded advisory risk signal but cannot alter totals, award a profile or permanently ban.
