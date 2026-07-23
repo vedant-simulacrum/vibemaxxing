@@ -67,6 +67,14 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-059 | Public launch targets the complete core social product except countries; internal staging does not permit weak or placeholder launch behavior | accepted | explicit user scope change |
 | D-060 | Open PR #17 is superseded by the July 23 audit, launch decisions, privacy and anti-cheat work and must not be merged unchanged | accepted | none |
 | D-061 | `vibemaxxing-daemon` is an always-on OS-supervised per-user background service: enabled at installation, auto-started, automatically restarted, independent of shell state, and resident through paused/offline/degraded/recovery states; platform-imposed session boundaries must be disclosed honestly | accepted | explicit user reversal or executable evidence that the selected platform mechanism cannot meet ADR-010 |
+| D-062 | macOS launch support includes both Apple silicon `arm64` and Intel `x86_64` under rolling exact-profile certification | accepted | explicit scope reversal or inability to satisfy release/security gates |
+| D-063 | Windows launch support includes native `x64` and native `ARM64` across maintained desktop and applicable Server profiles | accepted | explicit scope reversal or upstream/toolchain infeasibility proven by evidence |
+| D-064 | Linux launch support is broad and rolling across maintained desktop/headless distributions, major package ecosystems, `x86_64` and `aarch64`, with exact profile certification | accepted | explicit scope reversal or evidence-backed profile reduction |
+| D-065 | WSL, containers and CI/ephemeral runners are globally competitive by default at the verifier-awarded evidence level; boards may impose stronger minimums | accepted | severe integrity failure or explicit competition-policy change |
+| D-066 | Android, iOS, iPadOS and ChromeOS have no native collector, companion, control or launch application scope; hosted web remains an ordinary browser surface | accepted | explicit user reversal through a new ADR |
+| D-067 | Optional machine-wide privileged supervision is allowed as a separately consented, least-privilege lifecycle profile that cannot inspect source content or bypass user isolation | accepted | independent review failure or explicit privilege-policy reversal |
+| D-068 | Automatic updates are mandatory for competitive profiles, with signed release-set verification, bounded deferral, rollback and environment-specific mechanisms | accepted | explicit product reversal or updater evidence requires revision |
+| D-069 | Automated Storybook capture is permitted only as read-only prototype/design validation and cannot satisfy product implementation, security or launch gates | accepted | implementation phase opens or workflow scope materially expands |
 
 ## Register rules
 
