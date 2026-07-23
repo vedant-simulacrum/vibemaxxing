@@ -6,9 +6,9 @@ Updated: 2026-07-23
 
 The repository is in **planning contract repair**.
 
-P-1140A, the authority reset and launch-scope alignment, is complete. P-1140B is active. Product implementation remains unauthorized.
+P-1140A is complete. P-1140B is active. Product implementation remains unauthorized.
 
-The repository now has complete planning traceability for D-001 through D-061 and a cross-platform completeness audit for macOS, Windows, Linux desktop/headless, WSL, containers, CI and remote/headless environments.
+The repository now has complete planning traceability for D-001 through D-069 and accepted platform baselines for macOS, Windows, Linux, WSL, containers and CI.
 
 One bounded fixture-backed hosted-web/Storybook slice exists and is classified as a **runnable prototype**. It is not production implementation, backend integration, launch evidence or authorization to continue product implementation.
 
@@ -20,10 +20,16 @@ One bounded fixture-backed hosted-web/Storybook slice exists and is classified a
 - Global leaderboards: accepted Standard and Hardened claims both count; Imported records never count.
 - Ranked identity: one active ranked identity per detected/resolved person, strongly enforced without claiming mathematically verified humanity.
 - SLM: post-launch research only; not a launch dependency or authority.
-- Daemon lifecycle: D-061 and ADR-010 require an always-on OS-supervised per-user background service that auto-starts, auto-restarts, survives shell closure, and remains resident through paused/offline/degraded/recovery states.
+- Daemon lifecycle: D-061 and ADR-010 require an always-on OS-supervised background service that auto-starts, auto-restarts, survives shell closure and remains resident through paused/offline/degraded/recovery states within the declared platform lifecycle context.
+- macOS: Apple silicon and Intel are launch requirements under rolling exact-profile certification.
+- Windows: native x64 and ARM64 are launch requirements across maintained desktop and applicable Server profiles.
+- Linux: maintained desktop, headless and remote profiles are launch requirements through exact distribution/package/architecture certification.
+- WSL, containers and CI/ephemeral runners: globally competitive by default at the verifier-awarded evidence level; boards may impose stronger minimums.
+- Android, iOS, iPadOS and ChromeOS: no native product scope.
+- Optional privileged machine-wide supervision: accepted only as a separately consented, least-privilege lifecycle profile.
+- Automatic updates: mandatory for competitive profiles with bounded deferral, signed release-set verification and rollback.
+- Storybook automation: permitted only as prototype/design validation and cannot satisfy product, security or launch gates.
 - Decision traceability: every registered decision has a normative owner, implementation work unit, state/schema owner where applicable, platform scope and executable evidence requirement.
-- Cross-platform planning: mandatory capabilities, OS-specific implementations, integration sequences and release gates are defined in `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`.
-- Platform lifecycle limitations must be disclosed honestly; “always-on” excludes powered-off hardware, full suspension, disabled/uninstalled service and unavailable service contexts.
 - Exact machine-contract repair requirements are recorded in `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`.
 - Current CDDL, JSON Schema, Protobuf, OpenAPI, SQL, reason codes and policy defaults remain planning placeholders blocked from implementation where they conflict with P-1140.
 - Backend, collector, protocol runtime, identity service, ranking service, production storage, installers, updater, deployment and operational systems are not implemented.
@@ -47,25 +53,10 @@ Active work:
 ### Following gates
 
 - **P-1140C:** VibeProof v1 CDDL/COSE, batch, continuity, rotation, correction and exact-byte protocol rewrite.
-- **P-1140D:** OAuth/session, identity, API, SQL, ranking, social, native, always-on daemon, platform packaging, updater and release state machines.
-- **P-1140E:** cross-contract fixtures, complete D-001..D-061 traceability validation, platform baseline validation, clean-checkout planning validation and final P0/P1 review.
+- **P-1140D:** OAuth/session, identity, API, SQL, ranking, social, native, always-on daemon, complete platform packaging, optional privileged supervision, mandatory updater and release state machines.
+- **P-1140E:** cross-contract fixtures, D-001..D-069 traceability validation, exact platform-profile validation, clean-checkout planning validation and final P0/P1 review.
 
-P-1104 remains blocked until P-1140B–E complete, all planning-only validation passes from a clean checkout, every platform advertised for launch has a frozen support profile, no P0/P1 contradiction remains and the user explicitly authorizes implementation.
-
-## Open platform-scope decisions
-
-The exact launch matrix still requires user decisions on:
-
-- Intel Mac versus Apple-silicon-only support;
-- Windows ARM64 versus x64-only initial support;
-- first-class Linux distributions, versions, desktop environments and CPU architectures;
-- Linux lingering/across-logout behavior;
-- competitive eligibility for WSL, containers and CI;
-- ChromeOS and mobile scope;
-- whether machine-wide privileged service modes are ever allowed;
-- mandatory automatic updates versus optional manual/notify-only channels.
-
-Until resolved, no document may claim complete support for “every platform.”
+P-1104 remains blocked until P-1140B–E complete, all planning-only validation passes from a clean checkout, no P0/P1 contradiction remains and the user explicitly authorizes implementation.
 
 ## Artifact maturity
 
@@ -90,6 +81,10 @@ Planning artifacts and prototypes are not cryptographic interoperability evidenc
 - `docs/planning/DECISION_REGISTER.md`
 - `docs/planning/TASK_CATALOG.md`
 - `docs/decisions/ADR-010-ALWAYS_ON_DAEMON_LIFECYCLE.md`
+- `docs/decisions/ADR-011-UNIVERSAL_PLATFORM_SUPPORT_BASELINE.md`
+- `docs/decisions/ADR-012-OPTIONAL_PRIVILEGED_SUPERVISION.md`
+- `docs/decisions/ADR-013-MANDATORY_AUTOMATIC_UPDATES.md`
+- `docs/decisions/ADR-014-PROTOTYPE_VISUAL_VALIDATION_AUTOMATION.md`
 - `docs/implementation/IMPLEMENTATION_HANDOFF.md`
 - `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`
 
@@ -97,7 +92,7 @@ Run `python3 scripts/repository/doctor.py` before relying on repository state.
 
 ## Automation
 
-Read-only planning validation may run. Product build, dependency, security, fuzz, evaluation, release, signing, deployment and operational automation remain disabled until implementation is explicitly opened.
+Read-only planning validation may run. ADR-014 permits narrowly scoped Storybook prototype validation. Product build, dependency, security, fuzz, evaluation, release, signing, deployment and operational automation remain disabled until implementation is explicitly opened.
 
 ## Current gate
 
