@@ -1,99 +1,223 @@
 # Social, Integrity, and UX Contract
 
-Status: normative planning contract
-Version: 1
+Status: normative planning contract; persistence and state-machine details require P-1140D repair.
+Version: 2
+Updated: 2026-07-23
 
 ## Accounts and profiles
 
-Handles are 3-30 Unicode letters, numbers, underscores, or hyphens after normalization; reserved, deceptive, impersonating, or confusable handles are rejected. Rename cooldown is 30 days and old handles redirect for 90 days without exposing deleted identities. Provider usernames are not automatically claimed as VibeMaxxing handles.
+Handles are 3–30 Unicode letters, numbers, underscores or hyphens after the accepted normalization policy. Reserved, deceptive, impersonating or confusable handles are rejected. Rename, redirect, non-reuse, deletion privacy and policy migration must use an append-only assignment/reservation ledger.
 
-Profiles expose only user-approved fields. Default public fields: handle, avatar, Token Burn, rank, evidence state, and selected board memberships. Cash Burn, agent/model mix, history, country, friends, and presence each have independent visibility controls.
+Profiles expose only user-approved fields. Default public fields are handle, controlled avatar asset, Token Burn, rank, server-appraised evidence state and selected board memberships. Estimated Cash Burn, agent/model mix, history, friends and presence have independent visibility controls.
+
+Provider subjects, duplicate-identity signals, device/recovery lineage, raw source records and moderation evidence are private integrity data and never public profile fields.
+
+## Ranked participation
+
+VibeMaxxing strongly enforces one active ranked identity per detected/resolved person without claiming mathematical proof of unique humanity.
+
+Unranked users may browse, use private analytics and participate in non-ranking social surfaces allowed by board policy. Only an eligible ranked identity can appear in leaderboards, affect competitive totals or trigger ranked overtakes/movement.
+
+High-impact duplicate-identity outcomes require corroborating signals, human review and appeal. Shared IP, household, workplace, school, network or hardware is never sufficient alone.
 
 ## Friendship and blocking
 
-Friend request states: `pending`, `accepted`, `declined`, `cancelled`, `expired`, `blocked`. Requests expire after 30 days. Per-account and per-target limits prevent spam.
+Friend request states are `pending`, `accepted`, `declined`, `cancelled`, `expired` and `blocked`.
 
-Blocking immediately removes friendship/rival edges, hides presence and notifications in both directions, prevents requests and invitations, and suppresses search/discovery where feasible. Unblocking does not restore previous relationships.
+The persistence model must guarantee one canonical relationship per unordered account pair and prevent reverse-edge duplicates or crossed-request ambiguity.
+
+Blocking immediately:
+
+- removes or disables friendship/rival relationships;
+- hides presence and notifications in both directions;
+- prevents requests and invitations;
+- suppresses discovery where feasible;
+- does not automatically restore relationships after unblock.
+
+Every transition requires an initiator, authorization rule, idempotency behavior, timestamp, audit event and user-safe result.
 
 ## Rivals and overtakes
 
-Rivals may be user-selected or suggested from comparable leaderboard neighborhoods. Suggestions never expose private profile data. Rival edges are private by default unless both users choose display.
+Rivals may be user-selected or suggested from comparable ranking neighborhoods. Suggestions never expose private profile or integrity data. Rival edges are private by default unless both users choose display.
 
-An overtake event occurs only when a user moves from score <= another user's score to strictly greater within the same finalized scope/period/filter. Hysteresis suppresses repeated flip-flop notifications: at most one pairwise overtake notification per six hours unless the lead changes by a configurable material threshold.
+An overtake occurs only when one account moves from score less than or equal to another account to strictly greater score within the same immutable `ranking_view_id` and compatible finalized snapshots.
 
-## Boards and organizations
+Hysteresis and grouping suppress notification flip-flop. Corrections, moderation reversals and rebuilds may retract or replace prior overtake/movement notifications through explicit typed events.
 
-Board visibility: public, unlisted, invite-only, or private. Roles: owner, admin, moderator, member, viewer. Owners can transfer ownership only after recent authentication. The last owner cannot leave without transfer or deletion.
+## Boards, organizations and communities
 
-Board policy freezes: eligible agents, evidence tiers, metric, period set, membership rules, country/community scope, and historical behavior. Policy changes are versioned and apply prospectively unless a rebuild is explicitly approved and shown to members.
+Board visibility is public, unlisted, invite-only or private. Roles are owner, admin, moderator, member and viewer.
 
-Organizations, hacker houses, and communities use the same board primitives plus optional verified-domain or administrator approval. No government ID is required by default.
+One canonical board aggregate owns:
 
-## Country boards
+- board identity and owner authority;
+- membership and role state;
+- invitations;
+- policy versions;
+- transfer and deletion state.
 
-Country is a user assertion with optional stronger evidence and a 90-day change cooldown. Public boards require a minimum cohort threshold to prevent singling out users. Country is independently hideable. IP geolocation may be a fraud signal but never silently defines public country identity.
+The last owner cannot leave without transfer or deletion. Ownership transfer requires recent strong authentication and an auditable transition.
+
+Board policies are versioned and prospective. They may define eligible sources, minimum evidence profile, metric, periods, membership and historical behavior. Rebuilds require explicit authorization and visible member communication.
+
+Organizations, hacker houses and communities reuse board primitives plus optional domain or administrator approval. They do not receive private identity-integrity signals or legal identity data.
+
+## Country feature
+
+Country leaderboards, country profile disclosure and country notifications are **post-launch**.
+
+Launch routes, readiness gates and public marketing must not include countries. Future work requires a separate decision on semantics, season-frozen affiliation, switching, historical attribution, minimum-cohort privacy and moderation.
+
+Schemas may reserve a clearly unused future hook only when it cannot affect launch behavior or imply implemented support.
 
 ## Presence
 
-States: active, idle, offline, private. Active requires a qualifying live session and renewable lease. Idle begins after no qualifying model event for five minutes; offline after lease expiry. Multiple devices merge to the strongest non-private state while preserving no project details. Users may disable presence globally or per board.
+Presence states are active, idle, offline and private.
+
+Active presence must derive from qualifying collector-observed activity that has been safely signed/authorized and accepted under the presence policy. A browser or ordinary web session cannot fabricate indefinite activity.
+
+Presence processing must define:
+
+- device/account lease binding;
+- qualifying event freshness;
+- renewal and expiry;
+- multi-device aggregation;
+- audience and board visibility precedence;
+- block and privacy revocation;
+- no project, repository, filename, prompt, code or detailed source disclosure.
+
+Closing the menu-bar/tray shell does not end collection; disabling presence does not disable accounting.
 
 ## Notifications
 
-Types include friend request, acceptance, rival suggestion, overtake, rank movement, board invite, board administration, device/security event, quarantine, appeal, compatibility change, and release/security notice.
+Launch notification types include friend request/acceptance, rival suggestion, overtake, rank movement, board invitation/administration, device/security event, quarantine, appeal, compatibility change and release/security notice.
 
-Channels: in-app initially; email/push only with explicit preference. Notifications group by type/scope, obey quiet hours, expose no private agent details, and support per-type mute. Security and account-recovery notices cannot be fully muted.
+Notifications use typed schemas rather than unrestricted JSON. Each type defines:
+
+- allowed privacy-safe fields;
+- stable source-event identity;
+- deduplication/grouping;
+- hysteresis;
+- quiet-hour and channel behavior;
+- block/revocation interaction;
+- correction/retraction semantics;
+- retention and deletion.
+
+In-app is the initial required channel. Email or push requires explicit preference. Security and recovery notices cannot be fully muted.
 
 ## Moderation and integrity policy
 
-Deterministic outcomes: accept, idempotent accept, Standard downgrade, Hardened downgrade, claim exclusion, session quarantine, score quarantine, stronger-evidence requirement, temporary ranking restriction, device revocation, account suspension, restoration.
+Possible outcomes include accept, idempotent accept, profile downgrade, claim/session/score quarantine, claim exclusion, stronger-evidence requirement, temporary ranking restriction, device revocation, account suspension and restoration.
 
-Every action has a stable reason code, evidence references, policy version, actor, timestamp, expiry/review date, user-safe explanation, and appeal eligibility. Automated models cannot permanently ban or alter token totals independently.
+Every action binds:
 
-Appeal states: `submitted`, `needs_information`, `under_review`, `upheld`, `partially_upheld`, `reversed`, `expired`. High-impact decisions require human review. Moderator actions are append-only audited; privileged access uses least privilege, recent strong authentication, dual control for irreversible actions, and periodic review.
+- exact subject;
+- exact claims, periods and ranking views;
+- registered reason codes;
+- policy/ruleset/detector versions;
+- actor and timestamp;
+- expiry/review date;
+- user-safe explanation;
+- appeal eligibility;
+- deterministic ledger effect and reversal path.
+
+Automated models cannot permanently ban, alter totals or award stronger evidence independently. High-impact decisions require human review. Moderator access is least-privilege, recently authenticated and audited.
+
+Appeal states are `submitted`, `needs_information`, `under_review`, `upheld`, `partially_upheld`, `reversed` and `expired`.
+
+A reversal creates an immutable reversal record, rebuilds affected ranking views and retracts or corrects dependent notifications.
 
 ## Detector architecture
 
-Priority order: deterministic validation, source conformance, replay/clone controls, transparent rules, robust statistics, graph/cohort analysis, classical anomaly detection, optional SLM, human review.
+Priority order:
 
-The SLM receives bounded privacy-safe structural features by default. No network, shell, tools, plugins, MCP, or autonomous loop. Output is a schema of risk band, reason codes, calibrated confidence, recommended action, model/runtime/policy versions. Acceptance requires measured lift over simpler methods within false-quarantine and resource budgets.
+1. deterministic schema/accounting/signature rules;
+2. source conformance;
+3. replay, duplicate, fork and clone controls;
+4. transparent statistics and graph/cohort analysis;
+5. classical anomaly detection;
+6. optional model research;
+7. human review.
+
+Server anomaly detectors use only privacy-safe aggregate and integrity features, begin in shadow mode and require calibrated thresholds.
+
+The SLM is post-launch research only. It is local, sandboxed, advisory and non-authoritative. It may not rewrite totals, award Hardened, permanently ban or become a launch requirement without a new accepted decision backed by a reproducible bakeoff.
 
 ## Anti-cheat calibration
 
-Before launch define budgets by evidence tier and attack class. Initial planning targets:
+Planning targets to validate with implementation evidence include:
 
-- deterministic replay/duplicate false accept: zero in conformance campaigns;
-- invalid signature/canonical claim false accept: zero;
-- account-level false quarantine: <0.1% of legitimate active accounts per month in prelaunch simulation;
-- appeal overturn attributable to detector error: <5% for high-impact cases;
-- automated quarantine notification latency: <5 minutes;
-- ordinary appeal first human review target: 72 hours.
+- invalid signature/canonical claim false accept: zero in conformance campaigns;
+- deterministic exact replay/duplicate false accept: zero;
+- account-level false quarantine: below a predeclared prelaunch threshold measured on representative legitimate activity;
+- high-impact detector-error appeal overturn rate: explicitly monitored;
+- automated quarantine notification latency and human-review service targets: published before beta.
 
-These are launch gates subject to measured revision, not hidden promises.
+Targets are gates, not hidden guarantees. They may be revised only through recorded evidence and decision updates.
 
 ## Route map
 
-Public: landing, global leaderboard, period/scope/filter views, public profile, public boards, compatibility, downloads, protocol/privacy, open-source/security.
+Public launch routes:
 
-Authenticated: home leaderboard, friends, rivals, notifications, personal analytics, devices, adapters, privacy audit, account identities, settings, exports, deletion, board creation/administration, organizations/communities/countries, appeals.
+- landing;
+- global and period/filter leaderboard views;
+- public profiles;
+- public boards/organizations/communities/hacker houses;
+- compatibility;
+- downloads;
+- protocol/privacy/open-source/security.
 
-Local shell/dashboard: daemon health, current activity, adapter status, evidence tier, outbound claim inspection, sync queue, permissions, privacy controls, update/rollback, diagnostics, export/delete/uninstall.
+Authenticated routes:
+
+- home leaderboard;
+- friends and rivals;
+- notifications;
+- personal analytics;
+- devices, adapters and privacy audit;
+- account identities and sessions;
+- settings, exports and deletion;
+- board/community/organization administration;
+- moderation and appeals.
+
+Country routes are absent at launch.
+
+Local shell/dashboard:
+
+- daemon health;
+- current safe activity state;
+- adapter/support status;
+- server-appraised evidence state;
+- outbound claim inspection;
+- sync queue;
+- permissions and privacy controls;
+- update/rollback;
+- diagnostics, export, local deletion and uninstall.
 
 ## UI state contract
 
-Every page/component defines loading, empty, partial, stale, offline, error, rate-limited, unauthorized, private, blocked, restricted, quarantined, deleted, unsupported-agent, incompatible-version, and maintenance states. No generic blank screen or raw server error.
+Every page/component defines loading, empty, partial, stale, offline, error, rate-limited, unauthorized, private, blocked, restricted, quarantined, deleted, unsupported-source, incompatible-version and maintenance states.
 
-Evidence state and uncertainty are visible at the point of score interpretation. Estimated Cash Burn always includes `Estimated` and pricing-version access. Imported data is visually distinct and absent from active ranking.
+Evidence state and uncertainty are visible where scores are interpreted. Estimated Cash Burn always says `Estimated` and exposes pricing provenance. Imported data is visually distinct and absent from active ranking.
 
 ## Accessibility and performance
 
-WCAG 2.2 AA target; complete keyboard operation; semantic landmarks/tables; focus management; screen-reader announcements for live rank changes; reduced motion; non-color status cues; 200% zoom; responsive recomposition.
+Target WCAG 2.2 AA, complete keyboard operation, semantic landmarks/tables, focus management, screen-reader announcements for meaningful live changes, reduced motion, non-color status cues and 200% zoom.
 
-Web targets: LCP <=2.5s p75, INP <=200ms p75, CLS <=0.1; leaderboard virtualizes large rows without breaking accessibility. Native shell idle memory and CPU follow the native runtime contract.
+Web targets remain LCP <= 2.5 s p75, INP <= 200 ms p75 and CLS <= 0.1 for launch-supported environments, subject to implemented measurement. Virtualization must not break accessibility.
 
 ## Privacy UX
 
-Onboarding shows exact data classes that stay local and cross the network. Users can inspect serialized safe claim fields, pause collection/sync independently, hide social surfaces, revoke devices, remove adapters, export data, delete local-only analytics, delete server data, or delete everything.
+Onboarding and settings show exactly which data remains local and which fixed fields synchronize. Users can inspect serialized safe claims, pause collection and sync independently, hide social surfaces, revoke devices, remove adapters, export data, request server deletion and issue separate per-device local deletion.
 
-## Required tests
+The server must never claim it directly deleted data on an offline local device.
 
-State-machine/property tests for friendship, blocks, boards, roles, ownership, presence, overtakes, notifications, moderation, and appeals; abuse simulations; Sybil/collusion campaigns; accessibility automation/manual audits; browser matrix; responsive/visual regression; usability tests for evidence labels, privacy boundary, OAuth/device enrollment, quarantine, export, and deletion.
+## Required implementation evidence
+
+- state-machine/property tests for profiles, handles, friendships, blocks, rivals, boards, ownership, invitations, presence, overtakes, notifications, moderation, appeals, export and deletion;
+- SQL uniqueness and race tests;
+- authorization matrix;
+- abuse/Sybil/collusion simulations including shared-network false positives;
+- privacy canaries;
+- accessibility automation and manual audits;
+- browser/responsive/visual regression;
+- usability tests for evidence labels, privacy boundary, OAuth/device enrollment, quarantine and appeal.
