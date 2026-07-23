@@ -5,6 +5,17 @@ name: Prototype storyboard visuals
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/web/**"
+      - "apps/web/**"
+      - "packages/ui/**"
+      - "assets/**"
+      - "scripts/ui/**"
+      - "docs/style-guide/**"
+      - ".github/workflows/storyboard-visuals.yml"
   pull_request:
     paths:
       - "packages/ui/**"
@@ -73,7 +84,7 @@ jobs:
         run: node scripts/ui/playwright-runtime/audit-product-storyboards.mjs
       - name: Capture locked synthetic storyboards at governed responsive breakpoints
         run: node scripts/capture-product-storyboards.mjs storybook-captures
-      - name: Compare desktop captures with governed baselines
+      - name: Compare responsive captures with governed baselines
         run: node scripts/compare-product-storyboards.mjs storybook-captures storybook-diffs
       - name: Upload prototype visual-review artifacts and diffs
         if: always()
