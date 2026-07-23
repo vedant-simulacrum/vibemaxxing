@@ -17,8 +17,8 @@ This document is structurally comprehensive but **not implementation-ready**. It
 | Layer | Current state | Handoff consequence |
 |---|---|---|
 | Product authority and launch scope | Accepted and consolidated | Bind implementation to current decisions; do not revive country launch scope, mandatory proxying, kernel anti-cheat or a launch SLM |
-| Evidence, privacy and accounting | P-1140B active | Claim/appraisal ownership, typed local stages, accounting profiles, time, lineage, pricing and egress schemas must be repaired first |
-| VibeProof wire protocol | P-1140C blocked by P-1140B | Current CDDL and prose cannot generate production codecs |
+| Evidence, privacy and accounting | P-1140B complete-planning | Typed local stages, accounting profiles, appraisal authority, lineage, pricing and egress boundaries are frozen planning inputs; no implementation evidence is claimed |
+| VibeProof wire protocol | P-1140C active | Current CDDL remains blocked until the mutually complete deterministic CBOR/COSE and continuity rewrite passes |
 | Identity, API, SQL, ranking, social, native and release state | P-1140D dependency-blocked | Current OpenAPI, planning SQL and state prose are implementation inputs, not executable contracts |
 | Cross-contract validation | P-1140E dependency-blocked | No current clean-checkout result can certify the future implementation handoff |
 | Product code | Prototype/seeds only | Hosted fixture UI is a runnable prototype; API, Rust core, protocol, database, collectors, packaging and operations are not implemented |
