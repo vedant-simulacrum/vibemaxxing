@@ -1,257 +1,186 @@
 # VibeMaxxing Implementation Handoff
 
-Status: planning-ready implementation handoff; inactive until the user explicitly authorizes P-1104.
-Version: 9
+Status: consolidated but inactive; P-1140F semantic review is open and P-1104 is blocked
+Version: 10
 Updated: 2026-07-24
 
 ## Purpose
 
-This is the single build-order contract. It incorporates the repository alignment audit, machine-contract repair specification, D-001..D-069 traceability, frozen cross-platform audit, launch decisions, privacy boundary, anti-cheat architecture, optional privileged supervision and mandatory automatic updates.
+This is the single future build-order contract. It consolidates current product authority, privacy and integrity boundaries, accounting, VibeProof, identity, API, ranking, social, native-platform and release planning.
 
-It does not authorize implementation. Reviewable units live in `PR_SIZED_WORK_BREAKDOWN.md`; current/future paths are distinguished in `REPOSITORY_LAYOUT.md`; execution-thread generation is governed by `ISSUE_GENERATION.md`.
+It does not authorize implementation. `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` is subordinate to this file and must be reconciled again when P-1140F closes.
 
 ## Current handoff health
 
-This handoff is **planning-ready but inactive**. P-1140B–E establish a coherent contract and clean-checkout planning-validation set; they do not prove runtime behavior, platform support, security, deployment or launch readiness.
-
-| Layer | Current state | Handoff consequence |
+| Layer | Current state | Consequence |
 |---|---|---|
-| Product authority and launch scope | Accepted and consolidated | Bind implementation to current decisions; do not revive country launch scope, mandatory proxying, kernel anti-cheat or a launch SLM |
-| Evidence, privacy and accounting | P-1140B complete-planning | Typed local stages, accounting profiles, appraisal authority, lineage, pricing and egress boundaries are frozen planning inputs; no implementation evidence is claimed |
-| VibeProof wire protocol | P-1140C complete-planning | Closed CDDL, deterministic CBOR/COSE, continuity/replay state and fixed vectors are frozen planning inputs; independent codecs remain P-1140E work |
-| Identity, API, SQL, ranking, social, native and release state | P-1140D complete-planning | The authoritative state/platform registry, endpoint-specific OpenAPI, repaired SQL, typed social events and release/ranking/export schemas are frozen planning inputs; no implementation evidence is claimed |
-| Cross-contract validation | P-1140E complete-planning | All 69 decisions, API operations, state machines, exact platform profiles and planning fixtures cross-resolve; run #239 passed and the final transition head remains required before merge |
-| Product code | Prototype/seeds only | Hosted fixture UI is a runnable prototype; API, Rust core, protocol, database, collectors, packaging and operations are not implemented |
+| Product authority and launch scope | consolidated | preserve no-country launch scope and no native mobile/ChromeOS work |
+| Privacy, accounting and appraisal | P-1140B complete-planning | planning input only; no runtime privacy or security proof |
+| VibeProof | P-1140C complete-planning | planning input only; independent codecs and interoperability absent |
+| State/API/platform/release contracts | P-1140D complete-planning with four semantic P1 repairs open | not implementation-ready |
+| Structural validation | P-1140E complete-planning | proves internal reference and coverage consistency only |
+| Semantic review | P-1140F in progress | blocks implementation authorization |
+| Product code | prototype/seeds only | collector, services, database, packaging and operations are absent |
 
-P-1104 is now the sole entrance decision. This file and `PR_SIZED_WORK_BREAKDOWN.md` are reconciled to the repaired authority; the final audit has zero open P0/P1 planning contradictions. No agent may treat that as authorization: the user must explicitly open implementation.
-
-### Concurrent branch handoff rule
-
-Branch-local work is not canonical handoff state. The ADR-014 repair is merged through PR #31; the UI application-lockdown branch must now be updated onto that baseline, preserve the stricter workflow boundary and repository-doctor invariants, and rerun checks on the reconciled exact head. The authoritative status is updated only after merge.
+P-1104 is not ready for approval. The exact semantic findings and closure criteria are owned by `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
 
 ## Mandatory pre-read
 
-1. `AGENTS.md`;
-2. project authority/status/documentation map;
-3. `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`;
-4. all files under `docs/planning/decision-traceability/`;
-5. `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`;
-6. `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` and the state/platform registries;
-7. ADR-010 through ADR-014;
-8. decision/task registers and relevant contracts/schemas;
-9. this handoff and the PR-sized work breakdown.
+1. `AGENTS.md`
+2. `docs/project/PROJECT.md`
+3. `docs/project/STATUS.md`
+4. `docs/project/DOCUMENTATION.md`
+5. `docs/planning/DECISION_REGISTER.md`
+6. `docs/planning/TASK_CATALOG.md`
+7. `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`
+8. `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`
+9. relevant ADRs, contracts, schemas and conformance fixtures
+10. this file and the PR-sized work breakdown only after the gate is understood
 
 ## Entrance gate
 
 Implementation may begin only when:
 
-1. P-1140B through P-1140E are complete;
-2. every accepted implementation-bearing decision has an owner, work unit, schema/state owner, platform scope and evidence gate;
-3. superseded decisions have no active implementation path;
-4. repaired schemas, registries, references, policies and contracts are internally consistent;
-5. repository doctor and all planning-only validators pass from a clean checkout;
-6. no open P0/P1 planning contradiction remains;
-7. the user explicitly opens implementation under P-1104.
+1. P-1140F is `complete-planning`;
+2. SR-001 through SR-004 are repaired in normative prose, schemas, registries, fixtures and validators;
+3. P-1140E structural validation passes on the repaired exact head without claiming semantic proof;
+4. the manual semantic review records zero open P0/P1 findings;
+5. every implementation-bearing decision still has an owner, work unit, schema/state owner, platform scope and evidence gate;
+6. superseded decisions have no active implementation path;
+7. repository doctor and all planning-only validators pass from a clean checkout;
+8. the user explicitly opens P-1104.
 
-Platform scope is already frozen under D-062 through D-069. No implementation may reopen or narrow it silently.
+No agent may infer authorization from a green planning workflow, a complete planning task, this handoff, a prototype or a merged PR.
 
 ## Binding product constraints
 
 ### Privacy
 
-- No prompt, output, transcript, code, diff, command, tool content, filename, path, project/repository name, credential, embedding, summary, classification, personal insight or content-derived hash reaches the server.
+- Servers never receive prompts, outputs, transcripts, code, diffs, commands, tool contents, filenames, paths, project/repository names, credentials, embeddings, summaries, classifications, personal insights or content-derived hashes.
 - Processes able to read raw source content have no network capability.
-- Networked sync receives only fixed-schema aggregate claims.
+- Networked sync receives only fixed-schema aggregate claims and receipts.
 - Review, moderation, observability, support and privileged-supervisor tooling never expose local raw records.
 
-### Competition
+### Competition and accounting
 
-- Token Burn is the default raw metric.
+- Token Burn is the default raw ranking metric.
 - Estimated Cash Burn is server-derived, versioned and always labelled estimated.
-- Imported history is private analytics only.
+- Imported history is private analytics only and never ranks.
 - Accepted Standard and Hardened claims may contribute globally.
-- Local-model and delayed offline usage count when deterministically captured under a certified profile.
-- WSL, containers and CI are globally eligible by default at the verifier-awarded evidence level.
-- Evidence state is assigned by the server verifier, not the client.
+- Local-model and delayed offline usage count only when deterministically captured under a certified profile.
+- Evidence state is assigned by the server verifier, never by the client.
 
 ### Identity
 
 - OAuth proves provider-account control, not unique humanity.
-- Launch supports GitHub and X; Google remains deferred.
 - One active ranked identity per detected/resolved person is enforced through private account, device, recovery and enforcement lineage with review and appeal.
 - Government ID and biometrics are not required by default.
+- Provider-specific OAuth behavior must follow the capability-aware SR-001 repair.
+- Ordinary desktop clients use external-browser Authorization Code + PKCE; device authorization is limited by SR-002.
 
-### Platform scope
+### Platforms
 
-- macOS: Apple silicon `arm64` and Intel `x86_64`.
-- Windows: native x64 and native ARM64 across maintained desktop and applicable Server profiles.
-- Linux: maintained desktop, headless and remote profiles under exact distro/package/architecture certification.
-- WSL, containers and CI/ephemeral runners: launch-supported environment profiles.
-- Android, iOS, iPadOS and ChromeOS: no native implementation scope.
-- Hosted web remains an ordinary browser surface.
+- Candidate native scope: macOS arm64/x86_64, Windows x64/ARM64, maintained Linux desktop/headless/remote, WSL, containers and CI/ephemeral runners.
+- Android, iOS, iPadOS and ChromeOS have no native implementation lane.
+- Every public support claim requires exact, non-expired certification.
+- Platform evidence must use immutable version/commit/digest-bound source records under SR-004.
 
-### Security and lifecycle
+### Local runtime and anti-cheat
 
 - Default collector is unprivileged and per-user.
-- Optional machine-wide privileged supervision is allowed only under ADR-012 and cannot inspect source content or merge users.
-- No kernel anti-cheat or mandatory VibeMaxxing inference proxy.
-- Deterministic accounting, canonicalization, signatures, sequences, replay, duplicates, continuity and eligibility are authoritative.
-- Statistical/ML detectors are advisory and cannot alter totals or permanently ban.
-- `vibemaxxing-daemon` is OS-supervised and always-on within the declared platform lifecycle context.
-- Automatic updates are mandatory for competitive profiles under ADR-013.
+- Optional privileged supervision is separately consented and cannot inspect source content or merge users.
+- No kernel anti-cheat and no mandatory inference proxy.
+- Deterministic accounting, canonicalization, signatures, sequences, replay, duplicate, continuity and eligibility controls are authoritative.
+- Statistical/ML detectors are local-only, advisory and cannot alter totals, raise evidence tiers or permanently ban.
+- The OS-supervised daemon is independent of collector, sync, CLI and interactive shell.
+- The menu-bar/tray shell requires its own state machine and authenticated IPC under SR-003.
 
 ### Automation
 
-The Storybook workflow is prototype-only under ADR-014. It cannot satisfy product build, security, accessibility, platform or launch gates. Product CI remains disabled until P-1104 and P-1007.
+The Storybook workflow remains prototype-only under ADR-014. Product build, dependency, security, fuzz, evaluation, signing, release, deployment and operational automation remain disabled until P-1104 and their separate implementation gate.
 
-## Component ownership
+## Planned component ownership
 
 ### Rust local/protocol
 
-- `vibe-adapter-sdk`: manifests, probes and typed source observations; no network/device-key access.
-- `vibe-collector-core`: normalization, accounting, deterministic rules, dedup, commitments, claims and privacy filtering.
-- `vibe-device-identity`: keys, enrollment, rotation, revocation, recovery and platform assurance.
-- `vibeproof-protocol`: deterministic CBOR, COSE, claims, appraisal/receipt verification and exact vectors.
-- `vibemaxxing-daemon`: service lifecycle, supervision, local control and update coordination.
-- `vibeproof-sync`: networked safe-claim sync with no source-content access.
-- CLI and menu-bar/tray/local-dashboard integrations.
+- adapter SDK and probes;
+- collector/normalization/accounting/deterministic rules;
+- device identity and key lifecycle;
+- VibeProof codec/signing/verification;
+- OS-supervised daemon and local control;
+- isolated safe-claim sync;
+- CLI and menu-bar/tray shell;
 - optional post-launch local detector sandbox.
 
 ### Go server
 
-- OAuth, sessions, linked and ranked identities;
-- device/key enrollment and lineage;
-- challenge issuance and atomic verification;
-- verifier appraisal and checkpoint receipts;
-- immutable claim/moderation/correction ledgers;
-- transactional outbox, aggregation and rebuild;
-- pricing interpretation and alias resolution;
-- ranking views, snapshots, cursors and filters;
-- social graph, boards, presence and notifications;
-- moderation, appeals, export and server deletion;
-- operations/admin tooling;
-- compatibility/update deadline enforcement.
+- provider-capability-aware OAuth and sessions;
+- linked/ranked identity and recovery;
+- device enrollment and lineage;
+- challenge, verifier appraisal and checkpoint receipts;
+- immutable ledgers, outbox and rebuild;
+- pricing, ranking, social, presence and notifications;
+- moderation, appeals, export and deletion;
+- compatibility/update enforcement and operations tooling.
 
 ### TypeScript web
 
 - generated contract consumption;
-- public/authenticated routes;
-- evidence/privacy disclosure;
-- social/board/moderation UX;
-- device/update/platform status surfaces;
-- no independent business-policy reimplementation;
-- no fixture-only assumptions in production paths.
+- public/authenticated routes and disclosure UX;
+- social, board, moderation, device/update/platform status surfaces;
+- no independent business-policy reimplementation.
 
 ### PostgreSQL
 
-Constraints and transactions own account/provider uniqueness, token families, device/key lineage, challenge use, idempotency/replay/forks, immutable facts/projections, ranking views/corrections, relationships/ownership, moderation/reversal, outbox/rebuild checkpoints and signed update-policy state.
+Transactions and constraints own provider/account uniqueness, token families, device/key lineage, challenges, idempotency/replay/forks, immutable facts, projections, ranking views/corrections, social ownership, moderation/reversal, outbox/rebuild checkpoints and signed update-policy state.
 
-## Repaired normative set required before coding
-
-- product/scope and country removal;
-- privacy and exact local/outbound stages;
-- accounting profiles, canonical categories, time and pricing;
-- VibeProof claim/appraisal/checkpoint/rotation/correction protocol;
-- capability registry and digest/provenance certification;
-- native process, always-on lifecycle, privilege, IPC, storage, recovery and update contracts;
-- exact Mac/Windows/Linux/WSL/container/CI profile registry;
-- OAuth/session/token-family/ranked-identity contracts;
-- OpenAPI, PostgreSQL, atomic verifier, idempotency and ranking-view contracts;
-- typed social, presence, notification, moderation and appeal state machines;
-- TUF/release-set/provenance/transparency/compromise contracts;
-- complete decision traceability and negative check for out-of-scope mobile/ChromeOS native work.
-
-## Build sequence after approval
+## Build sequence after explicit approval
 
 ### Phase 1 — contract workspaces
 
-Pin Rust, Go, Node, package manager, Buf/Protobuf, CDDL, OpenAPI, JSON Schema and migration tools. Create authoritative workspaces, generated bindings, drift checks, ordered migrations, reason/policy registries, platform-profile registry and privacy-canary fixtures.
-
-Exit: clean generation is byte-identical; blocked schemas cannot enter builds; no parallel hand-maintained domain types.
+Pin Rust, Go, Node, Buf/Protobuf, CDDL, OpenAPI, JSON Schema and migration tools. Generate bindings and enforce byte-identical regeneration. Implement privacy-canary and checked numeric/time primitives first.
 
 ### Phase 2 — synthetic secure spine
 
-Implement:
+Implement a synthetic end-to-end path:
 
-`typed source observation -> normalized event -> accounting -> deterministic rules -> encrypted local state -> commitment -> signed claim -> isolated sync -> challenge -> atomic verifier -> appraisal -> checkpoint receipt -> immutable ledger/outbox -> aggregate -> ranking view -> accessible row`.
+`typed observation -> accounting -> deterministic rules -> encrypted local state -> commitment -> signed claim -> isolated sync -> challenge -> atomic verifier -> appraisal -> checkpoint -> immutable ledger/outbox -> ranking view`.
 
-Prove privacy-canary blocking, canonical/signature/key/challenge rejection, exact replay idempotency, conflicting reuse/fork quarantine, deterministic delayed sync and rebuild equivalence.
+Prove forbidden-egress blocking, exact replay, conflicting reuse/fork quarantine, deterministic delayed sync and rebuild equivalence.
 
-### Phase 3 — always-on local runtime and device boundary
+### Phase 3 — local runtime and device boundary
 
-Implement:
-
-- service registration before install success;
-- always-on daemon desired state and two-level supervision;
-- collector/sync separation and typed authenticated IPC;
-- encrypted storage, migrations, crash consistency and bounded queues;
-- protected keys, enrollment, rotation, revocation, recovery and requalification;
-- local commitments and server checkpoints;
-- shell-independent health/control and CLI parity;
-- sleep/resume, logout/login, reboot, network loss, disk full, corruption, permission loss, update and rollback behavior;
-- exact lifecycle/evidence status in diagnostics;
-- optional privileged supervisor with separate identity and ACLs.
-
-Platform implementation lanes:
-
-1. macOS Apple silicon and Intel;
-2. Windows native x64 and ARM64;
-3. Linux distro/package/desktop/headless profiles;
-4. WSL;
-5. containers;
-6. CI/ephemeral runners.
-
-No Android, iOS, iPadOS or ChromeOS lane exists.
+Implement OS supervision, collector/sync separation, authenticated local IPC, encrypted storage, crash consistency, bounded queues, protected keys, rotation/recovery, interactive shell, CLI parity, sleep/reboot/login/logout/offline/disk/permission/update behavior and optional privileged supervision.
 
 ### Phase 4 — two-source vertical slice
 
-Select one local runtime and one cloud structured-usage source. Each adapter ships manifest, digest/provenance, probes, accounting profile, duplicate contract, positive/adversarial/privacy/upgrade fixtures, support ceiling and emergency disable.
+Select one local runtime and one cloud structured-usage source. Each adapter requires immutable manifest/provenance, accounting profile, duplicate domain, privacy/adversarial/upgrade fixtures, support ceiling and emergency disable.
 
-Exit: both sources work end-to-end without forbidden egress; imports cannot rank; appraisal, filters and privacy preview work.
+### Phase 5 — authentication and ranked identity
 
-### Phase 5 — authentication, sessions and ranked identity
+Implement provider-capability-aware browser OAuth, restricted headless device flow where explicitly allowed, token-family rotation/replay, linked identities, recovery, ranked eligibility, investigation, restriction, consolidation and appeal.
 
-Implement GitHub App web/device authorization, X Authorization Code plus PKCE, typed OAuth transactions, web/native token families, replay/revocation, linked identities, recovery, optional stronger factors, ranked eligibility, duplicate investigation, restriction, consolidation and appeal.
+### Phase 6 — ranking, pricing and social
 
-### Phase 6 — verifier, ranking and pricing
+Implement atomic claim acceptance, immutable corrections/moderation facts, ranking-view generations, snapshots/cursors/rebuilds, estimated pricing, social state machines, privacy-aware presence and revalidated notifications.
 
-Implement atomic claim transaction, stored idempotent outcomes, appraisal policy, immutable receipts/corrections/moderation facts, outbox, canonical `ranking_view_id`, snapshots/cursors/current rank/rebuild, immutable alias resolution and line-item estimated pricing.
+### Phase 7 — packaging and release trust
 
-### Phase 7 — social state machines
+Implement exact-platform installers, daemon/shell registration, signed TUF metadata and release sets, immutable artifacts/provenance, mandatory update deadlines, rollback, compromise recovery and certification evidence.
 
-Implement profiles/privacy/handles/blocks, friendships/rivals, boards/roles/invitations/ownership, organizations/communities/hacker houses, collector-derived presence, typed notifications, overtakes/movement, moderation/appeals/reversal and separate server/local export/deletion. Country remains absent.
+## Handoff completeness checklist
 
-### Phase 8 — complete UX
+Before implementation authorization, confirm:
 
-Implement onboarding/pairing, all launch leaderboards, profiles/activity/agent/model/estimated-cost views, social/boards/notifications, devices/adapters/privacy/audit/export/deletion, update/channel/deadline status, privileged-profile status, moderation/appeals and complete exceptional states. Meet WCAG 2.2 AA and declared performance/resource budgets on every advertised profile.
+- P-1140F has zero open semantic P0/P1 findings;
+- STATUS, TASK_CATALOG, DOCUMENTATION and this handoff agree;
+- the work breakdown no longer contains ordinary-desktop device authorization as a default path;
+- interactive shell work is explicit and separate from the daemon;
+- source evidence is immutable and digest-bound;
+- all planning checks pass on the exact head;
+- no open PR or stale branch is treated as authority;
+- no implementation, support, security or launch claim is inferred from planning artifacts.
 
-### Phase 9 — integration and adversarial beta
+## Current next task
 
-Execute protocol, replay, fork, clone, restore, accounting, identity, social, notification, moderation, privacy and release campaigns.
-
-For every advertised profile execute install, registration, shell crash, daemon crash/hang, child crash loop, login/logout, reboot, sleep/hibernate where applicable, network loss, permission/key-store/storage failure, update/rollback, deadline expiry, background-service disable/repair and uninstall. Verify no queued-claim loss, duplicate score, continuity reset or privacy leakage.
-
-Privileged profiles additionally require cross-user and substitution tests. WSL/container/CI profiles require clone/replica/retry/matrix dedup tests.
-
-### Phase 10 — packaging, operations and launch
-
-Produce signed/notarized native artifacts, Linux packages, container images, CI artifacts, TUF metadata, release-set graph, SBOM/provenance/transparency, consumer verification, environments/secrets/migrations, backups/restores, SLOs/alerts/incidents/DR, product CI/security/eval/release gates, legal/governance review, public docs and reproducible releases.
-
-A platform enters public support only after every gate in `CROSS_PLATFORM_COMPLETENESS_AUDIT.md` passes for its exact tuple. Public release still requires explicit approval.
-
-## Implementation evidence rules
-
-Every PR identifies:
-
-- work key and dependencies;
-- every mapped decision ID;
-- owning ADRs/contracts/schemas;
-- exact platform profiles affected;
-- privacy/security impact and threats;
-- database/API/wire compatibility and migrations;
-- rollback/disable path;
-- tests, benchmarks, fixtures and generated artifacts;
-- support/evidence ceilings;
-- unresolved risk.
-
-A PR cannot close an accepted decision unless its traceability row has implementation and executable evidence links. Placeholders, skipped tests, mocks, empty certifications and planning/prototype validators do not close implementation work.
+Repair SR-001 through SR-004 under P-1140F. Do not begin product implementation.
