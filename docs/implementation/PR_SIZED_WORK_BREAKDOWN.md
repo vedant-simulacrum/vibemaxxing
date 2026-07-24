@@ -1,543 +1,251 @@
 # PR-Sized Implementation Work Breakdown
 
-Status: normative planning-ready work breakdown; inactive until the user explicitly authorizes P-1104.
+Status: consolidated planning draft; inactive until P-1140F closes and the user explicitly authorizes P-1104
 Updated: 2026-07-24
 
-Each unit must be independently reviewable, tested, migration-aware and reversible where possible. Units may be combined only when risk, ownership and rollback remain clear.
+Each unit must remain independently reviewable, testable, migration-aware and reversible where possible. This file is subordinate to `IMPLEMENTATION_HANDOFF.md`, accepted decisions, ADRs and repaired contracts.
 
-Country leaderboards and the SLM detector are not launch implementation units. Android, iOS, iPadOS and ChromeOS have no native implementation units under D-066.
+Country leaderboards and the SLM detector are not launch implementation units. Android, iOS, iPadOS and ChromeOS have no native implementation units.
 
-## Dependency rules
+## Entrance constraints
 
-- Bind implementation to the P-1140B–E repaired schemas, registries, fixtures and state-machine IDs; changes require explicit authority updates.
-- Foundation precedes the synthetic secure spine.
-- The synthetic spine precedes real adapters and broad UX.
-- Device/continuity and server-verifier units precede competitive ranking.
-- One local and one cloud source precede broad adapter expansion.
-- Identity/session correctness precedes social write operations.
-- Ranking-view identity precedes overtakes, movement and notifications.
-- Platform core precedes packaging breadth.
-- Mandatory-update infrastructure precedes external competitive distribution.
-- Privileged profiles cannot ship before unprivileged profiles and independent security review.
-- Packaging/release integrity precedes external distribution.
+Before any unit starts:
 
-## Epic F — contract workspaces and generation
+- P-1140F must be complete with zero open semantic P0/P1 findings;
+- SR-001 through SR-004 must be repaired in the normative contracts;
+- generated types must come only from repaired schemas;
+- product CI/security/release automation remains disabled until separately authorized;
+- no planning fixture or prototype is implementation evidence.
 
-### F-01 Pin implementation toolchains
-Rust 2024, Go, Node/package manager, Buf/Protobuf, CDDL, OpenAPI, JSON Schema, migration and cross-compilation tooling.
+## Dependency order
+
+1. semantic contract repairs and generated workspaces;
+2. deterministic protocol/accounting core;
+3. synthetic secure spine;
+4. local daemon, collector, sync, interactive shell and device boundary;
+5. one local and one cloud source;
+6. provider-capability-aware authentication and ranked identity;
+7. ranking, pricing and social state;
+8. packaging, update and release trust;
+9. broad adapter/platform certification and launch evidence.
+
+## Epic F — contract workspaces
+
+### F-01 Toolchain pins
+
+Pin Rust, Go, Node/package manager, Buf/Protobuf, CDDL, OpenAPI, JSON Schema, PostgreSQL migration and cross-compilation tooling.
 
 ### F-02 Authoritative schema workspaces
-Repaired local event schemas, VibeProof CDDL/COSE, internal Protobuf, endpoint-specific OpenAPI, PostgreSQL migrations, reason/policy registries, state-machine registry, exact platform profiles, release sets, ranking views and export manifests.
 
-### F-03 Generated binding pipeline
-Generate Rust, Go and TypeScript bindings. Clean regeneration must be byte-identical.
+Create generated Rust, Go and TypeScript bindings from repaired schemas, including provider capability, interactive-shell state and immutable source-evidence records.
 
-### F-04 Breaking-change classification
-Classify source-compatible, wire-compatible, migration-required and protocol-major changes.
+### F-03 Deterministic regeneration
+
+Clean regeneration must be byte-identical and drift must fail clearly.
+
+### F-04 Checked primitives
+
+Cross-language token, sequence, timestamp, duration, money, digest and identifier primitives.
 
 ### F-05 Privacy-canary framework
-Seed forbidden values across source, IPC, logs, network, notifications, review, privileged supervisor and platform crash facilities.
 
-### F-06 Checked numeric/time primitives
-Cross-language safe token, sequence, timestamp, duration and money primitives.
+Seed forbidden values across source, IPC, storage, logs, network, notifications, review, privileged supervisor and crash facilities.
 
-### F-07 Platform-profile schema
-Machine-readable OS family/release/architecture/distribution/environment/lifecycle/key/update/support tuple.
+### F-06 Structural and semantic gate checks
 
-### F-08 Decision traceability validator
-Run `validate_p1140e_contracts.py` to validate D-001..D-069 ownership, API/state/platform coverage, SQL race plans and reason references, and reject superseded paths or out-of-scope mobile/ChromeOS native work.
+Keep P-1140E structural validation distinct from the P-1140F manual semantic gate. Neither may claim runtime or security proof.
 
-Acceptance: blocked schemas cannot enter builds; unsupported toolchains fail clearly; generated output and traceability are deterministic.
+## Epic P — VibeProof core
 
-## Epic P — VibeProof protocol core
+### P-01 Rust canonical model and encoder
+### P-02 Go independent decoder/verifier
+### P-03 deterministic CBOR and COSE profile
+### P-04 exact claim/appraisal/receipt/rotation/correction/gap vectors
+### P-05 malformed and resource corpus
+### P-06 atomic batch and exact replay
+### P-07 continuity, gap, fork, rollback and recovery
+### P-08 cross-language interoperability suite
 
-### P-01 EvidenceClaim domain model
-No public evidence state or pricing authority.
-
-### P-02 Deterministic CBOR profile
-Exact ordering, shortest integers, definite lengths, tag policy, depth and size limits.
-
-### P-03 COSE key/signature profile
-Protected headers, key IDs, Ed25519/EdDSA, external AAD and exact signed bytes.
-
-### P-04 Go independent decoder/verifier
-Independent parser implementation.
-
-### P-05 TypeScript diagnostic decoder
-Read-only developer/privacy inspection only.
-
-### P-06 Exact-byte golden vectors
-Claims, receipts, appraisals, rotations, corrections and gaps.
-
-### P-07 Malformed parser corpus
-Duplicate keys, non-minimal values, wrong tags, algorithm confusion, truncation, nesting and allocation attacks.
-
-### P-08 VerifierAppraisal model
-Server-owned dimensions, profile, public state, outcome, reasons and policy version.
-
-### P-09 CheckpointReceipt model
-Bind lineage, accepted local head, server state, receipt sequence and policy.
-
-### P-10 KeyRotationTransition
-Old/new authorization, boundary sequence and recovery variant.
-
-### P-11 CorrectionRecord
-Append-only server-authorized correction and supersession.
-
-### P-12 Atomic batch envelope
-One challenge/batch/replay state machine without partial acceptance ambiguity.
-
-Acceptance: independent Rust/Go verification agrees exactly and malformed input fails without resource exhaustion.
+Acceptance: independent implementations agree byte-for-byte and malformed input fails without excess allocation or partial acceptance.
 
 ## Epic A — accounting and deterministic integrity
 
-### A-01 Accounting-profile registry
-Provider/runtime/API-mode/model/tokenizer profiles with immutable versions.
+### A-01 immutable accounting-profile registry
+### A-02 mutually exclusive token categories and containment
+### A-03 cache, reasoning, modality and source-total reconciliation
+### A-04 retry, cancellation and nested-agent accounting
+### A-05 local tokenizer/runtime-native profiles
+### A-06 monotonic clock/generation rules
+### A-07 duplicate-domain engine
+### A-08 deterministic fatal/quarantine/diagnostic rules
+### A-09 server-owned pricing interpretation
+### A-10 throughput-envelope registry
 
-### A-02 Canonical token categories
-Mutually exclusive components and source containment mappings.
+Acceptance: representative cloud, local, WSL, container and CI cases reconcile without double counting or client-controlled pricing/evidence.
 
-### A-03 Source-total reconciliation
-Prevent nested/cache/reasoning/modality double counting.
+## Epic N — native runtime
 
-### A-04 Retry/cancellation accounting
-Distinct execution, internal retry, aborted stream and unknown remainder.
+### N-01 typed SourceObservation IPC
+### N-02 non-networked collector process
+### N-03 source-blind networked sync process
+### N-04 OS-supervised daemon/control process
+### N-05 authenticated local IPC and peer identity
+### N-06 encrypted local database and migrations
+### N-07 append-only commitment and receipt store
+### N-08 crash consistency and bounded queues
+### N-09 sleep/resume, offline, disk-full, permission-loss and corruption recovery
+### N-10 CLI parity
+### N-11 interactive menu-bar/tray shell
 
-### A-05 Nested-agent accounting
-Parent/child attribution and duplicate prevention.
+The shell has its own generated state machine and process identity. It covers absent/headless, starting, connected, daemon-unavailable, stale, paused, offline, degraded, auth-required, update-required, update-blocked, permission-repair and exiting states.
 
-### A-06 Cache/reasoning profiles
-Provider-specific semantics and fixtures.
+### N-12 shell/daemon action separation
 
-### A-07 Local tokenizer profile
-Exact model/tokenizer digest and reconstruction ceiling.
+UI exit, collection pause, sync pause, daemon stop, logout and uninstall are distinct. Closing or crashing the shell never stops the daemon.
 
-### A-08 Runtime-native profile
-Local inference counters, token IDs and runtime-generation semantics.
+### N-13 platform shell mappings
 
-### A-09 Deterministic rules engine
-Versioned fatal, quarantine and diagnostic outcomes.
+- macOS menu-bar app plus approved login-item/LaunchAgent integration;
+- Windows notification-area shell plus supervised background process;
+- Linux desktop shell plus systemd-user and explicit headless mode.
 
-### A-10 Clock/generation rules
-Monotonic domain, suspend/resume, process reset and rollback.
+### N-14 optional privileged supervisor
+### N-15 mandatory-update coordinator
+### N-16 environment identity and diagnostics
 
-### A-11 Duplicate-domain engine
-Keyed non-content structural domains and collision behavior.
+Acceptance: daemon, collector, sync, shell and CLI fail independently; no privileged boundary can read source content.
 
-### A-12 Throughput-envelope registry
-Transparent source/runtime physical and protocol bounds.
+## Epic D — device identity and cloning controls
 
-### A-13 Pricing rule engine
-Server-side immutable datasets, alias resolution, conditions, line items, rounding and provenance.
-
-Acceptance: representative cloud/local/WSL/container/CI fixtures reconcile without double counting or client-controlled cost.
-
-## Epic N — native collector, daemon and local state
-
-### N-01 Typed SourceObservation IPC
-Replace arbitrary JSON/bytes with bounded generated messages.
-
-### N-02 Collector process
-Adapter supervision, normalization, accounting and deterministic rules; no network.
-
-### N-03 Sync process
-Challenges, claims, receipts, retries and sessions; no source-content access.
-
-### N-04 Daemon/control process
-Lifecycle, configuration, health and capability routing without content access.
-
-### N-05 Authenticated local IPC
-Peer identity, ACLs, challenge-response, version negotiation, deadlines, limits and replay controls.
-
-### N-06 Encrypted local database
-Separate source cursors, normalized facts, commitments, pending claims, receipts, audit and diagnostics.
-
-### N-07 Append-only commitment store
-Local sequence, heads, monotonic generation and checkpoint receipt.
-
-### N-08 Crash consistency
-Transactional normalized event, rule result, commitment and queue writes.
-
-### N-09 Offline queue/backpressure
-Bounded storage, batching, retry, expiry and visible backlog.
-
-### N-10 Disk-full behavior
-Stop safely without corrupting state or silently dropping ranked activity.
-
-### N-11 Sleep/resume and clock recovery
-Deterministic generation changes and diagnostics.
-
-### N-12 Corrupt-state recovery
-Quarantine, gap declaration where allowed and explicit new lineage where required.
-
-### N-13 Local outbound audit ledger
-Exact sent fields and receipt status without content.
-
-### N-14 Privacy preview
-Render exact outbound data before/after serialization.
-
-### N-15 CLI core
-Install, status, pause, adapters, privacy, export/delete, update/rollback and doctor.
-
-### N-16 Always-on supervisor
-Desired state, OS registration, child heartbeats, crash-loop isolation and maintenance handoff under ADR-010.
-
-### N-17 Optional privileged-supervisor protocol
-Separate identity, typed ACL-bound IPC, lifecycle-only capabilities and user isolation under ADR-012.
-
-### N-18 Mandatory-update coordinator
-Update classes, signed deadlines, maintenance lease, safe checkpoint, blocked-version and rollback behavior under ADR-013.
-
-### N-19 Environment identity
-Native/WSL/container/CI environment kind, lifecycle class and support tuple.
-
-### N-20 Platform status diagnostics
-Expose exact profile, service mode, key class, update deadline, evidence ceiling and repair actions.
-
-Acceptance: daemon remains resident in degraded states; shell and children fail independently; privileged boundary cannot read source content.
-
-## Epic D — device identity and platform keys
-
-### D-01 Device-lineage schema
-Separate installation, key and lineage identity.
-
-### D-02 Enrollment protocol
-Bind account, session, key, collector build and challenge.
-
+### D-01 installation, key and lineage schema
+### D-02 enrollment and server challenge binding
 ### D-03 macOS key backend
-Keychain/Secure Enclave capability and migration behavior on Apple silicon and Intel.
+### D-04 Windows CNG/TPM and fallback backend
+### D-05 Linux TPM/keyring/Secret Service and fallback backend
+### D-06 rotation and lost-key recovery
+### D-07 restore, clone, VM/WSL/container snapshot handling
+### D-08 requalification and evidence downgrade
+### D-09 optional issuer-specific attestation adapters
+### D-10 CI ephemeral and container workload identity
 
-### D-04 Windows key backend
-CNG/TPM non-exportable path and DPAPI fallback on native x64/ARM64.
-
-### D-05 Linux key backend
-TPM/keyring/Secret Service and encrypted fallback matrix.
-
-### D-06 Rotation flow
-Old/new authorization and exact sequence boundary.
-
-### D-07 Lost-key recovery
-Revoke old key, new lineage and no silent trust inheritance.
-
-### D-08 Restore/clone inputs
-Backup, home restore, credential migration, VM/WSL/container volume snapshot signals.
-
-### D-09 Requalification policy
-Recovered/migrated lineages cannot inherit Hardened automatically.
-
-### D-10 Optional attestation adapters
-Issuer-specific nonce/freshness/revocation evidence, never blanket truth.
-
-### D-11 CI ephemeral identity
-Short-lived key, workflow/run binding and no implicit cross-job continuity.
-
-### D-12 Container workload identity
-Replica/state-volume ownership and duplicate prevention.
-
-Acceptance: clone, export/import, runner retry and architecture migration never silently duplicate score or preserve stronger trust.
+Acceptance: clone, export/import, runner retry and architecture migration cannot silently duplicate score or preserve stronger trust.
 
 ## Epic S — server secure spine
 
 ### S-01 Go modular service skeleton
-HTTP, auth callbacks, verifier, workers and admin CLI around PostgreSQL.
+### S-02 ordered PostgreSQL migrations, roles and recovery
+### S-03 provider capability and OAuth transaction persistence
+### S-04 device/key/environment persistence
+### S-05 challenge and idempotency ledgers
+### S-06 atomic claim acceptance and exact replay
+### S-07 conflict/fork quarantine
+### S-08 immutable claim/appraisal/checkpoint/correction facts
+### S-09 transactional outbox and worker checkpoints
+### S-10 ranking projection and rebuild equivalence
+### S-11 compatibility/update policy service
+### S-12 environment eligibility and board minimums
 
-### S-02 PostgreSQL migration baseline
-Ordered migrations, roles, constraints and recovery.
+Acceptance: exact retry cannot add score; conflicting reuse is deterministic and auditable; expired tools receive signed actionable outcomes.
 
-### S-03 Device/key/environment persistence
-Lineages, keys, status, environment profiles, attestation and recovery events.
+## Epic O — authentication, sessions and ranked identity
 
-### S-04 Challenge service
-Random account/device-bound single-use challenges with limits.
+### O-01 provider-capability registry
 
-### S-05 Idempotency ledger
-Scoped key, principal, fingerprint, outcome, expiry and conflicts.
+Bind immutable issuer, authorization endpoint, token endpoint, client identifier, redirect URI, PKCE requirements and RFC 9207 issuer-response support.
 
-### S-06 Atomic claim acceptance
-Decode through appraisal, ledger, checkpoint and outbox in one transaction.
+### O-02 desktop browser authorization
 
-### S-07 Exact replay response
-Stored outcome for byte-identical retry.
+macOS, Windows and desktop Linux use the system browser with Authorization Code plus PKCE and exact stored redirect/provider binding.
 
-### S-08 Conflict/fork quarantine
-Registered conflict outcomes for reused identities/domains.
+### O-03 provider-specific callback verification
 
-### S-09 Privacy-safe rejection records
-Digest and bounded metadata only.
+Require callback `iss` only where supported; otherwise use fixed provider configuration and unique redirect paths. Never select provider or token endpoint from callback-controlled values.
 
-### S-10 Immutable claim/appraisal/checkpoint ledger
-Facts immutable; projections/cases separate.
+### O-04 limited-input/headless device authorization
 
-### S-11 Transactional outbox
-Ranking/social events only after accepted transaction.
+Implement only for explicitly registered interactive profiles and providers supporting RFC 8628. It is not the ordinary desktop path and is forbidden for unattended CI.
 
-### S-12 Worker idempotency/checkpoints
-Crash-safe deterministic processing.
+### O-05 web/native token families and replay revocation
+### O-06 linked identity and recovery
+### O-07 ranked eligibility, investigation and anti-reenrollment
+### O-08 restriction, consolidation, appeal and reversal
+### O-09 OAuth mix-up, redirect-confusion and race fixtures
 
-### S-13 Synthetic ranking projection
-Canonical ranking view.
+Acceptance: provider/session/recovery operations cannot duplicate claims, reset scores, choose attacker-controlled endpoints or bypass ranked-identity policy.
 
-### S-14 Rebuild equivalence
-Replay facts/corrections and hash compare.
+## Epic V — first sources and universal support
 
-### S-15 Compatibility/update policy service
-Signed minimum versions, deadlines, environment-specific restrictions and safe blocked-version responses.
-
-### S-16 Environment eligibility policy
-Global WSL/container/CI eligibility plus board minimum-profile overrides.
-
-Acceptance: exact retry cannot add score; expired tools/versions fail with signed actionable outcomes; environment restrictions are policy-driven and auditable.
-
-## Epic V — first sources and universal compatibility
-
-### V-01 Local runtime selection spike
-Compare current Ollama, llama.cpp and vLLM structured counters and version identity.
-
-### V-02 Cloud source selection spike
-Compare current official structured usage interfaces without calling metadata signed receipts.
-
-### V-03 Local adapter
-Manifest, probe, observation, accounting, duplicate domain and fixtures.
-
-### V-04 Cloud adapter
-Manifest, local response-metadata observation, accounting, duplicate domain and fixtures.
-
-### V-05 Certification runner
-Exact artifact/source/version/platform/mode/profile bundle and immutable result digest.
-
-### V-06 Support registry publication
-Generate honest support ceiling from exercised results.
-
-### V-07 Emergency disable/sunset
-Signed state, diagnostics and downgrade behavior.
-
-### V-08 Upgrade-break fixtures
-Changed source versions fail closed for stronger profiles.
-
+### V-01 local runtime selection spike
+### V-02 cloud structured-usage selection spike
+### V-03 local adapter and accounting profile
+### V-04 cloud adapter and accounting profile
+### V-05 certification runner
+### V-06 immutable support registry publication
+### V-07 emergency disable and sunset
+### V-08 upgrade-break fixtures
 ### V-09 WSL host/guest reconciliation
-Prevent Windows and WSL duplicate capture.
-
-### V-10 Container replica reconciliation
-Prevent duplicated scoring from cloned volumes/replicas.
-
+### V-10 container replica reconciliation
 ### V-11 CI retry/matrix reconciliation
-Prevent retry/cache/workspace/matrix double counting.
 
-## Epic I — authentication, sessions and ranked identity
+Acceptance: support is advertised only from non-expired certification bound to artifact digest, source version, exact platform tuple, mode and accounting profile.
 
-### I-01 GitHub App web authorization
-### I-02 GitHub native device authorization
-### I-03 X Authorization Code + PKCE
-### I-04 OAuth transaction schema
-### I-05 Web session families
-### I-06 Native token families
-### I-07 DPoP implementation decision
-### I-08 Linked identity state machine
-### I-09 Optional stronger factors
-### I-10 Recovery flow
-### I-11 Ranked eligibility
-### I-12 Duplicate-identity case model
-### I-13 Restriction/consolidation
-### I-14 Anti-reenrollment retention
+## Epic R — ranking and pricing
 
-Acceptance: provider/session/recovery operations cannot duplicate claims, reset scores or bypass one-ranked-identity policy.
+### R-01 canonical ranking_view_id
+### R-02 period registry and server-anchored event interval
+### R-03 immutable score facts and corrections
+### R-04 isolated generation, validation and promotion
+### R-05 snapshots, keyset cursors and movement
+### R-06 evidence/environment filters
+### R-07 immutable pricing aliases and line items
+### R-08 rebuild equivalence
 
-## Epic R — ranking, periods, corrections and pricing
+Acceptance: filtering never mutates accepted raw token totals and corrections remain append-only.
 
-### R-01 Canonical ranking_view_id
-### R-02 Period registry
-### R-03 Server-anchored event interval
-### R-04 Score fact/delta model
-### R-05 Snapshot generation
-### R-06 SQL rank semantics
-### R-07 First-reached semantics
-### R-08 Keyset pagination
-### R-09 Evidence/environment filters
-### R-10 Pricing interpretation records
-### R-11 Immutable alias resolution
-### R-12 Unpriced/local-compute UX data
+## Epic G — social, presence and moderation
 
-Acceptance: environment class changes filtering/eligibility but never mutates accepted raw token totals.
+### G-01 profiles and privacy matrix
+### G-02 block, friend, rival and canonical relationship state
+### G-03 boards, membership, invitation, role and ownership transfer
+### G-04 viewer-specific collector-derived presence
+### G-05 typed notification preferences, dedup, quiet hours and retraction
+### G-06 moderation cases, effects, appeals and reversals
+### G-07 typed export and distinct server/local deletion
 
-## Epic G — profiles and social graph
+Acceptance: block and privacy changes invalidate visibility immediately; notifications recheck authorization; moderation and deletion effects are reversible/auditable as specified.
 
-### G-01 Handle assignment ledger
-### G-02 Profile privacy matrix
-### G-03 Block state machine
-### G-04 Friend-request state machine
-### G-05 Friendship edge model
-### G-06 Rival state machine
-### G-07 Board aggregate root
-### G-08 Membership/role state machine
-### G-09 Board invitation state machine
-### G-10 Board policy versions
-### G-11 Organization/community/hacker-house specialization
+## Epic L — packaging, platform and release trust
 
-Board policy supports minimum evidence and environment exclusions without changing global eligibility.
+### L-01 immutable source-evidence schema
 
-## Epic L — presence, movement and notifications
+Every platform source binds source ID, immutable version/release/commit, retrieval timestamp, content SHA-256, canonical URI and supported fields.
 
-### L-01 Qualifying activity signal
-### L-02 Presence lease transaction
-### L-03 Audience/privacy projection
-### L-04 Multi-device merge
-### L-05 Overtake event
-### L-06 Rank movement event
-### L-07 Typed notification schema
-### L-08 Preferences and quiet hours
-### L-09 Deduplication/hysteresis/grouping
-### L-10 Retraction/correction
-### L-11 Mandatory-update/security notifications
+### L-02 exact platform-profile certification runner
+### L-03 macOS installer, daemon and shell registration
+### L-04 Windows installer, background process and tray registration
+### L-05 Linux packages, systemd-user and headless mode
+### L-06 WSL, container and CI lifecycle lanes
+### L-07 TUF repository, thresholds and expiry
+### L-08 signed release-set manifest and provenance
+### L-09 mandatory update deadlines, rollback and compromise recovery
+### L-10 uninstall, export and diagnostics
 
-No notification may expose source/project content.
+Acceptance: no platform is advertised before exact certification; all artifacts and source evidence are immutable and digest-bound; rollback/freeze/mix-and-match defenses are exercised.
 
-## Epic M — moderation, appeals and lifecycle
+## Epic W — hosted web and product UI
 
-### M-01 Moderation case aggregate
-### M-02 Progressive actions
-### M-03 Automated authority limits
-### M-04 Reviewer authorization/audit
-### M-05 Appeal state machine
-### M-06 Reversal record
-### M-07 Ranking rebuild after reversal
-### M-08 Export workflow
-### M-09 Server deletion workflow
-### M-10 Local deletion workflow
+### W-01 generated API clients
+### W-02 authentication and recovery UX
+### W-03 leaderboards, profiles, rivals, boards and social UX
+### W-04 evidence/privacy disclosure and outbound preview
+### W-05 device, platform, update and shell-status surfaces
+### W-06 moderation, appeals, export and deletion UX
+### W-07 accessibility, responsive and exceptional-state coverage
 
-## Epic U — web and native UX
+The existing hosted-web/Storybook code remains a fixture-backed runnable prototype until integrated with implemented contracts.
 
-### U-01 Native onboarding/permissions
-### U-02 Account login/device pairing
-### U-03 Daemon/collector/sync health
-### U-04 Adapter discovery/support ceilings
-### U-05 Exact outbound privacy inspection
-### U-06 Global leaderboard/period/filter views
-### U-07 Friends leaderboard/social home
-### U-08 Board/org/community/hacker-house leaderboards
-### U-09 Public profile/evidence disclosure
-### U-10 Personal activity/model/agent views
-### U-11 Estimated Cash Burn/provenance
-### U-12 Friends/rivals/overtakes/movement
-### U-13 Presence controls/privacy
-### U-14 Notifications/preferences
-### U-15 Board administration
-### U-16 Devices/identities/sessions
-### U-17 Moderation/restriction/appeal
-### U-18 Export/deletion
-### U-19 Exceptional-state matrix
-### U-20 Accessibility/performance
-### U-21 Exact platform-profile status
-### U-22 Update channel/deadline/rollback UX
-### U-23 Privileged-mode consent/status/downgrade UX
+## Release gates
 
-No Android, iOS, iPadOS or ChromeOS native UX unit exists.
+A work unit is not complete because code compiles. Applicable gates include unit/integration/property/concurrency/privacy tests, migration and rollback evidence, cross-language vectors, platform execution, security review, operational drills, reproducible artifacts and documentation updates.
 
-## Epic O — packaging, updater and operations
-
-### O-01 macOS Apple-silicon packaging
-Signed/notarized arm64 app, daemon and menu-bar release lane.
-
-### O-02 macOS Intel packaging
-Signed/notarized x86_64 lane and Universal 2 compatibility where possible.
-
-### O-03 Windows x64 packaging
-Native signed installer/service/tray lane.
-
-### O-04 Windows ARM64 packaging
-Native signed installer/service/tray lane; no emulation-only claim.
-
-### O-05 Linux deb ecosystem
-Debian/Ubuntu-family signed repository and service integration.
-
-### O-06 Linux rpm ecosystems
-Fedora/RHEL/Rocky/Alma and openSUSE/SLES signed profiles.
-
-### O-07 Linux Arch/Alpine/Nix/portable
-Arch, musl/Alpine, Nix and signed glibc/musl tarball profiles.
-
-### O-08 Linux init/service integrations
-systemd-user/linger, OpenRC, runit, s6, dinit and weaker desktop fallback classification.
-
-### O-09 WSL packaging
-Independent guest installation, update and uninstall.
-
-### O-10 Container images
-Non-root signed multi-architecture images and immutable replacement.
-
-### O-11 CI tool/action packaging
-Pinned signed artifacts and expiry compatibility.
-
-### O-12 Signed installer/uninstall verification
-All native/package profiles.
-
-### O-13 TUF trust root and role policy
-### O-14 Release-set manifest/compatibility graph
-### O-15 Automatic update policy engine
-Security, compatibility and routine deadlines with bounded deferral.
-
-### O-16 Atomic update/interrupted recovery
-### O-17 Rollback/freeze/compromised-version handling
-### O-18 Blocked-version safe mode
-Diagnostics, update, export and uninstall retained where safe.
-
-### O-19 Privileged supervisor packaging
-Separate least-privilege Mac/Windows/Linux artifacts.
-
-### O-20 SBOM/provenance generation
-### O-21 Signature transparency/consumer verification
-### O-22 Environment/secrets/migration promotion
-### O-23 Observability allowlist/canary blocking
-### O-24 Backup/restore/disaster recovery
-### O-25 SLOs/alerts/incidents/key-compromise playbooks
-### O-26 Restore product CI/security/dependency/evaluation/release gates
-### O-27 Independent security/privacy review
-### O-28 Open-source history/secret/license/trademark review
-### O-29 Reproducible public release and launch gate
-### O-30 Out-of-scope platform guard
-Fail packaging/release if Android, iOS, iPadOS or ChromeOS native artifacts are introduced without a superseding decision.
-
-## Adversarial beta campaigns
-
-Separate campaigns are required for:
-
-- canonicalization/parser/signature/key confusion;
-- replay/fork/race storms;
-- device clone/restore/migration;
-- modified adapters and fake source events;
-- clock/suspend/runtime reset/disk failure;
-- retry/cancellation/cache/reasoning/nested accounting;
-- long offline and extreme legitimate local volume;
-- identity/collusion/shared-network false positives;
-- social/board authorization abuse;
-- notification/privacy leakage;
-- moderation reversal/rebuild;
-- update/signing/freeze/rollback compromise;
-- privileged supervisor cross-user and substitution attacks;
-- Windows/WSL duplicate capture;
-- container replica/volume clone duplication;
-- CI retry/cache/matrix duplication;
-- privacy canaries across all processes, logs and server surfaces.
-
-## Post-launch tracks
-
-### PL-01 Country leaderboard research
-No launch dependency.
-
-### PL-02 SLM detector bakeoff
-Synthetic/consented data, deterministic/classical baselines and separate approval.
-
-## PR acceptance contract
-
-Every PR names:
-
-- unit ID and dependencies;
-- decisions, ADRs, contracts and schemas;
-- privacy/security impact and threat cases;
-- exact platform profiles;
-- database/API/wire compatibility and migrations;
-- rollback or disable path;
-- tests, benchmarks, fixtures and generated artifacts;
-- support/evidence ceilings;
-- unresolved risks.
-
-Placeholder-only PRs, skipped tests, mocks, empty certifications and planning/prototype validators do not close implementation work.
+P-1105 public-launch review remains blocked until every advertised source and platform has executable, non-expired evidence.
