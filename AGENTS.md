@@ -90,6 +90,13 @@ Do not add Kubernetes, Kafka, GraphQL, service mesh, workflow engines, vector da
 - Pin toolchains and dependencies; avoid overlapping libraries for the same responsibility.
 - `docs/implementation/REPOSITORY_LAYOUT.md` distinguishes current paths from future paths.
 
+## Workspace boundary
+
+- Commit reviewed source, contracts, schemas, synthetic fixtures, governed assets, reproducible baselines, and explicitly classified generated metadata only when they satisfy `docs/planning/ARTIFACT_POLICY.md`.
+- Keep agent sessions, prompts, transcripts, private repository material, credentials, machine-specific settings, local caches, generated builds, dependency directories, and transient captures outside Git; never add them to project context files.
+- `assets/` is the canonical repository-owned visual library. `artifacts/` contains only explicitly classified, reproducible, non-authoritative metadata or evidence; it is never a substitute for source authority.
+- Before committing generated repository metadata, regenerate it with its documented command and review the resulting checkout-specific diff.
+
 ## Schema and policy discipline
 
 - Authoritative schemas live in `packages/schemas/`.
