@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the final P-1140E planning handoff without claiming runtime evidence."""
+"""Validate P-1140E structural consistency without claiming semantic or runtime proof."""
 from __future__ import annotations
 
 import json
@@ -37,6 +37,7 @@ def main() -> int:
         key=lambda item: list(item.absolute_path),
     )
     require(not errors, "validation matrix schema failure: " + "; ".join(e.message for e in errors[:8]))
+    require(matrix["maturity"] == "planning-validation-only", "matrix must remain planning-validation-only")
 
     decision_text = (ROOT / "docs/planning/DECISION_REGISTER.md").read_text(encoding="utf-8")
     decision_statuses: dict[str, str] = {}
@@ -47,6 +48,7 @@ def main() -> int:
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
         if len(cells) >= 3 and re.fullmatch(r"D-\d{3}", cells[0]) and cells[2] in allowed:
             decision_statuses[cells[0]] = cells[2]
+
     expected_decisions = {f"D-{number:03d}" for number in range(1, 70)}
     require(set(decision_statuses) == expected_decisions, "decision register is not exactly D-001..D-069")
 
@@ -69,9 +71,6 @@ def main() -> int:
     require(set(trace_ids) == expected_decisions, "traceability files do not cover D-001..D-069")
     require(len(trace_ids) == len(set(trace_ids)), "duplicate decision traceability row")
 
-    for domain in matrix["validation_domains"]:
-        for path in domain["authorities"] + domain["fixtures"]:
-            require((ROOT / path).exists(), f"{domain['domain_id']} references missing path {path}")
     required_domains = {
         "decision-traceability", "protocol-exact-bytes", "protocol-malformed-resource",
         "accounting", "privacy-boundaries", "oauth-session-identity", "api-idempotency-rate",
@@ -80,6 +79,10 @@ def main() -> int:
         "reason-policy-references", "registry-references", "current-future-paths", "clean-checkout",
     }
     require({item["domain_id"] for item in matrix["validation_domains"]} == required_domains, "validation domain set mismatch")
+    for domain in matrix["validation_domains"]:
+        require(domain["execution_state"] in {"planning-validated", "planned-runtime-evidence"}, f"unknown execution state: {domain['domain_id']}")
+        for path in domain["authorities"] + domain["fixtures"]:
+            require((ROOT / path).exists(), f"{domain['domain_id']} references missing path {path}")
 
     spec = yaml.safe_load((SCHEMAS / "openapi-v1.yaml").read_text(encoding="utf-8"))
     operation_ids: list[str] = []
@@ -97,8 +100,7 @@ def main() -> int:
     fixture_machines = {item["machine_id"]: item for item in state_fixtures["machines"]}
     require(set(fixture_machines) == set(machines), "state fixture set mismatch")
     for machine_id, fixture in fixture_machines.items():
-        machine = machines[machine_id]
-        transitions = {item["transition_id"]: item for item in machine["transitions"]}
+        transitions = {item["transition_id"]: item for item in machines[machine_id]["transitions"]}
         positive = fixture["positive"]
         require(positive["transition_id"] in transitions, f"unknown positive transition for {machine_id}")
         transition = transitions[positive["transition_id"]]
@@ -136,14 +138,19 @@ def main() -> int:
         require(all(item["execution_state"] == "planned-runtime-evidence" for item in planned["cases"]), f"platform plan overclaims execution: {profile_id}")
 
     reason_registry = load_json(SCHEMAS / "reason-codes-v1.json")
-    external_authorities = {"vibeproof-v1", "device-lineage-v1", "server-runtime"}
-    allowed_authorities = set(machines) | external_authorities
+    allowed_authorities = set(machines) | {"vibeproof-v1", "device-lineage-v1", "server-runtime"}
     for item in reason_registry["codes"]:
         require(item["state_machine"] in allowed_authorities, f"reason authority does not resolve: {item['code']}")
 
-    audit = (ROOT / "docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md").read_text(encoding="utf-8")
-    require("P0 open: 0" in audit and "P1 open: 0" in audit, "final contradiction audit is not closed")
-    require("planning evidence only" in audit.lower(), "final audit overstates evidence maturity")
+    structural_audit = (ROOT / "docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md").read_text(encoding="utf-8").lower()
+    require("structural p0 open: 0" in structural_audit and "structural p1 open: 0" in structural_audit, "structural audit is not closed")
+    require("does not establish" in structural_audit and "semantic" in structural_audit, "structural audit overstates its claim scope")
+
+    semantic_review = (ROOT / "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md").read_text(encoding="utf-8").lower()
+    require("semantic p1 open: 4" in semantic_review, "semantic review must retain the four open P1 findings")
+    require("p-1104: blocked" in semantic_review, "semantic review must keep P-1104 blocked")
+    for finding in ("sr-001", "sr-002", "sr-003", "sr-004"):
+        require(finding in semantic_review, f"semantic review is missing {finding}")
 
     forbidden = [
         ROOT / "apps/android", ROOT / "apps/ios", ROOT / "apps/ipados", ROOT / "apps/chromeos",
@@ -151,9 +158,9 @@ def main() -> int:
     ]
     require(not any(path.exists() for path in forbidden), "out-of-scope native mobile implementation path exists")
 
-    print("P-1140E cross-contract validation: pass")
+    print("P-1140E structural cross-contract validation: pass")
     print(f"decisions={len(bindings)} operations={len(operation_ids)} machines={len(machines)} profiles={len(profiles)} races={len(races['cases'])}")
-    print("artifact maturity: planning evidence only; runtime and launch evidence remain absent")
+    print("claim_scope=structural-consistency-only semantic_gate=P-1140F-open runtime_evidence=absent")
     return 0
 
 
@@ -161,5 +168,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except Exception as exc:
-        print(f"P-1140E cross-contract validation: FAIL: {exc}", file=sys.stderr)
+        print(f"P-1140E structural cross-contract validation: FAIL: {exc}", file=sys.stderr)
         raise SystemExit(1)
