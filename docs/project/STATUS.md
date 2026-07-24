@@ -61,7 +61,7 @@ Closed CDDL, deterministic CBOR/COSE profile, exact vectors, replay/continuity/r
 
 ### Completed P-1140D — candidate state and platform contract set
 
-OAuth/session, ranked identity, API/idempotency, SQL, ranking, social, native lifecycle, update and release contracts are present as planning artifacts. P-1140F has reopened four semantic P1 repairs within this set; therefore P-1140D is not implementation-ready.
+OAuth/session, ranked identity, API/idempotency, SQL, ranking, social, native lifecycle, update and release contracts are present as planning artifacts. The P-1140F repair head reconciles the four identified semantic P1s and is pending independent semantic review; therefore the contracts are not implementation-ready.
 
 ### Completed P-1140E — structural cross-contract validation
 
@@ -122,4 +122,4 @@ Read-only planning validation may run. ADR-014 permits narrowly scoped Storybook
 
 ## Current gate
 
-P-1140F is active. P-1104, P-1131 and comprehensive launch review remain blocked.
+P-1140F repair head is pending independent semantic review. P-1104, P-1131 and comprehensive launch review remain blocked.

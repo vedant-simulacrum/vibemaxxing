@@ -34,7 +34,7 @@ Closed deterministic CBOR/COSE contracts, exact vectors, replay/idempotency, che
 
 Status: `complete-planning`
 
-Candidate OAuth/session, ranked identity, API/idempotency, PostgreSQL, ranking, pricing, social, moderation, export/deletion, platform lifecycle, update and release-trust contracts are present. P-1140F has identified four semantic P1 repairs within this set, so it is not implementation-ready.
+Candidate OAuth/session, ranked identity, API/idempotency, PostgreSQL, ranking, pricing, social, moderation, export/deletion, platform lifecycle, update and release-trust contracts are present. The P-1140F repair head reconciles the four identified semantic P1s and remains pending independent semantic review, so it is not implementation-ready.
 
 ### P-1140E — structural cross-contract validation
 
@@ -91,4 +91,4 @@ P-1140F acceptance:
 
 ## Current conclusion
 
-P-1140A through P-1140E are complete within their stated planning scopes. P-1140F is active. P-1104 remains blocked and is not ready for user authorization.
+P-1140A through P-1140E are complete within their stated planning scopes. The P-1140F repair head is pending independent semantic review and PostgreSQL-backed clean-checkout validation. P-1104 remains blocked and is not ready for user authorization.

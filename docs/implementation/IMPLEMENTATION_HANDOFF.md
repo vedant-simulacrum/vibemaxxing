@@ -1,6 +1,6 @@
 # VibeMaxxing Implementation Handoff
 
-Status: consolidated but inactive; P-1140F semantic review is open and P-1104 is blocked
+Status: consolidated but inactive; P-1140F repair head is pending independent semantic review and P-1104 is blocked
 Version: 10
 Updated: 2026-07-24
 
@@ -17,7 +17,7 @@ It does not authorize implementation. `docs/implementation/PR_SIZED_WORK_BREAKDO
 | Product authority and launch scope | consolidated | preserve no-country launch scope and no native mobile/ChromeOS work |
 | Privacy, accounting and appraisal | P-1140B complete-planning | planning input only; no runtime privacy or security proof |
 | VibeProof | P-1140C complete-planning | planning input only; independent codecs and interoperability absent |
-| State/API/platform/release contracts | P-1140D complete-planning with four semantic P1 repairs open | not implementation-ready |
+| State/API/platform/release contracts | P-1140D complete-planning; P-1140F repair head pending independent semantic review | not implementation-ready |
 | Structural validation | P-1140E complete-planning | proves internal reference and coverage consistency only |
 | Semantic review | P-1140F in progress | blocks implementation authorization |
 | Product code | prototype/seeds only | collector, services, database, packaging and operations are absent |
