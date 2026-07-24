@@ -752,6 +752,7 @@
     "export-job",
     "friendship",
     "idempotency-ledger",
+    "interactive-shell",
     "local-deletion-command",
     "model-alias-resolution",
     "moderation-case",
@@ -869,7 +870,8 @@
         "packages/schemas/state-machine-registry-v1.json"
       ],
       "fixtures": [
-        "conformance/p1140e/state-machine-fixtures-v1.json"
+        "conformance/p1140e/state-machine-fixtures-v1.json",
+        "conformance/p1140f/semantic-fixtures-v1.json"
       ],
       "expected": "OAuth, session-family, and ranked-identity transitions have positive and invalid-transition fixtures.",
       "execution_state": "planning-validated"

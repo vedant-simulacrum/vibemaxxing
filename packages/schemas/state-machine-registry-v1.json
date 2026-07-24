@@ -2045,6 +2045,105 @@
       ]
     },
     {
+      "machine_id": "interactive-shell",
+      "semantic_owner": "native-shell",
+      "persistence_owner": [
+        "shell-sessions",
+        "shell-ipc-peers"
+      ],
+      "aggregate_key": "shell-session-id",
+      "initial_state": "absent",
+      "states": [
+        "absent",
+        "headless",
+        "starting",
+        "connected",
+        "daemon-unavailable",
+        "stale",
+        "paused",
+        "offline",
+        "degraded",
+        "auth-required",
+        "update-required",
+        "update-blocked",
+        "permission-repair",
+        "exiting",
+        "crashed"
+      ],
+      "terminal_states": [
+        "absent",
+        "headless"
+      ],
+      "privacy_boundary": "local-only",
+      "transitions": [
+        {
+          "transition_id": "shell-start",
+          "from": ["absent", "headless"],
+          "action": "start-shell",
+          "to": "starting",
+          "actor": "user",
+          "authentication": "native-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "shell-start.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "shell-session"
+        },
+        {
+          "transition_id": "shell-ipc-connect",
+          "from": ["starting", "daemon-unavailable", "stale"],
+          "action": "verify-daemon-peer-and-connect",
+          "to": "connected",
+          "actor": "native-device",
+          "authentication": "device-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-ipc-connect.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "shell-ipc-peer"
+        },
+        {
+          "transition_id": "shell-daemon-unavailable",
+          "from": ["starting", "connected", "stale"],
+          "action": "daemon-peer-unavailable",
+          "to": "daemon-unavailable",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-daemon-unavailable.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "shell-session"
+        },
+        {
+          "transition_id": "shell-ui-exit",
+          "from": ["starting", "connected", "daemon-unavailable", "stale", "paused", "offline", "degraded", "auth-required", "update-required", "update-blocked", "permission-repair"],
+          "action": "exit-ui-without-daemon-stop",
+          "to": "absent",
+          "actor": "user",
+          "authentication": "native-session",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-ui-exit.audit",
+          "reversal": "none",
+          "transaction_boundary": "shell-session"
+        },
+        {
+          "transition_id": "shell-crash",
+          "from": ["starting", "connected", "daemon-unavailable", "stale", "paused", "offline", "degraded", "auth-required", "update-required", "update-blocked", "permission-repair"],
+          "action": "crash-without-daemon-stop",
+          "to": "crashed",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-crash.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "shell-session"
+        }
+      ]
+    },
+    {
       "machine_id": "platform-certification",
       "semantic_owner": "platform",
       "persistence_owner": [

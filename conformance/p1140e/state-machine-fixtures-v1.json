@@ -4,6 +4,22 @@
   "registry_id": "authoritative-state-machines-v1",
   "machines": [
     {
+      "machine_id": "interactive-shell",
+      "positive": {
+        "case_id": "interactive-shell-valid-transition",
+        "from": "connected",
+        "transition_id": "shell-ui-exit",
+        "expected_to": "absent",
+        "expected": "daemon-remains-os-supervised"
+      },
+      "negative": {
+        "case_id": "interactive-shell-invalid-transition",
+        "from": "absent",
+        "transition_id": "shell-ipc-connect",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
       "machine_id": "oauth-transaction",
       "positive": {
         "case_id": "oauth-transaction-valid-transition",
