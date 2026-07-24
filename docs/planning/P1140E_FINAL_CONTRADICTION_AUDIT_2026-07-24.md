@@ -1,58 +1,61 @@
-# P-1140E Final P0/P1 Contradiction Audit
+# P-1140E Structural Contradiction Audit
 
-Status: final planning contradiction review
+Status: complete structural planning review
 Updated: 2026-07-24
-Evidence maturity: planning evidence only; no runtime, security, certification, deployment, or launch evidence
+Evidence maturity: repository-consistency evidence only; no semantic certification, runtime proof, security review, platform certification, deployment evidence, or launch evidence
 
 ## Result
 
-P0 open: 0
-P1 open: 0
+Structural P0 open: 0
+Structural P1 open: 0
 
-The repaired P-1140B through P-1140D authority set has no remaining launch-scope, privacy, accounting, protocol, identity, API, persistence, ranking, social, platform, privilege, update, release, or workflow contradiction at P0/P1 planning severity.
+The P-1140E validator found no remaining P0/P1 contradiction within the repository dimensions it actually checks: decision registration, authority/reference closure, state-machine and API identifier coverage, planned SQL race cases, planned platform cases, reason-code authority, out-of-scope path rejection, and clean-checkout validator execution.
 
-This result means the handoff is internally coherent enough to request the separate P-1104 implementation authorization. It does not authorize implementation and does not show that any service, collector, codec, migration, package, updater, platform profile, security control, or deployment works.
+This result does **not** establish that the underlying OAuth, identity, protocol, replay, SQL, ranking, social, platform, release, privacy, or anti-cheat contracts are semantically correct, standards-conformant, secure, implementable, or independently reviewed. It does not make the implementation handoff active and it does not satisfy P-1104.
 
-## Review matrix
+The separate semantic-readiness gate is `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
 
-| Area | Authority checked | P0/P1 result | Residual work after authorization |
-|---|---|---|---|
-| Product and launch scope | D-001..D-069, project authority, ADR-010..014 | closed | preserve no-country and no-native-mobile scope in code review |
-| Evidence and privacy | typed local stages, appraisal policy, egress registry, canaries | closed | implement process isolation and exercise every boundary |
-| Accounting and pricing | profiles, accounting cases, pricing interpretation | closed | implement independent calculators and golden cross-language results |
-| VibeProof | closed CDDL, protocol profile, exact bytes, malformed/resource corpus | closed | implement independent codecs, fuzzing, resource and recovery tests |
-| Identity and sessions | state registry, device-bound proof decision, ranked identity | closed | implement OAuth/provider tests, token-family races, recovery and anti-reenrollment review |
-| API and persistence | endpoint resources, authority metadata, PostgreSQL 16 model | closed | implement migrations, transaction/race tests, load shedding and operations |
-| Ranking and social | ranking view identity, social union, board ownership, moderation reversal | closed | implement projections, rebuilds, privacy-aware presence, notification delivery and appeals |
-| Export and deletion | typed export, server/local deletion separation | closed | implement encryption, grants, purge, per-device commands and receipts |
-| Native lifecycle | exact platform registry, daemon/supervisor state | closed | build/install/exercise every exact platform tuple |
-| Updates and release trust | TUF/release-set and update machines | closed | create signed repository, compromise recovery, deadline and rollback evidence |
-| Automation | ADR-014 and workflow doctor invariants | closed | product CI remains disabled until its separately authorized gate |
+## Structural review matrix
 
-## Cross-contract checks
+| Area | Structural check completed | What remains outside P-1140E |
+|---|---|---|
+| Product and launch scope | D-001..D-069 registration, state and reference closure | independent scope and architecture review |
+| Evidence and privacy | typed-stage and fixture references resolve | process isolation, privacy canaries and security testing |
+| Accounting and pricing | profiles and representative cases resolve | independent calculators and cross-language golden results |
+| VibeProof | protocol files, vectors and malformed/resource corpus resolve | independent codecs, fuzzing and interoperability |
+| Identity and sessions | state/API/persistence references resolve | provider-capability review, OAuth conformance and race testing |
+| API and persistence | operations, tables and planned race cases resolve | migrations, transaction tests, concurrency and load testing |
+| Ranking and social | state owners and fixture references resolve | rebuild equivalence, privacy, abuse and authorization testing |
+| Export and deletion | typed state/reference closure | encryption, purge and offline-device behavior |
+| Native lifecycle | exact profile and planned failure-case equality | installers, tray/menu-bar behavior and platform execution |
+| Updates and release trust | release/update owners and plans resolve | real TUF repository, signed artifacts and recovery drills |
+| Automation | planning workflow and ADR-014 boundaries resolve | product CI/security/release automation remains disabled |
+
+## Cross-contract checks performed
 
 The P-1140E validator requires:
 
 - exactly D-001 through D-069 in the decision register, traceability set, and validation matrix;
 - no active path for superseded, deferred, rejected, or research-only decisions;
-- every OpenAPI operation, state machine, exact platform profile, SQL race plan, reason authority, fixture path, and validation domain to resolve;
+- every OpenAPI operation, registered state machine, exact platform profile, SQL race plan, reason authority, fixture path, and validation domain to resolve;
 - positive and invalid transition fixtures for every registered mutable-state machine;
 - PostgreSQL race plans for OAuth consumption, session replay, challenge/idempotency, sequence forks, social ownership, projections, moderation reversal, deletion/export, and release promotion;
 - exact platform failure-plan equality with the canonical platform registry;
 - no Android, iOS, iPadOS, or ChromeOS native implementation path;
 - all planning validators in one clean GitHub checkout on one exact head.
 
-## Non-contradiction blockers that remain
+## Non-structural blockers that remain
 
-These are expected implementation/evidence gaps, not open planning contradictions:
-
-1. product implementation is absent beyond the fixture-backed web prototype and seed modules;
-2. independent protocol codecs and cross-language numeric/time tests do not exist;
-3. SQL race plans and state fixtures are not runtime tests;
-4. every platform profile remains `advertised=false` and `planned-validation-required`;
-5. no release repository, installer, updater, deployment, operational drill, security review, or launch evidence exists;
-6. P-1104 remains `blocked-approval` until the user explicitly authorizes implementation.
+1. P-1140F semantic review has four open P1 findings covering OAuth issuer capability, device-authorization scope, interactive shell lifecycle, and immutable platform-source evidence.
+2. Product implementation is absent beyond the fixture-backed web prototype and seed modules.
+3. Independent protocol codecs and cross-language numeric/time tests do not exist.
+4. SQL race plans and state fixtures are not runtime tests.
+5. Every platform profile remains `advertised=false` and `planned-validation-required`.
+6. No release repository, installer, updater, deployment, operational drill, independent security review, or launch evidence exists.
+7. P-1104 remains blocked until P-1140F closes and the user separately authorizes implementation.
 
 ## Handoff rule
 
-If any implementation discovers a P0/P1 contradiction, P-1104 pauses and the relevant P-1140 authority is reopened. Runtime test failure is not rewritten as planning success.
+The P-1140E artifacts may be merged as structural planning evidence. They must not transition the repository to implementation-ready status. The handoff remains inactive until P-1140F records zero open semantic P0/P1 findings on a repaired exact head and the user then explicitly opens P-1104.
+
+If implementation later discovers a contradiction, P-1104 pauses and the relevant P-1140 authority reopens. Runtime failure is never rewritten as planning success.
