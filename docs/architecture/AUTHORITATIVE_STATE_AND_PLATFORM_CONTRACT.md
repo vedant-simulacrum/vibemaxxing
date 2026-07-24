@@ -14,9 +14,9 @@ Prose may explain a state machine but cannot create a second state vocabulary. O
 
 ### OAuth transactions
 
-An OAuth transaction binds transaction UUID, provider/issuer, client configuration, exact redirect URI, state-verifier hash, encrypted PKCE verifier, intended action, initiating web session or native instance, optional enrollment public-key commitment, creation/expiry/consumption and a one-time browser-handoff secret hash.
+An OAuth transaction binds transaction UUID, one preconfigured provider-capability record, immutable issuer, authorization endpoint, token endpoint, client identifier, exact redirect URI, state-verifier hash, encrypted PKCE verifier, intended action, initiating web session or native instance, optional enrollment public-key commitment, creation/expiry/consumption and a one-time browser-handoff secret hash. Callback-controlled values never select provider configuration, issuer, client configuration, redirect URI, or token endpoint.
 
-The callback verifies issuer, exact redirect, state, PKCE, transaction lifetime and one-time use before creating/linking provider identity or a session. Mutable usernames never identify the provider subject. Transaction consumption and session/provider binding are one database transaction.
+For a provider whose capability record advertises RFC 9207 support, the callback requires `iss` equal to that stored immutable issuer. For a provider without RFC 9207 support, the stored transaction provider and unique provider-specific redirect path bind the callback instead. Every callback verifies the stored exact redirect, state, PKCE, transaction lifetime and one-time use before creating/linking provider identity or a session. Mutable usernames never identify the provider subject. Transaction consumption and session/provider binding are one database transaction.
 
 ### Session families
 
@@ -115,7 +115,7 @@ Server deletion and local deletion are distinct:
 
 The registry includes macOS 26/15/14 on Apple silicon and compatible Intel; Windows 11 25H2 x64/ARM64; Windows Server 2025 x64; exact maintained Linux distribution/architecture/environment/package/init tuples; WSL2 Ubuntu 26.04; signed immutable OCI x64/arm64; and ephemeral CI x64/arm64. Windows Server ARM64 is not advertised without an applicable first-party release profile. Android, iOS, iPadOS and ChromeOS remain explicitly outside native scope.
 
-Daemon, shell, collector and sync lifecycles are independent. Closing shell never stops the OS-supervised daemon. Pausing collection or sync does not terminate the daemon. Crash loop, permission loss, key denial, disk exhaustion, sleep/reboot/login/logout, offline operation, update/rollback and uninstall are explicit failure cases.
+Daemon, shell, collector and sync lifecycles are independent. `interactive-shell` is the authoritative registry machine for the menu-bar/tray process and its authenticated IPC relationship to the daemon. Closing or crashing shell never stops the OS-supervised daemon. Pausing collection or sync does not terminate the daemon. Crash loop, permission loss, key denial, disk exhaustion, sleep/reboot/login/logout, offline operation, update/rollback and uninstall are explicit failure cases.
 
 macOS uses per-user launchd with optional separate constrained privileged service. Windows uses per-user service/task and optional constrained Windows Service. Linux uses systemd-user primarily and declared init templates. Privileged supervisors have separate identity/ACL/consent, cannot read ordinary source content or merge users, and can be removed without deleting user state.
 

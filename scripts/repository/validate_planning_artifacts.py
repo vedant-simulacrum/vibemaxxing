@@ -278,7 +278,7 @@ def validate_p1140d_contracts() -> None:
         "idempotency-ledger", "ranking-projection", "model-alias-resolution", "friendship", "rivalry",
         "board-membership", "board-invitation", "presence-lease", "notification-delivery",
         "moderation-case", "appeal", "export-job", "server-deletion", "local-deletion-command",
-        "daemon-lifecycle", "privileged-supervisor", "update-lifecycle", "release-trust",
+        "daemon-lifecycle", "interactive-shell", "privileged-supervisor", "update-lifecycle", "release-trust",
         "platform-certification",
     }
     if set(machine_ids) != required_machines:

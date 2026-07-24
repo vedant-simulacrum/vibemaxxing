@@ -91,9 +91,25 @@ def main() -> int:
                 operation_ids.append(operation["operationId"])
     require(len(operation_ids) == len(set(operation_ids)), "duplicate OpenAPI operationId")
     require(set(matrix["api_operations"]) == set(operation_ids), "matrix does not cover every API operation")
+    github_callback = spec["paths"]["/auth/github/callback"]["get"]
+    github_parameters = {item["$ref"] for item in github_callback["parameters"]}
+    require("#/components/parameters/OAuthIssuer" in github_parameters, "GitHub callback lacks RFC 9207 issuer parameter")
+    device_start = spec["components"]["schemas"]["DeviceAuthStartRequest"]
+    require("profile_id" in device_start["required"], "device authorization lacks registered profile binding")
+    semantic_fixtures = load_json(ROOT / "conformance" / "p1140f" / "semantic-fixtures-v1.json")
+    providers = semantic_fixtures["oauth_providers"]
+    require({provider["provider_id"] for provider in providers} == {"github", "x"}, "launch OAuth provider fixtures mismatch")
+    for provider in providers:
+        require(provider["pkce_required"], f"OAuth provider lacks PKCE requirement: {provider['provider_id']}")
+        require(provider["authorization_response_iss_supported"] is False, f"unsupported issuer-capability fixture: {provider['provider_id']}")
+        require("redirect-confusion-rejected" in provider["negative_cases"], f"OAuth provider lacks redirect confusion negative: {provider['provider_id']}")
+    device_fixtures = semantic_fixtures["device_authorization"]
+    require(device_fixtures["positive_case"] == "registered-headless-interactive-profile", "device authorization positive fixture is over-broad")
+    require({"ordinary-desktop-profile-rejected", "ci-profile-rejected"} <= set(device_fixtures["negative_cases"]), "device authorization lacks desktop or CI negative fixture")
 
     state_registry = load_json(SCHEMAS / "state-machine-registry-v1.json")
     machines = {item["machine_id"]: item for item in state_registry["machines"]}
+    require("interactive-shell" in machines, "interactive shell lacks authoritative state machine")
     require(set(matrix["state_machines"]) == set(machines), "matrix does not cover every state machine")
     state_fixtures = load_json(CONF / "state-machine-fixtures-v1.json")
     fixture_machines = {item["machine_id"]: item for item in state_fixtures["machines"]}
@@ -123,6 +139,14 @@ def main() -> int:
         require(case["execution_state"] == "planned-runtime-evidence", "SQL race plan overclaims execution")
 
     platform_registry = load_json(SCHEMAS / "platform-profile-registry-v1.json")
+    source_ids: set[str] = set()
+    for source in platform_registry["sources"]:
+        required_source_fields = {"source_id", "canonical_uri", "authority", "source_version", "retrieved_at", "content_sha256", "supported_fields"}
+        require(required_source_fields <= set(source), f"platform source lacks immutable evidence fields: {source.get('source_id')}")
+        require(source["source_id"] not in source_ids, f"duplicate platform source: {source['source_id']}")
+        source_ids.add(source["source_id"])
+        require(len(source["content_sha256"]) == 64, f"platform source digest is not SHA-256: {source['source_id']}")
+        require("/blob/main/" not in source["canonical_uri"], f"platform source uses moving branch URI: {source['source_id']}")
     profiles = {item["profile_id"]: item for item in platform_registry["profiles"]}
     require(set(matrix["platform_profiles"]) == set(profiles), "matrix does not cover every platform profile")
     plan = load_json(CONF / "platform-validation-plan-v1.json")
