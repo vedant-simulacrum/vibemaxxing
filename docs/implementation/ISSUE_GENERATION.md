@@ -11,9 +11,9 @@ Implementation issue keys are the stable work-unit headings already present in t
 
 - `F-01` for foundation contracts;
 - `P-06` for protocol vectors;
-- `N-18` for mandatory-update coordination;
-- `O-30` for the out-of-scope platform guard;
-- `PL-01` for a post-launch track.
+- `N-15` for mandatory-update coordination;
+- `O-04` for limited-input/headless device authorization;
+- `L-10` for uninstall, export, and diagnostics.
 
 Do not generate a parallel `IMP-###` numbering system. Renumbering by list position is prohibited because it silently changes issue identity when units are inserted or reorganized.
 
@@ -34,7 +34,7 @@ The generated JSON is produced on demand or into a temporary validation path. It
 
 ## Phase gates
 
-- Ordinary work units remain blocked by `P-1104-explicit-implementation-approval`.
+- Ordinary work units remain blocked by `P-1104-explicit-implementation-approval`; issue creation remains planning metadata until the user explicitly authorizes implementation after P-1140F closes.
 - `PL-*` units remain blocked by `post-launch-explicit-approval`.
 - Generating an issue plan does not authorize implementation.
 

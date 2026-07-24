@@ -45,7 +45,7 @@ A connector-backed audit of current `main`, open pull requests, issues, authorit
 
 - `main` at `111173b32ef972b600148f08675143d552cad4d9` remains a planning repository with one bounded web/Storybook prototype;
 - no root Rust, Go or JavaScript workspace exists; `apps/api/go.mod` is a module seed without a server entrypoint, the planned Rust crates are not present, and `packages/protocol` is explicitly a future generated-bindings placeholder;
-- the implementation handoff and PR-sized breakdown are broad and dependency ordered, but they cannot be treated as executable handoff authority while P-1140B through P-1140E remain incomplete;
+- the implementation handoff and PR-sized breakdown are broad and dependency ordered, but they cannot be treated as executable handoff authority while P-1140F has open semantic P1 findings;
 - the July 19 schema/interface inventory and traceability dry-run still used current-sounding `validated`, `normative` and `complete` language even though later audits reopened their assumptions;
 - open PR #30 contains the active UI application-lockdown work: 49 changed files and 24 branch commits, but it is two commits behind `main`, currently non-mergeable, and overlaps workflow/governance files changed by PR #31;
 - PR #31, the five-file ADR-014 workflow-boundary repair, completed exact-head planning and prototype validation and merged to `main` as `45125e89d53c3aafc34bb3ba90734964f4b0bc78` during this audit.

@@ -180,7 +180,7 @@ The repository becomes public before public launch only after history/secret sca
 
 ## Launch stages
 
-1. Planning repair: P-1140B–E and clean planning validation.
+1. Planning repair: P-1140A–E complete within their stated scopes, P-1140F closed with zero open semantic P0/P1 findings, clean planning validation, and explicit P-1104 authorization.
 2. Implementation alpha: synthetic secure spine and one real adapter, no public competition.
 3. Private alpha: native runtime, OAuth, ranking, privacy and initial exact platform tuples.
 4. Private competitive beta: complete platform families, multiple adapters, social loop, attack campaigns and operational drills.

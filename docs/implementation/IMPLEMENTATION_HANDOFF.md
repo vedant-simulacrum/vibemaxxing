@@ -52,6 +52,19 @@ Implementation may begin only when:
 
 No agent may infer authorization from a green planning workflow, a complete planning task, this handoff, a prototype or a merged PR.
 
+## Execution activation protocol
+
+After the entrance gate is satisfied, the implementation operator must:
+
+1. record the exact approved commit and the P-1140F closure evidence in the implementation-opening decision or issue;
+2. create the deterministic issue plan with `python3 scripts/repository/generate_issue_plan.py --output /tmp/vibemaxxing-issue-plan.json`, then create only dependency-ready issues using their existing stable keys;
+3. begin with `F-01` through `F-06` in source order; pin toolchains and generators before creating product workspaces, generated bindings, migrations, or runtime code;
+4. restore product automation only in the narrow order specified by the operations contract: format/lint/test, cross-language builds, contract drift checks, privacy canaries, security/dependency/license checks, then release and deployment gates;
+5. keep every implementation change linked to one work-unit key, its acceptance evidence, rollback or disable path, and applicable privacy, migration, compatibility, and platform impact;
+6. stop and reopen the owning P-1140 contract if implementation exposes a contradiction, rather than encoding an unreviewed workaround.
+
+The implementation phase begins as a synthetic secure spine, not a public product rollout. No source, platform, account flow, package, or deployment may be described as supported until its work-unit evidence is complete.
+
 ## Binding product constraints
 
 ### Privacy
