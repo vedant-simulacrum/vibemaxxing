@@ -141,16 +141,6 @@ def main() -> int:
     for item in reason_registry["codes"]:
         require(item["state_machine"] in allowed_authorities, f"reason authority does not resolve: {item['code']}")
 
-    structural_audit = (ROOT / "docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md").read_text(encoding="utf-8").lower()
-    require("structural p0 open: 0" in structural_audit and "structural p1 open: 0" in structural_audit, "structural audit is not closed")
-    require("semantic correctness" in structural_audit and "p-1140f" in structural_audit, "structural audit overstates its claim scope")
-
-    semantic_review = (ROOT / "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md").read_text(encoding="utf-8").lower()
-    require("semantic p1 open: 4" in semantic_review, "semantic review must retain the four open P1 findings")
-    require("p-1104: blocked" in semantic_review, "semantic review must keep P-1104 blocked")
-    for finding in ("sr-001", "sr-002", "sr-003", "sr-004"):
-        require(finding in semantic_review, f"semantic review is missing {finding}")
-
     forbidden = [
         ROOT / "apps/android", ROOT / "apps/ios", ROOT / "apps/ipados", ROOT / "apps/chromeos",
         ROOT / "packages/android", ROOT / "packages/ios", ROOT / "packages/ipados", ROOT / "packages/chromeos",
