@@ -92,7 +92,7 @@ def main() -> None:
         )
         require_tokens(
             "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md",
-            ["semantic P1 open: 4", "SR-001", "SR-002", "SR-003", "SR-004", "P-1104: blocked"],
+            ["semantic P1 open: 0 on the repair head", "SR-001", "SR-002", "SR-003", "SR-004", "P-1104: blocked"],
             errors,
         )
         require_tokens(
