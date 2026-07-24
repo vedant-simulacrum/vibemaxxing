@@ -6,9 +6,9 @@ Updated: 2026-07-24
 
 The repository is in **planning contract repair**.
 
-P-1140A through P-1140E are complete-planning. P-1104 awaits explicit user authorization. Product implementation remains unauthorized.
+P-1140A through P-1140E are complete as planning and structural-consistency work. P-1140F semantic review is active. P-1104 remains blocked. Product implementation remains unauthorized.
 
-The repository has planning traceability for D-001 through D-069 and accepted platform baselines for macOS, Windows, Linux, WSL, containers and CI.
+The repository has planning traceability for D-001 through D-069 and accepted candidate platform baselines for macOS, Windows, Linux, WSL, containers and CI. Those platform profiles remain uncertified and unadvertised.
 
 One bounded fixture-backed hosted-web/Storybook slice exists and is classified as a **runnable prototype**. It is not production implementation, backend integration, launch evidence or authorization to continue product implementation.
 
@@ -16,78 +16,77 @@ One bounded fixture-backed hosted-web/Storybook slice exists and is classified a
 
 - Product thesis, privacy posture, Token Burn metric and broad social direction: accepted.
 - Public launch scope: complete core social product except country leaderboards, which are post-launch.
-- Local-model and delayed offline usage: first-class competitive usage when deterministically counted under a certified source/accounting profile.
-- Global leaderboards: accepted Standard and Hardened claims both count; Imported records never count.
+- Local-model and delayed offline usage: first-class competitive usage only when deterministically counted under a certified source/accounting profile.
+- Global leaderboards: accepted Standard and Hardened claims may count; Imported records never count.
 - Ranked identity: one active ranked identity per detected/resolved person, strongly enforced without claiming mathematically verified humanity.
 - SLM: post-launch research only; not a launch dependency or authority.
 - T20: provisional candidate engineering cohort under D-046; not a launch dependency and not current support evidence.
-- Daemon lifecycle: D-061 and ADR-010 require an always-on OS-supervised background service that auto-starts, auto-restarts, survives shell closure and remains resident through paused/offline/degraded/recovery states within the declared platform lifecycle context.
-- macOS: Apple silicon and Intel are launch requirements under rolling exact-profile certification.
-- Windows: native x64 and ARM64 are launch requirements across maintained desktop and applicable Server profiles.
-- Linux: maintained desktop, headless and remote profiles are launch requirements through exact distribution/package/architecture certification.
-- WSL, containers and CI/ephemeral runners: globally competitive by default at the verifier-awarded evidence level; boards may impose stronger minimums.
-- Android, iOS, iPadOS and ChromeOS: no native product scope.
-- Optional privileged machine-wide supervision: accepted only as a separately consented, least-privilege lifecycle profile.
-- Automatic updates: mandatory for competitive profiles with bounded deferral, signed release-set verification and rollback.
-- Storybook automation: permitted only as prototype/design validation and cannot satisfy product, security or launch gates.
-- Decision traceability: every registered decision has a normative owner, implementation work unit, state/schema owner where applicable, platform scope and executable evidence requirement.
-- Planning tooling: doctor, coverage validation, artifact validation, provisional T20 validation, stable work-unit generation and prototype workflow dependency controls are aligned to D-001 through D-069.
-- Historical planning-complete reports are explicitly non-authoritative.
-- Exact machine-contract repair requirements are recorded in `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`.
-- P-1140B through P-1140E are complete-planning; the repaired handoff has cross-contract fixtures, exact traceability, a clean-checkout validation path and zero open P0/P1 planning contradictions.
-- The SQL file is a repaired PostgreSQL 16 planning migration contract; it is not a deployed migration history or implementation evidence.
-- Backend, collector, protocol runtime, identity service, ranking service, production storage, installers, updater, deployment and operational systems are not implemented.
-- No collector platform is currently production-complete or exercised.
-- Competitive beta and public launch remain no-go pending implementation and executable evidence.
+- Daemon lifecycle: D-061 and ADR-010 require an always-on OS-supervised background service independent of shell closure.
+- macOS Apple silicon and Intel, Windows native x64/ARM64, Linux desktop/headless/remote, WSL, containers and CI remain candidate launch profiles subject to exact certification.
+- Android, iOS, iPadOS and ChromeOS have no native product scope.
+- Optional privileged machine-wide supervision is separately consented, least privilege and cannot inspect source content or merge users.
+- Automatic updates are mandatory for competitive profiles with bounded deferral, signed release-set verification and rollback.
+- Storybook automation is prototype/design validation only and cannot satisfy product, security or launch gates.
+- Deterministic accounting, canonicalization, signatures, replay, duplicate, continuity and eligibility controls remain authoritative. Statistical/ML detectors remain advisory.
 
-Clean-checkout planning and prototype validation passed on the exact PR heads merged through PR #28 and PR #29. Those successful runs validate only the planning/tooling and synthetic prototype changes they exercised; they are not a completed P-1140E pass, production evidence or launch evidence. The squash commits on `main` do not have separate post-merge runs attached.
+## Reality map
 
-## Active planning gates
+### Implemented
+
+- bounded fixture-backed hosted-web and Storybook prototype;
+- planning validators and repository doctor;
+- schemas, registries, fixtures and exact vectors used as planning contracts.
+
+### Not implemented
+
+- collector, daemon, sync process, menu-bar/tray shell and native installers;
+- real adapters or certified universal agent support;
+- VibeProof runtime codecs or cross-language interoperability;
+- OAuth/session/identity service;
+- ranking, social, moderation, export or deletion services;
+- production PostgreSQL migrations and runtime transaction evidence;
+- updater, signed release repository, deployment and operations systems.
+
+Specifications, schemas, fixtures and successful planning checks are not implementation evidence.
+
+## Planning gates
 
 ### Completed P-1140B — core trust, privacy and accounting contracts
 
-Candidate contract set now present:
-
-- typed SourceObservation, NormalizedAccountingEvent and LocalDetectorResult schemas;
-- typed local IPC with no opaque normalized-event JSON;
-- digest/provenance/certification-bound adapter manifests and device-lineage transitions;
-- immutable accounting-profile schema/registry and representative cloud/local containment fixtures;
-- independent server appraisal policy and capability ceilings;
-- server-owned pricing interpretation with immutable event-time alias resolution;
-- deny-by-default claim-egress registry and positive/negative canaries for every required boundary.
-
-Planning checks run #211 passed on the exact P-1140B candidate head. The gate-transition head must also pass before merge. Product implementation remains unauthorized.
+Typed local stages, accounting profiles, appraisal authority, lineage, server-owned pricing and deny-by-default egress contracts are present. They remain planning inputs without runtime security evidence.
 
 ### Completed P-1140C — VibeProof v1 protocol rewrite
 
-Candidate contract set now present:
+Closed CDDL, deterministic CBOR/COSE profile, exact vectors, replay/continuity/rotation/recovery state and malformed/resource cases are present. Independent codecs and interoperability evidence remain absent.
 
-- closed CDDL for claim, appraisal, checkpoint, challenge, atomic batch/result, gap, rotation and correction;
-- deterministic CBOR and strict COSE_Sign1 profile with bounded resources;
-- separate local/server continuity, atomic idempotency/replay and recovery state;
-- fixed Ed25519 claim/receipt vectors plus malformed/resource/transaction cases.
+### Completed P-1140D — candidate state and platform contract set
 
-Planning checks run #219 passed on the exact P-1140C candidate head. The gate-transition head must also pass before merge. P-1140C is complete-planning; follow-on implementation and interoperability evidence remain blocked.
+OAuth/session, ranked identity, API/idempotency, SQL, ranking, social, native lifecycle, update and release contracts are present as planning artifacts. P-1140F has reopened four semantic P1 repairs within this set; therefore P-1140D is not implementation-ready.
 
-### Completed P-1140D — identity, API, ranking, social, native and release state machines
+### Completed P-1140E — structural cross-contract validation
 
-P-1140D now owns OAuth/session, ranked identity, API/idempotency, SQL, ranking views, pricing persistence, social/presence/notification/moderation state, export/deletion, native platform lifecycle, privileged supervision, mandatory updates and release trust.
+The P-1140E matrix and validator demonstrate repository consistency across decisions, references, API operation IDs, state-machine IDs, candidate platform profiles, planned SQL races, reason authorities and clean-checkout validation. They do not prove semantic correctness, standards conformance, security or implementability.
 
-Candidate artifacts now encode 23 authoritative state machines, 34 exact launch platform profiles, endpoint-specific OpenAPI resources, the repaired PostgreSQL ownership/constraint model, a closed social event union, signed release sets, immutable ranking views, typed exports and enriched reason/policy lifecycle fields. All profiles remain uncertified and unadvertised. Planning checks run #234 passed on the exact candidate head; a separate gate-transition check is required before merge.
+### Active P-1140F — semantic review and standards mapping
 
-### Completed P-1140E — cross-contract planning validation
+Current semantic P1 findings:
 
-P-1140E owns cross-contract fixtures, D-001..D-069 traceability validation, exact platform-profile validation, clean-checkout planning validation and the final P0/P1 review.
+1. OAuth authorization-response issuer verification must be provider-capability aware.
+2. Device authorization must be limited to eligible limited-input/headless interactive profiles, not ordinary desktop OAuth or CI.
+3. The interactive menu-bar/tray shell needs its own authoritative lifecycle and IPC state machine.
+4. Platform source evidence must bind immutable versions/commits and content digests.
 
-The final matrix binds 69 decisions, all API operations, 23 state machines, 34 profiles and 18 validation domains. It includes state transition fixtures, PostgreSQL race plans, per-profile runtime evidence plans, reference closure and a final audit recording zero open P0/P1 planning contradictions. Planning checks run #239 passed on the exact candidate head; the gate-transition head must also pass before merge. These are planning artifacts; runtime evidence remains absent.
+The canonical record is `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
 
-P-1104 remains `blocked-approval`. All planning prerequisites are complete; implementation may begin only after the user explicitly authorizes it.
+### Following gate
+
+P-1104 remains `blocked-approval`. It may be considered only after P-1140F is complete, all repaired contracts and structural validators pass from a clean checkout, no semantic P0/P1 finding remains, and the user explicitly authorizes implementation.
 
 ## Artifact maturity
 
 1. **Specification** — normative intended behavior without executable proof.
 2. **Mock** — static or illustrative design artifact.
-3. **Runnable prototype** — executable exploratory work using fixtures or incomplete integrations; non-normative unless separately adopted.
+3. **Runnable prototype** — executable exploratory work using fixtures or incomplete integrations.
 4. **Production implementation** — integrated product code satisfying accepted contracts and implementation gates.
 5. **Executable evidence** — reproducible conformance, security, benchmark or operational output supporting a specific claim.
 
@@ -105,6 +104,8 @@ Planning artifacts and prototypes are not cryptographic interoperability evidenc
 - `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`
 - `docs/planning/DECISION_REGISTER.md`
 - `docs/planning/TASK_CATALOG.md`
+- `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`
+- `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`
 - `docs/decisions/ADR-010-ALWAYS_ON_DAEMON_LIFECYCLE.md`
 - `docs/decisions/ADR-011-UNIVERSAL_PLATFORM_SUPPORT_BASELINE.md`
 - `docs/decisions/ADR-012-OPTIONAL_PRIVILEGED_SUPERVISION.md`
@@ -121,4 +122,4 @@ Read-only planning validation may run. ADR-014 permits narrowly scoped Storybook
 
 ## Current gate
 
-P-1140A–C are complete. P-1140D is active; P-1140E follows. P-1131 and comprehensive launch review remain blocked until real implementation and exercised evidence exist.
+P-1140F is active. P-1104, P-1131 and comprehensive launch review remain blocked.
