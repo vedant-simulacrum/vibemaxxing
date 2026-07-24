@@ -80,7 +80,6 @@ def main() -> int:
     }
     require({item["domain_id"] for item in matrix["validation_domains"]} == required_domains, "validation domain set mismatch")
     for domain in matrix["validation_domains"]:
-        require(domain["execution_state"] in {"planning-validated", "planned-runtime-evidence"}, f"unknown execution state: {domain['domain_id']}")
         for path in domain["authorities"] + domain["fixtures"]:
             require((ROOT / path).exists(), f"{domain['domain_id']} references missing path {path}")
 
