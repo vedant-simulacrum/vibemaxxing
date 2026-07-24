@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "maturity": "planning-semantic-fixtures-only",
+  "oauth_providers": [
+    {
+      "provider_id": "github",
+      "issuer": "https://github.com",
+      "authorization_endpoint": "https://github.com/login/oauth/authorize",
+      "token_endpoint": "https://github.com/login/oauth/access_token",
+      "redirect_uri": "https://api.vibemaxxing.dev/v1/auth/github/callback",
+      "pkce_required": true,
+      "authorization_response_iss_supported": false,
+      "positive_case": "stored-provider-and-redirect-match",
+      "negative_cases": ["callback-issuer-cannot-select-provider", "redirect-confusion-rejected"]
+    },
+    {
+      "provider_id": "x",
+      "issuer": "https://x.com",
+      "authorization_endpoint": "https://x.com/i/oauth2/authorize",
+      "token_endpoint": "https://api.x.com/2/oauth2/token",
+      "redirect_uri": "https://api.vibemaxxing.dev/v1/auth/x/callback",
+      "pkce_required": true,
+      "authorization_response_iss_supported": false,
+      "positive_case": "stored-provider-and-redirect-match",
+      "negative_cases": ["callback-issuer-cannot-select-provider", "redirect-confusion-rejected"]
+    }
+  ],
+  "device_authorization": {
+    "positive_case": "registered-headless-interactive-profile",
+    "negative_cases": ["ordinary-desktop-profile-rejected", "ci-profile-rejected", "unattended-human-device-code-rejected"]
+  },
+  "platform_source_evidence": {
+    "positive_case": "immutable-version-and-digest-bound-source",
+    "negative_cases": ["moving-branch-uri-rejected", "missing-content-digest-rejected", "conflicting-field-authority-rejected"]
+  }
+}

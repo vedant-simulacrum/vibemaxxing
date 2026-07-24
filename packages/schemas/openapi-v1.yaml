@@ -84,6 +84,9 @@
           },
           {
             "$ref": "#/components/parameters/OAuthState"
+          },
+          {
+            "$ref": "#/components/parameters/OAuthIssuer"
           }
         ]
       }
@@ -1750,6 +1753,16 @@
           "pattern": "^[0-9a-f]{64}$"
         }
       },
+      "OAuthIssuer": {
+        "name": "iss",
+        "in": "query",
+        "required": false,
+        "description": "Required only when the stored provider-capability record supports RFC 9207; the callback value is compared with the immutable transaction issuer and never selects provider configuration.",
+        "schema": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
       "IdempotencyKey": {
         "name": "Idempotency-Key",
         "in": "header",
@@ -1944,14 +1957,9 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "redirect_uri",
           "intended_action"
         ],
         "properties": {
-          "redirect_uri": {
-            "type": "string",
-            "format": "uri"
-          },
           "intended_action": {
             "enum": [
               "sign_in",
@@ -2017,7 +2025,8 @@
         "additionalProperties": false,
         "required": [
           "installation_id",
-          "device_name"
+          "device_name",
+          "profile_id"
         ],
         "properties": {
           "installation_id": {
@@ -2028,6 +2037,11 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80
+          },
+          "profile_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "description": "Must resolve to a registered limited-input or headless interactive profile. Desktop and CI profiles are rejected."
           }
         }
       },
