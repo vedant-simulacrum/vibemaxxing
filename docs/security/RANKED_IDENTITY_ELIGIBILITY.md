@@ -5,15 +5,14 @@ Status: normative planning contract
 
 ## Product rule
 
-VibeMaxxing permits one active ranked identity per human. A person may use private local analytics without verification, but must establish an eligible ranked identity before appearing on any leaderboard or affecting competitive totals.
+VibeMaxxing permits one active ranked identity per human. A person may use private local analytics without verification, but must establish an eligible ranked identity before appearing on any leaderboard or affecting competitive totals. At launch, GitHub and X are the supported OAuth providers; Google is deferred until its contracts are added coherently.
 
-This is a product and abuse-policy rule, not a claim that OAuth proves legal identity or mathematically guarantees human uniqueness. Google, GitHub, and X authentication prove control of provider accounts. VibeMaxxing combines linked provider subjects, account history, recovery continuity, device relationships, and abuse review to enforce the rule without government identity documents or facial biometrics.
+This is a product and abuse-policy rule, not a claim that OAuth proves legal identity or mathematically guarantees human uniqueness. GitHub and X authentication prove control of provider accounts at launch. VibeMaxxing combines linked provider subjects, account history, recovery continuity, device relationships, and abuse review to enforce the rule without government identity documents or facial biometrics.
 
 ## Verification boundary
 
 Launch verification uses supported OAuth providers only:
 
-- Google;
 - GitHub;
 - X/Twitter, subject to current provider availability and protocol constraints.
 

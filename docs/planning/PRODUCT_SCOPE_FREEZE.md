@@ -11,7 +11,7 @@ The intended public launch is the complete initial product, not a narrow MVP. In
 
 ### Competition
 
-- global, friends, private-board, organization, hacker-house, community, and country leaderboards;
+- global, friends, private-board, organization, hacker-house, and community leaderboards; country leaderboards are post-launch;
 - daily, weekly, monthly, seasonal, yearly, and lifetime periods;
 - Token Burn default ranking and explicitly Estimated Cash Burn;
 - ties, movement, streaks, seasons, late/offline events, corrections, evidence filtering, quarantines, and archived standings.

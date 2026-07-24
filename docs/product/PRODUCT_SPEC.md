@@ -11,7 +11,7 @@ VibeMaxxing is a privacy-preserving public leaderboard and Steam-like social com
 
 Public launch targets the complete initial product. Internal delivery may be staged, but launch includes:
 
-- global, friends, private-board, organization, hacker-house, community, and country leaderboards;
+- global, friends, private-board, organization, hacker-house, and community leaderboards; country leaderboards are post-launch;
 - daily, weekly, monthly, seasonal, yearly, and lifetime periods;
 - profiles, friendships, blocks, rivals, overtakes, rank movement, streaks, presence, notifications, boards, organizations, communities, moderation, appeals, export, and deletion;
 - background daemon, CLI installation/control, macOS menu-bar, Windows/Linux tray, local privacy/audit controls, and hosted web dashboard;
@@ -91,7 +91,7 @@ The daemon owns lifecycle and supervision; collector owns transcript-private obs
 
 ## Hosted web experience
 
-The hosted product owns leaderboards, profiles, social graph, boards, organizations, communities, countries, notifications, account settings, moderation, appeals, and server-side lifecycle controls. It never requires access to transcript content.
+The hosted product owns leaderboards, profiles, social graph, boards, organizations, communities, notifications, account settings, moderation, appeals, and server-side lifecycle controls. Country surfaces are post-launch. It never requires access to transcript content.
 
 ## Moderation and appeals
 

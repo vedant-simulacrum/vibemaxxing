@@ -6,7 +6,7 @@ VibeMaxxing is a privacy-preserving competitive leaderboard and Steam-like socia
 
 The repository is in **planning alignment and contract repair**.
 
-A July 23 audit found contradictions between earlier “planning complete” declarations, newer product decisions, privacy requirements, anti-cheat research, draft schemas and the implementation handoff. Product implementation has not begun and remains blocked by P-1140A–E plus explicit approval under P-1104.
+A July 23 audit found contradictions between earlier “planning complete” declarations, newer product decisions, privacy requirements, anti-cheat research, draft schemas and the implementation handoff. Product implementation has not begun and remains blocked by P-1140F plus explicit approval under P-1104.
 
 One fixture-backed hosted-web/Storybook slice exists as a runnable prototype. It is not a production frontend, backend integration, protocol implementation, launch evidence or authorization to continue implementation.
 
@@ -19,7 +19,7 @@ Current planning conclusions:
 - prompts, outputs, code, paths, repositories, tool contents and raw logs never reach VibeMaxxing servers;
 - country leaderboards are post-launch;
 - the SLM detector is post-launch research and is not a launch dependency;
-- current protocol and event schemas are planning placeholders until P-1140B–E repair and validate them.
+- current protocol and event schemas are planning placeholders until P-1140F repairs and validates their remaining semantic findings.
 
 ## Start here
 
