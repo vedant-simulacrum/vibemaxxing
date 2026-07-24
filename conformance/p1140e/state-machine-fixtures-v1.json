@@ -1,0 +1,375 @@
+{
+  "schema_version": 1,
+  "maturity": "planning-fixtures-only",
+  "registry_id": "authoritative-state-machines-v1",
+  "machines": [
+    {
+      "machine_id": "oauth-transaction",
+      "positive": {
+        "case_id": "oauth-transaction-valid-transition",
+        "from": "created",
+        "transition_id": "oauth-begin",
+        "expected_to": "redirected",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "oauth-transaction-invalid-transition",
+        "from": "consumed",
+        "transition_id": "oauth-begin",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "web-session-family",
+      "positive": {
+        "case_id": "web-session-family-valid-transition",
+        "from": "active",
+        "transition_id": "web-refresh-rotate",
+        "expected_to": "active",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "web-session-family-invalid-transition",
+        "from": "revoked",
+        "transition_id": "web-refresh-rotate",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "native-session-family",
+      "positive": {
+        "case_id": "native-session-family-valid-transition",
+        "from": "active",
+        "transition_id": "native-refresh-rotate",
+        "expected_to": "active",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "native-session-family-invalid-transition",
+        "from": "device-revoked",
+        "transition_id": "native-refresh-rotate",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "ranked-identity-eligibility",
+      "positive": {
+        "case_id": "ranked-identity-eligibility-valid-transition",
+        "from": "unverified",
+        "transition_id": "identity-qualify",
+        "expected_to": "eligible",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "ranked-identity-eligibility-invalid-transition",
+        "from": "retired",
+        "transition_id": "identity-qualify",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "idempotency-ledger",
+      "positive": {
+        "case_id": "idempotency-ledger-valid-transition",
+        "from": "reserved",
+        "transition_id": "idempotency-commit",
+        "expected_to": "committed",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "idempotency-ledger-invalid-transition",
+        "from": "committed",
+        "transition_id": "idempotency-commit",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "ranking-projection",
+      "positive": {
+        "case_id": "ranking-projection-valid-transition",
+        "from": "building",
+        "transition_id": "projection-validate",
+        "expected_to": "validating",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "ranking-projection-invalid-transition",
+        "from": "superseded",
+        "transition_id": "projection-validate",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "model-alias-resolution",
+      "positive": {
+        "case_id": "model-alias-resolution-valid-transition",
+        "from": "active",
+        "transition_id": "alias-supersede",
+        "expected_to": "superseded",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "model-alias-resolution-invalid-transition",
+        "from": "superseded",
+        "transition_id": "alias-supersede",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "friendship",
+      "positive": {
+        "case_id": "friendship-valid-transition",
+        "from": "none",
+        "transition_id": "friend-request-a",
+        "expected_to": "pending-a-to-b",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "friendship-invalid-transition",
+        "from": "blocked",
+        "transition_id": "friend-request-a",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "rivalry",
+      "positive": {
+        "case_id": "rivalry-valid-transition",
+        "from": "none",
+        "transition_id": "rival-add",
+        "expected_to": "active",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "rivalry-invalid-transition",
+        "from": "ended",
+        "transition_id": "rival-add",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "board-membership",
+      "positive": {
+        "case_id": "board-membership-valid-transition",
+        "from": "invited",
+        "transition_id": "board-join",
+        "expected_to": "active-member",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "board-membership-invalid-transition",
+        "from": "left",
+        "transition_id": "board-join",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "board-invitation",
+      "positive": {
+        "case_id": "board-invitation-valid-transition",
+        "from": "pending",
+        "transition_id": "invite-accept",
+        "expected_to": "accepted",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "board-invitation-invalid-transition",
+        "from": "accepted",
+        "transition_id": "invite-accept",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "presence-lease",
+      "positive": {
+        "case_id": "presence-lease-valid-transition",
+        "from": "absent",
+        "transition_id": "presence-renew",
+        "expected_to": "active",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "presence-lease-invalid-transition",
+        "from": "expired",
+        "transition_id": "presence-renew",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "notification-delivery",
+      "positive": {
+        "case_id": "notification-delivery-valid-transition",
+        "from": "created",
+        "transition_id": "notification-group",
+        "expected_to": "grouped",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "notification-delivery-invalid-transition",
+        "from": "read",
+        "transition_id": "notification-group",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "moderation-case",
+      "positive": {
+        "case_id": "moderation-case-valid-transition",
+        "from": "open",
+        "transition_id": "case-investigate",
+        "expected_to": "investigating",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "moderation-case-invalid-transition",
+        "from": "reversed",
+        "transition_id": "case-investigate",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "appeal",
+      "positive": {
+        "case_id": "appeal-valid-transition",
+        "from": "submitted",
+        "transition_id": "appeal-screen",
+        "expected_to": "screening",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "appeal-invalid-transition",
+        "from": "approved",
+        "transition_id": "appeal-screen",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "export-job",
+      "positive": {
+        "case_id": "export-job-valid-transition",
+        "from": "requested",
+        "transition_id": "export-start",
+        "expected_to": "snapshotting",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "export-job-invalid-transition",
+        "from": "purged",
+        "transition_id": "export-start",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "server-deletion",
+      "positive": {
+        "case_id": "server-deletion-valid-transition",
+        "from": "requested",
+        "transition_id": "deletion-authorize",
+        "expected_to": "recent-auth-verified",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "server-deletion-invalid-transition",
+        "from": "complete",
+        "transition_id": "deletion-authorize",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "local-deletion-command",
+      "positive": {
+        "case_id": "local-deletion-command-valid-transition",
+        "from": "issued",
+        "transition_id": "local-delete-ack",
+        "expected_to": "acknowledged",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "local-deletion-command-invalid-transition",
+        "from": "complete",
+        "transition_id": "local-delete-ack",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "daemon-lifecycle",
+      "positive": {
+        "case_id": "daemon-lifecycle-valid-transition",
+        "from": "unregistered",
+        "transition_id": "daemon-register",
+        "expected_to": "registered",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "daemon-lifecycle-invalid-transition",
+        "from": "uninstalled",
+        "transition_id": "daemon-register",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "privileged-supervisor",
+      "positive": {
+        "case_id": "privileged-supervisor-valid-transition",
+        "from": "absent",
+        "transition_id": "supervisor-consent",
+        "expected_to": "consent-pending",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "privileged-supervisor-invalid-transition",
+        "from": "removed",
+        "transition_id": "supervisor-consent",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "update-lifecycle",
+      "positive": {
+        "case_id": "update-lifecycle-valid-transition",
+        "from": "current",
+        "transition_id": "update-offer",
+        "expected_to": "available",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "update-lifecycle-invalid-transition",
+        "from": "rolled-back",
+        "transition_id": "update-offer",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "release-trust",
+      "positive": {
+        "case_id": "release-trust-valid-transition",
+        "from": "draft",
+        "transition_id": "release-sign",
+        "expected_to": "threshold-signed",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "release-trust-invalid-transition",
+        "from": "superseded",
+        "transition_id": "release-sign",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "platform-certification",
+      "positive": {
+        "case_id": "platform-certification-valid-transition",
+        "from": "planned",
+        "transition_id": "profile-candidate",
+        "expected_to": "candidate",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "platform-certification-invalid-transition",
+        "from": "retired",
+        "transition_id": "profile-candidate",
+        "expected": "reject-without-mutation"
+      }
+    }
+  ]
+}

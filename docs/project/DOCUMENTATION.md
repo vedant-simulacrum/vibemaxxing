@@ -14,141 +14,107 @@ This is the sole canonical map. Do not create competing indexes, start prompts, 
 8. `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`
 9. `docs/planning/DECISION_REGISTER.md`
 10. `docs/planning/TASK_CATALOG.md`
-11. relevant ADRs, contracts and schemas
-12. implementation handoff only for implementation planning or after explicit approval
+11. `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`
+12. `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`
+13. relevant ADRs, contracts, schemas and fixtures
+14. implementation handoff only for implementation planning or after explicit approval
 
 Run `python3 scripts/repository/doctor.py` before relying on repository state.
 
 ## Current authority note
 
-The repository is in planning contract repair. P-1140A through P-1140D are complete and P-1140E is active.
+P-1140A through P-1140E are complete within their stated planning scopes. P-1140E proves structural repository consistency only. P-1140F semantic review is active with four open P1 findings. P-1104 remains blocked and product implementation remains unauthorized.
 
-Historical reports that declare planning complete or platform scope unresolved do not override current project authority, D-062 through D-069, ADR-011 through ADR-014, decision traceability or the frozen cross-platform audit.
+Historical reports that declare planning complete, implementation-ready or launch-ready do not override current STATUS, TASK_CATALOG, P-1140F, accepted decisions, ADRs or repaired contracts.
 
-Where a contract conflicts with an accepted decision, the decision is authoritative and the dependent contract/schema is blocked until its P-1140 repair task closes.
-
-## Normative product and architecture owners
+## Normative owners
 
 - Project authority and phase: `docs/project/PROJECT.md`, `docs/project/STATUS.md`
+- Documentation hierarchy: this file
+- Task and gate state: `docs/planning/TASK_CATALOG.md`
+- Decision authority: `docs/planning/DECISION_REGISTER.md`, `docs/decisions/`
 - Repository reconciliation: `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`
-- Exact machine-contract target: `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`
-- Decision-to-code/platform/evidence mapping: `docs/planning/decision-traceability/`
-- Cross-platform profiles and release gates: `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`
+- Machine-contract repair target: `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`
+- Decision-to-owner/platform/evidence mapping: `docs/planning/decision-traceability/`
+- Frozen candidate platform baseline: `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`
+- Structural cross-contract result: `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`
+- Semantic review and standards mapping: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`
 - Scope/product: `docs/planning/PRODUCT_SCOPE_FREEZE.md`, `docs/product/PRODUCT_SPEC.md`, subject to D-052 and D-066
-- Accounting/time/pricing: `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`, blocked for P-1140B/D repairs
-- Social/integrity/UX: `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, blocked for P-1140D repairs and country removal
-- Adapter data stages and authority: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
-- VibeProof v1 wire/state protocol: `docs/architecture/VIBEPROOF_V1_PROTOCOL.md` and `packages/schemas/vibeproof-claim-v1.cddl`
-- Universal compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`, blocked where certification is not digest/provenance/profile bound
-- T20 planning: `docs/integrations/T20_MODEL_HARDENING_CONTRACT.md`, `docs/integrations/T20_CERTIFICATION_AND_SELECTION_SPEC.md`; D-046 remains provisional
-- Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, ADR-010 through ADR-013
-- Authoritative server/native state and platform contract: `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
-- Server/data/ranking: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, reconciled by the P-1140D authority contract
+- Accounting/time/pricing: `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
+- Adapter data stages and VibeProof authority: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
+- VibeProof wire/state protocol: `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`, `packages/schemas/vibeproof-claim-v1.cddl`
+- Authoritative server/native state and platform contract: `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, subject to P-1140F repairs
+- Universal compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`
 - Privacy: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md`
 - Security: `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`
-- Operations/launch: `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, ADR-013, subject to P-1140D release repair
+- Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, ADR-010 through ADR-013
+- Operations and launch: `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, ADR-013
 - Prototype visual validation: ADR-014 and `.github/workflows/storyboard-visuals.yml`
-- Accepted decisions: `docs/decisions/` and `docs/planning/DECISION_REGISTER.md`
+- Future implementation handoff: `docs/implementation/IMPLEMENTATION_HANDOFF.md`
+- Future review-sized work units: `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`
 
 ## Important ADRs
 
-- `ADR-007-BATCH_CHALLENGE_AND_SEQUENCE_RECOVERY.md` is provisional where P-1140C finds contradictions.
-- `ADR-008-HANDLE_NORMALIZATION_AND_POLICY_REGISTRY.md` remains accepted.
-- `ADR-009-LICENSING_AND_CONTRIBUTION_MODEL.md` remains accepted.
-- `ADR-010-ALWAYS_ON_DAEMON_LIFECYCLE.md` owns D-061.
-- `ADR-011-UNIVERSAL_PLATFORM_SUPPORT_BASELINE.md` owns D-062 through D-066.
-- `ADR-012-OPTIONAL_PRIVILEGED_SUPERVISION.md` owns D-067.
-- `ADR-013-MANDATORY_AUTOMATIC_UPDATES.md` owns D-068.
-- `ADR-014-PROTOTYPE_VISUAL_VALIDATION_AUTOMATION.md` owns D-069.
+- ADR-007 remains provisional where superseded by P-1140C.
+- ADR-008 and ADR-009 remain accepted.
+- ADR-010 owns always-on daemon lifecycle.
+- ADR-011 owns universal platform baseline.
+- ADR-012 owns optional privileged supervision.
+- ADR-013 owns mandatory automatic updates.
+- ADR-014 owns bounded prototype visual validation.
 
 ## Authoritative planning-grade schemas
 
-`packages/schemas/` currently owns draft planning interfaces:
+`packages/schemas/` owns planning contracts for:
 
-- `adapter-manifest.schema.json`
-- `source-observation.schema.json`
-- `normalized-event.schema.json` (`NormalizedAccountingEvent`)
-- `local-detector-result.schema.json`
-- `accounting-profile.schema.json`
-- `device-lineage.schema.json`
-- `pricing-interpretation.schema.json`
-- `evidence-profile-policy-v1.json`
-- `egress-allowlist-v1.schema.json` and `egress-allowlist-v1.json`
-- `vibeproof-claim-v1.cddl`
-- `state-machine-registry-v1.schema.json` and `state-machine-registry-v1.json`
-- `platform-profile-registry-v1.schema.json` and `platform-profile-registry-v1.json`
-- `release-set-v1.schema.json`
-- `ranking-view-v1.schema.json`
-- `export-manifest-v1.schema.json`
-- `local-control-v1.proto`
-- `social-integrity-events-v1.proto`
-- `openapi-v1.yaml`
-- `planning-schema.sql`
-- `reason-codes-v1.json`
-- `policy-defaults-v1.json`
-- `observability-allowlist-v1.yaml`
+- adapter manifests and typed source observations;
+- normalized accounting and local detector results;
+- accounting profiles, pricing interpretations and evidence policy;
+- device lineage and egress allowlists;
+- VibeProof CDDL;
+- local-control and social/integrity Protobuf;
+- OpenAPI;
+- PostgreSQL planning schema;
+- state-machine, platform-profile, release-set, ranking-view and export-manifest schemas/registries;
+- reason codes, policy defaults and observability allowlist.
 
-These are not implemented or production-proven artifacts.
+These are not production-proven artifacts. P-1140F currently blocks the state/API/platform set on SR-001 through SR-004.
 
-Until P-1140B–E close:
-
-- adapter manifest, typed local stages, accounting profiles, device lineage, pricing interpretation, evidence policy and claim-egress registry are repaired P-1140B planning contracts; P-1140C owns wire binding and P-1140E owns final cross-validation;
-- VibeProof v1 CDDL/protocol and exact-byte/malformed conformance artifacts are repaired P-1140C planning contracts; P-1140E still requires independent codecs and cross-contract validation;
-- local and social Protobuf contracts use closed typed messages; P-1140E owns cross-contract fixture validation;
-- OpenAPI uses endpoint-specific closed resources, authority metadata, durable idempotency and typed rate limits;
-- planning SQL declares the repaired PostgreSQL 16 ownership/constraint model, including session families, lineage, appraisal, receipt, ranking, social and release/update state;
-- state-machine and exact platform-profile registries are the P-1140D candidate authority;
-- reason codes and policy defaults carry lifecycle, appeal, retry, visibility, effective-time and change semantics.
-
-No generated production types should be based on a blocked schema.
+No generated production type may be based on a contract that P-1140F marks unresolved.
 
 ## Machine registries and conformance planning
 
-- Adapter compatibility: `conformance/adapters/agent-registry-v1.json` and adjacent schema.
-- Adversarial cases: `conformance/adversarial/anti-cheat-registry-v1.json` and adjacent schema.
-- Authoritative mutable state: `packages/schemas/state-machine-registry-v1.json` and adjacent schema.
-- Exact launch platform profiles: `packages/schemas/platform-profile-registry-v1.json` and adjacent schema.
-- T20 model registry: `conformance/models/t20-model-registry-v1.json` and adjacent schema.
-- T20 optimization evidence: `conformance/models/t20-optimization-evidence-v1.schema.json`.
-- T20 planning fixtures: `conformance/models/fixtures/`.
-- T20 planning validator: `scripts/repository/validate_t20_contract.py`.
+- Adapter compatibility: `conformance/adapters/agent-registry-v1.json`
+- Adversarial cases: `conformance/adversarial/anti-cheat-registry-v1.json`
+- Mutable state: `packages/schemas/state-machine-registry-v1.json`
+- Candidate platform profiles: `packages/schemas/platform-profile-registry-v1.json`
+- T20 planning: `conformance/models/`
+- Structural cross-contract matrix and plans: `conformance/p1140e/`
+- Structural validator: `scripts/repository/validate_p1140e_contracts.py`
 
-An empty certification list means no product-level support claim. Certification must ultimately bind artifact digest, provenance, source version, exact platform tuple, mode and immutable result bundle.
+P-1140E validation demonstrates structural closure only. It cannot close P-1140F.
 
-## Planning control and evidence
-
-- Decisions: `docs/planning/DECISION_REGISTER.md`
-- Tasks and gates: `docs/planning/TASK_CATALOG.md`
-- Alignment audit: `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`
-- Machine-contract target: `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`
-- Complete D-001..D-069 traceability: `docs/planning/decision-traceability/`
-- Frozen platform baseline: `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`
-- Consolidated findings: `docs/planning/CONSOLIDATED_AUDIT_2026-07-23.md`
-- Launch decisions: `docs/planning/LAUNCH_POLICY_DECISIONS_2026-07-23.md`
-- Anti-cheat implementation input: `docs/planning/ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`
-- Historical traceability audit: `docs/planning/TRACEABILITY_AND_DRY_RUN_AUDIT.md`
-- Schema inventory: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
-- Defaults/reversal: `docs/planning/PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`
+An empty certification list means no support claim. Certification must bind artifact digest, provenance, source version, exact platform tuple, mode and immutable result bundle.
 
 ## Implementation planning
 
-Only these are canonical for future build execution:
+Only these files are canonical for future execution:
 
 - `docs/implementation/IMPLEMENTATION_HANDOFF.md`
 - `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`
 - `docs/implementation/REPOSITORY_LAYOUT.md`
 - `docs/implementation/ISSUE_GENERATION.md`
 
-The anti-cheat plan, decision traceability, platform audit and ADR-010 through ADR-014 are normative inputs. Do not create another roadmap.
+They are inactive until P-1140F closes and the user explicitly authorizes P-1104.
 
 ## Research
 
-`docs/research/README.md` is the sole research entrypoint. Research informs decisions but never overrides accepted decisions or repaired contracts.
+`docs/research/README.md` is the sole research entrypoint. Research informs decisions but never overrides accepted decisions or repaired contracts. Current primary standards cited by P-1140F include RFC 7636, RFC 8252, RFC 8414, RFC 8628, RFC 9207, RFC 9700, deterministic CBOR/COSE/Ed25519 RFCs, TUF and SLSA provenance.
 
-## Generated artifacts
+## Generated and historical artifacts
 
-Repository metadata and issue plans under `artifacts/repository/` are non-authoritative. Storybook captures are short-lived prototype review artifacts under ADR-014.
+Repository metadata under `artifacts/repository/`, story captures, old completion reports and stale branch documents are non-authoritative. Storybook captures are short-lived prototype evidence only.
 
 ## Duplication rule
 
-A concept has one normative owner. Merge unique content into that owner, repair links, delete or clearly mark duplicates and record material changes through the decision register and an ADR when needed.
+A concept has one normative owner. Merge unique content into that owner, repair references, delete or clearly mark duplicates and record material changes through the decision register and an ADR when required.

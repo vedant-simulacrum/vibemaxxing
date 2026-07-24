@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "registry_version": "1.1.0-p1140d",
+  "registry_version": "1.2.0-p1140e",
   "codes": [
     {
       "code": "CLAIM_INVALID_CANONICAL_ENCODING",
@@ -13,7 +13,7 @@
       "internal_visibility": "support-and-security",
       "severity": "medium",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -28,7 +28,7 @@
       "internal_visibility": "support-and-security",
       "severity": "medium",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -43,7 +43,7 @@
       "internal_visibility": "support-and-security",
       "severity": "medium",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -58,7 +58,7 @@
       "internal_visibility": "support-and-security",
       "severity": "medium",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -73,7 +73,7 @@
       "internal_visibility": "support-and-security",
       "severity": "high",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -88,7 +88,7 @@
       "internal_visibility": "support-and-security",
       "severity": "high",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -103,7 +103,7 @@
       "internal_visibility": "support-and-security",
       "severity": "low",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -118,7 +118,7 @@
       "internal_visibility": "support-and-security",
       "severity": "low",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -133,7 +133,7 @@
       "internal_visibility": "support-and-security",
       "severity": "high",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -148,7 +148,7 @@
       "internal_visibility": "support-and-security",
       "severity": "medium",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -163,7 +163,7 @@
       "internal_visibility": "support-and-security",
       "severity": "medium",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -178,7 +178,7 @@
       "internal_visibility": "support-and-security",
       "severity": "low",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -193,7 +193,7 @@
       "internal_visibility": "support-and-security",
       "severity": "medium",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -208,7 +208,7 @@
       "internal_visibility": "support-and-security",
       "severity": "medium",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -223,7 +223,7 @@
       "internal_visibility": "support-and-security",
       "severity": "medium",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "vibeproof-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -238,7 +238,7 @@
       "internal_visibility": "support-and-security",
       "severity": "high",
       "appealability": "not-eligible",
-      "state_machine": "device-lineage",
+      "state_machine": "device-lineage-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -253,7 +253,7 @@
       "internal_visibility": "support-and-security",
       "severity": "medium",
       "appealability": "not-eligible",
-      "state_machine": "device-lineage",
+      "state_machine": "device-lineage-v1",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -268,7 +268,7 @@
       "internal_visibility": "support-and-security",
       "severity": "high",
       "appealability": "eligible",
-      "state_machine": "ranked-identity",
+      "state_machine": "ranked-identity-eligibility",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     },
@@ -298,7 +298,7 @@
       "internal_visibility": "security-only",
       "severity": "low",
       "appealability": "not-eligible",
-      "state_machine": "claim-verification",
+      "state_machine": "server-runtime",
       "introduced_in": "1.0.0",
       "deprecated_in": null
     }
