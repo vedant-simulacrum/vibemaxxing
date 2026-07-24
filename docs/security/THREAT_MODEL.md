@@ -1,7 +1,7 @@
 # Threat Model
 
 Updated: 2026-07-23
-Status: normative planning contract; implementation blocked by P-1140B–E
+Status: normative planning contract; P-1140F semantic review is active and implementation remains blocked by P-1104
 
 ## Security objective
 
