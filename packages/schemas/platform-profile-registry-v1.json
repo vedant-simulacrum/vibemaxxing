@@ -5,53 +5,93 @@
   "sources": [
     {
       "source_id": "apple-macos-tahoe-26",
-      "url": "https://support.apple.com/en-us/122867",
-      "authority": "vendor"
+      "canonical_uri": "https://support.apple.com/en-us/122867",
+      "authority": "vendor",
+      "source_version": "macOS-Tahoe-26",
+      "retrieved_at": "2026-07-24T00:00:00Z",
+      "content_sha256": "bc07d8b4c14c08433fd6fc18f28d2214264f6278782ec02dfcce2039df912dea",
+      "supported_fields": ["os-release", "architecture"]
     },
     {
       "source_id": "microsoft-windows-11-25h2",
-      "url": "https://learn.microsoft.com/en-us/windows/whats-new/whats-new-windows-11-version-25h2",
-      "authority": "vendor"
+      "canonical_uri": "https://learn.microsoft.com/en-us/windows/whats-new/whats-new-windows-11-version-25h2",
+      "authority": "vendor",
+      "source_version": "windows-11-25h2",
+      "retrieved_at": "2026-07-24T00:00:00Z",
+      "content_sha256": "4e4ff107759be1598832799ca85a60b7ea7ab9858e152662d08da16c1d96ae83",
+      "supported_fields": ["os-release", "architecture"]
     },
     {
       "source_id": "microsoft-windows-server-2025",
-      "url": "https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2025",
-      "authority": "vendor"
+      "canonical_uri": "https://learn.microsoft.com/en-us/lifecycle/products/windows-server-2025",
+      "authority": "vendor",
+      "source_version": "windows-server-2025",
+      "retrieved_at": "2026-07-24T00:00:00Z",
+      "content_sha256": "e3c38125352ac990ad225bb102af0388bbc71df782c2a768259f1be0a54c3296",
+      "supported_fields": ["os-release", "architecture", "environment-kind"]
     },
     {
       "source_id": "ubuntu-26.04",
-      "url": "https://releases.ubuntu.com/26.04/",
-      "authority": "distribution-project"
+      "canonical_uri": "https://releases.ubuntu.com/26.04/",
+      "authority": "distribution-project",
+      "source_version": "ubuntu-26.04",
+      "retrieved_at": "2026-07-24T00:00:00Z",
+      "content_sha256": "654acb953d0263b5babbd1c505702bd5148d948fc3bc4d956cd79978c0153250",
+      "supported_fields": ["os-release", "architecture", "distribution", "package-profile"]
     },
     {
       "source_id": "ubuntu-24.04",
-      "url": "https://releases.ubuntu.com/24.04/",
-      "authority": "distribution-project"
+      "canonical_uri": "https://releases.ubuntu.com/24.04/",
+      "authority": "distribution-project",
+      "source_version": "ubuntu-24.04",
+      "retrieved_at": "2026-07-24T00:00:00Z",
+      "content_sha256": "5b37388cba77036993d0548bff854717996c5d9800c4cfa6c32d41dd3c053e03",
+      "supported_fields": ["os-release", "architecture", "distribution", "package-profile"]
     },
     {
       "source_id": "debian-13",
-      "url": "https://www.debian.org/releases/stable/",
-      "authority": "distribution-project"
+      "canonical_uri": "https://www.debian.org/releases/stable/",
+      "authority": "distribution-project",
+      "source_version": "debian-13",
+      "retrieved_at": "2026-07-24T00:00:00Z",
+      "content_sha256": "de9094157b6a7443caa157d81820020267480fc654496a69331251a966c19df8",
+      "supported_fields": ["os-release", "architecture", "distribution", "package-profile"]
     },
     {
       "source_id": "fedora-44",
-      "url": "https://fedoramagazine.org/announcing-fedora-linux-44/",
-      "authority": "distribution-project"
+      "canonical_uri": "https://fedoramagazine.org/announcing-fedora-linux-44/",
+      "authority": "distribution-project",
+      "source_version": "fedora-44",
+      "retrieved_at": "2026-07-24T00:00:00Z",
+      "content_sha256": "4050fe78991444dc98ca287ddc00ad97093d46647c7df9f655d7c961d0bf32c4",
+      "supported_fields": ["os-release", "architecture", "distribution", "package-profile"]
     },
     {
       "source_id": "alpine-3.23",
-      "url": "https://alpinelinux.org/posts/Alpine-3.23.0-released.html",
-      "authority": "distribution-project"
+      "canonical_uri": "https://alpinelinux.org/posts/Alpine-3.23.0-released.html",
+      "authority": "distribution-project",
+      "source_version": "alpine-3.23",
+      "retrieved_at": "2026-07-24T00:00:00Z",
+      "content_sha256": "380be5b876304e96d0f51f5b680bddd528a1f805011f1b86fdf360ebbd4d7c6f",
+      "supported_fields": ["os-release", "architecture", "distribution", "package-profile"]
     },
     {
       "source_id": "nixos-26.05",
-      "url": "https://nixos.org/blog/announcements/2026/nixos-2605/",
-      "authority": "distribution-project"
+      "canonical_uri": "https://nixos.org/blog/announcements/2026/nixos-2605/",
+      "authority": "distribution-project",
+      "source_version": "nixos-26.05",
+      "retrieved_at": "2026-07-24T00:00:00Z",
+      "content_sha256": "2215d392de640d4750b9ac1bf85be81e62666fb6765882e9a4b46072505ae1b5",
+      "supported_fields": ["os-release", "architecture", "distribution", "package-profile"]
     },
     {
       "source_id": "vibemaxxing-platform-policy",
-      "url": "https://github.com/vedant-simulacrum/vibemaxxing/blob/main/docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md",
-      "authority": "project-policy"
+      "canonical_uri": "https://github.com/vedant-simulacrum/vibemaxxing/blob/27ca0701c2b21d434064712d3664de17a85ceec2/docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md",
+      "authority": "project-policy",
+      "source_version": "git:27ca0701c2b21d434064712d3664de17a85ceec2",
+      "retrieved_at": "2026-07-24T00:00:00Z",
+      "content_sha256": "c8183a5307752d204036c707102d8e3bfd77a4f67501779e64f3961af401bd00",
+      "supported_fields": ["project-policy"]
     }
   ],
   "profiles": [
