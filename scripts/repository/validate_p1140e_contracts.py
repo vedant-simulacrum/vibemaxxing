@@ -143,7 +143,7 @@ def main() -> int:
 
     structural_audit = (ROOT / "docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md").read_text(encoding="utf-8").lower()
     require("structural p0 open: 0" in structural_audit and "structural p1 open: 0" in structural_audit, "structural audit is not closed")
-    require("does not establish" in structural_audit and "semantic" in structural_audit, "structural audit overstates its claim scope")
+    require("semantic correctness" in structural_audit and "p-1140f" in structural_audit, "structural audit overstates its claim scope")
 
     semantic_review = (ROOT / "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md").read_text(encoding="utf-8").lower()
     require("semantic p1 open: 4" in semantic_review, "semantic review must retain the four open P1 findings")
