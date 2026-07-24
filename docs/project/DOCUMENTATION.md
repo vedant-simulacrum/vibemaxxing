@@ -23,7 +23,7 @@ Run `python3 scripts/repository/doctor.py` before relying on repository state.
 
 ## Current authority note
 
-P-1140A through P-1140E are complete within their stated planning scopes. P-1140E proves structural repository consistency only. P-1140F semantic review is active with four open P1 findings. P-1104 remains blocked and product implementation remains unauthorized.
+P-1140A through P-1140E are complete within their stated planning scopes. P-1140E proves structural repository consistency only. The P-1140F repair head is pending independent semantic review and PostgreSQL-backed clean-checkout validation. P-1104 remains blocked and product implementation remains unauthorized.
 
 Historical reports that declare planning complete, implementation-ready or launch-ready do not override current STATUS, TASK_CATALOG, P-1140F, accepted decisions, ADRs or repaired contracts.
 

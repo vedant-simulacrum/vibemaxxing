@@ -6,7 +6,7 @@ Updated: 2026-07-24
 
 The repository is in **planning contract repair**.
 
-P-1140A through P-1140E are complete as planning and structural-consistency work. P-1140F semantic review is active. P-1104 remains blocked. Product implementation remains unauthorized.
+P-1140A through P-1140E are complete as planning and structural-consistency work. P-1140F repair head is pending independent semantic review and PostgreSQL-backed clean-checkout validation. P-1104 remains blocked. Product implementation remains unauthorized.
 
 The repository has planning traceability for D-001 through D-069 and accepted candidate platform baselines for macOS, Windows, Linux, WSL, containers and CI. Those platform profiles remain uncertified and unadvertised.
 

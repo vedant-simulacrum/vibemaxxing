@@ -15,10 +15,10 @@ P-1140F is the separate semantic-readiness gate. It reviews the frozen P-1140B t
 - Structural P0 open: 0
 - Structural P1 open: 0
 - Semantic P0 open: 0
-- Semantic P1 open: 4
+- Semantic P1 open: 0 on the repair head; independent semantic review pending
 - P-1104: blocked
 
-No implementation may begin until all four semantic P1 findings are repaired in their normative owners, the repaired schemas and fixtures cross-resolve, and a clean-checkout planning run passes on the repair head.
+No implementation may begin until the repair head completes independent semantic review, repaired schemas and fixtures cross-resolve, and a PostgreSQL-backed clean-checkout planning run passes. P-1104 remains blocked while this record is `in-progress-planning`.
 
 ## Open semantic P1 findings
 
