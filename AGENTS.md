@@ -19,7 +19,7 @@ Do not treat chat history, generated indexes, stale branches, historical complet
 
 The current phase is defined only by `docs/project/STATUS.md`.
 
-The repository is in **planning contract repair**. P-1140A through P-1140E are complete within their stated planning scopes. P-1140F semantic review is active. Product implementation has not begun and P-1104 remains blocked.
+The repository is in **planning contract repair**. P-1140A through P-1140E are complete within their stated planning scopes. The P-1140F repair head is pending independent semantic review and PostgreSQL-backed clean-checkout validation. Product implementation has not begun and P-1104 remains blocked.
 
 Allowed work:
 
