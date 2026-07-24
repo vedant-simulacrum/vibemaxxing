@@ -7,7 +7,7 @@
 
 1. GitHub identity uses a GitHub App with user authorization, minimum permissions, expiring user tokens where available, and no repository-content permission for ordinary VibeMaxxing use.
 2. Browser login uses OAuth authorization-code flow with state, PKCE where supported, exact redirect allowlists, and one-time callback codes.
-3. Native CLI/daemon login uses the GitHub App OAuth device flow. The daemon never receives the user's GitHub password.
+3. Ordinary native CLI/daemon login uses external-browser Authorization Code + PKCE. OAuth device authorization is limited to explicitly registered limited-input or headless interactive profiles when the provider supports it. The daemon never receives the user's GitHub password.
 4. X identity uses OAuth 2.0 Authorization Code with PKCE and the minimum identity scopes required to resolve the stable X user ID. OAuth 1.0a is not used unless a future required endpoint lacks OAuth 2.0 support.
 5. GitHub and X are independent linked identities. Either may initiate an account when enabled; linking an identity requires a recent authenticated session and provider reauthorization.
 6. Provider usernames and avatars are presentation metadata. Stable provider subject IDs are identity keys.
@@ -29,7 +29,7 @@
 - Session secrets are stored hashed server-side; rotation occurs after login, recovery, privilege changes, and suspicious activity.
 - Access session target lifetime: 24 hours idle, 30 days absolute for ordinary users; privileged sessions are shorter.
 - CSRF protection is mandatory for state-changing browser requests.
-- Native device authorization produces a one-time enrollment grant bound to a device public key, account ID, nonce, and expiry. It is exchanged once for a revocable device credential.
+- When an eligible limited-input or headless profile uses device authorization, it produces a one-time enrollment grant bound to a device public key, account ID, nonce, and expiry. It is exchanged once for a revocable device credential.
 
 ## Failure behavior
 

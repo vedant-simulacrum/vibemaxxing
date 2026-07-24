@@ -95,7 +95,7 @@ The local product has separate adapter, collector, deterministic validation, loc
 
 Primary launch identity paths are:
 
-- GitHub through the accepted GitHub App/web/device authorization architecture;
+- GitHub through a provider-capability-aware GitHub App/web authorization architecture; device authorization is restricted to eligible limited-input or headless interactive profiles;
 - X through OAuth 2.0 Authorization Code with PKCE, subject to provider availability.
 
 Google is not a launch provider until authentication, API, persistence, recovery and policy contracts add it coherently.
@@ -138,9 +138,9 @@ ADR-014 and D-069 permit the existing Storybook workflow only as read-only proto
 
 ## Planning and evidence boundary
 
-P-1140A–E must repair and validate current contracts before implementation may begin. Current schemas and registries are planning inputs and must not be treated as implementation-ready where the audit marks them inconsistent.
+P-1140A–E are complete within their stated planning scopes. P-1140F must repair and validate the remaining semantic findings before implementation may begin. Current schemas and registries are planning inputs and must not be treated as implementation-ready where the audit marks them inconsistent.
 
-Implementation requires explicit user approval under P-1104 after P-1140A–E and clean planning validation complete.
+Implementation requires explicit user approval under P-1104 after P-1140F closes with clean planning validation and zero open semantic P0/P1 findings.
 
 Planning artifacts and prototype workflows are not working code, cryptographic interoperability evidence, certified adapters, performance evidence, packages, deployments, security hardening or launch readiness.
 

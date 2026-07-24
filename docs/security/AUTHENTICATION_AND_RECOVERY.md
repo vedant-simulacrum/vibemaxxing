@@ -18,7 +18,7 @@ Supported primary providers:
 - GitHub.
 - X/Twitter.
 
-The implementation decision between GitHub App and OAuth App must be finalized through current official documentation and a threat/permission comparison. Native CLI onboarding should support a secure device-authorization flow when available; browser callback flows must bind state, PKCE where supported, redirect URI, client instance, and session.
+The implementation decision between GitHub App and OAuth App must be finalized through current official documentation and a threat/permission comparison. Ordinary desktop native clients use external-browser Authorization Code + PKCE. Device authorization is restricted to registered limited-input or headless interactive profiles when the provider supports it; CI and unattended automation must not poll a human device code. Browser callback flows must bind state, PKCE where supported, redirect URI, client instance, and session.
 
 ## Account model
 
