@@ -46,15 +46,14 @@ class VerifyRepositoryTests(unittest.TestCase):
         self.assertEqual(run.call_args.kwargs["cwd"], ROOT)
         self.assertEqual(evaluator_unit.returncode, 0)
 
-    def test_ci_pins_go_rust_and_node(self) -> None:
+    def test_toolchains_are_pinned_while_ci_stays_manual(self) -> None:
         workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
 
-        self.assertIn("actions/setup-go@v5", workflow)
-        self.assertIn("go-version: '1.26.4'", workflow)
-        self.assertIn("actions/setup-node@v4", workflow)
-        self.assertIn("node-version-file: '.node-version'", workflow)
-        self.assertIn("actions-rust-lang/setup-rust-toolchain@v1", workflow)
-        self.assertIn("toolchain: '1.96.0'", workflow)
+        self.assertIn("workflow_dispatch", workflow)
+        self.assertIn("Automated build, eval, security, dependency, and release checks are intentionally disabled.", workflow)
+        self.assertEqual((ROOT / ".node-version").read_text().strip(), "22.23.1")
+        self.assertIn('channel = "1.96.0"', (ROOT / "rust-toolchain.toml").read_text())
+        self.assertIn("go 1.26.0", (ROOT / "apps" / "api" / "go.mod").read_text())
 
     def test_gitignore_excludes_generated_outputs_without_excluding_eval_fixtures(self) -> None:
         ignored = (ROOT / ".gitignore").read_text().splitlines()
