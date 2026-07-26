@@ -1,0 +1,12 @@
+{
+  "version": "1",
+  "suite": "ranking-accounting",
+  "command": ["python3", "scripts/ci/run_phase1_evidence.py", "--suite", "ranking-accounting", "--commit", "{commit}"],
+  "fixtures": [
+    {
+      "id": "imported-exclusion-and-dedupe",
+      "path": "conformance/accounting/accounting-v1-fixtures.json",
+      "sha256": "3466cacff808b3aa6ffaed2e374c83f0c3b4ea8ef0d3fb3b9aff5ef157e47786"
+    }
+  ]
+}

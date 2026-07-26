@@ -1,0 +1,12 @@
+{
+  "version": "1",
+  "suite": "sample",
+  "command": ["python3", "evals/fixtures/runner-test-command.py", "{commit}"],
+  "fixtures": [
+    {
+      "id": "rejects-invalid-input",
+      "path": "evals/fixtures/runner-test-fixture.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

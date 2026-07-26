@@ -2,114 +2,148 @@ version: 1
 suites:
 - id: protocol-conformance
   owner: vibeproof
-  blocking_from_milestone: vertical-slice
+  blocking_milestone: vertical-slice
+  status: ready
+  reason: ""
+  command: ["python3", "scripts/ci/run_phase1_evidence.py", "--suite", "protocol-conformance", "--commit", "{commit}"]
+  cases: ["canonical-vectors", "rust-go-acceptance-parity", "invalid-vectors"]
+  fixture_manifest: evals/fixtures/protocol-conformance.json
+  fixture_ids: ["canonical-vectors"]
 - id: privacy-boundary
   owner: security
-  blocking_from_milestone: vertical-slice
+  blocking_milestone: vertical-slice
+  status: not_applicable
+  reason: Executable privacy boundary fixtures are not implemented yet
 - id: ranking-accounting
   owner: backend
-  blocking_from_milestone: vertical-slice
+  blocking_milestone: vertical-slice
+  status: ready
+  reason: ""
+  command: ["python3", "scripts/ci/run_phase1_evidence.py", "--suite", "ranking-accounting", "--commit", "{commit}"]
+  cases: ["imported-exclusion-and-dedupe"]
+  fixture_manifest: evals/fixtures/ranking-accounting.json
+  fixture_ids: ["imported-exclusion-and-dedupe"]
 - id: sandbox-enforcement
   owner: security
-  blocking_from_milestone: collector-alpha
+  blocking_milestone: collector-alpha
+  status: not_applicable
+  reason: Executable sandbox fixtures are not implemented yet
 - id: authentication-recovery
   owner: identity
-  blocking_from_milestone: accounts-alpha
+  blocking_milestone: accounts-alpha
+  status: not_applicable
+  reason: Executable authentication and recovery fixtures are not implemented yet
 - id: release-verification
   owner: release
-  blocking_from_milestone: first-binary-release
+  blocking_milestone: first-binary-release
+  status: not_applicable
+  reason: Executable release verification fixtures are not implemented yet
 - id: observability-privacy
   owner: platform
-  blocking_from_milestone: service-alpha
+  blocking_milestone: service-alpha
+  status: not_applicable
+  reason: Instrumented service export artifacts do not exist yet
 - id: adversarial-integrity
   owner: security
-  blocking_from_milestone: competitive-beta
+  blocking_milestone: competitive-beta
+  status: not_applicable
+  reason: Executable adversarial fixtures are not implemented yet
 - id: frontend-quality
   owner: frontend
-  blocking_from_milestone: ui-shell
+  blocking_milestone: ui-shell
+  status: not_applicable
+  reason: Executable frontend quality coverage is not implemented yet
 - id: resilience
   owner: platform
-  blocking_from_milestone: beta
+  blocking_milestone: beta
+  status: not_applicable
+  reason: Executable resilience fixtures are not implemented yet
 - id: performance-efficiency
   owner: performance
-  blocking_from_milestone: beta
+  blocking_milestone: beta
+  status: not_applicable
+  reason: Cross-platform benchmark artifacts do not exist yet
 - id: local-ipc-identity
-  description: Cross-platform peer authentication, ACL, freshness, replay, and message-boundary
-    tests
+  owner: platform
+  blocking_milestone: collector-alpha
   status: not_applicable
   reason: Executable platform IPC fixtures are not implemented yet
 - id: pricing-provenance
-  description: Immutable pricing datasets, source digests, effective dates, category
-    mapping, and historical reproducibility
+  owner: backend
+  blocking_milestone: competitive-beta
   status: not_applicable
-  reason: Versioned pricing ledger and fixtures are not implemented yet
+  reason: Test-only unsigned pricing fixtures exist; pricing authority and signing-key decisions remain pending.
 - id: abuse-country-privacy
-  description: Rate limits, Sybil controls, country correction, cohort suppression,
-    and privacy negative tests
+  owner: security
+  blocking_milestone: competitive-beta
   status: not_applicable
   reason: Abuse and country systems are not implemented yet
 - id: webauthn-conformance
-  description: Registration, authentication, origin/RP validation, recovery gates,
-    multiple credentials, and browser interoperability
+  owner: identity
+  blocking_milestone: accounts-alpha
   status: not_applicable
   reason: WebAuthn implementation and conformance fixtures are not implemented yet
 - id: agent-integration-feasibility
-  description: Versioned adapter probes, token reconciliation, privacy negatives,
-    and upgrade compatibility
+  owner: adapters
+  blocking_milestone: competitive-beta
   status: not_applicable
   reason: Three exercised production adapters and result artifacts do not exist yet
 - id: protocol-library-bakeoff
-  description: Rust CBOR/COSE malformed vectors, fuzzing, differential decoding, memory
-    and throughput evidence
+  owner: protocol
+  blocking_milestone: vertical-slice
   status: not_applicable
-  reason: Executable library comparison result artifact does not exist yet
+  reason: COSE library selection is deliberately pending malformed-vector, differential, fuzz, resource-limit, throughput, and maintenance bakeoff evidence.
 - id: database-ranking-benchmark
-  description: PostgreSQL score-table scale, top-N, user rank, duplicate storm, rollover,
-    and rebuild benchmarks
+  owner: backend
+  blocking_milestone: competitive-beta
   status: not_applicable
   reason: Ephemeral database benchmark results do not exist yet
 - id: updater-conformance
-  description: TUF root, expiry, rollback, freeze, threshold, interruption, and atomic-install
-    conformance
+  owner: release
+  blocking_milestone: first-binary-release
   status: not_applicable
   reason: Updater client and upstream conformance results do not exist yet
 - id: telemetry-canary-leakage
-  description: Seeded sensitive canaries absent from all telemetry, logs, profiles,
-    and crash artifacts
+  owner: platform
+  blocking_milestone: service-alpha
   status: not_applicable
   reason: Instrumented service export artifacts do not exist yet
 - id: competitive-beta-go-no-go
-  description: Aggregates all mandatory viability evidence for competitive beta
+  owner: release
+  blocking_milestone: competitive-beta
   status: not_applicable
-  reason: Mandatory adapter, protocol, ranking, isolation, adversarial, and release
-    evidence is incomplete
+  reason: Mandatory adapter protocol ranking isolation adversarial and release evidence is incomplete
 - id: token-accounting-conformance
-  description: Cross-provider category relationships, source precedence, retries,
-    caching, reasoning, tools, multimodal, and deduplication semantics
-  status: not_applicable
-  reason: Provider fixtures and normalized accounting implementation are not complete
+  owner: backend
+  blocking_milestone: competitive-beta
+  status: ready
+  reason: ""
+  command: ["python3", "scripts/ci/run_phase1_evidence.py", "--suite", "token-accounting-conformance", "--commit", "{commit}"]
+  cases: ["deterministic-normalization"]
+  fixture_manifest: evals/fixtures/token-accounting-conformance.json
+  fixture_ids: ["deterministic-normalization"]
 - id: collector-power-performance
-  description: CPU, memory, wakeups, disk, latency, throughput, battery and energy
-    benchmarks across macOS, Windows and Linux
+  owner: performance
+  blocking_milestone: beta
   status: not_applicable
   reason: Cross-platform benchmark artifacts do not exist yet
 - id: onboarding-trust
-  description: Five-minute first-claim flow, privacy comprehension, Cash Burn comprehension,
-    accessibility, uninstall and deletion confidence
+  owner: frontend
+  blocking_milestone: ui-shell
   status: not_applicable
   reason: User-study result artifact does not exist yet
 - id: social-ranking-simulation
-  description: Tie policy, rollovers, late claims, notification hysteresis, presence
-    expiry, private boards and country cohorts
+  owner: backend
+  blocking_milestone: competitive-beta
   status: not_applicable
   reason: Executable social and ranking simulation results do not exist yet
 - id: data-lifecycle-recovery
-  description: Deletion, backup expiry, restore, ledger rebuild, migration rollback,
-    key rotation and corruption recovery
+  owner: platform
+  blocking_milestone: service-alpha
   status: not_applicable
   reason: Deletion and recovery exercise artifacts do not exist yet
 - id: moderation-operations
-  description: Quarantine, appeals, device revocation, spam, board moderation and
-    audited enforcement tabletop
+  owner: operations
+  blocking_milestone: competitive-beta
   status: not_applicable
   reason: Moderation tabletop and operational tooling evidence do not exist yet
