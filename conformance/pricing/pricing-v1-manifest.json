@@ -1,0 +1,8 @@
+{
+  "version": "1",
+  "signed": false,
+  "test_only": true,
+  "datasets": [
+    {"id": "pricing-v1", "path": "conformance/pricing/pricing-v1.json", "sha256": "aef0dff8e6b39cc38d95e3457066a036492a64165a8e729fc5bde95c2fce9485", "effective_date": "2026-01-01", "review_status": "test-only"}
+  ]
+}
