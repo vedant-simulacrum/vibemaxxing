@@ -1,0 +1,28 @@
+vibeproof-v1 = {
+  1: "v1",
+  2: claim-id,
+  3: device-id,
+  4: key-id,
+  5: challenge,
+  6: issued-at,
+  7: sequence,
+  8: previous-claim-hash,
+  9: accounting-spec-version,
+  10: token-totals,
+  11: evidence-class
+}
+
+claim-id = bstr .size 16
+device-id = bstr .size 16
+key-id = bstr .size 16
+challenge = bstr .size 32
+issued-at = uint
+sequence = uint .gt 0
+previous-claim-hash = bstr .size 32
+accounting-spec-version = uint .size 1
+token-totals = {
+  1: uint,
+  2: uint,
+  3: uint
+}
+evidence-class = 0 / 1 / 2 / 3 / 4

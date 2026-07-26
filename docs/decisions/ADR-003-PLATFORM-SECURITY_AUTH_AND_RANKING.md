@@ -18,6 +18,15 @@ VibeMaxxing needs a privacy-enforcing local collector, low-friction social accou
 7. Require both producer-side release signing/attestation and consumer-side verification tests.
 8. Apply telemetry allowlists and privacy-negative tests to all observability output.
 
+## Phase 1 implementation boundary
+
+The initial Rust reference freezes only the CDDL fixed schema and a bounded canonical
+CBOR subset. It deliberately does not claim COSE verification, key management, or a
+selected COSE library. Those remain pending `protocol-library-bakeoff` evidence.
+Pricing manifests are immutable test fixtures but unsigned; authority and signing-key
+selection remain open. Rollback quarantines an affected protocol/accounting version
+and requires deterministic fixture-bound replay rather than reinterpretation.
+
 ## Consequences
 
 - The collector has platform-specific modules and evidence tiers.

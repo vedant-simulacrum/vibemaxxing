@@ -97,6 +97,24 @@ Genuine, non-duplicated and correctly accounted wasteful usage is not cheating.
 - exports sensitive diagnostics;
 - manipulates ranking corrections or release policy.
 
+## Phase 1 protocol boundary
+
+The Phase 1 decoder rejects noncanonical CBOR, duplicate and unknown keys, tags,
+floats, indefinite lengths, malformed or truncated lengths, trailing bytes,
+oversized claims, wrong map cardinality, unordered or missing keys, invalid version,
+zero sequence, invalid evidence enum, and malformed fixed-length or nested token
+fields before claims reach accounting. This limits parser disagreement and
+content-smuggling risk, but does not provide signature verification. COSE key,
+algorithm, and library selection remain a gated bakeoff; unsigned fixture claims are
+never authority evidence. Pricing fixtures are also unsigned and test-only pending a
+separate pricing authority and signing-key decision.
+
+On rollback of a decoder or accounting release, quarantine the affected version and
+replay only with its immutable vector/dataset binding. Do not silently reinterpret
+accepted claim bytes or pricing history.
+
+## SLM safety
+
 ## Fundamental limitations
 
 A device signature proves only that the registered key signed bytes. It does not prove the local source was honest.
