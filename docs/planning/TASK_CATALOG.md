@@ -1,14 +1,14 @@
 # VibeMaxxing Planning Task Catalog
 
-Updated: 2026-07-24
+Updated: 2026-08-04
 
 Statuses: `complete-planning`, `in-progress-planning`, `blocked-planning`, `blocked-implementation`, `blocked-approval`, `blocked-launch-evidence`.
 
-A task is `complete-planning` only when its normative planning artifacts exist, references resolve, applicable planning checks pass and its stated review scope is satisfied. It does not imply implementation, security evidence, certification or launch readiness.
+A task is `complete-planning` only when its normative artifacts exist, references resolve, applicable planning checks pass, and its stated review scope is satisfied. It never implies implementation, security evidence, certification, or launch readiness.
 
 ## Historical planning groups
 
-P-001 through P-1130 produced useful planning inputs. Where a later P-1140 task repaired or superseded them, the later contract is authoritative. Historical completion reports are not current authority.
+P-001 through P-1130 produced useful planning inputs. Where P-1140 work repairs or supersedes them, the later contract is authoritative. Historical completion reports and stale review heads are not current authority.
 
 ## Active planning-repair program
 
@@ -16,79 +16,136 @@ P-001 through P-1130 produced useful planning inputs. Where a later P-1140 task 
 
 Status: `complete-planning`
 
-Authority hierarchy, scope corrections, decision traceability, implementation handoff ownership and repository consolidation were established. Country leaderboards are post-launch, native mobile/ChromeOS work is out of scope, SLM is post-launch advisory research and implementation remains gated.
+Authority hierarchy, scope corrections, decision traceability, implementation-handoff ownership, and repository consolidation were established. Country leaderboards remain post-launch, native mobile/ChromeOS are out of scope, SLM remains post-launch advisory research, and implementation remains gated.
 
-### P-1140B — core trust, privacy and accounting contracts
+### P-1140B — core trust, privacy, and accounting contracts
 
 Status: `complete-planning`
 
-Typed source observations, normalized accounting, detector results, local IPC, device lineage, accounting profiles, server-owned appraisal/pricing and deny-by-default egress contracts are present. These remain planning artifacts without runtime security evidence.
+Typed source observations, normalized accounting, local detector results, local IPC, device lineage, accounting profiles, server-owned appraisal/pricing, and deny-by-default egress contracts are present. Their semantic implementation dependencies are reopened under P-1140F.
 
 ### P-1140C — VibeProof v1 protocol rewrite
 
 Status: `complete-planning`
 
-Closed deterministic CBOR/COSE contracts, exact vectors, replay/idempotency, checkpoint continuity, rotation, recovery, fork/clone handling and corrections are present. Independent codecs, fuzzing and interoperability evidence remain implementation work.
+Closed deterministic CBOR/COSE contracts, exact vectors, replay/continuity/rotation/recovery plans, and malformed/resource cases are present as normative planning authority. Later executable Rust/Go prototypes do not conform to that authority and are tracked under P-1140F-1.
 
-### P-1140D — identity, API, ranking, social, native and release contracts
+### P-1140D — identity, API, ranking, social, native, and release contracts
 
 Status: `complete-planning`
 
-Candidate OAuth/session, ranked identity, API/idempotency, PostgreSQL, ranking, pricing, social, moderation, export/deletion, platform lifecycle, update and release-trust contracts are present. The P-1140F repair head reconciles the four identified semantic P1s and remains pending independent semantic review, so it is not implementation-ready.
+Candidate contracts are present, but their semantic readiness is reopened under P-1140F. `complete-planning` here means the candidate contract set exists, not that it is implementation-ready.
 
 ### P-1140E — structural cross-contract validation
 
 Status: `complete-planning`
 
-Dependencies: P-1140B, P-1140C and P-1140D.
-
-Completed scope:
-
-- exact D-001..D-069 registration and traceability closure;
-- API operation, state-machine and candidate platform-profile coverage;
-- planned positive/invalid transitions, SQL race cases and platform failure cases;
-- reason-authority and reference closure;
-- rejection of out-of-scope native mobile/ChromeOS paths;
-- clean-checkout planning validation.
-
-P-1140E proves structural repository consistency only. It does not prove semantic correctness, standards conformance, security, implementability or runtime behavior.
+P-1140E proves structural repository consistency only. It does not prove semantic correctness, standards conformance, authorization safety, privacy, runtime behavior, database transactions, platform behavior, or implementation readiness.
 
 ### P-1140F — semantic review and standards mapping
 
 Status: `in-progress-planning`
 
-Dependencies: P-1140B through P-1140E.
-
 Canonical record: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
 
-Open P1 repairs, in dependency order:
+Current review target: `41ecb77856991ee033afcfe52d24eb42cd6ecb47` before consolidation changes.
 
-1. **SR-001 OAuth provider capability** — make authorization-response issuer verification capability-aware; bind provider configuration, token endpoint and exact redirect; add mix-up/redirect-confusion fixtures.
-2. **SR-002 native authentication scope** — use external-browser Authorization Code + PKCE for normal desktop clients; restrict device authorization to explicitly eligible limited-input/headless interactive profiles; prohibit human device-code flow for unattended CI.
-3. **SR-003 interactive shell lifecycle** — add one authoritative menu-bar/tray shell state machine and authenticated daemon IPC boundary; distinguish UI exit, collection pause, sync pause, daemon stop and uninstall.
-4. **SR-004 immutable source evidence** — replace mutable platform source references with typed version/commit/digest-bound evidence and field authority.
-5. Re-run P-1140E structural validation on the repaired exact head and record a final manual semantic review with zero open P0/P1 findings.
+The earlier review target `f06f630619427ec7f0576b57c4b3ac914d9a4c87` and four-item issue scope are superseded. Current semantic work is organized into five dependency-ordered tasks.
 
-P-1140F acceptance:
+#### P-1140F-1 — re-establish protocol and repository authority
 
-- SR-001 through SR-004 are repaired in every affected normative owner, schema, fixture and validator;
-- provider-specific OAuth and interactive-shell fixtures exist;
-- platform source evidence is immutable and digest-bound;
-- structural validation passes without claiming semantic proof;
-- the exact-head semantic review records zero open P0/P1 findings;
-- implementation remains unauthorized until the user separately opens P-1104.
+Status: `in-progress-planning`
+
+Scope:
+
+- quarantine or remove the unsigned 11-field shadow protocol from normative/product paths;
+- retain CDDL, COSE, and `conformance/vibeproof/v1/` as sole VibeProof v1 authority;
+- correct status, documentation, evaluation, review, and issue scope;
+- classify executable prototypes honestly;
+- register every mutable authority and persistence owner.
+
+Blocks: all later P-1140F tasks.
+
+#### P-1140F-2 — identity, OAuth, lineage, replay, and recovery
+
+Status: `blocked-planning`
+
+Dependencies: P-1140F-1.
+
+Scope:
+
+- one account-bound OAuth transaction authority;
+- linked-identity, provider-loss, compromise, and recovery lifecycle;
+- duplicate-account consolidation and canonical ranked identity;
+- lineage-scoped continuity;
+- canonical challenge, checkpoint, rotation, fork, appeal, and reversal semantics.
+
+#### P-1140F-3 — local trust boundary, adapters, and accounting inputs
+
+Status: `blocked-planning`
+
+Dependencies: P-1140F-2.
+
+Scope:
+
+- process trust domains, role-bound IPC, process generations, local persistence, and platform supervision;
+- atomic compatibility tuples and signed certification lifecycle;
+- deterministic observation-to-profile selection;
+- nested/multi-observer deduplication and checked arithmetic;
+- ACP/OTel/proxy/wrapper paths remain private until exact certification.
+
+#### P-1140F-4 — server product state and privacy projection
+
+Status: `blocked-planning`
+
+Dependencies: P-1140F-2 and P-1140F-3.
+
+Scope:
+
+- exact idempotent replay and ambiguous-commit recovery;
+- ranking authorization, immutable generations, periods, ties, contributions, and corrections;
+- friendship, directional blocks, rivals, boards, roles, ownership, presence, and notifications;
+- export, deletion, retention, legal hold, per-device completion, and backup tombstones;
+- current authorization for historical snapshots, cursors, grants, and delivery.
+
+#### P-1140F-5 — release trust and exact-head semantic closure
+
+Status: `blocked-planning`
+
+Dependencies: P-1140F-1 through P-1140F-4.
+
+Scope:
+
+- TUF-backed release authorization;
+- component, compatibility, provenance, native-signing, update-class, migration, health, and rollback contracts;
+- aligned API, SQL, state, event, policy, reason, and fixture vocabularies;
+- planning-safe validation;
+- one new exact review head with zero open semantic P0/P1 findings.
+
+## P-1140F acceptance
+
+P-1140F becomes `complete-planning` only when:
+
+1. SR-005 through SR-016 in the canonical semantic record are repaired in every affected owner.
+2. No executable prototype contradicts or bypasses the sole normative protocol/accounting authority.
+3. Every mutable aggregate has one reachable lifecycle, persistence owner, revision model, stable outcome vocabulary, and transaction boundary.
+4. API, SQL, Protobuf/CDDL, fixtures, policies, and state machines cross-resolve without hidden security-critical mappings.
+5. Privacy and authorization are current at every display and delivery boundary.
+6. Structural validators pass without claiming semantic proof.
+7. A new exact repaired head receives independent semantic review with zero open P0/P1 findings.
+8. The user separately authorizes P-1104.
 
 ## Future implementation and launch tasks
 
 | ID | Task | Status | Reason |
 |---|---|---|---|
-| P-1007 | Restore product CI, security, dependency, evaluation and release checks | blocked-implementation | requires executable product code and P-1104 |
-| P-1104 | Enter implementation phase | blocked-approval | requires P-1140F completion, clean validation, zero semantic P0/P1 findings and explicit user approval |
+| P-1007 | Restore product CI, security, dependency, evaluation, and release checks | blocked-implementation | requires executable product code and P-1104 |
+| P-1104 | Enter implementation phase | blocked-approval | requires P-1140F completion, clean planning validation, zero semantic P0/P1 findings, and explicit user approval |
 | P-1105 | Public-launch readiness review | blocked-launch-evidence | requires implemented system and executable evidence on every advertised profile |
-| P-1131 | Select source/model golden paths and produce non-expired certifications | blocked-launch-evidence | requires real adapters, benchmarks and conformance |
+| P-1131 | Select golden source/model paths and produce non-expired exact-tuple certifications | blocked-launch-evidence | requires real adapters, benchmarks, and conformance |
 | P-1150 | Country leaderboard research and planning | blocked-launch-evidence | post-launch only |
 | P-1151 | SLM detector bakeoff | blocked-implementation | post-launch after deterministic baselines and data |
 
 ## Current conclusion
 
-P-1140A through P-1140E are complete within their stated planning scopes. The P-1140F repair head is pending independent semantic review and PostgreSQL-backed clean-checkout validation. P-1104 remains blocked and is not ready for user authorization.
+P-1140F-1 is the only unblocked planning task. Product implementation, automated product/security/evaluation workflows, certification claims, and launch-readiness claims remain prohibited.
