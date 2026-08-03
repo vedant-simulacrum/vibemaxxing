@@ -1,33 +1,14 @@
 # VibeMaxxing Status
 
-Updated: 2026-07-24
+Updated: 2026-08-04
 
 ## Phase
 
-The repository is in **planning contract repair**.
+The repository remains in **planning contract repair**.
 
-P-1140A through P-1140E are complete as planning and structural-consistency work. P-1140F repair head is pending independent semantic review and PostgreSQL-backed clean-checkout validation. P-1104 remains blocked. Product implementation remains unauthorized.
+P-1140A through P-1140E are complete only within their stated planning and structural scopes. P-1140F is open against current `main` at `41ecb77856991ee033afcfe52d24eb42cd6ecb47`. P-1104 remains blocked and product implementation remains unauthorized.
 
-The repository has planning traceability for D-001 through D-069 and accepted candidate platform baselines for macOS, Windows, Linux, WSL, containers and CI. Those platform profiles remain uncertified and unadvertised.
-
-One bounded fixture-backed hosted-web/Storybook slice exists and is classified as a **runnable prototype**. It is not production implementation, backend integration, launch evidence or authorization to continue product implementation.
-
-## Current readiness
-
-- Product thesis, privacy posture, Token Burn metric and broad social direction: accepted.
-- Public launch scope: complete core social product except country leaderboards, which are post-launch.
-- Local-model and delayed offline usage: first-class competitive usage only when deterministically counted under a certified source/accounting profile.
-- Global leaderboards: accepted Standard and Hardened claims may count; Imported records never count.
-- Ranked identity: one active ranked identity per detected/resolved person, strongly enforced without claiming mathematically verified humanity.
-- SLM: post-launch research only; not a launch dependency or authority.
-- T20: provisional candidate engineering cohort under D-046; not a launch dependency and not current support evidence.
-- Daemon lifecycle: D-061 and ADR-010 require an always-on OS-supervised background service independent of shell closure.
-- macOS Apple silicon and Intel, Windows native x64/ARM64, Linux desktop/headless/remote, WSL, containers and CI remain candidate launch profiles subject to exact certification.
-- Android, iOS, iPadOS and ChromeOS have no native product scope.
-- Optional privileged machine-wide supervision is separately consented, least privilege and cannot inspect source content or merge users.
-- Automatic updates are mandatory for competitive profiles with bounded deferral, signed release-set verification and rollback.
-- Storybook automation is prototype/design validation only and cannot satisfy product, security or launch gates.
-- Deterministic accounting, canonicalization, signatures, replay, duplicate, continuity and eligibility controls remain authoritative. Statistical/ML detectors remain advisory.
+The previous P-1140F review target `f06f630619427ec7f0576b57c4b3ac914d9a4c87` and its four-finding scope are stale. Later commits added executable Rust/Go protocol and accounting prototypes that were not covered by that review. The canonical current semantic record is `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
 
 ## Reality map
 
@@ -35,91 +16,65 @@ One bounded fixture-backed hosted-web/Storybook slice exists and is classified a
 
 - bounded fixture-backed hosted-web and Storybook prototype;
 - planning validators and repository doctor;
-- schemas, registries, fixtures and exact vectors used as planning contracts.
+- planning-grade schemas, registries, fixtures, vectors, and symbolic race plans;
+- bounded exploratory Rust and Go protocol/accounting prototypes added after the original semantic-review target.
 
 ### Not implemented
 
-- collector, daemon, sync process, menu-bar/tray shell and native installers;
-- real adapters or certified universal agent support;
-- VibeProof runtime codecs or cross-language interoperability;
-- OAuth/session/identity service;
-- ranking, social, moderation, export or deletion services;
-- production PostgreSQL migrations and runtime transaction evidence;
-- updater, signed release repository, deployment and operations systems.
+- production collector, daemon, sync process, shell, installers, updater, and local storage;
+- certified source adapters or universal competitive support;
+- normative VibeProof v1 codecs and verifier interoperability;
+- OAuth, identity, recovery, ranked-identity, ranking, social, presence, notification, moderation, export, deletion, and release services;
+- production PostgreSQL migrations and executable transaction evidence;
+- production infrastructure, signed release repository, deployment, and operations.
 
-Specifications, schemas, fixtures and successful planning checks are not implementation evidence.
+The later executable prototypes are not production implementation, normative protocol evidence, implementation authorization, or launch evidence.
+
+## Binding product posture
+
+- Servers never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, repository/project names, credentials, embeddings, summaries, classifications, personal insights, or content-derived hashes.
+- Token Burn is the default raw ranking metric. Estimated Cash Burn is always labelled estimated and is server interpreted.
+- Historical imports never enter active competition.
+- Public evidence status is assigned by the server verifier, never selected by the client.
+- Deterministic controls are authoritative. SLM/statistical detection remains local-only, advisory, and post-launch.
+- OAuth proves provider-account control, not one unique human.
+- One person may have only one active resolved ranked identity, with privacy safeguards and appeals.
+- Local-model and delayed offline usage count competitively only under an exact certified source/accounting profile.
+- Country leaderboards remain post-launch.
+- Public launch still targets the complete core social product except country leaderboards; staged implementation does not redefine launch scope.
+
+## Active semantic gate
+
+P-1140F currently has 12 consolidated P1 clusters:
+
+1. normative VibeProof versus shadow executable protocol;
+2. OAuth, linked identity, recovery, consolidation, and ranked identity;
+3. device lineage, challenge, replay, checkpoints, fork handling, and recovery;
+4. daemon, shell, IPC role authentication, process generation, and platform supervision;
+5. universal adapter certification and deterministic accounting inputs;
+6. ranking authorization, immutable generations, periods, ties, and corrections;
+7. social relationships, board ownership/roles, presence, and notifications;
+8. idempotency and ambiguous commit recovery;
+9. export, deletion, retention, and backup tombstones;
+10. release authorization, compatibility, migration, and rollback;
+11. privacy-safe current authorization for historical projections;
+12. review, conformance, and launch-evidence integrity.
+
+Exact findings, owners, closure criteria, closed defaults, remaining user decisions, and dependency order live only in the canonical P-1140F record.
 
 ## Planning gates
 
-### Completed P-1140B — core trust, privacy and accounting contracts
-
-Typed local stages, accounting profiles, appraisal authority, lineage, server-owned pricing and deny-by-default egress contracts are present. They remain planning inputs without runtime security evidence.
-
-### Completed P-1140C — VibeProof v1 protocol rewrite
-
-Closed CDDL, deterministic CBOR/COSE profile, exact vectors, replay/continuity/rotation/recovery state and malformed/resource cases are present. Independent codecs and interoperability evidence remain absent.
-
-### Completed P-1140D — candidate state and platform contract set
-
-OAuth/session, ranked identity, API/idempotency, SQL, ranking, social, native lifecycle, update and release contracts are present as planning artifacts. The P-1140F repair head reconciles the four identified semantic P1s and is pending independent semantic review; therefore the contracts are not implementation-ready.
-
-### Completed P-1140E — structural cross-contract validation
-
-The P-1140E matrix and validator demonstrate repository consistency across decisions, references, API operation IDs, state-machine IDs, candidate platform profiles, planned SQL races, reason authorities and clean-checkout validation. They do not prove semantic correctness, standards conformance, security or implementability.
-
-### Active P-1140F — semantic review and standards mapping
-
-Current semantic P1 findings:
-
-1. OAuth authorization-response issuer verification must be provider-capability aware.
-2. Device authorization must be limited to eligible limited-input/headless interactive profiles, not ordinary desktop OAuth or CI.
-3. The interactive menu-bar/tray shell needs its own authoritative lifecycle and IPC state machine.
-4. Platform source evidence must bind immutable versions/commits and content digests.
-
-The canonical record is `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
-
-### Following gate
-
-P-1104 remains `blocked-approval`. It may be considered only after P-1140F is complete, all repaired contracts and structural validators pass from a clean checkout, no semantic P0/P1 finding remains, and the user explicitly authorizes implementation.
-
-## Artifact maturity
-
-1. **Specification** — normative intended behavior without executable proof.
-2. **Mock** — static or illustrative design artifact.
-3. **Runnable prototype** — executable exploratory work using fixtures or incomplete integrations.
-4. **Production implementation** — integrated product code satisfying accepted contracts and implementation gates.
-5. **Executable evidence** — reproducible conformance, security, benchmark or operational output supporting a specific claim.
-
-Planning artifacts and prototypes are not cryptographic interoperability evidence, certified adapter support, performance evidence, deployed infrastructure, security hardening or launch evidence.
-
-## Canonical entrypoints
-
-- `AGENTS.md`
-- `docs/project/PROJECT.md`
-- `docs/project/STATUS.md`
-- `docs/project/DOCUMENTATION.md`
-- `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`
-- `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`
-- `docs/planning/decision-traceability/README.md`
-- `docs/planning/CROSS_PLATFORM_COMPLETENESS_AUDIT.md`
-- `docs/planning/DECISION_REGISTER.md`
-- `docs/planning/TASK_CATALOG.md`
-- `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`
-- `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`
-- `docs/decisions/ADR-010-ALWAYS_ON_DAEMON_LIFECYCLE.md`
-- `docs/decisions/ADR-011-UNIVERSAL_PLATFORM_SUPPORT_BASELINE.md`
-- `docs/decisions/ADR-012-OPTIONAL_PRIVILEGED_SUPERVISION.md`
-- `docs/decisions/ADR-013-MANDATORY_AUTOMATIC_UPDATES.md`
-- `docs/decisions/ADR-014-PROTOTYPE_VISUAL_VALIDATION_AUTOMATION.md`
-- `docs/implementation/IMPLEMENTATION_HANDOFF.md`
-- `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`
-
-Run `python3 scripts/repository/doctor.py` before relying on repository state.
+- **P-1140A through P-1140E:** complete within stated planning/structural scope; not implementation evidence.
+- **P-1140F:** `in-progress-planning`; semantic closure is not achieved.
+- **P-1104:** `blocked-approval`; cannot be considered until P-1140F reaches zero open semantic P0/P1 findings on one exact reviewed head.
+- **P-1105:** `blocked-launch-evidence`; requires an implemented system and executable evidence on every advertised profile.
+- **P-1131:** `blocked-launch-evidence`; requires real adapters and non-expired exact-tuple certifications.
+- **P-1151:** `blocked-implementation`; SLM bakeoff remains post-launch.
 
 ## Automation
 
-Read-only planning validation may run. ADR-014 permits narrowly scoped Storybook prototype validation. Product build, dependency, security, fuzz, evaluation, release, signing, deployment and operational automation remain disabled until implementation is explicitly opened.
+Read-only planning validation may run. ADR-014 permits narrowly scoped Storybook prototype validation. Product build, dependency, security, fuzz, evaluation, release, signing, deployment, and operational automation remain disabled until implementation is explicitly opened.
 
-## Current gate
+## Current next task
 
-P-1140F repair head is pending independent semantic review. P-1104, P-1131 and comprehensive launch review remain blocked.
+Execute `P-1140F-1`: re-establish sole protocol and repository authority, quarantine the shadow protocol from normative paths, align status/task/evaluation/review records, and register every mutable authority and persistence owner. Do not begin product implementation while performing this work.
