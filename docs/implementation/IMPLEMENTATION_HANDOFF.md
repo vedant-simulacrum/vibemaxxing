@@ -1,199 +1,437 @@
 # VibeMaxxing Implementation Handoff
 
-Status: consolidated but inactive; P-1140F repair head is pending independent semantic review and P-1104 is blocked
-Version: 10
-Updated: 2026-07-24
+Status: canonical future implementation plan; inactive while P-1140F is open and P-1104 is blocked
+Version: 11
+Updated: 2026-08-04
 
 ## Purpose
 
-This is the single future build-order contract. It consolidates current product authority, privacy and integrity boundaries, accounting, VibeProof, identity, API, ranking, social, native-platform and release planning.
+This file is the sole future implementation handoff. It does not authorize implementation. It defines:
 
-It does not authorize implementation. `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` is subordinate to this file and must be reconciled again when P-1140F closes.
+1. the remaining planning-closure program;
+2. the dependency-safe build sequence after explicit P-1104 authorization;
+3. the evidence required before any support, security, production, or launch claim.
 
-## Current handoff health
+`docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` decomposes this plan into review-sized units. It is subordinate to this file, accepted decisions, ADRs, repaired normative contracts, and the exact-head P-1140F verdict.
 
-| Layer | Current state | Consequence |
-|---|---|---|
-| Product authority and launch scope | consolidated | preserve no-country launch scope and no native mobile/ChromeOS work |
-| Privacy, accounting and appraisal | P-1140B complete-planning | planning input only; no runtime privacy or security proof |
-| VibeProof | P-1140C complete-planning | planning input only; independent codecs and interoperability absent |
-| State/API/platform/release contracts | P-1140D complete-planning; P-1140F repair head pending independent semantic review | not implementation-ready |
-| Structural validation | P-1140E complete-planning | proves internal reference and coverage consistency only |
-| Semantic review | P-1140F in progress | blocks implementation authorization |
-| Product code | prototype/seeds only | collector, services, database, packaging and operations are absent |
+## Audit basis and coverage
 
-P-1104 is not ready for approval. The exact semantic findings and closure criteria are owned by `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
+This revision follows a repository-wide authority audit covering:
 
-## Mandatory pre-read
+- `AGENTS.md`, project authority, documentation map, decision and task registers;
+- product, privacy, accounting, security, identity, integrity, adapter, native, state, release, and operations contracts;
+- ADRs, platform profiles, schemas, registries, fixtures, evaluation declarations, SQL planning model, OpenAPI, Protobuf, CDDL, Rust and Go prototype paths;
+- recent commits, issue #41, draft PR #42, and the stale review-head relationship;
+- cross-domain authority, lifecycle, persistence, privacy, replay, correction, recovery, migration, and evidence claims.
 
-1. `AGENTS.md`
-2. `docs/project/PROJECT.md`
-3. `docs/project/STATUS.md`
-4. `docs/project/DOCUMENTATION.md`
-5. `docs/planning/DECISION_REGISTER.md`
-6. `docs/planning/TASK_CATALOG.md`
-7. `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`
-8. `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`
-9. relevant ADRs, contracts, schemas and conformance fixtures
-10. this file and the PR-sized work breakdown only after the gate is understood
+The GitHub connector does not expose a reliable single recursive repository-tree/read-all-lines operation. Coverage was therefore constructed from canonical maps, referenced owners, code search, known implementation paths, recent commit diffs, and direct file reads. This plan must not be represented as an independent source-code security audit or proof that every unreferenced binary/generated file was manually inspected.
 
-## Entrance gate
+## Current reality
 
-Implementation may begin only when:
+### Planning authority
 
-1. P-1140F is `complete-planning`;
-2. SR-001 through SR-004 are repaired in normative prose, schemas, registries, fixtures and validators;
-3. P-1140E structural validation passes on the repaired exact head without claiming semantic proof;
-4. the manual semantic review records zero open P0/P1 findings;
-5. every implementation-bearing decision still has an owner, work unit, schema/state owner, platform scope and evidence gate;
-6. superseded decisions have no active implementation path;
-7. repository doctor and all planning-only validators pass from a clean checkout;
-8. the user explicitly opens P-1104.
+- P-1140A through P-1140E are historical planning/structural stages.
+- P-1140F owns current semantic closure.
+- SR-005 through SR-016 are open semantic P1 clusters.
+- P-1104 remains blocked and requires a separate explicit user authorization after P-1140F closes.
 
-No agent may infer authorization from a green planning workflow, a complete planning task, this handoff, a prototype or a merged PR.
+### Implemented artifacts
 
-## Execution activation protocol
+- fixture-backed hosted-web and Storybook prototype;
+- planning validators and repository doctor;
+- schemas, registries, synthetic fixtures, exact vectors, and symbolic race plans;
+- bounded Rust and Go protocol/accounting prototypes added after the original review head.
 
-After the entrance gate is satisfied, the implementation operator must:
+### Not implemented
 
-1. record the exact approved commit and the P-1140F closure evidence in the implementation-opening decision or issue;
-2. create the deterministic issue plan with `python3 scripts/repository/generate_issue_plan.py --output /tmp/vibemaxxing-issue-plan.json`, then create only dependency-ready issues using their existing stable keys;
-3. begin with `F-01` through `F-06` in source order; pin toolchains and generators before creating product workspaces, generated bindings, migrations, or runtime code;
-4. restore product automation only in the narrow order specified by the operations contract: format/lint/test, cross-language builds, contract drift checks, privacy canaries, security/dependency/license checks, then release and deployment gates;
-5. keep every implementation change linked to one work-unit key, its acceptance evidence, rollback or disable path, and applicable privacy, migration, compatibility, and platform impact;
-6. stop and reopen the owning P-1140 contract if implementation exposes a contradiction, rather than encoding an unreviewed workaround.
+- production collector, daemon, sync, shell, local database, installers, updater, or platform packages;
+- certified source adapters or universal competitive support;
+- normative VibeProof v1 Rust/Go interoperability;
+- OAuth, session, identity, recovery, ranked identity, challenge, verifier, ranking, social, presence, notification, moderation, export, deletion, release, or operations services;
+- production PostgreSQL migrations and transaction evidence;
+- deployed infrastructure, TUF repository, release signing, production telemetry, incident operations, or launch evidence.
 
-The implementation phase begins as a synthetic secure spine, not a public product rollout. No source, platform, account flow, package, or deployment may be described as supported until its work-unit evidence is complete.
+The executable Rust/Go artifacts are exploratory prototypes. They are not normative protocol evidence and cannot silently become the production base.
 
-## Binding product constraints
+## Non-negotiable product and trust invariants
 
-### Privacy
+### Privacy boundary
 
-- Servers never receive prompts, outputs, transcripts, code, diffs, commands, tool contents, filenames, paths, project/repository names, credentials, embeddings, summaries, classifications, personal insights or content-derived hashes.
-- Processes able to read raw source content have no network capability.
-- Networked sync receives only fixed-schema aggregate claims and receipts.
-- Review, moderation, observability, support and privileged-supervisor tooling never expose local raw records.
+- Servers never receive prompts, responses, transcripts, code, diffs, commands, tool contents, filenames, paths, project/repository names, credentials, embeddings, summaries, classifications, personal insights, or content-derived hashes.
+- A process that can read raw source content has no network capability.
+- Networked sync accepts only closed-schema aggregate claims, commitments, receipts, diagnostics, and explicitly allowlisted metadata.
+- Logs, crashes, support tools, moderator tools, privileged supervisors, exports, notifications, and analytics obey the same boundary.
 
 ### Competition and accounting
 
-- Token Burn is the default raw ranking metric.
-- Estimated Cash Burn is server-derived, versioned and always labelled estimated.
-- Imported history is private analytics only and never ranks.
-- Accepted Standard and Hardened claims may contribute globally.
-- Local-model and delayed offline usage count only when deterministically captured under a certified profile.
-- Evidence state is assigned by the server verifier, never by the client.
+- Token Burn is the default raw metric.
+- Estimated Cash Burn is server interpreted, versioned, and labelled estimated.
+- Imported history never contributes to active competition.
+- Standard and Hardened accepted claims may count globally.
+- Authentic but intentionally pointless usage counts when non-duplicated.
+- Client code never selects public evidence class, competition eligibility, pricing authority, or final duplicate disposition.
+- Consolidated duplicate accounts combine independently valid historical claim contributions; stored account totals are never added together.
 
-### Identity
+### Identity and recovery
 
 - OAuth proves provider-account control, not unique humanity.
-- One active ranked identity per detected/resolved person is enforced through private account, device, recovery and enforcement lineage with review and appeal.
-- Government ID and biometrics are not required by default.
-- Provider-specific OAuth behavior must follow the capability-aware SR-001 repair.
-- Ordinary desktop clients use external-browser Authorization Code + PKCE; device authorization is limited by SR-002.
+- Account, linked provider identity, device lineage, installation, and ranked identity are separate aggregates.
+- One detected/resolved person has one active ranked identity.
+- Provider subjects are durable provider IDs; usernames and display names are mutable metadata.
+- Provider identities are never silently reassigned between accounts.
+- Recovery, consolidation, restriction, and appeals preserve evidence and enforcement history.
 
-### Platforms
+### Anti-cheat
 
-- Candidate native scope: macOS arm64/x86_64, Windows x64/ARM64, maintained Linux desktop/headless/remote, WSL, containers and CI/ephemeral runners.
-- Android, iOS, iPadOS and ChromeOS have no native implementation lane.
-- Every public support claim requires exact, non-expired certification.
-- Platform evidence must use immutable version/commit/digest-bound source records under SR-004.
+- Deterministic accounting, canonicalization, signatures, challenge binding, sequence continuity, duplicate domains, exact replay, corrections, and eligibility policy are authoritative.
+- Kernel anti-cheat and mandatory inference proxying are rejected.
+- SLM/statistical detection remains local-only, advisory, post-launch research and cannot rewrite totals, raise evidence tier, or permanently ban.
+- Hardware-backed keys prove key continuity and device posture, not semantic truth of arbitrary usage values.
 
-### Local runtime and anti-cheat
+### Platform and local runtime
 
-- Default collector is unprivileged and per-user.
-- Optional privileged supervision is separately consented and cannot inspect source content or merge users.
-- No kernel anti-cheat and no mandatory inference proxy.
-- Deterministic accounting, canonicalization, signatures, sequences, replay, duplicate, continuity and eligibility controls are authoritative.
-- Statistical/ML detectors are local-only, advisory and cannot alter totals, raise evidence tiers or permanently ban.
-- The OS-supervised daemon is independent of collector, sync, CLI and interactive shell.
-- The menu-bar/tray shell requires its own state machine and authenticated IPC under SR-003.
+- Candidate native scope: macOS arm64/x86_64, Windows x64/ARM64, maintained Linux desktop/headless/remote, WSL, containers, and CI/ephemeral runners.
+- Android, iOS, iPadOS, and ChromeOS have no native product lane.
+- Daemon, collector, sync, CLI, shell, updater, and optional supervisor are separate trust domains.
+- Shell exit never stops the daemon.
+- Presence is server-derived from qualifying native activity: 30-second pulse, idle after 90 seconds, offline after 300 seconds; private is a visibility policy.
 
-### Automation
+### Release and migration
 
-The Storybook workflow remains prototype-only under ADR-014. Product build, dependency, security, fuzz, evaluation, signing, release, deployment and operational automation remain disabled until P-1104 and their separate implementation gate.
+- TUF/project authorization, platform-native signing, provenance, compatibility, migration safety, and server competitive eligibility are separate controls.
+- Automatic binary rollback is permitted only while the prior release remains read/write compatible with committed state.
+- After an irreversible migration, recovery is roll-forward or restoration of a verified pre-migration snapshot.
 
-## Planned component ownership
+## Phase boundary: planning closure before implementation
 
-### Rust local/protocol
+No product code, generated production binding, production migration, deployment, or workflow activation may begin during the following program.
 
-- adapter SDK and probes;
-- collector/normalization/accounting/deterministic rules;
-- device identity and key lifecycle;
-- VibeProof codec/signing/verification;
-- OS-supervised daemon and local control;
-- isolated safe-claim sync;
-- CLI and menu-bar/tray shell;
-- optional post-launch local detector sandbox.
+### P-1140F-1 — Re-establish sole authority
 
-### Go server
+Objectives:
 
-- provider-capability-aware OAuth and sessions;
-- linked/ranked identity and recovery;
-- device enrollment and lineage;
-- challenge, verifier appraisal and checkpoint receipts;
-- immutable ledgers, outbox and rebuild;
-- pricing, ranking, social, presence and notifications;
-- moderation, appeals, export and deletion;
-- compatibility/update enforcement and operations tooling.
+- make normative CDDL/COSE and `conformance/vibeproof/v1/` the sole VibeProof v1 authority;
+- remove, rename, or quarantine the unsigned 11-field shadow protocol and its misleading conformance labels;
+- classify every artifact as specification, fixture, prototype, production implementation, or executable evidence;
+- align status, task catalog, schema inventory, handoff, work breakdown, issue #41, and review packet;
+- inventory every mutable aggregate and verify one lifecycle and one persistence owner.
 
-### TypeScript web
+Exit criteria:
 
-- generated contract consumption;
-- public/authenticated routes and disclosure UX;
-- social, board, moderation, device/update/platform status surfaces;
+- no file or suite can reasonably be read as a second VibeProof v1 authority;
+- no suite claims ranking, protocol, security, or conformance evidence it does not execute;
+- all current semantic findings and accepted decisions are traceable from canonical entrypoints.
+
+### P-1140F-2 — Close identity, OAuth, lineage, replay, and recovery
+
+Objectives:
+
+- one provider-configuration registry and one persisted OAuth transaction authority;
+- bind account/session/recent-auth/action/provider/redirect/state/PKCE/callback/result;
+- exact linked-identity lifecycle, last-method protection, provider-loss and compromise recovery;
+- immutable duplicate-account consolidation plan using claim-level historical recomputation;
+- separate ranked-identity, investigation, restriction, retirement, appeal, and reversal authorities;
+- lineage-scoped continuity and one canonical challenge/checkpoint/rotation/fork contract;
+- quarantine every post-fork branch, preserve pre-fork accepted claims, select or recover one survivor, resume through a new lineage generation, and keep the decision appealable.
+
+Exit criteria:
+
+- no raw authorization code can mutate identity outside its initiating transaction;
+- no account or device recovery path resets competitive or enforcement history;
+- all replay, challenge, rotation, fork, recovery, and appeal outcomes have stable reason codes and persistence.
+
+### P-1140F-3 — Close local trust boundary, adapters, and accounting inputs
+
+Objectives:
+
+- split shell process state from daemon, collection, sync, authentication, permission, update, and connectivity projections;
+- define authenticated local channels using OS peer identity, release/artifact identity, daemon-assigned role, generation, nonce, sequence window, capabilities, and revocation;
+- define local database ownership, migration generations, crash consistency, queue bounds, and content-free diagnostics;
+- define one atomic compatibility tuple per product/source/version/platform/mode/artifact/accounting/privacy profile;
+- define certification result, expiry, suspension, downgrade, and reinstatement;
+- make source observation carry or inherit an authenticated tuple before normalization;
+- close operation identity, parent/child, retry, observer equivalence, checked arithmetic, contradictions, and duplicate-domain semantics;
+- keep generic ACP, OpenTelemetry, proxy, wrapper, and unknown-version support private until an exact tuple is exercised.
+
+Exit criteria:
+
+- no broad manifest certification can authorize an untested Cartesian product;
+- no collector invents provider/model/profile/certification identity from undocumented configuration;
+- no same-user untrusted client can impersonate another local role merely by claiming a role field.
+
+### P-1140F-4 — Close server product state and privacy projection
+
+Objectives:
+
+- exact idempotency replay with typed principals, operation scope, request canonicalization, stored bounded response, crash recovery, expiry, and business-effect/outbox linkage;
+- separate ranking definition, audience, immutable generation, snapshot, cursor, contribution, correction, period, and season authorities;
+- current viewer authorization for friends, rivals, private/unlisted boards, presence, notifications, exports, and cached projections;
+- canonical friendship, directional block, rivalry, board membership, role, invitation, and ownership transfer;
+- invitations grant only non-privileged roles; admin promotion and ownership transfer are separate recent-authenticated audited operations;
+- device-bound presence pulses and separate viewer visibility;
+- immutable notification source event, recipient inbox item, channel attempts, preferences, read/dismiss, expiry, and retraction;
+- durable export/deletion status resources, immutable plans, per-effect and per-device results, tombstones, legal holds, and backup propagation.
+
+Default planning decisions:
+
+- retain exact high-impact mutation replay for at least 30 days;
+- retain claim-batch replay until a later acknowledged checkpoint safely supersedes it;
+- reject expired-key reuse for high-impact operations;
+- report hosted deletion separately from each local device and never claim all local data erased while a device is unreachable or unverified.
+
+Exit criteria:
+
+- every private display/delivery boundary rechecks current authorization;
+- immutable historical facts coexist with immediate privacy invalidation through projections and retractions;
+- no asynchronous job returns an unusable dead-end identifier;
+- no committed mutation can lose its exact result after a dropped connection.
+
+### P-1140F-5 — Close release trust and exact-head review
+
+Objectives:
+
+- make release manifests authenticated TUF targets rather than self-authorizing signature containers;
+- define component IDs, target paths, architecture, provenance, native signing, compatibility, migration chain, health checks, rollback class, and server eligibility;
+- persist trusted TUF client state and canonical metadata;
+- align release, update, migration, rollback, local IPC, platform profile, and installer state vocabularies;
+- update structural validators without claiming semantic proof;
+- pin one exact repaired head and obtain an independent zero-P0/P1 semantic verdict.
+
+Exit criteria:
+
+- SR-005 through SR-016 are closed in every normative and machine-readable owner;
+- planning validators pass from a clean checkout;
+- P-1104 remains a separate explicit user decision.
+
+## P-1104 implementation entrance gate
+
+Implementation may begin only when all are true:
+
+1. P-1140F is `complete-planning`;
+2. SR-005 through SR-016 are closed;
+3. one exact commit is recorded as the approved implementation base;
+4. canonical docs, schemas, SQL, Protobuf/CDDL, fixtures, decisions, tasks, and review issue agree;
+5. all planning-only checks pass from a clean checkout;
+6. no stale branch, prototype, generated artifact, or issue comment is treated as authority;
+7. the user explicitly authorizes P-1104.
+
+## Future post-approval implementation program
+
+### Wave 0 — Reproducible engineering foundation
+
+Deliver:
+
+- pinned Rust, Go, Node/package manager, Buf, CDDL, OpenAPI, JSON Schema, PostgreSQL, migration, cross-compilation, signing, and packaging toolchains;
+- repository workspaces and generated-binding boundaries;
+- byte-identical regeneration;
+- checked numeric/time/digest/identifier primitives;
+- privacy-canary framework;
+- explicit feature flags and emergency disable paths;
+- only narrow format/lint/unit automation initially.
+
+Do not deliver user-facing support or production deployment.
+
+### Wave 1 — Normative VibeProof reference implementations
+
+Deliver independent Rust and Go implementations of:
+
+- canonical claim/appraisal/receipt/challenge/batch/gap/rotation/correction records;
+- deterministic CBOR and COSE_Sign1 profile;
+- exact external AAD and protected headers;
+- resource bounds, malformed rejection, unknown-field behavior, and checked arithmetic;
+- byte-exact official vectors and cross-language differential tests.
+
+Exit: both languages verify the same normative bytes without sharing a hand-written shadow model.
+
+### Wave 2 — Accounting and deterministic integrity core
+
+Deliver:
+
+- immutable accounting profile registry;
+- source authority and containment semantics;
+- cache, reasoning, modality, total, retry, cancellation, nested-agent, and cumulative/incremental reconciliation;
+- operation and observer equivalence model;
+- duplicate-domain engine;
+- deterministic rule result and reason registry;
+- server pricing interpretation boundary.
+
+Exit: multiple legitimate operations aggregate; equal-authority contradictions quarantine; ordering does not change results; overflow cannot produce maximum score.
+
+### Wave 3 — Local secure spine
+
+Deliver:
+
+- isolated non-network collector;
+- source-blind network sync;
+- OS-supervised daemon;
+- encrypted local database, ordered migrations, commitments, receipts, queues, and crash recovery;
+- authenticated local channels and capability grants;
+- protected key lifecycle;
+- CLI and shell control clients;
+- sleep, resume, reboot, login/logout, offline, disk-full, permission-loss, corruption, and update behavior.
+
+Exit: components fail independently and forbidden content cannot cross any networked boundary.
+
+### Wave 4 — Server secure spine
+
+Deliver:
+
+- Go modular service boundary;
+- ordered PostgreSQL migrations, roles, constraints, recovery, and transaction helpers;
+- typed idempotency ledger with exact replay;
+- challenge, claim acceptance, appraisal, checkpoint, correction, outbox, and rebuild facts;
+- lineage/fork quarantine;
+- source/compatibility policy service.
+
+Exit: exact retry cannot add score; ambiguous commits recover the exact original result; rebuild matches source facts.
+
+### Wave 5 — OAuth, sessions, recovery, and ranked identity
+
+Deliver:
+
+- provider-capability-aware GitHub and X browser OAuth;
+- limited-input interactive device flow only where accepted;
+- token-family rotation and replay revocation;
+- linked identity, recent-auth, provider loss/compromise recovery;
+- ranked identity, investigation, restriction, consolidation, retirement, appeal, and reversal;
+- claim-level historical consolidation without aggregate summation.
+
+Exit: provider conflicts cannot transfer an identity or reset score history.
+
+### Wave 6 — Two-source vertical slice
+
+Select one local runtime source and one cloud structured-usage source.
+
+Each requires:
+
+- immutable compatibility tuple;
+- artifact/provenance/SBOM verification;
+- source-version and capability probes;
+- accounting/privacy profiles;
+- duplicate, retry, cancellation, upgrade-break, malformed, and privacy fixtures;
+- certification result and emergency disable.
+
+Exit: one complete end-to-end local path and one cloud path produce ranked claims under honest evidence ceilings.
+
+### Wave 7 — Ranking, periods, pricing, and corrections
+
+Deliver:
+
+- ranking definitions and audience instances;
+- exact period and season lifecycle;
+- immutable contribution ledger;
+- generation-keyed entries, validation, atomic promotion, rollback pointer, snapshots, and viewer-bound cursors;
+- tie rank from score only plus deterministic display ordering;
+- estimated pricing aliases and line items;
+- corrections, rebuild equivalence, movement, overtakes, streaks, and retractions.
+
+Exit: private scopes are authorized, pagination is immutable, and every score is explainable.
+
+### Wave 8 — Social, boards, presence, and notifications
+
+Deliver:
+
+- profiles and visibility policy;
+- canonical friendship and directional blocks;
+- rivals;
+- board creation with atomic initial owner;
+- member invitations, separate admin promotion, and paired ownership transfer;
+- device-bound presence pulses and viewer projections;
+- notification source events, inbox, grouping, channel attempts, quiet hours, read/dismiss, expiry, and retraction.
+
+Exit: block/privacy changes invalidate visibility immediately and stale notifications cannot reveal private state.
+
+### Wave 9 — Moderation, appeals, export, and deletion
+
+Deliver:
+
+- typed moderation cases, evidence, effects, restrictions, reversals, and appeals;
+- coherent encrypted export snapshots, manifests, checksums, grants, audit, revocation, and purge;
+- immutable hosted deletion plan and per-effect outcomes;
+- per-device local deletion commands and execution receipts;
+- tombstones, backup propagation, legal holds, projection corrections, and completion wording.
+
+Exit: users can monitor and recover every asynchronous workflow; deletion cannot resurrect data or overclaim remote erasure.
+
+### Wave 10 — Packaging, TUF, updates, migration, and rollback
+
+Deliver:
+
+- exact macOS, Windows, Linux, WSL, container, and CI lifecycle packages;
+- daemon/shell registration and uninstall;
+- TUF repository and trusted client state;
+- release manifests as authenticated targets;
+- immutable artifacts, provenance, native signing, compatibility graph, migration chain, health checks, deadlines, compromise recovery, and rollback policy.
+
+Exit: each platform installs, updates, migrates, recovers, and uninstalls under an exact certified profile.
+
+### Wave 11 — Hosted web integration
+
+Deliver:
+
+- generated clients only;
+- authentication/recovery, leaderboards, profiles, rivals, boards, privacy disclosures, evidence status, devices, updates, moderation, appeals, export, and deletion UX;
+- responsive, accessible, loading, empty, conflict, degraded, offline, restricted, and correction states;
 - no independent business-policy reimplementation.
 
-### PostgreSQL
+Exit: the existing prototype becomes integrated implementation only after all data comes from implemented contracts.
 
-Transactions and constraints own provider/account uniqueness, token families, device/key lineage, challenges, idempotency/replay/forks, immutable facts, projections, ranking views/corrections, social ownership, moderation/reversal, outbox/rebuild checkpoints and signed update-policy state.
+### Wave 12 — Operations and open-source readiness
 
-## Build sequence after explicit approval
+Deliver:
 
-### Phase 1 — contract workspaces
+- cloud-portable reference infrastructure;
+- secret and key management;
+- observability allowlist and privacy canaries;
+- backup/restore and tombstone reapplication drills;
+- incident response, abuse operations, support boundaries, release key compromise recovery;
+- reproducible builds, dependency/license/SBOM governance, DCO, security policy, contributor docs, and public repository preparation.
 
-Pin Rust, Go, Node, Buf/Protobuf, CDDL, OpenAPI, JSON Schema and migration tools. Generate bindings and enforce byte-identical regeneration. Implement privacy-canary and checked numeric/time primitives first.
+Exit: operational drills and recovery evidence exist without exposing forbidden content.
 
-### Phase 2 — synthetic secure spine
+### Wave 13 — Compatibility expansion
 
-Implement a synthetic end-to-end path:
+Expand adapters and platform profiles only through exact atomic certification tuples. Generic ACP, OTel, proxies, wrappers, orchestrators, subagents, WSL host/guest, containers, and CI matrices require duplicate and lifecycle reconciliation before competitive eligibility.
 
-`typed observation -> accounting -> deterministic rules -> encrypted local state -> commitment -> signed claim -> isolated sync -> challenge -> atomic verifier -> appraisal -> checkpoint -> immutable ledger/outbox -> ranking view`.
+### Wave 14 — Launch evidence and review
 
-Prove forbidden-egress blocking, exact replay, conflicting reuse/fork quarantine, deterministic delayed sync and rebuild equivalence.
+P-1105 may begin only after:
 
-### Phase 3 — local runtime and device boundary
+- every advertised source/platform tuple has non-expired executable evidence;
+- threat, privacy, integrity, migration, backup, rollback, and incident drills pass;
+- public support pages are generated from active certification records;
+- no P0/P1 launch finding remains;
+- open-source and legal/dependency reviews are complete.
 
-Implement OS supervision, collector/sync separation, authenticated local IPC, encrypted storage, crash consistency, bounded queues, protected keys, rotation/recovery, interactive shell, CLI parity, sleep/reboot/login/logout/offline/disk/permission/update behavior and optional privileged supervision.
+Country leaderboards and SLM promotion remain post-launch.
 
-### Phase 4 — two-source vertical slice
+## Cross-cutting implementation requirements
 
-Select one local runtime and one cloud structured-usage source. Each adapter requires immutable manifest/provenance, accounting profile, duplicate domain, privacy/adversarial/upgrade fixtures, support ceiling and emergency disable.
+Every implementation PR must state:
 
-### Phase 5 — authentication and ranked identity
+- owning work-unit ID and accepted decision/contract;
+- exact aggregate and persistence owner;
+- privacy classification and egress impact;
+- authorization and idempotency behavior;
+- migrations and rollback/roll-forward behavior;
+- compatibility and platform impact;
+- tests and evidence actually produced;
+- feature disable, emergency revoke, or recovery path;
+- documentation and generated-artifact updates.
 
-Implement provider-capability-aware browser OAuth, restricted headless device flow where explicitly allowed, token-family rotation/replay, linked identities, recovery, ranked eligibility, investigation, restriction, consolidation and appeal.
+A contradiction found during implementation reopens its planning owner. It must never be hidden in a local workaround.
 
-### Phase 6 — ranking, pricing and social
+## Evidence taxonomy
 
-Implement atomic claim acceptance, immutable corrections/moderation facts, ranking-view generations, snapshots/cursors/rebuilds, estimated pricing, social state machines, privacy-aware presence and revalidated notifications.
+- **Specification:** intended normative behavior.
+- **Fixture:** synthetic input/output expectation.
+- **Prototype:** executable exploratory artifact with incomplete authority.
+- **Production implementation:** integrated code satisfying accepted contracts.
+- **Executable evidence:** reproducible result supporting one precise claim.
+- **Certification:** current signed result for one exact compatibility/platform tuple.
 
-### Phase 7 — packaging and release trust
+No lower category may be described as a higher category.
 
-Implement exact-platform installers, daemon/shell registration, signed TUF metadata and release sets, immutable artifacts/provenance, mandatory update deadlines, rollback, compromise recovery and certification evidence.
+## Current next action
 
-## Handoff completeness checklist
-
-Before implementation authorization, confirm:
-
-- P-1140F has zero open semantic P0/P1 findings;
-- STATUS, TASK_CATALOG, DOCUMENTATION and this handoff agree;
-- the work breakdown no longer contains ordinary-desktop device authorization as a default path;
-- interactive shell work is explicit and separate from the daemon;
-- source evidence is immutable and digest-bound;
-- all planning checks pass on the exact head;
-- no open PR or stale branch is treated as authority;
-- no implementation, support, security or launch claim is inferred from planning artifacts.
-
-## Current next task
-
-Repair SR-001 through SR-004 under P-1140F. Do not begin product implementation.
+Complete P-1140F-1. Do not begin Wave 0 or any product implementation.
