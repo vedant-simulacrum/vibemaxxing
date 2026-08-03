@@ -1,127 +1,129 @@
 # VibeMaxxing Agent Operating Manual
 
-This file is the sole agent initialization entrypoint. Do not create additional start prompts, master-context files, model-specific manuals, duplicate roadmaps or parallel project repositories.
+This file is the sole agent initialization entrypoint. Do not create additional start prompts, master-context files, model-specific manuals, duplicate roadmaps, or parallel project repositories.
 
 ## Initialize
 
 Before changing anything:
 
 1. Confirm the repository is `vedant-simulacrum/vibemaxxing` or an authorized fork.
-2. Resolve root, default branch, current branch, working-tree state, current issue/PR, linked issue and unresolved review threads.
+2. Resolve default branch, current branch, working-tree state, current issue/PR, linked issue, and unresolved review threads.
 3. Run `python3 scripts/repository/doctor.py` from a clean checkout. Do not continue past a failure without repairing or documenting it.
-4. Read, in order: `docs/project/PROJECT.md`, `docs/project/STATUS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`, `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, then relevant ADRs, contracts and schemas.
-5. Read the implementation handoff and PR work breakdown only for implementation planning or after explicit implementation authorization.
-6. Use `docs/research/README.md` to locate evidence relevant to the active decision.
+4. Read, in order: `docs/project/PROJECT.md`, `docs/project/STATUS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`, `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, then relevant ADRs, contracts, schemas, fixtures, issues, and PR discussions.
+5. Read implementation handoff files only for implementation planning or after explicit P-1104 authorization.
+6. Use `docs/research/README.md` to locate primary evidence relevant to the active decision.
 
-Do not treat chat history, generated indexes, stale branches, historical completion reports, external notes, another repository or unexecuted fixtures as authority.
+Do not treat chat history, generated indexes, stale branches, historical completion reports, external notes, another repository, green structural checks, or unexecuted fixtures as authority.
 
 ## Current phase
 
-The current phase is defined only by `docs/project/STATUS.md`.
+The repository is in **planning contract repair**. P-1140F is open against current repository authority. Product implementation remains unauthorized and P-1104 remains blocked.
 
-The repository is in **planning contract repair**. P-1140A through P-1140E are complete within their stated planning scopes. The P-1140F repair head is pending independent semantic review and PostgreSQL-backed clean-checkout validation. Product implementation has not begun and P-1104 remains blocked.
+The earlier P-1140F four-finding review at `f06f630619427ec7f0576b57c4b3ac914d9a4c87` is stale. Later commits added executable Rust/Go protocol and accounting prototypes and additional machine contracts. The canonical current semantic scope, findings, closed defaults, user decisions, and dependency order live only in `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
 
 Allowed work:
 
 - primary-source research tied to an unresolved P-1140F finding;
-- repository-wide alignment and contradiction repair;
-- normative contract, ADR, schema and planning-fixture refinement;
-- planning-only validators and traceability checks;
+- repository-wide authority alignment and contradiction repair;
+- normative contract, ADR, schema, state, policy, fixture, and planning-validator refinement;
 - implementation decomposition and issue preparation without product code.
 
-Not allowed until explicit implementation authorization:
+Not allowed until explicit P-1104 authorization:
 
-- product code beyond the existing bounded prototype;
+- product code beyond existing bounded prototypes;
 - production infrastructure or deployments;
-- activation of product CI, fuzz, dependency, security, evaluation, signing or release workflows;
-- claims of certified support, production hardening or launch readiness.
+- activation of product CI, fuzz, dependency, security, evaluation, signing, release, or deployment workflows;
+- certified-support, production-hardening, or launch-readiness claims.
 
-## Structural versus semantic evidence
+## Evidence discipline
 
-- P-1140E proves structural repository consistency only.
-- P-1140F owns semantic and standards review.
-- A green validator does not prove security, standards conformance, implementability or runtime behavior.
-- No agent may mark P-1104 ready while P-1140F has an open P0/P1 finding.
+- P-1140E proves structural consistency only.
+- P-1140F owns semantic and standards closure.
+- A green validator does not prove security, privacy, standards conformance, implementability, transaction safety, or runtime behavior.
+- Specifications, mocks, placeholders, skipped checks, empty fixtures, and unexecuted tests are not implementation evidence.
+- Cross-language agreement is not conformance when both implementations consume the wrong authority.
+- A suite name must describe what it actually executes.
+- No agent may mark P-1104 ready while any semantic P0/P1 remains open.
 
 ## Binding product rules
 
-- Servers never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project/repository names, credentials, embeddings, summaries, classifications, personal insights or content-derived hashes.
+- Servers never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project/repository names, credentials, embeddings, summaries, classifications, personal insights, or content-derived hashes.
 - Only fixed-schema aggregate accounting and integrity claims cross the device boundary.
-- Token Burn is the default raw ranking metric; Estimated Cash Burn is always labelled estimated and is server interpreted.
+- Token Burn is the default raw ranking metric. Estimated Cash Burn is always labelled estimated and server interpreted.
 - Historical imports never enter active competition.
 - Authentic intentionally pointless activity counts when non-duplicated.
-- Standard and Hardened accepted claims may both count globally; Imported does not.
-- Public evidence status is assigned by the server verifier, never selected by the client.
-- Local-model and delayed offline usage are first-class only when deterministically captured under a certified profile.
-- OAuth proves provider-account control, not one unique human.
-- VibeMaxxing enforces one ranked identity per detected/resolved person with privacy safeguards and appeals.
-- Country leaderboards are post-launch.
-- The SLM detector is post-launch research, local-only and non-authoritative.
-- Public launch targets the complete core social product except country leaderboards; staged implementation does not redefine launch scope.
+- Public evidence status and competitive eligibility are assigned by the server verifier, never selected by the client.
+- Local-model and delayed offline usage count competitively only when deterministically captured under one active exact certified source/accounting tuple.
+- OAuth proves provider-account control, not unique humanity.
+- Account, linked provider identity, and ranked identity are separate aggregates.
+- One person may have only one active resolved ranked identity, with private evidence, appeals, and no automatic summation of duplicate account scores.
+- Continuity is lineage-scoped rather than device-row-scoped.
+- Accepted claims and historical facts remain immutable; corrections, consolidation, deletion effects, and reversals are append-only.
+- Generic ACP, OpenTelemetry, proxy, wrapper, and unknown-version integrations remain private analytics until an exact tuple is certified.
+- Only global leaderboard views are universally public by default. Friend, rival, private, and unlisted board views require current viewer authorization.
+- Blocks are directional and independent from symmetric friendship state.
+- Presence is server-derived from qualifying device activity; private is a visibility policy.
+- The server inbox is notification authority; push and email are best-effort hints.
+- Deterministic controls are authoritative. Statistical/SLM detection remains local-only, advisory, and post-launch.
+- Country leaderboards remain post-launch.
+- Public launch still targets the complete core social product except country leaderboards; staged implementation does not redefine launch scope.
 
-## Active semantic findings
+## Active semantic program
 
-P-1140F currently blocks implementation on:
+Follow `docs/planning/TASK_CATALOG.md` exactly:
 
-- provider-capability-aware OAuth issuer and redirect validation;
-- restricting device authorization to eligible limited-input/headless interactive profiles;
-- an authoritative interactive menu-bar/tray shell lifecycle and IPC state machine;
-- immutable version/commit/digest-bound platform source evidence.
+1. **P-1140F-1:** re-establish sole protocol and repository authority.
+2. **P-1140F-2:** close OAuth, identity, lineage, replay, fork, appeal, and recovery.
+3. **P-1140F-3:** close native trust domains, role-bound IPC, adapters, certification, and accounting inputs.
+4. **P-1140F-4:** close idempotency, ranking, social, boards, presence, notifications, export, deletion, retention, and current privacy authorization.
+5. **P-1140F-5:** close TUF-backed release, compatibility, migration, rollback, and exact-head semantic review.
 
-Do not silently work around these findings in code or duplicate their authority in a new file.
+Do not silently work around a finding in code or duplicate its authority in a new file.
 
 ## Technical ownership
 
-- Rust 2024: VibeProof, adapters, collector, native core, privacy boundary, accounting, canonical encoding, signing, daemon, CLI and interactive shell.
-- Go: OAuth, APIs, server verification and appraisal, ingestion, aggregation, ranking, presence, notifications, migrations and operations tooling.
+- Rust 2024: normative VibeProof codecs, adapters, collector, native core, privacy boundary, accounting, canonical encoding, signing, daemon, CLI, and interactive shell.
+- Go: OAuth, APIs, server verification/appraisal, ingestion, aggregation, ranking, presence, notifications, migrations, and operations tooling.
 - Strict TypeScript/Next.js: hosted web.
 - PostgreSQL/pgx and explicit SQL: server source of truth.
 - Protobuf/Buf: internal typed contracts.
 - Deterministic CBOR/CDDL/COSE: signed public evidence claims and server receipts/appraisals.
 
-Do not add Kubernetes, Kafka, GraphQL, service mesh, workflow engines, vector databases or ORM-heavy persistence without measured evidence and an accepted ADR.
+Do not add Kubernetes, Kafka, GraphQL, service mesh, workflow engines, vector databases, or ORM-heavy persistence without measured evidence and an accepted ADR.
+
+## Schema and state discipline
+
+- Authoritative schemas live in `packages/schemas/`.
+- Repair the authoritative schema before dependent business logic; generated bindings originate from that source and are not hand-maintained in parallel.
+- Every mutable aggregate must have one reachable state machine, one persistence owner, a revision model, stable outcomes, transaction boundaries, and reversal/expiry behavior where applicable.
+- API, SQL, Protobuf/CDDL, policies, reasons, fixtures, and state vocabularies must cross-resolve without hidden security-critical mappings.
+- Stable reasons come from `reason-codes-v1.json`; configurable defaults come from `policy-defaults-v1.json` only after their owning contract is reconciled.
+- Registries may not imply exercised support when certifications are empty, planned, expired, suspended, or do not bind the exact tuple.
+- Database constraints, exact idempotent replay, migrations, corrections, rebuilds, deletion, recovery, and rollback are correctness requirements.
 
 ## Repository and dependency discipline
 
-- Use exact upstreams named by a contract, lockfile, manifest, ADR or issue.
-- Verify ownership, license, release status, maintenance, compatibility, security posture, update path and removal plan before adoption.
+- Use exact upstreams named by a contract, lockfile, manifest, ADR, or issue.
+- Verify ownership, license, release status, maintenance, compatibility, security posture, update path, and removal plan before adoption.
 - Prefer official upstreams and primary documentation.
-- Forks require an ADR, divergence policy, update strategy and exit plan.
+- Forks require an ADR, divergence policy, update strategy, and exit plan.
 - Pin toolchains and dependencies; avoid overlapping libraries for the same responsibility.
 - `docs/implementation/REPOSITORY_LAYOUT.md` distinguishes current paths from future paths.
 
 ## Workspace boundary
 
-- Commit reviewed source, contracts, schemas, synthetic fixtures, governed assets, reproducible baselines, and explicitly classified generated metadata only when they satisfy `docs/planning/ARTIFACT_POLICY.md`.
-- Keep agent sessions, prompts, transcripts, private repository material, credentials, machine-specific settings, local caches, generated builds, dependency directories, and transient captures outside Git; never add them to project context files.
-- `assets/` is the canonical repository-owned visual library. `artifacts/` contains only explicitly classified, reproducible, non-authoritative metadata or evidence; it is never a substitute for source authority.
-- Before committing generated repository metadata, regenerate it with its documented command and review the resulting checkout-specific diff.
+Commit only reviewed source, contracts, schemas, synthetic fixtures, governed assets, reproducible baselines, and explicitly classified generated metadata that satisfy `docs/planning/ARTIFACT_POLICY.md`.
 
-## Schema and policy discipline
+Keep agent sessions, prompts, transcripts, private repository material, credentials, machine-specific settings, caches, generated builds, dependencies, and transient captures outside Git. `assets/` is the canonical repository-owned visual library. `artifacts/` is non-authoritative unless explicitly classified.
 
-- Authoritative schemas live in `packages/schemas/`.
-- Current schemas are planning-grade and must not be treated as implementation-ready while P-1140F marks a dependent semantic finding open.
-- Repair the authoritative schema before dependent business logic; generated bindings originate from the repaired source and are not hand-maintained in parallel.
-- Stable reasons come from `reason-codes-v1.json`; configurable defaults come from `policy-defaults-v1.json` after their owning contracts are reconciled.
-- Registries validate against adjacent schemas and may not imply exercised support when certifications are empty, planned or expired.
-- Database constraints, idempotency, migrations, corrections, rebuilds, deletion, recovery and rollback are correctness requirements.
+## Work and documentation discipline
 
-## Work and thread discipline
+Planning work must map to a user instruction, issue/review thread, accepted decision, or concrete contract defect. Read complete issue and PR conversations. Durable conclusions belong in canonical docs, ADRs, schemas, registries, or issue scope—not only comments or hidden branches.
 
-Planning work must map to a user instruction, issue/review thread, accepted decision or concrete contract defect. Follow the dependency order in `docs/planning/TASK_CATALOG.md`.
+Use `docs/project/DOCUMENTATION.md` to locate the single normative owner. When duplicates appear, choose the owner, merge unique content, repair references, and delete or clearly mark the duplicate. Do not create another project context, status file, start prompt, roadmap, architecture summary, implementation plan, or numbered research wave.
 
-After implementation authorization, use `docs/implementation/IMPLEMENTATION_HANDOFF.md` and `PR_SIZED_WORK_BREAKDOWN.md`; generate execution threads through `docs/implementation/ISSUE_GENERATION.md`.
-
-Read complete issue and PR conversations. Durable conclusions belong in canonical docs, ADRs, schemas or registries—not only comments or hidden branches.
-
-## Documentation ownership
-
-Use `docs/project/DOCUMENTATION.md` to locate the single normative owner. When duplicates appear: choose the owner, merge unique content, repair links, mark or delete the duplicate and record material changes.
-
-Do not create another project context, status file, start prompt, roadmap, architecture summary, implementation plan or numbered research wave.
+After implementation authorization, use `docs/implementation/IMPLEMENTATION_HANDOFF.md`, `PR_SIZED_WORK_BREAKDOWN.md`, and `ISSUE_GENERATION.md`.
 
 ## Completion report
 
-Report the phase and IDs, files and threads inspected, changes, decisions resolved, validations actually run, privacy/security/schema/migration/compatibility impact, remaining risks and next unblocked task without silently changing phase.
-
-Specifications, mocks, placeholders, skipped checks, empty fixtures and unexecuted tests are not implementation evidence.
+Report the phase and IDs, exact head, files and threads inspected, changes made, decisions resolved, validations actually run, privacy/security/schema/migration/compatibility impact, remaining risks, and next unblocked task. Never silently change phase or claim checks that were not executed.
