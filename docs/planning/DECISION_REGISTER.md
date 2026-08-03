@@ -1,6 +1,6 @@
 # VibeMaxxing Decision Register
 
-Updated: 2026-07-23
+Updated: 2026-08-04
 
 Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `rejected`, `superseded`.
 
@@ -75,6 +75,11 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-067 | Optional machine-wide privileged supervision is allowed as a separately consented, least-privilege lifecycle profile that cannot inspect source content or bypass user isolation | accepted | independent review failure or explicit privilege-policy reversal |
 | D-068 | Automatic updates are mandatory for competitive profiles, with signed release-set verification, bounded deferral, rollback and environment-specific mechanisms | accepted | explicit product reversal or updater evidence requires revision |
 | D-069 | Automated Storybook capture is permitted only as read-only prototype/design validation and cannot satisfy product implementation, security or launch gates | accepted | implementation phase opens or workflow scope materially expands |
+| D-070 | Duplicate-account consolidation combines valid historical competitive claim contributions under one surviving ranked identity, preserving original period attribution and corrections; stored account totals are never added together, imported records remain excluded, and overlapping or duplicate-domain contributions count once | accepted | explicit user reversal or demonstrated inability to reconstruct non-overlapping contributions safely |
+| D-071 | Board invitations may grant only non-privileged membership roles; administrator promotion and ownership transfer are separate recent-authenticated, revision-checked, audited operations | accepted | explicit user reversal after abuse and recovery analysis |
+| D-072 | A detected lineage fork quarantines all post-fork branches, preserves accepted pre-fork claims, selects or recovers one survivor where possible, resumes through a new lineage generation, never merges commitment chains, and remains appealable | accepted | cryptographic or recovery evidence requires a safer fork-resolution protocol |
+| D-073 | Presence uses qualifying native pulses every 30 seconds, becomes idle after 90 seconds without a qualifying pulse, and becomes offline after 300 seconds; private is an independent viewer-visibility policy | accepted | measured battery/network evidence or user comprehension testing requires adjustment |
+| D-074 | Automatic binary rollback is allowed only while the previous release remains read/write compatible with every committed local-state and database mutation; after an irreversible migration recovery is roll-forward or restoration of a verified pre-migration snapshot | accepted | implementation evidence proves a safer equivalent recovery mechanism |
 
 ## Register rules
 
