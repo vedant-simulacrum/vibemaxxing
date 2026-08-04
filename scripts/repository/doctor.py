@@ -29,6 +29,8 @@ REQUIRED = [
     "conformance/p1140f/semantic-findings-v1.json",
     "conformance/p1140f/artifact-authority-v1.schema.json",
     "conformance/p1140f/artifact-authority-v1.json",
+    "conformance/p1140f/contract-bundles-v1.schema.json",
+    "conformance/p1140f/contract-bundles-v1.json",
     "conformance/p1140f/review-target-v1.schema.json",
     "conformance/p1140f/review-target-v1.json",
     "scripts/repository/validate_p1140f_authority.py",
