@@ -1,14 +1,16 @@
 version: 1
 suites:
-- id: protocol-conformance
+- id: shadow-codec-parity
   owner: vibeproof
   blocking_milestone: vertical-slice
   status: ready
-  reason: ""
-  command: ["python3", "scripts/ci/run_phase1_evidence.py", "--suite", "protocol-conformance", "--commit", "{commit}"]
-  cases: ["canonical-vectors", "rust-go-acceptance-parity", "invalid-vectors"]
+  reason: Exploratory Rust and Go parity for the unsigned 11-field shadow codec; not normative VibeProof conformance.
+  command: ["python3", "scripts/ci/run_phase1_evidence.py", "--suite", "shadow-codec-parity", "--commit", "{commit}"]
+  cases: ["shadow-vectors", "rust-go-acceptance-parity", "invalid-shadow-vectors"]
   fixture_manifest: evals/fixtures/protocol-conformance.json
-  fixture_ids: ["canonical-vectors"]
+  fixture_ids: ["shadow-vectors"]
+  authority_class: exploratory-prototype
+  evidence_ceiling: cross-language-parity
 - id: privacy-boundary
   owner: security
   blocking_milestone: vertical-slice
