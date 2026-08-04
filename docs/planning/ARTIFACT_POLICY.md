@@ -2,13 +2,48 @@
 
 ## Purpose
 
-Prevent generated outputs, environment-specific probes, placeholders, and release evidence from being confused with authoritative specifications or production proof.
+Prevent specifications, prototypes, generated outputs, environment-specific probes, placeholders, and release evidence from being confused with one another.
 
-## Classes
+`conformance/p1140f/artifact-authority-v1.json` is the machine-readable authority for classified planning artifacts. Prose may explain a classification but may not silently raise its authority or evidence ceiling.
 
-### Authoritative source
+## Authority classes
 
-ADRs, specifications, schemas, state machines, planning tasks, threat models, and policies. These are reviewed and versioned in Git.
+### `normative-planning`
+
+Accepted planning authority: ADRs, normative specifications, schemas, state machines, policies, and exact planning vectors. This class defines intended behavior but is not implementation or production evidence.
+
+### `candidate-planning`
+
+A proposed contract under active semantic review. It cannot be implemented as final authority until promoted through the owning planning gate.
+
+### `exploratory-prototype`
+
+Executable or visual material built from incomplete, simplified, synthetic, or conflicting contracts. It must name its normative owner, known incompatibilities, evidence ceiling, and prohibited uses.
+
+Exploratory material may not be called canonical, normative, conformant, certified, supported, production-ready, or launch-ready. Product and normative paths may not depend on it after P-1104 without an accepted replacement or explicit ADR.
+
+### `historical-non-authoritative`
+
+Superseded reports, stale review packets, old fixtures, archived baselines, and prior planning conclusions retained only for history.
+
+## Evidence ceilings
+
+Evidence claims use the following ordered vocabulary:
+
+1. `schema-valid`
+2. `structurally-consistent`
+3. `fixture-consistent`
+4. `cross-language-parity`
+5. `normative-conformance`
+6. `adversarial-tested`
+7. `platform-exercised`
+8. `production-evidence`
+
+A higher level requires all lower-level prerequisites but does not automatically imply security, privacy, certification, or launch readiness.
+
+Two implementations agreeing on the same non-normative format establish only `cross-language-parity`. A suite may claim `normative-conformance` only when it consumes the sole normative corpus and exercises every required encoding, signature, rejection, and resource invariant. `production-evidence` requires an implemented integrated system and immutable operational evidence.
+
+## Supporting artifact types
 
 ### Deterministic fixture
 
@@ -32,16 +67,24 @@ README scaffolds, empty directories, declared cases, and `not_applicable` evals.
 
 ## Required metadata
 
-Generated evidence must record:
+Generated or executable evidence must record:
 
 - schema version;
 - source commit;
 - producing command and tool versions;
 - platform and relevant resource profile;
-- fixture or dataset identifier;
+- fixture or dataset identifier and digest;
+- authority class and evidence ceiling;
+- normative owner;
 - privacy classification;
 - result status;
-- known limitations.
+- known limitations and prohibited uses.
+
+## Suite naming
+
+A suite name must match what it actually executes. Names containing `conformance`, `certification`, `security`, `production`, or `launch` are prohibited unless their declared evidence ceiling supports that term.
+
+The Rust/Go unsigned 11-field protocol suite is `shadow-codec-parity`, not VibeProof conformance. Its output cannot gate ranking, support, certification, or launch.
 
 ## Commit rules
 
@@ -49,8 +92,9 @@ Generated evidence must record:
 - Prefer synthetic fixtures.
 - Large or transient outputs belong in CI artifacts or release storage, not Git.
 - Committed generated artifacts must be reproducible and reviewed.
-- Any artifact referenced as proof must link to its owning task, eval, and acceptance gate.
+- Any artifact referenced as proof must link to its owning task, finding, normative owner, suite, and acceptance gate.
 - `artifacts/` may contain seed examples today; their status must remain explicit.
+- Changing a normative artifact, finding registry, artifact registry, status, task catalog, or handoff invalidates any previously pinned semantic review target unless the exact reviewed tree is unchanged.
 
 ## Regeneration
 
