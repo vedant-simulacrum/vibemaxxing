@@ -6,9 +6,9 @@ Updated: 2026-08-04
 
 The repository remains in **planning contract repair**.
 
-P-1140A through P-1140E are complete only within their stated planning and structural scopes. P-1140F is open against current `main` at `41ecb77856991ee033afcfe52d24eb42cd6ecb47`. P-1104 remains blocked and product implementation remains unauthorized.
+P-1140A through P-1140E are complete only within their stated planning and structural scopes. P-1140F is open. P-1104 remains blocked and product implementation remains unauthorized.
 
-The previous P-1140F review target `f06f630619427ec7f0576b57c4b3ac914d9a4c87` and its four-finding scope are stale. Later commits added executable Rust/Go protocol and accounting prototypes that were not covered by that review. The canonical current semantic record is `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
+The canonical machine-readable semantic state is `conformance/p1140f/semantic-findings-v1.json`. Artifact authority and evidence ceilings are owned by `conformance/p1140f/artifact-authority-v1.json`. Exact-head review state is owned by `conformance/p1140f/review-target-v1.json`. Prose documents summarize those registries and may not independently redefine counts or state.
 
 ## Reality map
 
@@ -17,7 +17,7 @@ The previous P-1140F review target `f06f630619427ec7f0576b57c4b3ac914d9a4c87` an
 - bounded fixture-backed hosted-web and Storybook prototype;
 - planning validators and repository doctor;
 - planning-grade schemas, registries, fixtures, vectors, and symbolic race plans;
-- bounded exploratory Rust and Go protocol/accounting prototypes added after the original semantic-review target.
+- bounded exploratory Rust and Go protocol/accounting prototypes.
 
 ### Not implemented
 
@@ -28,7 +28,7 @@ The previous P-1140F review target `f06f630619427ec7f0576b57c4b3ac914d9a4c87` an
 - production PostgreSQL migrations and executable transaction evidence;
 - production infrastructure, signed release repository, deployment, and operations.
 
-The later executable prototypes are not production implementation, normative protocol evidence, implementation authorization, or launch evidence.
+The executable prototypes are not production implementation, normative protocol evidence, implementation authorization, or launch evidence.
 
 ## Binding product posture
 
@@ -45,28 +45,17 @@ The later executable prototypes are not production implementation, normative pro
 
 ## Active semantic gate
 
-P-1140F currently has 12 consolidated P1 clusters:
+P-1140F has **13 active P1 clusters**, SR-005 through SR-017. SR-005 is `repair-in-progress`; SR-006 through SR-017 remain `open`.
 
-1. normative VibeProof versus shadow executable protocol;
-2. OAuth, linked identity, recovery, consolidation, and ranked identity;
-3. device lineage, challenge, replay, checkpoints, fork handling, and recovery;
-4. daemon, shell, IPC role authentication, process generation, and platform supervision;
-5. universal adapter certification and deterministic accounting inputs;
-6. ranking authorization, immutable generations, periods, ties, and corrections;
-7. social relationships, board ownership/roles, presence, and notifications;
-8. idempotency and ambiguous commit recovery;
-9. export, deletion, retention, and backup tombstones;
-10. release authorization, compatibility, migration, and rollback;
-11. privacy-safe current authorization for historical projections;
-12. review, conformance, and launch-evidence integrity.
+The first cluster is protocol authority drift. The Rust/Go 11-field shadow codec, its parallel fixture corpus, and its parity suite are explicitly `exploratory-prototype`. Their evidence ceiling is `cross-language-parity`; they cannot be used for ingestion, ranking, verifier appraisal, normative conformance, support, or launch claims.
 
-Exact findings, owners, closure criteria, closed defaults, remaining user decisions, and dependency order live only in the canonical P-1140F record.
+Exact titles, owners, conflicts, repair tasks, evidence and review state live only in the P-1140F registries.
 
 ## Planning gates
 
 - **P-1140A through P-1140E:** complete within stated planning/structural scope; not implementation evidence.
 - **P-1140F:** `in-progress-planning`; semantic closure is not achieved.
-- **P-1104:** `blocked-approval`; cannot be considered until P-1140F reaches zero open semantic P0/P1 findings on one exact reviewed head.
+- **P-1104:** `blocked-approval`; cannot be considered until the finding registry has zero active P0/P1 findings and one exact reviewed head has a passing verdict.
 - **P-1105:** `blocked-launch-evidence`; requires an implemented system and executable evidence on every advertised profile.
 - **P-1131:** `blocked-launch-evidence`; requires real adapters and non-expired exact-tuple certifications.
 - **P-1151:** `blocked-implementation`; SLM bakeoff remains post-launch.
@@ -77,4 +66,4 @@ Read-only planning validation may run. ADR-014 permits narrowly scoped Storybook
 
 ## Current next task
 
-Execute `P-1140F-1`: re-establish sole protocol and repository authority, quarantine the shadow protocol from normative paths, align status/task/evaluation/review records, and register every mutable authority and persistence owner. Do not begin product implementation while performing this work.
+Execute `P-1140F-1`: finish repository authority enforcement, complete the specification bundle inventory, and prepare a new exact-head semantic review target. Do not begin product implementation while performing this work.
