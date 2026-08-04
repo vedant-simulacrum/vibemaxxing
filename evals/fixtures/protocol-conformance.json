@@ -1,12 +1,20 @@
 {
   "version": "1",
-  "suite": "protocol-conformance",
-  "command": ["python3", "scripts/ci/run_phase1_evidence.py", "--suite", "protocol-conformance", "--commit", "{commit}"],
+  "suite": "shadow-codec-parity",
+  "authority_class": "exploratory-prototype",
+  "evidence_ceiling": "cross-language-parity",
+  "normative_owner": "conformance/vibeproof/v1/exact-byte-vectors.json",
+  "command": ["python3", "scripts/ci/run_phase1_evidence.py", "--suite", "shadow-codec-parity", "--commit", "{commit}"],
   "fixtures": [
     {
-      "id": "canonical-vectors",
+      "id": "shadow-vectors",
       "path": "conformance/protocol/vibeproof-v1-vectors.json",
       "sha256": "3c41e65a70a770c2fc93e5018f41494ffdb6bd90b241c98eef757b1e7803707b"
     }
+  ],
+  "limitations": [
+    "unsigned 11-field shadow payload",
+    "not normative VibeProof v1 conformance",
+    "must not gate ranking, support, or launch"
   ]
 }
