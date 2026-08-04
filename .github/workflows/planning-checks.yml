@@ -17,9 +17,11 @@ on:
       - 'docs/**'
       - 'packages/schemas/**'
       - 'conformance/**'
+      - 'evals/**'
       - 'scripts/repository/**'
-      - 'scripts/ui/playwright-runtime/**'
+      - 'scripts/ci/run_phase1_evidence.py'
       - 'scripts/ci/repository_policy.py'
+      - 'scripts/ui/playwright-runtime/**'
   pull_request:
     paths:
       - 'AGENTS.md'
@@ -34,9 +36,11 @@ on:
       - 'docs/**'
       - 'packages/schemas/**'
       - 'conformance/**'
+      - 'evals/**'
       - 'scripts/repository/**'
-      - 'scripts/ui/playwright-runtime/**'
+      - 'scripts/ci/run_phase1_evidence.py'
       - 'scripts/ci/repository_policy.py'
+      - 'scripts/ui/playwright-runtime/**'
 
 permissions:
   contents: read
@@ -69,6 +73,8 @@ jobs:
         run: python3 -m pip install --disable-pip-version-check -r requirements-planning.txt
       - name: Repository doctor
         run: python3 scripts/repository/doctor.py
+      - name: Validate P-1140F authority, maturity, and review state
+        run: python3 scripts/repository/validate_p1140f_authority.py
       - name: Validate schemas, registries, examples, protocols, API, and SQL
         run: python3 scripts/repository/validate_planning_artifacts.py
       - name: Validate provisional T20 candidate artifacts
