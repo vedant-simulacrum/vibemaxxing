@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate machine-readable P-1140F authority, maturity, and review state."""
+"""Validate machine-readable P-1140F authority, maturity, bundles, and review state."""
 from __future__ import annotations
 
 import json
@@ -37,6 +37,7 @@ def path_exists(reference: str) -> bool:
 def main() -> int:
     findings = validate("semantic-findings-v1.schema.json", "semantic-findings-v1.json")
     artifacts = validate("artifact-authority-v1.schema.json", "artifact-authority-v1.json")
+    bundles = validate("contract-bundles-v1.schema.json", "contract-bundles-v1.json")
     review = validate("review-target-v1.schema.json", "review-target-v1.json")
 
     finding_rows = findings["findings"]
@@ -83,12 +84,45 @@ def main() -> int:
             if not row.get("known_incompatibilities"):
                 raise RuntimeError(f"exploratory artifact lacks known incompatibilities: {row['path']}")
 
+    bundle_rows = bundles["bundles"]
+    bundle_ids = [row["bundle_id"] for row in bundle_rows]
+    if bundle_ids != [f"CB-{number:03d}" for number in range(1, 8)]:
+        raise RuntimeError("contract bundles must be ordered exactly CB-001..CB-007")
+    covered_findings: set[str] = set()
+    for row in bundle_rows:
+        if row["state"] == "complete-planning" and any(
+            next(item for item in finding_rows if item["finding_id"] == finding_id)["state"] in open_states
+            for finding_id in row["finding_ids"]
+        ):
+            raise RuntimeError(f"{row['bundle_id']} claims complete-planning while a linked finding is active")
+        covered_findings.update(row["finding_ids"])
+        for finding_id in row["finding_ids"]:
+            if finding_id not in ids:
+                raise RuntimeError(f"{row['bundle_id']} references unknown finding {finding_id}")
+        references = [
+            row["normative_owner"],
+            row["lifecycle_owner"],
+            row["persistence_owner"],
+            row["privacy_owner"],
+            *row["machine_owners"],
+            *row["threat_mappings"],
+            *row["fixtures"],
+        ]
+        for reference in references:
+            if not path_exists(reference):
+                raise RuntimeError(f"{row['bundle_id']} references missing owner or fixture: {reference}")
+    if covered_findings != set(ids):
+        raise RuntimeError(f"contract bundles do not cover every finding; missing={sorted(set(ids) - covered_findings)}")
+
     suites = yaml.safe_load((ROOT / "evals/suites/suites.yaml").read_text(encoding="utf-8"))["suites"]
     suite_ids = {row["id"] for row in suites}
     if "protocol-conformance" in suite_ids:
         raise RuntimeError("shadow codec suite must not be named protocol-conformance")
     if "shadow-codec-parity" not in suite_ids:
         raise RuntimeError("shadow-codec-parity suite is missing")
+    shadow_suite = next(row for row in suites if row["id"] == "shadow-codec-parity")
+    if shadow_suite.get("authority_class") != "exploratory-prototype" or shadow_suite.get("evidence_ceiling") != "cross-language-parity":
+        raise RuntimeError("shadow-codec-parity suite lacks explicit exploratory authority ceiling")
 
     status = (ROOT / "docs/project/STATUS.md").read_text(encoding="utf-8")
     tasks = (ROOT / "docs/planning/TASK_CATALOG.md").read_text(encoding="utf-8")
@@ -108,7 +142,10 @@ def main() -> int:
         raise RuntimeError("unpinned or pending review must have pending verdict")
 
     print("P-1140F authority validation: pass")
-    print(f"findings={len(finding_rows)} active_p1={open_p1} artifacts={len(artifact_rows)} review_state={review['state']}")
+    print(
+        f"findings={len(finding_rows)} active_p1={open_p1} artifacts={len(artifact_rows)} "
+        f"bundles={len(bundle_rows)} review_state={review['state']}"
+    )
     return 0
 
 
