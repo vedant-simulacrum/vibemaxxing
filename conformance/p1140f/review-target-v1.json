@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "gate": "P-1140F",
+  "state": "not-pinned",
+  "reviewed_commit": null,
+  "validation_run": null,
+  "finding_registry_sha256": null,
+  "artifact_registry_sha256": null,
+  "review_verdict": "pending",
+  "reviewed_at": null,
+  "limitations": [
+    "P-1140F has open P1 findings",
+    "product implementation remains unauthorized",
+    "planning validation is not semantic or runtime proof"
+  ]
+}
