@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Read-only repository authority and phase checks.
 
-Deep contract, schema, protocol, API, SQL and fixture semantics are owned by
-specialized validators. This doctor intentionally checks only stable repository
-boundaries and must not couple success to prose formatting.
+Deep contract, schema, protocol, API, SQL, fixture and P-1140F registry semantics
+are owned by specialized validators. This doctor checks stable repository
+boundaries and does not parse prose as the source of finding truth.
 """
 from __future__ import annotations
 
@@ -20,10 +20,18 @@ REQUIRED = [
     "docs/project/DOCUMENTATION.md",
     "docs/planning/DECISION_REGISTER.md",
     "docs/planning/TASK_CATALOG.md",
+    "docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md",
     "docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md",
     "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md",
     "docs/implementation/IMPLEMENTATION_HANDOFF.md",
     "docs/implementation/PR_SIZED_WORK_BREAKDOWN.md",
+    "conformance/p1140f/semantic-findings-v1.schema.json",
+    "conformance/p1140f/semantic-findings-v1.json",
+    "conformance/p1140f/artifact-authority-v1.schema.json",
+    "conformance/p1140f/artifact-authority-v1.json",
+    "conformance/p1140f/review-target-v1.schema.json",
+    "conformance/p1140f/review-target-v1.json",
+    "scripts/repository/validate_p1140f_authority.py",
     ".github/workflows/planning-checks.yml",
     ".github/workflows/storyboard-visuals.yml",
 ]
@@ -77,12 +85,12 @@ def main() -> None:
     if not errors:
         require_tokens(
             "docs/project/STATUS.md",
-            ["planning contract repair", "P-1140F", "P-1104", "blocked", "implementation remains unauthorized"],
+            ["planning contract repair", "P-1140F", "P-1104", "blocked", "implementation remains unauthorized", "semantic-findings-v1.json"],
             errors,
         )
         require_tokens(
             "docs/planning/TASK_CATALOG.md",
-            ["P-1140E", "complete-planning", "P-1140F", "in-progress-planning", "P-1104", "blocked-approval"],
+            ["P-1140E", "complete-planning", "P-1140F", "in-progress-planning", "SR-005", "SR-017", "P-1104", "blocked-approval"],
             errors,
         )
         require_tokens(
@@ -92,7 +100,7 @@ def main() -> None:
         )
         require_tokens(
             "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md",
-            ["semantic P1 open: 0 on the repair head", "SR-001", "SR-002", "SR-003", "SR-004", "P-1104: blocked"],
+            ["SR-005", "SR-017", "P-1104: blocked"],
             errors,
         )
         require_tokens(
