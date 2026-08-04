@@ -12,20 +12,26 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 SUITES = {
-    "protocol-conformance": (
+    "shadow-codec-parity": (
         ((["cargo", "test", "-p", "vibeproof-core", "--test", "vectors"], ROOT), (["go", "test", "./cmd/api"], ROOT / "apps" / "api")),
         "evals/fixtures/protocol-conformance.json",
-        ("canonical-vectors", "rust-go-acceptance-parity", "invalid-vectors"),
+        ("shadow-vectors", "rust-go-acceptance-parity", "invalid-shadow-vectors"),
+        "exploratory-prototype",
+        "cross-language-parity",
     ),
     "token-accounting-conformance": (
         ((["cargo", "test", "-p", "vibeproof-core", "--test", "accounting_pricing"], ROOT),),
         "evals/fixtures/token-accounting-conformance.json",
         ("deterministic-normalization",),
+        "exploratory-prototype",
+        "fixture-consistent",
     ),
     "ranking-accounting": (
         ((["cargo", "test", "-p", "vibeproof-core", "--test", "accounting_pricing"], ROOT),),
         "evals/fixtures/ranking-accounting.json",
         ("imported-exclusion-and-dedupe",),
+        "exploratory-prototype",
+        "fixture-consistent",
     ),
 }
 
@@ -39,7 +45,7 @@ def main() -> int:
     parser.add_argument("--suite", choices=sorted(SUITES))
     parser.add_argument("--commit", required=True)
     arguments = parser.parse_args()
-    commands, manifest_path, cases = SUITES[arguments.suite]
+    commands, manifest_path, cases, authority_class, evidence_ceiling = SUITES[arguments.suite]
     if arguments.commit != current_commit():
         return 2
     manifest_bytes = (ROOT / manifest_path).read_bytes()
@@ -61,6 +67,8 @@ def main() -> int:
         "suite": arguments.suite,
         "commit": arguments.commit,
         "status": "pass" if returncode == 0 else "fail",
+        "authority_class": authority_class,
+        "evidence_ceiling": evidence_ceiling,
         "cases": [{"id": case, "status": "pass" if returncode == 0 else "fail"} for case in cases],
         "fixtures": {"manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(), "fixtures": fixtures},
         "started_at": started_at,
