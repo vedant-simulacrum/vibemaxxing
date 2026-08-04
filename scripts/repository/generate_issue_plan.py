@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "docs/implementation/PR_SIZED_WORK_BREAKDOWN.md"
 DEFAULT_OUTPUT = ROOT / "artifacts/repository/issue-plan.json"
 EPIC = re.compile(r"^##\s+Epic\s+([A-Z][A-Z0-9]*)\s+[—-]\s+(.+?)\s*$")
-UNIT = re.compile(r"^###\s+([A-Z][A-Z0-9]*-\d{2})\s+(.+?)\s*$")
+UNIT = re.compile(r"^###\s+([A-Z][A-Z0-9]*-\d{3})\s+[—-]?\s*(.+?)\s*$")
+PLANNING_HEADING = "## Current planning program"
 POST_LAUNCH_HEADING = "## Post-launch tracks"
 
 
@@ -40,6 +41,10 @@ def main() -> None:
             current_epic_id = epic_match.group(1)
             current_epic_title = epic_match.group(2).strip()
             continue
+        if line.strip() == PLANNING_HEADING:
+            current_epic_id = "PF"
+            current_epic_title = "P-1140F planning repairs"
+            continue
         if line.strip() == POST_LAUNCH_HEADING:
             current_epic_id = "PL"
             current_epic_title = "post-launch tracks"
@@ -62,7 +67,15 @@ def main() -> None:
         seen.add(key)
         numbers_by_prefix[prefix].append(int(number_text))
 
-        phase_gate = "post-launch-explicit-approval" if prefix == "PL" else "P-1104-explicit-implementation-approval"
+        if prefix == "PF":
+            phase_gate = "P-1140F-planning-repair"
+            labels = ["planning-repair", "blocked-or-active"]
+        elif prefix == "PL":
+            phase_gate = "post-launch-explicit-approval"
+            labels = ["implementation", "post-launch", "blocked"]
+        else:
+            phase_gate = "P-1104-explicit-implementation-approval"
+            labels = ["implementation", "blocked"]
         component = slug(current_epic_title)
         records.append(
             {
@@ -72,7 +85,7 @@ def main() -> None:
                 "component": component,
                 "source_line": line_number,
                 "phase_gate": phase_gate,
-                "labels": ["implementation", component, "blocked"],
+                "labels": [*labels, component],
                 "authority": "docs/implementation/PR_SIZED_WORK_BREAKDOWN.md",
                 "artifact_maturity": "planning",
             }

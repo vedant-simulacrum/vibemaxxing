@@ -46,11 +46,15 @@ P-1140E proves structural repository consistency only. It does not prove semanti
 
 Status: `in-progress-planning`
 
-Canonical record: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
+Canonical prose record: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
 
-Current review target: `41ecb77856991ee033afcfe52d24eb42cd6ecb47` before consolidation changes.
+Machine-readable authorities:
 
-The earlier review target `f06f630619427ec7f0576b57c4b3ac914d9a4c87` and four-item issue scope are superseded. Current semantic work is organized into five dependency-ordered tasks.
+- finding state: `conformance/p1140f/semantic-findings-v1.json`;
+- artifact maturity and evidence ceilings: `conformance/p1140f/artifact-authority-v1.json`;
+- exact-head review state: `conformance/p1140f/review-target-v1.json`.
+
+P-1140F has 13 active P1 clusters, SR-005 through SR-017. Current semantic work is organized into five dependency-ordered tasks.
 
 #### P-1140F-1 — re-establish protocol and repository authority
 
@@ -60,8 +64,9 @@ Scope:
 
 - quarantine or remove the unsigned 11-field shadow protocol from normative/product paths;
 - retain CDDL, COSE, and `conformance/vibeproof/v1/` as sole VibeProof v1 authority;
-- correct status, documentation, evaluation, review, and issue scope;
-- classify executable prototypes honestly;
+- enforce artifact maturity and evidence ceilings;
+- rename misleading evaluation suites and fixtures;
+- make status, task, semantic and review records consume the structured registries;
 - register every mutable authority and persistence owner.
 
 Blocks: all later P-1140F tasks.
@@ -80,7 +85,7 @@ Scope:
 - lineage-scoped continuity;
 - canonical challenge, checkpoint, rotation, fork, appeal, and reversal semantics.
 
-#### P-1140F-3 — local trust boundary, adapters, and accounting inputs
+#### P-1140F-3 — local trust boundary, adapters, source evidence, and accounting inputs
 
 Status: `blocked-planning`
 
@@ -90,6 +95,7 @@ Scope:
 
 - process trust domains, role-bound IPC, process generations, local persistence, and platform supervision;
 - atomic compatibility tuples and signed certification lifecycle;
+- source receipts, evidence bundles and immutable verifier appraisals under SR-017;
 - deterministic observation-to-profile selection;
 - nested/multi-observer deduplication and checked arithmetic;
 - ACP/OTel/proxy/wrapper paths remain private until exact certification.
@@ -103,7 +109,7 @@ Dependencies: P-1140F-2 and P-1140F-3.
 Scope:
 
 - exact idempotent replay and ambiguous-commit recovery;
-- ranking authorization, immutable generations, periods, ties, contributions, and corrections;
+- ranking authorization, immutable generations, periods, ties, contributions, appraisals, and corrections;
 - friendship, directional blocks, rivals, boards, roles, ownership, presence, and notifications;
 - export, deletion, retention, legal hold, per-device completion, and backup tombstones;
 - current authorization for historical snapshots, cursors, grants, and delivery.
@@ -120,19 +126,19 @@ Scope:
 - component, compatibility, provenance, native-signing, update-class, migration, health, and rollback contracts;
 - aligned API, SQL, state, event, policy, reason, and fixture vocabularies;
 - planning-safe validation;
-- one new exact review head with zero open semantic P0/P1 findings.
+- one new exact review head with zero active semantic P0/P1 findings.
 
 ## P-1140F acceptance
 
 P-1140F becomes `complete-planning` only when:
 
-1. SR-005 through SR-016 in the canonical semantic record are repaired in every affected owner.
+1. SR-005 through SR-017 in the semantic finding registry are closed in every affected owner.
 2. No executable prototype contradicts or bypasses the sole normative protocol/accounting authority.
 3. Every mutable aggregate has one reachable lifecycle, persistence owner, revision model, stable outcome vocabulary, and transaction boundary.
 4. API, SQL, Protobuf/CDDL, fixtures, policies, and state machines cross-resolve without hidden security-critical mappings.
 5. Privacy and authorization are current at every display and delivery boundary.
 6. Structural validators pass without claiming semantic proof.
-7. A new exact repaired head receives independent semantic review with zero open P0/P1 findings.
+7. `review-target-v1.json` binds one exact repaired commit, validation run and passing independent semantic verdict.
 8. The user separately authorizes P-1104.
 
 ## Future implementation and launch tasks

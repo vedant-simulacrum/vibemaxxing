@@ -49,12 +49,16 @@ def main() -> int:
         if len(cells) >= 3 and re.fullmatch(r"D-\d{3}", cells[0]) and cells[2] in allowed:
             decision_statuses[cells[0]] = cells[2]
 
+    # P-1140E froze structural traceability for D-001..D-069. Later P-1140F
+    # decisions may extend the register, but they are owned by the P-1140F
+    # authority validator and must not silently expand this historical matrix.
     expected_decisions = {f"D-{number:03d}" for number in range(1, 70)}
-    require(set(decision_statuses) == expected_decisions, "decision register is not exactly D-001..D-069")
+    require(expected_decisions <= set(decision_statuses), "decision register no longer contains every D-001..D-069 decision")
 
     bindings = {item["decision_id"]: item for item in matrix["decision_bindings"]}
-    require(set(bindings) == expected_decisions, "matrix decision set is not exactly D-001..D-069")
-    for decision_id, status in decision_statuses.items():
+    require(set(bindings) == expected_decisions, "P-1140E matrix decision set is not exactly D-001..D-069")
+    for decision_id in sorted(expected_decisions):
+        status = decision_statuses[decision_id]
         binding = bindings[decision_id]
         require(binding["decision_status"] == status, f"status mismatch for {decision_id}")
         require(binding["active"] == (status in {"accepted", "provisional"}), f"active-path mismatch for {decision_id}")
@@ -68,7 +72,7 @@ def main() -> int:
             match = re.match(r"^\|\s*(D-\d{3})\s*\|", line)
             if match:
                 trace_ids.append(match.group(1))
-    require(set(trace_ids) == expected_decisions, "traceability files do not cover D-001..D-069")
+    require(expected_decisions <= set(trace_ids), "traceability files no longer cover every D-001..D-069 decision")
     require(len(trace_ids) == len(set(trace_ids)), "duplicate decision traceability row")
 
     required_domains = {

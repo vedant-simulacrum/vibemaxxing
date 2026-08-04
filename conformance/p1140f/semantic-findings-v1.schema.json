@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/semantic-findings-v1.schema.json",
+  "title": "P-1140F semantic finding registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "program", "findings"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "program": {"const": "P-1140F"},
+    "findings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["finding_id", "severity", "state", "title", "repair_task", "normative_owners", "conflicting_artifacts", "closure_evidence"],
+        "properties": {
+          "finding_id": {"type": "string", "pattern": "^SR-[0-9]{3}$"},
+          "severity": {"enum": ["P0", "P1", "P2"]},
+          "state": {"enum": ["open", "repair-in-progress", "repaired-pending-review", "closed", "deferred", "superseded"]},
+          "title": {"type": "string", "minLength": 3},
+          "repair_task": {"type": "string", "pattern": "^P-1140F-[1-5]$"},
+          "normative_owners": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "conflicting_artifacts": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "closure_evidence": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "reviewed_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+          "review_verdict": {"enum": [null, "pending", "pass", "fail"]}
+        }
+      }
+    }
+  }
+}
