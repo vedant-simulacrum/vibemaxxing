@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/review-target-v1.schema.json",
+  "title": "Exact-head semantic review target",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "gate", "state", "reviewed_commit", "validation_run", "finding_registry_sha256", "artifact_registry_sha256", "review_verdict"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "gate": {"const": "P-1140F"},
+    "state": {"enum": ["not-pinned", "pending-validation", "pending-review", "reviewed"]},
+    "reviewed_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+    "validation_run": {"type": ["integer", "null"], "minimum": 1},
+    "finding_registry_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "artifact_registry_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "review_verdict": {"enum": ["pending", "pass", "fail"]},
+    "reviewed_at": {"type": ["string", "null"], "format": "date-time"},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}
