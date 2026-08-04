@@ -94,11 +94,14 @@ jobs:
           data = json.loads(Path('/tmp/vibemaxxing-issue-plan.json').read_text())
           issues = data['issues']
           keys = [issue['key'] for issue in issues]
+          by_key = {issue['key']: issue for issue in issues}
           assert data['schema_version'] == 2
           assert data['issue_count'] == len(issues)
           assert len(keys) == len(set(keys))
-          assert all(re.fullmatch(r'[A-Z][A-Z0-9]*-\d{2}', key) for key in keys)
-          assert {'F-01', 'P-08', 'N-16', 'O-09', 'V-11', 'L-10', 'W-07'} <= set(keys)
+          assert all(re.fullmatch(r'[A-Z][A-Z0-9]*-\d{3}', key) for key in keys)
+          assert {'PF-001', 'PF-036', 'F-001', 'P-008', 'N-016'} <= set(keys)
+          assert by_key['PF-001']['phase_gate'] == 'P-1140F-planning-repair'
+          assert by_key['F-001']['phase_gate'] == 'P-1104-explicit-implementation-approval'
           assert not any(key.startswith('IMP-') for key in keys)
           print(f'issue plan: pass ({len(keys)} stable work units)')
           PY
