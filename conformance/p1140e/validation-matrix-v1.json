@@ -745,10 +745,12 @@
     "updateMe"
   ],
   "state_machines": [
+    "account-lifecycle",
     "appeal",
     "board-invitation",
     "board-membership",
     "daemon-lifecycle",
+    "device-enrollment",
     "export-job",
     "friendship",
     "idempotency-ledger",

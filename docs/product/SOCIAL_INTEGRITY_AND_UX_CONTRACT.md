@@ -123,7 +123,7 @@ Every action binds:
 
 Automated models cannot permanently ban, alter totals or award stronger evidence independently. High-impact decisions require human review. Moderator access is least-privilege, recently authenticated and audited.
 
-Appeal states are `submitted`, `needs_information`, `under_review`, `upheld`, `partially_upheld`, `reversed` and `expired`.
+Appeal state is owned by the `appeal` machine in `packages/schemas/state-machine-registry-v1.json` and is not restated here. The appellant-visible states are `submitted`, `needs-information`, `reviewing`, `approved`, `denied`, `withdrawn` and `expired`; `screening` is internal. The decision outcome — `upheld`, `partially-upheld`, `reversed` — is not a state and is published separately as `Appeal.decision`, present exactly when the appeal is `approved`.
 
 A reversal creates an immutable reversal record, rebuilds affected ranking views and retracts or corrects dependent notifications.
 

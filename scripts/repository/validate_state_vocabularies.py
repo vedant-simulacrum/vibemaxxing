@@ -390,16 +390,19 @@ BINDINGS: tuple[Binding, ...] = (
     ),
     Binding(
         aggregate="account-lifecycle",
+        machine="account-lifecycle",
         states=("active", "restricted", "deletion-pending", "deleted"),
         sql=("accounts.state",),
-        note="No registry machine yet; see the open items in the contract document.",
+        note="Cancelling a deletion requested while restricted returns the row to active; "
+        "see the open items in the contract document.",
     ),
     Binding(
         aggregate="device-enrollment",
+        machine="device-enrollment",
         states=("pending", "active", "quarantined", "revoked", "deleted"),
         sql=("devices.state",),
         api=("Device.state",),
-        note="No registry machine yet; see the open items in the contract document.",
+        note="Revocation cascades to native-session-family via device-revoked.",
     ),
     Binding(
         aggregate="device-authorization-grant",

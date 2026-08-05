@@ -124,6 +124,55 @@ class StateVocabularyValidatorTests(unittest.TestCase):
             checks["ranking_projection_generations.state"], set(machine["states"])
         )
 
+    def test_account_and_device_lifecycles_have_machines(self) -> None:
+        bindings = {b.aggregate: b for b in self.validator.BINDINGS}
+        self.assertEqual(bindings["account-lifecycle"].machine, "account-lifecycle")
+        self.assertEqual(bindings["device-enrollment"].machine, "device-enrollment")
+
+    def test_restriction_and_quarantine_are_restorable(self) -> None:
+        # ANTI_CHEAT_ATTACK_CATALOG.md:87 requires restoration semantics for every
+        # restriction, quarantine and revocation.
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+        machines = {m["machine_id"]: m for m in registry["machines"]}
+        for machine_id, source, target in (
+            ("account-lifecycle", "restricted", "active"),
+            ("device-enrollment", "quarantined", "active"),
+        ):
+            restorations = [
+                t
+                for t in machines[machine_id]["transitions"]
+                if t["to"] == target and source in t["from"]
+            ]
+            self.assertEqual(len(restorations), 1, machine_id)
+            self.assertTrue(restorations[0]["recent_auth"], machine_id)
+            self.assertEqual(restorations[0]["actor"], "moderator", machine_id)
+
+    def test_every_bound_machine_state_is_reachable(self) -> None:
+        # A state no transition can reach is a vocabulary the three sources agree on
+        # but no worker can ever produce. Scoped to machines this unit binds to SQL
+        # or an API enum; the native runtime and shell machines are not yet complete.
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+        machines = {m["machine_id"]: m for m in registry["machines"]}
+        bound = {
+            b.machine for b in self.validator.BINDINGS if b.machine and (b.sql or b.api)
+        }
+        for machine_id in sorted(bound):
+            machine = machines[machine_id]
+            reachable = {machine["initial_state"]}
+            changed = True
+            while changed:
+                changed = False
+                for transition in machine["transitions"]:
+                    if (
+                        set(transition["from"]) & reachable
+                        and transition["to"] not in reachable
+                    ):
+                        reachable.add(transition["to"])
+                        changed = True
+            self.assertEqual(
+                set(machine["states"]) - reachable, set(), f"{machine_id} unreachable"
+            )
+
     def test_appeal_outcome_is_published_and_matches_persistence(self) -> None:
         spec = json.loads(OPENAPI.read_text(encoding="utf-8"))
         appeal = spec["components"]["schemas"]["Appeal"]
