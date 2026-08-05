@@ -1,6 +1,6 @@
 # Contributing to VibeMaxxing
 
-The repository is private and in planning-hardening. External contribution processes become active before public release, but all changes already follow this contract.
+The repository is public and in planning contract repair. Product implementation has not begun and is gated behind `P-1104`; see `docs/project/STATUS.md`. External contribution processes become fully active before public release, but all changes already follow this contract.
 
 ## Start
 

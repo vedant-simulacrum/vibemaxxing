@@ -1,59 +1,103 @@
 # VibeMaxxing
 
-VibeMaxxing is a privacy-preserving competitive leaderboard and Steam-like social layer for AI-agent activity, built around local-first accounting and the planned VibeProof integrity protocol.
+**A public leaderboard for AI-agent usage that never sees your code.**
 
-## Status
+Developers burn tokens all day and have no shared way to see it. VibeMaxxing ranks that activity — a Steam-like social layer over how much you actually run Claude Code, Codex, Gemini CLI, and friends — while keeping every prompt, file path, and repository name on your own machine.
 
-The repository is in **planning alignment and contract repair**.
+A local daemon watches your agent, counts tokens, signs the count on-device, and sends **only fixed-schema aggregates** to the server. No prompts. No transcripts. No filenames. No content-derived hashes. That boundary is the product.
 
-A July 23 audit found contradictions between earlier “planning complete” declarations, newer product decisions, privacy requirements, anti-cheat research, draft schemas and the implementation handoff. Product implementation has not begun and remains blocked by P-1140F plus explicit approval under P-1104.
+- **Token Burn** — the ranked metric. Raw accepted tokens.
+- **Estimated Cash Burn** — an API-equivalent price interpretation, always labeled estimated, never real spend.
 
-One fixture-backed hosted-web/Storybook slice exists as a runnable prototype. It is not a production frontend, backend integration, protocol implementation, launch evidence or authorization to continue implementation.
+---
 
-Current planning conclusions:
+## Status: planning, not shipping
 
-- local-model and delayed offline usage can count competitively when deterministically captured by a certified source profile;
-- Standard and Hardened claims can both contribute to public leaderboards;
-- Imported history never enters competition;
-- the server verifier, not the client, awards public evidence status;
-- prompts, outputs, code, paths, repositories, tool contents and raw logs never reach VibeMaxxing servers;
-- country leaderboards are post-launch;
-- the SLM detector is post-launch research and is not a launch dependency;
-- current protocol and event schemas are planning placeholders until P-1140F repairs and validates their remaining semantic findings.
+This repository is in **planning contract repair**. Implementation is gated behind `P-1104`, which is not yet open.
 
-## Start here
+What exists today:
 
-1. [`AGENTS.md`](AGENTS.md) — sole initialization and operating manual.
-2. [`docs/project/PROJECT.md`](docs/project/PROJECT.md) — product and architectural authority.
-3. [`docs/project/STATUS.md`](docs/project/STATUS.md) — current phase, readiness and allowed work.
-4. [`docs/project/DOCUMENTATION.md`](docs/project/DOCUMENTATION.md) — canonical documentation and schema ownership map.
-5. [`docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`](docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md) — current cross-repository reconciliation.
-6. [`docs/planning/DECISION_REGISTER.md`](docs/planning/DECISION_REGISTER.md) and [`TASK_CATALOG.md`](docs/planning/TASK_CATALOG.md).
-7. Run `python3 scripts/repository/doctor.py` from a clean checkout.
+| | |
+|---|---|
+| Specification | ~34,000 lines — JSON Schema, CDDL, OpenAPI, SQL, protobuf, contracts |
+| Executable code | ~4,400 lines |
+| Running product | **None.** A `GET /healthz`, a fixture-driven Storybook/Next.js prototype, a Rust CBOR codec, and Python planning validators |
 
-## Structure
+There is no daemon, adapter, collector, OAuth, database, or API yet. `docs/project/STATUS.md` is the authority on what is and is not implemented, and it is deliberately blunt about it.
 
-- `docs/project/` — project authority, status and documentation map.
-- `docs/planning/` — decisions, tasks, audits, alignment and planning validation.
-- `docs/research/` — evidence inputs; research does not override accepted decisions.
-- `docs/product/`, `docs/architecture/`, `docs/security/`, `docs/privacy/` — normative contracts being reconciled under P-1140.
-- `docs/integrations/` — universal compatibility, certification and T20 planning contracts.
-- `docs/decisions/` — accepted ADRs.
-- `docs/implementation/` — inactive implementation handoff and dependency-ordered work breakdown.
-- `packages/schemas/` — planning-grade schemas; not production-proven and blocked where marked inconsistent.
-- `conformance/` — planning registries and fixtures; empty or planned certifications are not support evidence.
-- `scripts/repository/` — read-only repository and planning validators.
-- `apps/web/` — bounded fixture-backed prototype.
-- `crates/`, `apps/`, `packages/` — current seeds and approved future implementation areas; see `docs/implementation/REPOSITORY_LAYOUT.md` before assuming a path exists.
+**Be skeptical of green checks.** A passing validator here proves structural consistency, not security, privacy, conformance, or runtime behavior. That rule is written into `AGENTS.md` and it applies to this README too.
 
-## Core rules
+## Quick start
 
-- No prompt, transcript, code, path, repository name, tool content, credential, embedding, summary, classification or personal insight may reach VibeMaxxing servers.
-- Token Burn is the default raw metric; Estimated Cash Burn is always explicitly estimated.
+```bash
+git clone https://github.com/vedant-simulacrum/vibemaxxing && cd vibemaxxing
+make doctor          # repository invariants — should print PASS
+make validate        # full planning validator suite (needs Python deps)
+make plan            # regenerate the deterministic work-unit issue plan
+```
+
+`make help` lists every target. Nothing here builds or runs a product, because there isn't one yet.
+
+## Where to start reading
+
+**If you are an AI agent:** read [`AGENTS.md`](AGENTS.md) and stop there until you have. It is the sole entrypoint and it tells you what you may and may not do in the current phase. `CLAUDE.md` is a symlink to it.
+
+**If you are a human:**
+
+1. [`docs/project/PROJECT.md`](docs/project/PROJECT.md) — what the product is, and the architecture that follows from it
+2. [`docs/project/STATUS.md`](docs/project/STATUS.md) — current phase, what is implemented, what is not
+3. [`docs/project/DOCUMENTATION.md`](docs/project/DOCUMENTATION.md) — the single map of which document owns which decision
+4. [`docs/planning/DECISION_REGISTER.md`](docs/planning/DECISION_REGISTER.md) — every decision D-001..D-077 and its status
+5. [`docs/planning/TASK_CATALOG.md`](docs/planning/TASK_CATALOG.md) — gates, programs, and what blocks what
+
+For the current blocking work, `conformance/p1140f/semantic-findings-v1.json` is the machine-readable truth; prose summarizes it and may not redefine it.
+
+## Repository map
+
+```
+docs/
+  project/        authority: what this is, where it stands, who owns what
+  planning/       decisions, gates, scope freeze, artifact policy
+  architecture/   VibeProof protocol, adapters, server, ranking, native runtime
+  product/        product spec, token accounting, pricing, social contract
+  security/       threat model, integrity model, anti-cheat, attestation
+  privacy/        the privacy boundary — the invariant everything else serves
+  decisions/      accepted ADRs
+  integrations/   agent compatibility, adapter certification
+  operations/     launch, SLOs, incident response, release verification
+  implementation/ active plan and frozen backlog
+  history/        superseded reports, retained as evidence, NOT authority
+
+packages/schemas/ the real contract surface — OpenAPI, SQL, CDDL, JSON Schema
+conformance/      registries and fixtures; empty certifications are not evidence
+crates/           Rust seeds (protocol core; other crates are placeholders)
+apps/             Go API skeleton, Next.js web prototype
+packages/ui/      design system and storyboards — fixture-driven
+scripts/          read-only repository and planning validators
+```
+
+`docs/implementation/REPOSITORY_LAYOUT.md` distinguishes paths that exist from paths that are planned. Check it before assuming a directory is real.
+
+## Binding rules
+
+These are not aspirations. They constrain every change.
+
+- **No prompt, transcript, code, diff, file path, repository name, tool content, credential, embedding, summary, classification, personal insight, or content-derived hash may reach VibeMaxxing servers.** Only fixed-schema aggregates cross the device boundary.
+- Public evidence status is assigned by the server verifier, never selected by the client.
 - Historical imports never enter active competition.
-- Competitive support requires exercised exact-version, mode, platform and artifact certification evidence.
-- OAuth account control is not proof of one unique human.
-- Deterministic controls own accounting, signatures, replay, duplicates, continuity and hard eligibility.
-- Models and statistical detectors are secondary signals and cannot independently rewrite totals or permanently ban users.
-- Internal delivery may be staged, but public launch targets the complete core social product except country leaderboards.
-- Specifications, mocks, fixtures and runnable prototypes are not implementation or launch evidence.
+- Authentic but intentionally pointless activity counts, when it is not duplicated.
+- OAuth proves control of a provider account, not that you are one unique human.
+- Deterministic controls are authoritative. Statistical and model-based detection is local-only, advisory, and post-launch — it cannot rewrite totals or ban anyone.
+- Competitive support requires exercised certification evidence against an exact version, mode, platform, and artifact. A registry entry is not support.
+- **The words "verified", "proof", "cheat-proof", and "attested" are banned from user-facing claims.** No score here is cryptographic proof of real usage; someone who controls their own machine can inflate their own number. See `docs/security/THREAT_MODEL.md`.
+- Specifications, mocks, fixtures, and runnable prototypes are not implementation evidence and are not launch evidence.
+
+## Contributing
+
+Read [`CONTRIBUTING.md`](CONTRIBUTING.md). Commits require a DCO `Signed-off-by`. Changes to protocol, privacy, security, accounting, identity, release, or governance need review from the code owner.
+
+Security issues: see [`SECURITY.md`](SECURITY.md). Please do not include real prompts, keys, or user data in a report.
+
+## License
+
+Code is Apache-2.0 ([`LICENSE`](LICENSE)). Documentation is CC BY 4.0. See [`LICENSES.md`](LICENSES.md) and `docs/decisions/ADR-009-LICENSING_AND_CONTRIBUTION_MODEL.md` for the full contribution and licensing model. Hosted components are not source-licensed.

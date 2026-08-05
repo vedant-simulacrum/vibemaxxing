@@ -2,9 +2,9 @@
 
 ## Reporting
 
-While the repository is private, report vulnerabilities directly to the repository owner through a private GitHub message or another private channel already established with the owner. Do not open a public issue.
+Report vulnerabilities through **[GitHub private vulnerability reporting](https://github.com/vedant-simulacrum/vibemaxxing/security/advisories/new)**. Do not open a public issue.
 
-Before the repository becomes public, GitHub private vulnerability reporting and security advisories must be enabled and this section must be replaced with the exact reporting URL or security email.
+If that channel is unavailable to you, contact the repository owner through a private channel. Private reporting is enabled on this repository as of 2026-08-05; an earlier version of this file assumed the repository was private and directed reporters to a private message instead. The repository is public.
 
 Do not include real prompts, transcripts, code, repository names, paths, API keys, credentials, access tokens, cookies, or user data. Use minimal synthetic reproduction material and encrypted attachments where necessary.
 
@@ -31,7 +31,11 @@ Privacy-boundary violations are treated as highest severity until scoped.
 
 ## Supported versions
 
-No production version is currently supported because product implementation has not begun. Before the first release, this file must list supported versions and end-of-support policy.
+No production version is currently supported because product implementation has not begun. There is no deployed system, no release, and no binary to attack — reports at this stage concern the design and the specifications in `packages/schemas/` and `docs/`.
+
+Before the first release, this file must list supported versions and an end-of-support policy.
+
+Known and accepted at this stage, so you need not report them: the ranked metric is uncapped and a user who controls their own machine can inflate their own score; automated dependency scanning, SAST, and SBOM generation are deliberately disabled until implementation opens (`AGENTS.md`); and `main` has no branch protection. These are tracked, not overlooked.
 
 ## Safe harbor
 
