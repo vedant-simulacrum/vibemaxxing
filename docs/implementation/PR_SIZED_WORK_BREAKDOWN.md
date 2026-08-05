@@ -77,7 +77,7 @@ Ordering principle: each specification is paired with the artifact or code that 
 | `PF-060` | Collapse single-purpose documentation directories | PF-059 | 4-6 |
 | `PF-061` | Archive spent planning specifications | none | 4-6 |
 | `PF-062` | Make the decision register and task catalog machine-readable | PF-053, PF-055 | 12-16 |
-| `PF-063` | Validate decision and work-unit traceability | PF-062 | 6-8 |
+| `PF-063` | Complete decision traceability coverage | PF-062 | 4-6 |
 | `PF-064` | Remove stale dates from living document filenames | PF-057 | 2-3 |
 | `PF-065` | Correct the OpenAPI file extension | PF-038 | 2-3 |
 | `PF-066` | Repair unreachable states and false terminal states | none | 6-8 |
@@ -409,12 +409,12 @@ Dependencies: PF-001 through PF-035.
 - require zero open P0/P1 before considering P-1104.
 
 ### PF-037 — Enforce required unit fields in the issue plan generator
-Files: `scripts/repository/generate_issue_plan.py`, `docs/implementation/ISSUE_GENERATION.md`, `tests/ci/test_generate_issue_plan.py`
+Files: `scripts/repository/generate_issue_plan.py`, `docs/implementation/ISSUE_GENERATION.md`, `tests/ci/test_generate_issue_plan.py` (new)
 Acceptance: `python3 scripts/repository/generate_issue_plan.py` exits non-zero when any unit under `## Active plan` lacks `Files:`, `Acceptance:`, `Depends:`, or `Est:`; exits 0 on the current file; emitted records carry all four fields.
 Depends: none
 Est: 4-6
 
-Also corrects three defects in the generator: `labels` hardcodes `blocked` and `phase_gate` hardcodes `P-1104-explicit-implementation-approval` with no gate-state input, so every generated record is mislabeled the moment the gate moves; `POST_LAUNCH_HEADING` and the `PL-` branch are dead code matching a heading that does not exist; and `ISSUE_GENERATION.md:11-15` documents stable keys in two-digit form (`F-01`, `N-15`) which the generator's own `\d{3}` pattern rejects.
+Also corrects three defects in the generator: `labels` hardcodes `blocked` and `phase_gate` hardcodes `P-1104-explicit-implementation-approval` with no gate-state input, so every generated record is mislabeled the moment the gate moves; `POST_LAUNCH_HEADING` and the `PL-` branch are dead code matching a heading that does not exist; and `ISSUE_GENERATION.md` documented stable keys in a two-digit form that the generator's own `\d{3}` key pattern rejects, since corrected to the three-digit headings the breakdown actually carries.
 
 ### PF-038 — Reconcile state vocabularies across API, SQL and registry
 Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
@@ -494,7 +494,7 @@ The string `evidence_class` does not appear in 3,780 lines of OpenAPI. The produ
 
 ### PF-047 — Expand profile and rank entry schemas to the rendered product
 Files: `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
-Acceptance: every field rendered by `packages/ui/src/concepts/product-storyboards.tsx` and `src/patterns/product-system.tsx` resolves to an API field; no storyboard depends on a value the API cannot return.
+Acceptance: every field rendered by `packages/ui/src/concepts/product-storyboards.tsx` and `packages/ui/src/patterns/product-system.tsx` resolves to an API field; no storyboard depends on a value the API cannot return.
 Depends: PF-046
 Est: 6-8
 
@@ -525,7 +525,7 @@ Est: 6-8
 Inventory `:106-107` assigns retention to `policy-defaults-v1.json`, which currently contains 16 knobs and zero retention windows. `expires_at` is stored in several tables and enforced nowhere.
 
 ### PF-051 — Specify multi-observer deduplication
-Files: `packages/schemas/normalized-event-v1.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/dedup-vectors-v1.json` (new)
+Files: `packages/schemas/normalized-event.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/dedup-vectors-v1.json` (new)
 Acceptance: two collectors observing one session produce a single counted event; fixture covers the colliding and non-colliding commitment cases.
 Depends: PF-042
 Est: 6-8
@@ -551,7 +551,7 @@ Research on 2026-08-05 established that Anthropic's Admin API (`/v1/organization
 Consequence: E1 evidence is reachable **today for organizations and unreachable for individuals**. This bears directly on the ranking-integrity limits recorded in `docs/security/THREAT_MODEL.md` and determines whether a credible evidence tier exists at all. It affects the identity and board data model, so it is decided before ranking contracts are frozen rather than after.
 
 ### PF-054 — Author the negative CBOR corpus
-Files: `conformance/vibeproof/v1/negative-vectors.json` (new), `docs/protocol/VIBEPROOF_V1_CANONICAL_PROFILE.md`
+Files: `conformance/vibeproof/v1/negative-vectors.json` (new), `docs/architecture/VIBEPROOF_V1_CANONICAL_PROFILE.md`
 Acceptance: a decoder rejects every vector for the stated reason; duplicate keys, non-minimal integers, indefinite-length containers, and trailing bytes are each covered.
 Depends: none
 Est: 4-6
@@ -597,12 +597,12 @@ No document explains how the system works end to end. Understanding it currently
 This is the single highest-value change for anyone, human or agent, encountering the repository for the first time. It does not replace any normative contract; it gives them a spine.
 
 ### PF-059 — Merge duplicated UI and design documentation
-Files: `docs/style-guide/COMPONENTS.md`, `docs/style-guide/COMPONENT_INVENTORY.md`, `docs/style-guide/COMPONENT_STANDARD.md`, `docs/style-guide/README.md`, `docs/style-guide/ARCHITECTURE.md`, `docs/design/design.md`, `docs/design/UI_FOUNDATIONS.md`, `docs/design/BRAND.md`, `docs/project/DOCUMENTATION.md`
-Acceptance: one owner per concept; no two files in `docs/style-guide/` or `docs/design/` describe the same component surface; `DOCUMENTATION.md` names the surviving owner for each.
+Files: `docs/style-guide/COMPONENT_INVENTORY.md`, `docs/style-guide/COMPONENT_STANDARD.md`, `docs/style-guide/README.md`, `docs/style-guide/UI_ARCHITECTURE.md`, `docs/style-guide/UI_FOUNDATIONS.md`, `docs/style-guide/BRAND.md`, `docs/project/DOCUMENTATION.md`
+Acceptance: one owner per concept; no two files in `docs/style-guide/` describe the same component surface; `DOCUMENTATION.md` names the surviving owner for each.
 Depends: none
 Est: 6-8
 
-Three files describe components (`COMPONENTS.md`, `COMPONENT_INVENTORY.md`, `COMPONENT_STANDARD.md`) and three describe design foundations (`design/design.md`, `design/UI_FOUNDATIONS.md`, `style-guide/README.md`). Additionally `docs/architecture/ARCHITECTURE.md` and `docs/style-guide/ARCHITECTURE.md` share a filename while describing unrelated scopes, which makes every reference to "ARCHITECTURE.md" ambiguous.
+Three files described components (`COMPONENTS.md`, `COMPONENT_INVENTORY.md`, `COMPONENT_STANDARD.md`) and three described design foundations (`design/design.md`, `design/UI_FOUNDATIONS.md`, `style-guide/README.md`); the first and fourth of those have since been merged into their surviving owners. `docs/architecture/ARCHITECTURE.md` and the former `docs/style-guide/ARCHITECTURE.md` shared a filename while describing unrelated scopes, which made every reference to "ARCHITECTURE.md" ambiguous until the latter was renamed to `docs/style-guide/UI_ARCHITECTURE.md`.
 
 Merge unique content into one owner per concept, repair references, and delete or clearly mark the duplicates, per the rule already stated in `DOCUMENTATION.md`.
 
@@ -617,7 +617,7 @@ Eighteen directories hold 82 files, and seven of them hold one to three: `protoc
 Every move must repair inbound references. `AGENTS.md` and `doctor.py`'s REQUIRED list both name paths.
 
 ### PF-061 — Archive spent planning specifications
-Files: `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`, `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`, `docs/history/`, `docs/project/DOCUMENTATION.md`, `AGENTS.md`, `README.md`
+Files: `docs/history/MACHINE_CONTRACT_REPAIR_SPEC.md`, `docs/history/REPOSITORY_ALIGNMENT_2026-07-23.md`, `docs/history/`, `docs/project/DOCUMENTATION.md`, `AGENTS.md`, `README.md`
 Acceptance: both files are in `docs/history/` with unique content merged into a living owner; no inbound reference is broken; `doctor.py` passes.
 Depends: none
 Est: 4-6
@@ -634,17 +634,17 @@ Est: 12-16
 
 `conformance/p1140f/*.json` is the pattern that works in this repository: validators read structure. But 77 decisions and every planning gate live in Markdown tables, and validators reach them by substring matching — `validate_p1140f_authority.py:131` greps prose for a count, and `doctor.py` asserts that literal strings appear somewhere in a document. That is why the phase gate could only be moved by editing its own validator.
 
-Make JSON the source and generate the Markdown, so prose can no longer drift from state and validators can assert on structure. This unit is what makes PF-063 possible.
+Make JSON the source and generate the Markdown, so prose can no longer drift from state and validators can assert on structure. This unit is what lets PF-063 assert on the whole register.
 
-### PF-063 — Validate decision and work-unit traceability
-Files: `scripts/repository/validate_traceability.py` (new), `tests/ci/test_validate_traceability.py` (new), `docs/planning/decision-traceability/`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
-Acceptance: the validator resolves every `D-` identifier and every work-unit identifier referenced anywhere under `docs/planning/` and `docs/implementation/`, and exits non-zero on any that does not resolve. It reports zero unresolved identifiers.
+### PF-063 — Complete decision traceability coverage
+Files: `scripts/repository/validate_p1140e_contracts.py`, `docs/planning/decision-traceability/`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
+Acceptance: every accepted implementation-bearing decision has a traceability row with an implementation owner, machine or state ownership, platform scope, and executable evidence requirement; the traceability validator covers the whole register rather than a frozen prefix of it.
 Depends: PF-062
-Est: 6-8
+Est: 4-6
 
-There are currently 126 dangling work-unit references across 74 unique identifiers. Three prefixes cited in the traceability matrix — `I-`, `PL-`, `U-` — do not exist anywhere in the 195-unit breakdown. `D-01` through `D-10` are used as work-unit identifiers in the same documents where `D-001` through `D-010` are decision identifiers. Decisions D-070 through D-077 have no traceability rows at all, because `validate_p1140e_contracts.py:52-59` freezes its matrix at `range(1, 70)` and delegates the remainder to a validator that never references a `D-` identifier.
+Reference resolution itself is closed. `scripts/repository/validate_cross_references.py` resolves every decision, finding, ADR, program, work-unit, path, `$ref`, and `operationId` citation in the repository and exits non-zero on any that dangles; `tests/ci/test_cross_references.py` proves it fires per class. The 128 dangling work-unit citations that motivated this unit — a superseded two-digit numbering across 72 identifiers, including the `I-`, `PL-` and `U-` prefixes that never existed in the breakdown, and `D-01` through `D-10` used as work-unit identifiers in the same files where `D-001` onward are decisions — were deleted rather than remapped, because no unit they named survives.
 
-No validator reads these files' content today. This one closes the class of defect permanently rather than enumerating instances of it.
+What remains is coverage, not resolution. Decisions D-070 onward have no traceability rows at all, because `validate_p1140e_contracts.py:52-59` freezes its matrix at `range(1, 70)` and delegates the remainder to a validator that never references a `D-` identifier.
 
 ### PF-064 — Remove stale dates from living document filenames
 Files: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `scripts/repository/doctor.py`, `AGENTS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/TASK_CATALOG.md`

@@ -3,7 +3,7 @@
 Updated: 2026-07-19
 Status: planning control matrix
 
-This catalog defines attack classes, primary deterministic controls, policy outcomes, residual risks, and required validation. Detailed fixtures live in `conformance/adversarial/anti-cheat-cases.json`.
+This catalog defines attack classes, primary deterministic controls, policy outcomes, residual risks, and required validation. Detailed fixtures live in `conformance/adversarial/anti-cheat-registry-v1.json`.
 
 ## Policy actions
 

@@ -54,6 +54,13 @@ jobs:
         run: python3 scripts/repository/validate_state_vocabularies.py
       - name: Validate the evaluation registry
         run: python3 scripts/ci/run_evals.py --validate-registry
+      # Known failing at HEAD, deliberately. Three references dangle and none of them
+      # is special-cased away: ADR-015, which PF-039 has not authored yet, and the
+      # superseded SR-001/SR-004 numbering still named in DOCUMENTATION.md. The step
+      # is strict so the gap stays visible; tests/ci/test_cross_references.py pins the
+      # exact set so a fourth dangle cannot appear unnoticed.
+      - name: Resolve every repository cross-reference
+        run: python3 scripts/repository/validate_cross_references.py
       - name: Run the validator unit tests
         run: python3 -m unittest discover -s tests
       - name: Verification matrix

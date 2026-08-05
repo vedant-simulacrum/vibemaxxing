@@ -13,10 +13,10 @@ This record captures the repaired planning-contract head. It is not a security c
 
 ## Repairs present on this head
 
-- SR-001: OAuth transactions bind a preconfigured provider capability; callback input cannot select issuer, provider, client, redirect, or token endpoint. GitHub and X fixtures bind stored issuer/endpoints/redirects and reject redirect confusion.
-- SR-002: ordinary desktop authentication is browser Authorization Code plus PKCE; device authorization requires a registered profile ID and fixtures reject ordinary desktop and CI paths.
-- SR-003: `interactive-shell` is an authoritative local-only state machine with authenticated daemon-peer connection and explicit UI-exit/crash transitions that do not stop the daemon.
-- SR-004: every platform source has canonical URI, immutable version/revision, retrieval instant, SHA-256 content digest, authority, and supported-field scope. Internal policy source binds an exact Git commit rather than `main`.
+- OAuth transactions bind a preconfigured provider capability; callback input cannot select issuer, provider, client, redirect, or token endpoint. GitHub and X fixtures bind stored issuer/endpoints/redirects and reject redirect confusion.
+- Ordinary desktop authentication is browser Authorization Code plus PKCE; device authorization requires a registered profile ID and fixtures reject ordinary desktop and CI paths.
+- `interactive-shell` is an authoritative local-only state machine with authenticated daemon-peer connection and explicit UI-exit/crash transitions that do not stop the daemon.
+- Every platform source has canonical URI, immutable version/revision, retrieval instant, SHA-256 content digest, authority, and supported-field scope. Internal policy source binds an exact Git commit rather than `main`.
 
 ## Required closure evidence
 
@@ -30,10 +30,10 @@ Record one verdict against the exact target above:
 
 | Area | Required verdict | Evidence |
 | --- | --- | --- |
-| SR-001 OAuth capability and callback binding | approve / reject | architecture contract, OpenAPI, semantic fixtures, P-1140E validator |
-| SR-002 device-flow profile boundary | approve / reject | ADR-006, OpenAPI, semantic fixtures, P-1140E validator |
-| SR-003 interactive-shell lifecycle and IPC separation | approve / reject | state registry, state fixture, native/platform contract |
-| SR-004 immutable platform-source evidence | approve / reject | source schema, registry digests, P-1140E validator |
+| OAuth capability and callback binding | approve / reject | architecture contract, OpenAPI, semantic fixtures, P-1140E validator |
+| Device-flow profile boundary | approve / reject | ADR-006, OpenAPI, semantic fixtures, P-1140E validator |
+| Interactive-shell lifecycle and IPC separation | approve / reject | state registry, state fixture, native/platform contract |
+| Immutable platform-source evidence | approve / reject | source schema, registry digests, P-1140E validator |
 | Overall semantic P0/P1 state | zero open / list findings | exact finding ID and owner for every rejection |
 
 An approval must state that no semantic P0/P1 remains in the four repaired areas. A rejection reopens only the cited area; it does not authorize partial implementation.

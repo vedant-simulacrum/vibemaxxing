@@ -32,6 +32,11 @@ validate: $(VENV_PY) ## Run the planning validator suite
 	$(VENV_PY) scripts/repository/validate_planning_artifacts.py --allow-no-postgres
 	$(VENV_PY) scripts/ci/run_evals.py --validate-registry
 	@echo ""
+	@echo "Known failing at HEAD: the cross-reference validator reports three dangling"
+	@echo "references it must not hide — ADR-015, which PF-039 has not authored yet,"
+	@echo "and the superseded SR-001/SR-004 numbering in DOCUMENTATION.md."
+	$(VENV_PY) scripts/repository/validate_cross_references.py
+	@echo ""
 	@echo "Skipped locally: the PostgreSQL DDL stage of validate_planning_artifacts.py."
 	@echo "CI runs it against a real instance; set PLANNING_DATABASE_URL to run it here."
 	@echo "Run 'make test' for the unit suite and 'make evals' for the eval registry."

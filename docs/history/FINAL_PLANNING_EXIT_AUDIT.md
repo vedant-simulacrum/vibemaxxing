@@ -18,7 +18,7 @@ The former PASS must not be used as current readiness evidence.
 Use:
 
 - `docs/project/STATUS.md` for current phase and readiness;
-- `docs/planning/TASK_CATALOG.md` for P-1120 through P-1128;
+- `docs/planning/TASK_CATALOG.md` for the planning-hardening gates;
 - `docs/planning/DECISION_REGISTER.md` for D-042 through D-044;
 - `scripts/repository/doctor.py` for clean-checkout planning validation.
 

@@ -62,12 +62,11 @@ It must not manufacture passing product evidence from missing implementations.
 
 Before implementation begins:
 
-1. Complete P-901 through P-903.
-2. Obtain explicit user approval in P-904.
-3. Enable required branch protections and checks.
-4. Freeze the initial implementation task set and owners.
-5. Confirm local development prerequisites and supported platforms.
-6. Confirm no private or stale planning material will leak into public releases.
+1. Obtain explicit user approval.
+2. Enable required branch protections and checks.
+3. Freeze the initial implementation task set and owners.
+4. Confirm local development prerequisites and supported platforms.
+5. Confirm no private or stale planning material will leak into public releases.
 
 ## Publication checklist
 

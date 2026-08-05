@@ -47,4 +47,4 @@ The current environment does not have the GitHub CLI and could not clone the pri
 7. Parse planning SQL in a disposable PostgreSQL database, without treating it as migration evidence.
 8. Perform an independent context-free re-audit.
 
-Until those pass, P-1120, P-1126 and P-1128 remain open and implementation remains unauthorized.
+Until those pass, the planning-hardening gates remain open and implementation remains unauthorized.

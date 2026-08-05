@@ -616,7 +616,7 @@ Changes eventually required:
 - `docs/security/THREAT_MODEL.md`;
 - `docs/security/INTEGRITY_MODEL.md`;
 - `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`;
-- `docs/specs/ADAPTER_AND_VIBEPROOF_CONTRACT.md`;
+- `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`;
 - current schemas and ADRs.
 
 Acceptance:

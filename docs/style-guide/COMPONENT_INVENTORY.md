@@ -104,7 +104,7 @@ Every approved product screen has explicit desktop, tablet, and mobile stories. 
 
 | Screen | Status | Executable reference | Boundary |
 |---|---|---|---|
-| Leaderboard First baseline | Approved fidelity prototype | `packages/ui/src/concepts/leaderboard-first.stories.tsx`, `references/leaderboard-first-browser-approved.png`, and `references/leaderboard-first-storybook-approved.png` | Canonical desktop Storybook recreation; production extraction remains intentionally separate |
+| Leaderboard First baseline | Approved fidelity prototype | `packages/ui/src/concepts/leaderboard-first.tsx` and `references/leaderboard-first-approved.png` | Canonical desktop Storybook recreation; production extraction remains intentionally separate |
 | Public profile, rival comparison, friends, activity, board standings | Implemented prototype | `packages/ui/src/concepts/product-storyboards.stories.tsx` | Shared product patterns, governed assets, responsive stories, difficult states, and visual baselines; non-production under P-1104 |
 | Leaderboard bento prototype | Deprecated | `packages/ui/src/concepts/leaderboard-bento.stories.tsx` | Superseded fixture-only prototype; must not drive new implementation |
 
