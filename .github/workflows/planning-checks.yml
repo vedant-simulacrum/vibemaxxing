@@ -60,6 +60,14 @@ jobs:
         run: python3 scripts/repository/validate_cross_references.py
       - name: Run the validator unit tests
         run: python3 -m unittest discover -s tests
+      # Green at HEAD, and green only because the holes are written down. The node lane
+      # reports `uncovered` rather than `not_applicable` — apps/web, packages/ui and
+      # scripts/brand are npm workspaces with lockfiles that no workflow has ever built,
+      # and apps/web has never built at all (issue 52) — and the eval lane reports
+      # `partial`. Both outcomes are recorded in scripts/ci/coverage-baseline-v1.json,
+      # so this step fails when coverage gets worse than the record, not because it is
+      # already imperfect. Do not silence a new hole by editing that file without a
+      # reason a reviewer can read.
       - name: Verification matrix
         run: python3 scripts/ci/verify_repository.py
       - name: Validate deterministic stable work-unit generation
@@ -90,3 +98,8 @@ jobs:
 # present and reports them as not_applicable when they are not. Neither language was
 # reached by any workflow before this. It still does not deploy, release, or sign
 # anything, and a green run remains evidence of structural consistency only.
+#
+# A lane that executed nothing is no longer reported the same way as one that passed.
+# The matrix separates not_applicable (nothing exists to run) from uncovered (something
+# exists and nothing runs it), and the eval registry is pinned against a recorded status
+# ceiling so a suite cannot be downgraded to not_applicable without a reviewable edit.

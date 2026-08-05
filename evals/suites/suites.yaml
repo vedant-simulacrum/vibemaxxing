@@ -17,6 +17,7 @@ suites:
   blocking_milestone: vertical-slice
   status: not_applicable
   reason: Executable privacy boundary fixtures are not implemented yet
+  not_applicable_until: ["crates/vibeproof-sync/src/lib.rs", "evals/fixtures/privacy-boundary.json"]
 - id: ranking-accounting
   owner: backend
   blocking_milestone: vertical-slice
@@ -31,91 +32,109 @@ suites:
   blocking_milestone: collector-alpha
   status: not_applicable
   reason: Executable sandbox fixtures are not implemented yet
+  not_applicable_until: ["crates/vibeproof-collector/src/lib.rs", "evals/fixtures/sandbox-enforcement.json"]
 - id: authentication-recovery
   owner: identity
   blocking_milestone: accounts-alpha
   status: not_applicable
   reason: Executable authentication and recovery fixtures are not implemented yet
+  not_applicable_until: ["apps/api/internal/auth", "evals/fixtures/authentication-recovery.json"]
 - id: release-verification
   owner: release
   blocking_milestone: first-binary-release
   status: not_applicable
   reason: Executable release verification fixtures are not implemented yet
+  not_applicable_until: ["crates/vibeproof-verifier/src/lib.rs", "evals/fixtures/release-verification.json"]
 - id: observability-privacy
   owner: platform
   blocking_milestone: service-alpha
   status: not_applicable
   reason: Instrumented service export artifacts do not exist yet
+  not_applicable_until: ["apps/api/internal/telemetry", "evals/fixtures/observability-privacy.json"]
 - id: adversarial-integrity
   owner: security
   blocking_milestone: competitive-beta
   status: not_applicable
   reason: Executable adversarial fixtures are not implemented yet
+  not_applicable_until: ["apps/api/internal/appraisal", "evals/fixtures/adversarial-integrity.json"]
 - id: frontend-quality
   owner: frontend
   blocking_milestone: ui-shell
   status: not_applicable
   reason: Executable frontend quality coverage is not implemented yet
+  not_applicable_until: ["apps/web/tests", "evals/fixtures/frontend-quality.json"]
 - id: resilience
   owner: platform
   blocking_milestone: beta
   status: not_applicable
   reason: Executable resilience fixtures are not implemented yet
+  not_applicable_until: ["apps/api/internal/ingest", "evals/fixtures/resilience.json"]
 - id: performance-efficiency
   owner: performance
   blocking_milestone: beta
   status: not_applicable
   reason: Cross-platform benchmark artifacts do not exist yet
+  not_applicable_until: ["benchmarks/results", "evals/fixtures/performance-efficiency.json"]
 - id: local-ipc-identity
   owner: platform
   blocking_milestone: collector-alpha
   status: not_applicable
   reason: Executable platform IPC fixtures are not implemented yet
+  not_applicable_until: ["crates/vibeproof-collector/src/ipc.rs", "evals/fixtures/local-ipc-identity.json"]
 - id: pricing-provenance
   owner: backend
   blocking_milestone: competitive-beta
   status: not_applicable
   reason: Test-only unsigned pricing fixtures exist; pricing authority and signing-key decisions remain pending.
+  not_applicable_until: ["conformance/pricing/pricing-v1-signature.json", "evals/fixtures/pricing-provenance.json"]
 - id: abuse-country-privacy
   owner: security
   blocking_milestone: competitive-beta
   status: not_applicable
   reason: Abuse and country systems are not implemented yet
+  not_applicable_until: ["apps/api/internal/abuse", "evals/fixtures/abuse-country-privacy.json"]
 - id: webauthn-conformance
   owner: identity
   blocking_milestone: accounts-alpha
   status: not_applicable
   reason: WebAuthn implementation and conformance fixtures are not implemented yet
+  not_applicable_until: ["apps/api/internal/webauthn", "evals/fixtures/webauthn-conformance.json"]
 - id: agent-integration-feasibility
   owner: adapters
   blocking_milestone: competitive-beta
   status: not_applicable
   reason: Three exercised production adapters and result artifacts do not exist yet
+  not_applicable_until: ["crates/vibeproof-adapters/src/lib.rs", "evals/fixtures/agent-integration-feasibility.json"]
 - id: protocol-library-bakeoff
   owner: protocol
   blocking_milestone: vertical-slice
   status: not_applicable
   reason: COSE library selection is deliberately pending malformed-vector, differential, fuzz, resource-limit, throughput, and maintenance bakeoff evidence.
+  not_applicable_until: ["crates/vibeproof-core/src/cose.rs", "evals/fixtures/protocol-library-bakeoff.json"]
 - id: database-ranking-benchmark
   owner: backend
   blocking_milestone: competitive-beta
   status: not_applicable
   reason: Ephemeral database benchmark results do not exist yet
+  not_applicable_until: ["apps/api/internal/ranking", "evals/fixtures/database-ranking-benchmark.json"]
 - id: updater-conformance
   owner: release
   blocking_milestone: first-binary-release
   status: not_applicable
   reason: Updater client and upstream conformance results do not exist yet
+  not_applicable_until: ["crates/vibeproof-verifier/src/updater.rs", "evals/fixtures/updater-conformance.json"]
 - id: telemetry-canary-leakage
   owner: platform
   blocking_milestone: service-alpha
   status: not_applicable
   reason: Instrumented service export artifacts do not exist yet
+  not_applicable_until: ["apps/api/internal/telemetry", "evals/fixtures/telemetry-canary-leakage.json"]
 - id: competitive-beta-go-no-go
   owner: release
   blocking_milestone: competitive-beta
   status: not_applicable
   reason: Mandatory adapter protocol ranking isolation adversarial and release evidence is incomplete
+  not_applicable_until: ["evals/fixtures/competitive-beta-go-no-go.json"]
 - id: token-accounting-conformance
   owner: backend
   blocking_milestone: competitive-beta
@@ -130,23 +149,28 @@ suites:
   blocking_milestone: beta
   status: not_applicable
   reason: Cross-platform benchmark artifacts do not exist yet
+  not_applicable_until: ["crates/vibeproof-collector/src/lib.rs", "evals/fixtures/collector-power-performance.json"]
 - id: onboarding-trust
   owner: frontend
   blocking_milestone: ui-shell
   status: not_applicable
   reason: User-study result artifact does not exist yet
+  not_applicable_until: ["conformance/onboarding/study-results-v1.json", "evals/fixtures/onboarding-trust.json"]
 - id: social-ranking-simulation
   owner: backend
   blocking_milestone: competitive-beta
   status: not_applicable
   reason: Executable social and ranking simulation results do not exist yet
+  not_applicable_until: ["apps/api/internal/social", "evals/fixtures/social-ranking-simulation.json"]
 - id: data-lifecycle-recovery
   owner: platform
   blocking_milestone: service-alpha
   status: not_applicable
   reason: Deletion and recovery exercise artifacts do not exist yet
+  not_applicable_until: ["apps/api/internal/lifecycle", "evals/fixtures/data-lifecycle-recovery.json"]
 - id: moderation-operations
   owner: operations
   blocking_milestone: competitive-beta
   status: not_applicable
   reason: Moderation tabletop and operational tooling evidence do not exist yet
+  not_applicable_until: ["apps/api/internal/moderation", "evals/fixtures/moderation-operations.json"]
