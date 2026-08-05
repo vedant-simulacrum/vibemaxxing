@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate machine-readable P-1140F authority, maturity, bundles, and review state."""
+
 from __future__ import annotations
 
 import json
@@ -21,11 +22,15 @@ def validate(schema_name: str, instance_name: str) -> dict:
     schema = load_json(P1140F / schema_name)
     instance = load_json(P1140F / instance_name)
     errors = sorted(
-        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(instance),
+        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(
+            instance
+        ),
         key=lambda error: list(error.absolute_path),
     )
     if errors:
-        raise RuntimeError(f"{instance_name}: " + "; ".join(error.message for error in errors[:8]))
+        raise RuntimeError(
+            f"{instance_name}: " + "; ".join(error.message for error in errors[:8])
+        )
     return instance
 
 
@@ -36,30 +41,49 @@ def path_exists(reference: str) -> bool:
 
 def main() -> int:
     findings = validate("semantic-findings-v1.schema.json", "semantic-findings-v1.json")
-    artifacts = validate("artifact-authority-v1.schema.json", "artifact-authority-v1.json")
+    artifacts = validate(
+        "artifact-authority-v1.schema.json", "artifact-authority-v1.json"
+    )
     bundles = validate("contract-bundles-v1.schema.json", "contract-bundles-v1.json")
     review = validate("review-target-v1.schema.json", "review-target-v1.json")
+    authorization = validate(
+        "gate-authorization-v1.schema.json", "gate-authorization-v1.json"
+    )
 
     finding_rows = findings["findings"]
     ids = [row["finding_id"] for row in finding_rows]
     expected = [f"SR-{number:03d}" for number in range(5, 18)]
     if ids != expected:
-        raise RuntimeError(f"finding registry must be ordered exactly SR-005..SR-017; found {ids}")
+        raise RuntimeError(
+            f"finding registry must be ordered exactly SR-005..SR-017; found {ids}"
+        )
     if len(ids) != len(set(ids)):
         raise RuntimeError("duplicate semantic finding ID")
 
-    open_states = {"open", "repair-in-progress", "repaired-pending-review"}
-    open_p1 = sum(row["severity"] == "P1" and row["state"] in open_states for row in finding_rows)
-    if open_p1 != 13:
-        raise RuntimeError(f"expected 13 active P1 clusters during P-1140F-1; found {open_p1}")
-    if finding_rows[0]["state"] != "repair-in-progress":
-        raise RuntimeError("SR-005 must be repair-in-progress while P-1140F-1 is active")
-    if any(row["state"] == "closed" and not row["closure_evidence"] for row in finding_rows):
+    baseline = authorization["open_p1_baseline"]
+    open_states = set(baseline["counted_states"])
+    open_p1 = sum(
+        row["severity"] == "P1" and row["state"] in open_states for row in finding_rows
+    )
+    if open_p1 > baseline["count"]:
+        raise RuntimeError(
+            f"active P1 findings regressed: {open_p1} open exceeds the recorded baseline of "
+            f"{baseline['count']} in conformance/p1140f/gate-authorization-v1.json"
+        )
+    if finding_rows[0]["state"] == "open":
+        raise RuntimeError(
+            "SR-005 must be under repair or resolved while P-1140F-1 is active"
+        )
+    if any(
+        row["state"] == "closed" and not row["closure_evidence"] for row in finding_rows
+    ):
         raise RuntimeError("closed finding lacks closure evidence")
     for row in finding_rows:
         for reference in row["normative_owners"] + row["conflicting_artifacts"]:
             if not path_exists(reference):
-                raise RuntimeError(f"{row['finding_id']} references missing artifact: {reference}")
+                raise RuntimeError(
+                    f"{row['finding_id']} references missing artifact: {reference}"
+                )
 
     artifact_rows = artifacts["artifacts"]
     paths = [row["path"] for row in artifact_rows]
@@ -77,12 +101,21 @@ def main() -> int:
     }
     for row in artifact_rows:
         if not path_exists(row["path"]):
-            raise RuntimeError(f"artifact registry references missing path: {row['path']}")
+            raise RuntimeError(
+                f"artifact registry references missing path: {row['path']}"
+            )
         if row["authority_class"] == "exploratory-prototype":
-            if ceiling_order[row["evidence_ceiling"]] > ceiling_order["cross-language-parity"]:
-                raise RuntimeError(f"exploratory artifact overclaims evidence: {row['path']}")
+            if (
+                ceiling_order[row["evidence_ceiling"]]
+                > ceiling_order["cross-language-parity"]
+            ):
+                raise RuntimeError(
+                    f"exploratory artifact overclaims evidence: {row['path']}"
+                )
             if not row.get("known_incompatibilities"):
-                raise RuntimeError(f"exploratory artifact lacks known incompatibilities: {row['path']}")
+                raise RuntimeError(
+                    f"exploratory artifact lacks known incompatibilities: {row['path']}"
+                )
 
     bundle_rows = bundles["bundles"]
     bundle_ids = [row["bundle_id"] for row in bundle_rows]
@@ -91,14 +124,21 @@ def main() -> int:
     covered_findings: set[str] = set()
     for row in bundle_rows:
         if row["state"] == "complete-planning" and any(
-            next(item for item in finding_rows if item["finding_id"] == finding_id)["state"] in open_states
+            next(item for item in finding_rows if item["finding_id"] == finding_id)[
+                "state"
+            ]
+            in open_states
             for finding_id in row["finding_ids"]
         ):
-            raise RuntimeError(f"{row['bundle_id']} claims complete-planning while a linked finding is active")
+            raise RuntimeError(
+                f"{row['bundle_id']} claims complete-planning while a linked finding is active"
+            )
         covered_findings.update(row["finding_ids"])
         for finding_id in row["finding_ids"]:
             if finding_id not in ids:
-                raise RuntimeError(f"{row['bundle_id']} references unknown finding {finding_id}")
+                raise RuntimeError(
+                    f"{row['bundle_id']} references unknown finding {finding_id}"
+                )
         references = [
             row["normative_owner"],
             row["lifecycle_owner"],
@@ -110,32 +150,83 @@ def main() -> int:
         ]
         for reference in references:
             if not path_exists(reference):
-                raise RuntimeError(f"{row['bundle_id']} references missing owner or fixture: {reference}")
+                raise RuntimeError(
+                    f"{row['bundle_id']} references missing owner or fixture: {reference}"
+                )
     if covered_findings != set(ids):
-        raise RuntimeError(f"contract bundles do not cover every finding; missing={sorted(set(ids) - covered_findings)}")
+        raise RuntimeError(
+            f"contract bundles do not cover every finding; missing={sorted(set(ids) - covered_findings)}"
+        )
 
-    suites = yaml.safe_load((ROOT / "evals/suites/suites.yaml").read_text(encoding="utf-8"))["suites"]
+    suites = yaml.safe_load(
+        (ROOT / "evals/suites/suites.yaml").read_text(encoding="utf-8")
+    )["suites"]
     suite_ids = {row["id"] for row in suites}
     if "protocol-conformance" in suite_ids:
         raise RuntimeError("shadow codec suite must not be named protocol-conformance")
     if "shadow-codec-parity" not in suite_ids:
         raise RuntimeError("shadow-codec-parity suite is missing")
     shadow_suite = next(row for row in suites if row["id"] == "shadow-codec-parity")
-    if shadow_suite.get("authority_class") != "exploratory-prototype" or shadow_suite.get("evidence_ceiling") != "cross-language-parity":
-        raise RuntimeError("shadow-codec-parity suite lacks explicit exploratory authority ceiling")
+    if (
+        shadow_suite.get("authority_class") != "exploratory-prototype"
+        or shadow_suite.get("evidence_ceiling") != "cross-language-parity"
+    ):
+        raise RuntimeError(
+            "shadow-codec-parity suite lacks explicit exploratory authority ceiling"
+        )
 
-    status = (ROOT / "docs/project/STATUS.md").read_text(encoding="utf-8")
-    tasks = (ROOT / "docs/planning/TASK_CATALOG.md").read_text(encoding="utf-8")
-    semantic = (ROOT / "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md").read_text(encoding="utf-8")
-    for label, text in (("STATUS", status), ("TASK_CATALOG", tasks), ("P1140F", semantic)):
-        if "13" not in text or "SR-005" not in text or "SR-017" not in text:
-            raise RuntimeError(f"{label} does not summarize the registry range/count")
-    if re.search(r"SR-005 through SR-016", tasks):
-        raise RuntimeError("TASK_CATALOG omits SR-017 from P-1140F acceptance")
+    for gate in authorization["gates"]:
+        for document in gate["documents"]:
+            if not path_exists(document["path"]):
+                raise RuntimeError(
+                    f"{gate['gate']} names a missing document: {document['path']}"
+                )
+        grant = gate["authorization"]
+        if grant is None:
+            continue
+        unknown = sorted(
+            set(grant.get("findings_open_at_authorization", [])) - set(ids)
+        )
+        if unknown:
+            raise RuntimeError(
+                f"{gate['gate']} authorization names findings outside the registry: {unknown}"
+            )
+        if len(grant.get("findings_open_at_authorization", [])) not in (
+            0,
+            grant["open_p1_findings_at_authorization"],
+        ):
+            raise RuntimeError(
+                f"{gate['gate']} authorization lists a finding set that contradicts its recorded count"
+            )
+
+    for relative_path in authorization["registry_summary_documents"]:
+        text = (ROOT / relative_path).read_text(encoding="utf-8")
+        for token in (str(open_p1), ids[0], ids[-1]):
+            if token not in text:
+                raise RuntimeError(
+                    f"{relative_path} does not summarize the registry range/count: missing {token}"
+                )
+        stale = sorted(
+            {
+                match
+                for match in re.findall(rf"{ids[0]} through (SR-[0-9]{{3}})", text)
+                if match != ids[-1]
+            }
+        )
+        if stale:
+            raise RuntimeError(
+                f"{relative_path} states a finding range ending at {stale} rather than {ids[-1]}"
+            )
 
     if review["state"] == "reviewed":
-        if review["review_verdict"] != "pass" or not review["reviewed_commit"] or not review["validation_run"]:
-            raise RuntimeError("reviewed P-1140F target lacks immutable passing evidence")
+        if (
+            review["review_verdict"] != "pass"
+            or not review["reviewed_commit"]
+            or not review["validation_run"]
+        ):
+            raise RuntimeError(
+                "reviewed P-1140F target lacks immutable passing evidence"
+            )
         if open_p1:
             raise RuntimeError("P-1140F review cannot pass with active P1 findings")
     elif review["review_verdict"] != "pending":
@@ -143,8 +234,9 @@ def main() -> int:
 
     print("P-1140F authority validation: pass")
     print(
-        f"findings={len(finding_rows)} active_p1={open_p1} artifacts={len(artifact_rows)} "
-        f"bundles={len(bundle_rows)} review_state={review['state']}"
+        f"findings={len(finding_rows)} active_p1={open_p1} baseline_p1={baseline['count']} "
+        f"artifacts={len(artifact_rows)} bundles={len(bundle_rows)} review_state={review['state']} "
+        + " ".join(f"{gate['gate']}={gate['state']}" for gate in authorization["gates"])
     )
     return 0
 

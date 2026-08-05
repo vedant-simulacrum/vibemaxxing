@@ -1,7 +1,7 @@
 # P-1140F Semantic Review and Standards Mapping
 
 Status: `in-progress-planning`
-Updated: 2026-08-04
+Updated: 2026-08-05
 Review base: `41ecb77856991ee033afcfe52d24eb42cd6ecb47`
 Evidence maturity: repository and standards audit; not runtime proof, certification, implementation authorization, or launch evidence
 
@@ -15,11 +15,13 @@ The original four-finding review against `f06f630619427ec7f0576b57c4b3ac914d9a4c
 
 - Semantic P0 open: 0
 - Semantic P1 clusters open: 13
-- P-1104: blocked
-- Product implementation: unauthorized
+- P-1104: authorized-open
+- Product implementation: authorized
 - Product/security/evaluation/release/signing/deployment workflows: remain disabled
 
-A green schema check, fixture, symbolic SQL race, or cross-language agreement does not close a finding unless it exercises the exact normative authority and invariant.
+P-1104 was opened by owner decision on 2026-08-05, recorded in GitHub issue 44 and in `conformance/p1140f/gate-authorization-v1.json`, while this gate was still open. The 13 P1 clusters above are unchanged by that decision. They remain open, remain tracked in `conformance/p1140f/semantic-findings-v1.json`, and are not waived. Authorization to implement is not a semantic verdict and closes no finding.
+
+A green schema check, fixture, symbolic SQL race, or cross-language agreement does not close a finding unless it exercises the exact normative authority and invariant. The same holds for the P-1104 decision: it is an authorization, not evidence.
 
 ## Reality classification
 
@@ -180,8 +182,8 @@ No further user policy decision is required for this audit set. These decisions 
 
 - define TUF-backed release, components, compatibility, migration, D-074 rollback, and eligibility;
 - align API, SQL, state, events, reasons, policy, inventory and fixtures;
-- run planning-safe validators only until P-1104;
-- pin a new exact review head and require zero semantic P0/P1 findings before implementation authorization.
+- run planning-safe validators; product, security, evaluation, release, signing and deployment workflows stay disabled under `P-1007` regardless of P-1104;
+- pin a new exact review head and require zero semantic P0/P1 findings before this gate is called closed.
 
 ## Closure criteria
 
@@ -195,4 +197,4 @@ P-1140F becomes `complete-planning` only when:
 6. Privacy and authorization are current at every display and delivery boundary.
 7. Structural validators pass without claiming semantic proof.
 8. The exact repaired head receives independent manual review with zero open semantic P0/P1 findings.
-9. P-1104 remains a separate explicit user authorization after this gate closes.
+9. P-1104 is a separate explicit user authorization. It was granted on 2026-08-05 before this gate closed, out of the intended order, and is recorded in `conformance/p1140f/gate-authorization-v1.json`. Criteria 1 through 8 are unaffected and still bind: this gate is not closed, and nothing here may be cited as implementation, security, certification, or launch evidence.

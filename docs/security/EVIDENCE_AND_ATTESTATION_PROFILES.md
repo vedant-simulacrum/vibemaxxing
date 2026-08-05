@@ -1,7 +1,7 @@
 # Evidence and Attestation Profiles
 
 Status: normative planning contract; P-1140B appraisal policy frozen, P-1140C wire binding pending.
-Updated: 2026-07-23
+Updated: 2026-08-06
 
 ## Purpose
 
@@ -21,6 +21,8 @@ Consumer-facing states remain Standard, Hardened and Imported. The server verifi
 `packages/schemas/evidence-profile-policy-v1.json` is the planning authority for the independent dimension enums, named profile minimums, fatal conditions and downgrade order. The client does not serialize a desired public state. The server stores an immutable `VerifierAppraisal` that references the exact policy and implementation digests; changing policy creates a new appraisal or explicit re-evaluation record rather than mutating a claim.
 
 Evaluation is dimensional: a stronger key cannot compensate for contradictory accounting, and strong source authority cannot bypass privacy, continuity or artifact failures. Fatal conditions reject or quarantine. Failure to satisfy Hardened evaluates Standard; failure to satisfy Standard becomes private analytics. E5 remains Imported/private only.
+
+The policy file carries a single `E1` value in its `source` enum and no marker distinguishing the E1-S and E1-R limbs introduced by D-078, so the availability split below is currently expressed only in prose. Reconciling the machine-readable policy with it is a required follow-up owned by that file.
 
 ## Independent dimensions
 
@@ -43,11 +45,18 @@ No stronger value in one dimension silently upgrades a failed mandatory requirem
 
 ### E1 — provider-signed or provider-verifiable
 
-An independently verifiable artifact is cryptographically signed by the provider or verified through a provider-operated interface. It must bind exact model/version, usage categories, outcome, issuance time and anti-replay identity.
+Usage authority originates with the provider rather than with the measured party, either as an artifact the provider signed or through an interface the provider operates. Ordinary JSON usage metadata, request IDs, invoices, screenshots, bearer-token possession, local logs and authenticated TLS do not qualify by themselves.
 
-Ordinary JSON usage metadata, request IDs, invoices, screenshots, bearer-token possession, local logs and authenticated TLS do not qualify by themselves.
+Under ADR-016 and D-078 the class splits into two limbs of different availability. E1 alone is not a sufficient designation; an appraisal records which limb applies.
 
-E1 is reserved and unavailable until a provider actually exposes a qualifying artifact or verification interface.
+- **E1-S provider-signed claim receipt** — an independently verifiable artifact cryptographically signed by the provider, binding exact model/version, usage categories, outcome, issuance time and anti-replay identity. Reserved and unavailable; no provider currently issues a qualifying artifact.
+- **E1-R provider-retrieved organization aggregate** — the server retrieves aggregate consumption from a provider-operated administrative usage interface, authenticated by a provider-issued credential supplied by the enrolled organization's administrator. Available today at organization scope only.
+
+E1-R authority comes from the retrieval channel and the credential, not from the artifact: the measured party cannot write what the interface returns. Anthropic, OpenAI and Cursor expose administrative usage endpoints. No provider exposes an authorization scope by which an individual permits third-party read of their own consumption, so E1-R is unreachable for individual accounts and individual evidence remains bounded by the user-controlled device.
+
+E1-R is not a receipt. It is unsigned, carries no per-request outcome and no anti-replay identity, is retrieved rather than issued, and may be restated by the provider on re-query. It binds at board scope for a stated interval, never to an individual EvidenceClaim, and it does not alter raw score.
+
+E1-R coverage is partial by construction. The administrative endpoints report API-key traffic, while subscription-backed agent usage is largely unexposed, so an enrolled organization may hold substantial genuine activity that no retrieval corroborates. Partial retrieval is never presented as whole-board corroboration, and normal disagreement between retrieved and claimed totals within a stated reconciliation window is not an integrity signal.
 
 ### E2 — trusted local structured source event
 
@@ -128,7 +137,7 @@ Delayed offline activity may qualify when its local continuity is internally con
 
 Minimum direction:
 
-- qualifying E1, hostile-tested E2 or specially approved exact E4 local-runtime path;
+- qualifying E1-S, hostile-tested E2 or specially approved exact E4 local-runtime path;
 - deterministic authoritative accounting for the source;
 - K1 or K2 unless another named profile explicitly proves an equivalent protection path;
 - C3 or C4;
@@ -138,6 +147,8 @@ Minimum direction:
 - no unresolved observation gap for the claimed interval.
 
 Hardened must not depend exclusively on cloud-provider receipts or hardware attestation. Certified local models can qualify under a named local-source profile.
+
+E1-R does not satisfy this minimum. An organization-level aggregate supplies no per-member runtime, model/tokenizer, mode, platform, adapter or collector certification and cannot close an observation gap, so no account or board reaches Hardened by way of E1-R.
 
 ### Imported v1
 

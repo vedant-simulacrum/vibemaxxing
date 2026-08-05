@@ -72,6 +72,14 @@ Ordering principle: each specification is paired with the artifact or code that 
 | `PF-055` | Repair the P-1140F authority validator | none | 3-4 |
 | `PF-056` | Restore executable evaluation gates | PF-055 | 4-6 |
 | `PF-057` | Specify the P-1104 gate transition | PF-055 | 4-6 |
+| `PF-058` | Author the system narrative in PROJECT.md | none | 6-8 |
+| `PF-059` | Merge duplicated UI and design documentation | none | 6-8 |
+| `PF-060` | Collapse single-purpose documentation directories | PF-059 | 4-6 |
+| `PF-061` | Archive spent planning specifications | none | 4-6 |
+| `PF-062` | Make the decision register and task catalog machine-readable | PF-053, PF-055 | 12-16 |
+| `PF-063` | Validate decision and work-unit traceability | PF-062 | 6-8 |
+| `PF-064` | Remove stale dates from living document filenames | PF-057 | 2-3 |
+| `PF-065` | Correct the OpenAPI file extension | PF-038 | 2-3 |
 
 Full specifications for these units are in **Current planning program** below, in unit-number order after `PF-036`.
 
@@ -571,6 +579,84 @@ Depends: PF-055
 Est: 4-6
 
 The gate is currently enforced by prose substring assertions in four files: `doctor.py:90` requires `STATUS.md` to contain the literal string "implementation remains unauthorized", `:95` requires "blocked-approval" in `TASK_CATALOG.md`, `:105` requires "P-1104: blocked", and `:110` requires "inactive" and "blocked" in the handoff. Moving the gate therefore requires editing the validator that enforces it, which is the same defect as PF-055 in a different place. The machine-readable state already exists in `conformance/p1140f/`; the validator should read it.
+
+### PF-058 — Author the system narrative in PROJECT.md
+Files: `docs/project/PROJECT.md`, `docs/project/DOCUMENTATION.md`
+Acceptance: a reader who has read only `PROJECT.md` can state the full path a token takes from an agent process to a public rank, and name the component that owns each step.
+Depends: none
+Est: 6-8
+
+No document explains how the system works end to end. Understanding it currently requires reading eight files in a prescribed order, which is why `AGENTS.md:12` has to prescribe that order. `PROJECT.md` should carry one narrative — install, adapter observes, collector normalizes, sync signs, verifier appraises, ledger records, projection ranks — with a diagram, and every other document should read as detail hanging off it.
+
+This is the single highest-value change for anyone, human or agent, encountering the repository for the first time. It does not replace any normative contract; it gives them a spine.
+
+### PF-059 — Merge duplicated UI and design documentation
+Files: `docs/style-guide/COMPONENTS.md`, `docs/style-guide/COMPONENT_INVENTORY.md`, `docs/style-guide/COMPONENT_STANDARD.md`, `docs/style-guide/README.md`, `docs/style-guide/ARCHITECTURE.md`, `docs/design/design.md`, `docs/design/UI_FOUNDATIONS.md`, `docs/design/BRAND.md`, `docs/project/DOCUMENTATION.md`
+Acceptance: one owner per concept; no two files in `docs/style-guide/` or `docs/design/` describe the same component surface; `DOCUMENTATION.md` names the surviving owner for each.
+Depends: none
+Est: 6-8
+
+Three files describe components (`COMPONENTS.md`, `COMPONENT_INVENTORY.md`, `COMPONENT_STANDARD.md`) and three describe design foundations (`design/design.md`, `design/UI_FOUNDATIONS.md`, `style-guide/README.md`). Additionally `docs/architecture/ARCHITECTURE.md` and `docs/style-guide/ARCHITECTURE.md` share a filename while describing unrelated scopes, which makes every reference to "ARCHITECTURE.md" ambiguous.
+
+Merge unique content into one owner per concept, repair references, and delete or clearly mark the duplicates, per the rule already stated in `DOCUMENTATION.md`.
+
+### PF-060 — Collapse single-purpose documentation directories
+Files: `docs/protocol/`, `docs/qa/`, `docs/evals/`, `docs/design/`, `docs/project/DOCUMENTATION.md`, `README.md`, `AGENTS.md`
+Acceptance: no directory under `docs/` holds fewer than four files without a recorded reason; every moved path resolves; `doctor.py` passes.
+Depends: PF-059
+Est: 4-6
+
+Eighteen directories hold 82 files, and seven of them hold one to three: `protocol/` (1), `qa/` (1), `evals/` (2), `privacy/` (2), `design/` (3), `engineering/` (3), `project/` (3). Fold `protocol/` into `architecture/`, combine `qa/` and `evals/` into one verification directory, and fold `design/` into `style-guide/`. Keep `privacy/` and `project/` where they are — both are small but load-bearing, and `privacy/` deliberately isolates the invariant everything else serves.
+
+Every move must repair inbound references. `AGENTS.md` and `doctor.py`'s REQUIRED list both name paths.
+
+### PF-061 — Archive spent planning specifications
+Files: `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`, `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`, `docs/history/`, `docs/project/DOCUMENTATION.md`, `AGENTS.md`, `README.md`
+Acceptance: both files are in `docs/history/` with unique content merged into a living owner; no inbound reference is broken; `doctor.py` passes.
+Depends: none
+Est: 4-6
+
+`MACHINE_CONTRACT_REPAIR_SPEC.md` (521 lines) declares itself a "normative P-1140B–E planning input"; P-1140E is closed, so it is spent. `REPOSITORY_ALIGNMENT_2026-07-23.md` (366 lines) restates decisions owned by `DECISION_REGISTER.md` and is cited in the `AGENTS.md` initialization order and in `DOCUMENTATION.md`, so both must be updated when it moves. Roughly 890 lines leave the active planning surface.
+
+Unlike the nine files archived on 2026-08-05, these two have live inbound references. Merge before moving; do not orphan a reference.
+
+### PF-062 — Make the decision register and task catalog machine-readable
+Files: `conformance/planning/decisions-v1.json` (new), `conformance/planning/decisions-v1.schema.json` (new), `conformance/planning/tasks-v1.json` (new), `conformance/planning/tasks-v1.schema.json` (new), `scripts/repository/generate_planning_docs.py` (new), `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`
+Acceptance: the Markdown register and catalog are generated from JSON and byte-identical to the committed files; a validator fails on drift between source and generated output.
+Depends: PF-053, PF-055
+Est: 12-16
+
+`conformance/p1140f/*.json` is the pattern that works in this repository: validators read structure. But 77 decisions and every planning gate live in Markdown tables, and validators reach them by substring matching — `validate_p1140f_authority.py:131` greps prose for a count, and `doctor.py` asserts that literal strings appear somewhere in a document. That is why the phase gate could only be moved by editing its own validator.
+
+Make JSON the source and generate the Markdown, so prose can no longer drift from state and validators can assert on structure. This unit is what makes PF-063 possible.
+
+### PF-063 — Validate decision and work-unit traceability
+Files: `scripts/repository/validate_traceability.py` (new), `tests/ci/test_validate_traceability.py` (new), `docs/planning/decision-traceability/`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
+Acceptance: the validator resolves every `D-` identifier and every work-unit identifier referenced anywhere under `docs/planning/` and `docs/implementation/`, and exits non-zero on any that does not resolve. It reports zero unresolved identifiers.
+Depends: PF-062
+Est: 6-8
+
+There are currently 126 dangling work-unit references across 74 unique identifiers. Three prefixes cited in the traceability matrix — `I-`, `PL-`, `U-` — do not exist anywhere in the 195-unit breakdown. `D-01` through `D-10` are used as work-unit identifiers in the same documents where `D-001` through `D-010` are decision identifiers. Decisions D-070 through D-077 have no traceability rows at all, because `validate_p1140e_contracts.py:52-59` freezes its matrix at `range(1, 70)` and delegates the remainder to a validator that never references a `D-` identifier.
+
+No validator reads these files' content today. This one closes the class of defect permanently rather than enumerating instances of it.
+
+### PF-064 — Remove stale dates from living document filenames
+Files: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `scripts/repository/doctor.py`, `AGENTS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/TASK_CATALOG.md`
+Acceptance: no file that is still being updated carries a date in its filename; every inbound reference resolves; `doctor.py` passes.
+Depends: PF-057
+Est: 2-3
+
+`P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md` is live and was last updated 2026-08-04, but its filename says July 24. A date in a filename should mean the document is a point-in-time record; using it for a living document teaches readers to distrust the convention. It has nine inbound references including `doctor.py`'s REQUIRED list.
+
+Archived point-in-time reports in `docs/history/` keep their dates. That is what the convention is for.
+
+### PF-065 — Correct the OpenAPI file extension
+Files: `packages/schemas/openapi-v1.yaml`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_planning_coverage.py`, `scripts/repository/validate_p1140e_contracts.py`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
+Acceptance: the file's extension matches its contents; every reader resolves it; all planning validators pass.
+Depends: PF-038
+Est: 2-3
+
+`openapi-v1.yaml` contains JSON. YAML is a superset of JSON so parsers accept it, but the first tool that selects a parser by extension, or any human opening it expecting YAML, will be wrong. Either rename to `.json` or convert the contents to YAML — decide deliberately and record which, since several validators reference the path by name.
 
 ## Frozen backlog — scope inventory, not executable units
 

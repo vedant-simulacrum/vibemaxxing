@@ -1,14 +1,18 @@
 # VibeMaxxing Status
 
-Updated: 2026-08-04
+Updated: 2026-08-05
 
 ## Phase
 
-The repository remains in **planning contract repair**.
+The repository has entered **implementation**. Planning contract repair continues in parallel and is not finished.
 
-P-1140A through P-1140E are complete only within their stated planning and structural scopes. P-1140F is open. P-1104 remains blocked and product implementation remains unauthorized.
+P-1140A through P-1140E are complete only within their stated planning and structural scopes. P-1140F is open. P-1104 is `authorized-open`: the repository owner authorized entry into implementation on 2026-08-05, recorded in GitHub issue 44 and in `conformance/p1140f/gate-authorization-v1.json`.
 
-The canonical machine-readable semantic state is `conformance/p1140f/semantic-findings-v1.json`. Artifact authority and evidence ceilings are owned by `conformance/p1140f/artifact-authority-v1.json`. Exact-head review state is owned by `conformance/p1140f/review-target-v1.json`. Prose documents summarize those registries and may not independently redefine counts or state.
+The gate was opened while its own documented preconditions were unmet. Thirteen P1 semantic findings (SR-005 through SR-017) were open and `conformance/p1140f/review-target-v1.json` was `not-pinned` with a `pending` verdict. Those preconditions were knowingly accepted, not satisfied. The 13 findings remain open and tracked; they are **not waived**.
+
+Opening P-1104 authorizes work. It is not evidence. Nothing below has been implemented, secured, certified, or made launch-ready by this decision, and the **Not implemented** list in this file is unchanged by it.
+
+The canonical machine-readable semantic state is `conformance/p1140f/semantic-findings-v1.json`. Artifact authority and evidence ceilings are owned by `conformance/p1140f/artifact-authority-v1.json`. Exact-head review state is owned by `conformance/p1140f/review-target-v1.json`. Phase and gate state are owned by `conformance/p1140f/gate-authorization-v1.json`. Prose documents summarize those registries and may not independently redefine counts or state.
 
 ## Reality map
 
@@ -28,7 +32,7 @@ The canonical machine-readable semantic state is `conformance/p1140f/semantic-fi
 - production PostgreSQL migrations and executable transaction evidence;
 - production infrastructure, signed release repository, deployment, and operations.
 
-The executable prototypes are not production implementation, normative protocol evidence, implementation authorization, or launch evidence.
+This list is unchanged by the P-1104 decision. The executable prototypes are not production implementation, normative protocol evidence, or launch evidence.
 
 ## Binding product posture
 
@@ -55,15 +59,15 @@ Exact titles, owners, conflicts, repair tasks, evidence and review state live on
 
 - **P-1140A through P-1140E:** complete within stated planning/structural scope; not implementation evidence.
 - **P-1140F:** `in-progress-planning`; semantic closure is not achieved.
-- **P-1104:** `blocked-approval`; cannot be considered until the finding registry has zero active P0/P1 findings and one exact reviewed head has a passing verdict.
+- **P-1104:** `authorized-open`; opened by owner decision on 2026-08-05 under GitHub issue 44. The stated preconditions — zero active P0/P1 findings and one exact reviewed head with a passing verdict — were not met at authorization and are not met now. The stated reasoning is that the open findings are contradictions between documents whose closure is largely unfalsifiable without running code, and that most become testable once behaviour exists. The findings stay open, stay tracked, and are not waived. The authoritative record is `conformance/p1140f/gate-authorization-v1.json`.
 - **P-1105:** `blocked-launch-evidence`; requires an implemented system and executable evidence on every advertised profile.
 - **P-1131:** `blocked-launch-evidence`; requires real adapters and non-expired exact-tuple certifications.
 - **P-1151:** `blocked-implementation`; SLM bakeoff remains post-launch.
 
 ## Automation
 
-Read-only planning validation may run. ADR-014 permits narrowly scoped Storybook prototype validation. Product build, dependency, security, fuzz, evaluation, release, signing, deployment, and operational automation remain disabled until implementation is explicitly opened.
+Read-only planning validation may run. ADR-014 permits narrowly scoped Storybook prototype validation. Product build, dependency, security, fuzz, evaluation, release, signing, deployment, and operational automation are still disabled. Opening P-1104 did not re-enable them; restoring them is tracked as `P-1007` and requires executable product code to check.
 
 ## Current next task
 
-Execute `P-1140F-1`: finish repository authority enforcement, complete the specification bundle inventory, and prepare a new exact-head semantic review target. Do not begin product implementation while performing this work.
+Execute the `PF-` units in `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` in dependency order. `P-1140F-1` continues in parallel: finish repository authority enforcement, complete the specification bundle inventory, and prepare a new exact-head semantic review target. Closing SR-005 through SR-017 is expected to happen against running code rather than before it, and the count in this document must fall as they close.
