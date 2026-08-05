@@ -1,6 +1,6 @@
 {
   "schema_version":1,
-  "registry_version":"1.0.0-planning",
+  "registry_version":"1.1.0-planning",
   "support_tiers":["hardened-certified","competitive-certified","community-certified","generic-live","imported","unsupported"],
   "families":[
     {"id":"cli-native","generic_capture_paths":["native-events","otel","official-hooks","stdio-wrapper","live-log"],"examples":["Codex CLI","Claude Code","Gemini CLI","OpenCode","Aider","Goose","Kimi CLI","Qwen Code","Mistral Vibe"]},
@@ -14,10 +14,77 @@
     {"id":"unknown-tool","generic_capture_paths":["generic-wrapper","import"],"examples":["private tools","new agents"]}
   ],
   "products":[
-    {"id":"codex-cli","family":"cli-native","planning_status":"certification-planned","target_tier":"hardened-certified","certifications":[]},
-    {"id":"claude-code","family":"cli-native","planning_status":"certification-planned","target_tier":"hardened-certified","certifications":[]},
-    {"id":"gemini-cli","family":"cli-native","planning_status":"certification-planned","target_tier":"hardened-certified","certifications":[]},
-    {"id":"cursor","family":"ide-extension","planning_status":"research-required","target_tier":"competitive-certified","certifications":[]},
+    {
+      "id":"codex-cli","family":"cli-native","planning_status":"specified","target_tier":"competitive-certified","certifications":[],
+      "capability":{
+        "verdict":"partial-local-capture",
+        "mechanism":"otel",
+        "evidence_kind":"published-surface-read",
+        "assessed_on":"2026-08-06",
+        "local_collector_sufficient":true,
+        "plan_tier_required":"consumer account",
+        "provider_attestation":"organization-scoped-only",
+        "signals":["codex.turn.token_usage"],
+        "coverage_gaps":["codex exec emits zero metrics","codex mcp-server emits no metrics"],
+        "known_defects":[
+          {"reference":"openai/codex#12913","effect":"two execution surfaces are silent, so any total derived from this adapter omits whatever ran through them","measured_magnitude":"zero datapoints from exec and mcp-server"}
+        ],
+        "notes":"Target tier lowered from hardened-certified because a total over an incomplete surface cannot support a hardened claim, and because OpenTelemetry capture is attested-local under D-077 rather than source-bound."
+      }
+    },
+    {
+      "id":"claude-code","family":"cli-native","planning_status":"certification-planned","target_tier":"competitive-certified","certifications":[],
+      "capability":{
+        "verdict":"deterministic-local-capture",
+        "mechanism":"otel",
+        "evidence_kind":"exercised-on-hardware",
+        "assessed_on":"2026-08-06",
+        "local_collector_sufficient":true,
+        "plan_tier_required":"consumer subscription; no enterprise plan, organization, or administrator provisioning",
+        "provider_attestation":"none-for-individual-account",
+        "signals":["claude_code.token.usage","claude_code.cost.usage","claude_code.session.count","claude_code.active_time.total"],
+        "identity_attributes_requiring_strip":["user.email","user.id","user.account_id","user.account_uuid","organization.id"],
+        "known_defects":[
+          {"reference":"vendor telemetry documentation","effect":"account identity attributes are present on every datapoint by default and no documented setting removes user.email; the collector strips all five at the device boundary before aggregation","measured_magnitude":"five identity attributes per datapoint"},
+          {"reference":"ryoppippi/ccusage#866","effect":"the session JSONL fallback substrate undercounts input tokens because entries hold literal 0 or 1 placeholders written during streaming and never updated","measured_magnitude":"approximately 174x undercount across roughly 75 percent of entries"},
+          {"reference":"ryoppippi/ccusage#950","effect":"the session JSONL fallback substrate replays a parent thread's token history for subagent execution with new timestamps","measured_magnitude":"91x overcount"},
+          {"reference":"viberank#83","effect":"the CLI rewrites its own session files on resume and compaction, so the fallback substrate mutates after observation","measured_magnitude":"month-to-date total fell 11 percent in 16 hours while file count rose"}
+        ],
+        "specification":"docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md",
+        "notes":"OpenTelemetry metrics are the primary mechanism and session JSONL is a private-analytics-only degraded fallback under D-098. Target tier lowered from hardened-certified because an unauthenticated loopback receiver yields attested-local evidence under D-077, never source-bound. The empty certifications array means no public support claim exists."
+      }
+    },
+    {
+      "id":"gemini-cli","family":"cli-native","planning_status":"specified","target_tier":"competitive-certified","certifications":[],
+      "capability":{
+        "verdict":"deterministic-local-capture",
+        "mechanism":"otel",
+        "evidence_kind":"published-surface-read",
+        "assessed_on":"2026-08-06",
+        "local_collector_sufficient":true,
+        "plan_tier_required":"consumer account",
+        "provider_attestation":"none-for-individual-account",
+        "signals":["gemini_cli.token.usage","gen_ai.client.token.usage"],
+        "known_defects":[
+          {"reference":"vendor telemetry configuration surface","effect":"logPrompts defaults to true, so prompt text is present on the telemetry logs channel unless explicitly disabled; only the metrics channel is admissible and the logs channel is unusable at any tier","measured_magnitude":"default-on prompt logging"}
+        ],
+        "notes":"Verdict applies to the metrics channel only. Target tier lowered from hardened-certified because OpenTelemetry capture is attested-local under D-077 rather than source-bound."
+      }
+    },
+    {
+      "id":"cursor","family":"ide-extension","planning_status":"specified","target_tier":"unsupported","certifications":[],
+      "capability":{
+        "verdict":"no-deterministic-local-capture",
+        "mechanism":"none",
+        "evidence_kind":"published-surface-read",
+        "assessed_on":"2026-08-06",
+        "local_collector_sufficient":false,
+        "plan_tier_required":"team or business plan for the documented surface; no individual surface exists",
+        "provider_attestation":"organization-scoped-only",
+        "coverage_gaps":["every documented endpoint is team-scoped","individual access exists only through undocumented endpoints reachable by replaying a browser session cookie"],
+        "notes":"An undocumented cookie-replayed endpoint has no stability contract, no version probe, and requires holding a session credential, which the privacy contract forbids the collector from touching. Target tier set to unsupported for individual accounts and stated as a visible gap rather than an aspiration."
+      }
+    },
     {"id":"github-copilot","family":"ide-extension","planning_status":"research-required","target_tier":"competitive-certified","certifications":[]},
     {"id":"opencode","family":"cli-native","planning_status":"research-required","target_tier":"competitive-certified","certifications":[]},
     {"id":"cline","family":"ide-extension","planning_status":"research-required","target_tier":"competitive-certified","certifications":[]},
@@ -34,5 +101,6 @@
     {"id":"vllm","family":"local-inference","planning_status":"research-required","target_tier":"generic-live","certifications":[]},
     {"id":"lm-studio","family":"local-inference","planning_status":"research-required","target_tier":"generic-live","certifications":[]}
   ],
-  "publication_rule":"A product is publicly listed as supported only when at least one non-expired certification records an exact version, mode, platform, suite, fixture reference, maintainer, and passing result. Empty certifications mean no public product-level support claim. Family fallback remains separately labelled."
+  "publication_rule":"A product is publicly listed as supported only when at least one non-expired certification records an exact version, mode, platform, suite, fixture reference, maintainer, and passing result. Empty certifications mean no public product-level support claim. Family fallback remains separately labelled.",
+  "capability_rule":"A capability block records what a mechanism was observed to produce. It is never certification, never exercised support, and never a public support claim; only a non-expired certification entry can be one. evidence_kind exercised-on-hardware means a real machine produced the named signal on assessed_on and nothing more. A verdict of deterministic-local-capture describes the count, not the trust: no capability block raises the tier ceiling, and D-077 keeps every locally observed mechanism attested-local rather than source-bound. D-100 records that no provider exposes an individual-account attestation path, so provider_attestation is never available for an individual participant."
 }

@@ -67,6 +67,7 @@ Syntax validity, schema parsing, fixture loading, symbolic race plans, prototype
 | Specification family | Normative owner | Machine owner | Status | Repair / implementation dependency |
 |---|---|---|---|---|
 | Adapter capability manifest | universal compatibility contract | adapter manifest schema and registry | present-blocked | capability declaration must not imply certification |
+| Per-adapter integration contract | `docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md` for `claude-code-otel`; one file per adapter thereafter | agent registry `capability` block; `conformance/adapters/claude-code-otel/` fixtures | present-blocked | receive surface, environment, attribute allowlist and D-099 strip list, stage mapping, degraded-fallback bounds and certification tuple; binds `cloud-separate-cache-v1` until PF-041 registers a narrower profile |
 | Atomic compatibility tuple | universal compatibility/evidence contracts | proposed compatibility-tuple schema | planned-missing | artifact, source/version, mode, platform, profile and privacy binding |
 | Certification result bundle | evidence contract | proposed signed certification-result schema | planned-missing | exact tuple, suite, result, validity, signer and revocation |
 | Certification lifecycle/revocation | universal compatibility contract | proposed registry/state authority | planned-missing | candidate/testing/active/degraded/suspended/expired/superseded/retired |

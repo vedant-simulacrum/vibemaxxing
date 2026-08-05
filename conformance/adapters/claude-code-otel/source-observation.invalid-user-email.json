@@ -1,0 +1,43 @@
+{
+  "observation_schema_version": 1,
+  "adapter_id": "claude-code-otel",
+  "adapter_artifact_sha256": "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a",
+  "adapter_manifest_sha256": "2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b",
+  "source_product_id": "claude-code",
+  "source_version": "2.0.0",
+  "platform": "macos",
+  "execution_mode": "otel",
+  "source_cursor": {
+    "domain": "claude-code-otel-metrics",
+    "generation": "1",
+    "ordinal": "17"
+  },
+  "runtime_generation": "1",
+  "source_event_ref": "Y2NvdGVsLWNvbW1pdG1lbnQtc3ludGhldGlj",
+  "local_wall_time": {
+    "observed_at": "2026-08-06T12:00:10Z",
+    "uncertainty_ms": "10500"
+  },
+  "monotonic_clock": {
+    "domain_id": "019896a0-0000-7000-8000-0000000000c1",
+    "generation": "1",
+    "start_ns": "600000000000",
+    "end_ns": "610000000000"
+  },
+  "token_observation": {
+    "kind": "category-counts",
+    "categories": {
+      "input": "1420",
+      "output": "860",
+      "cache_read": "39100",
+      "cache_write": "5200"
+    }
+  },
+  "outcome": "success",
+  "sensitivity": {
+    "classification": "L0",
+    "contains_raw_content": false,
+    "network_eligible": false
+  },
+  "user.email": "VMX_CANARY_EMAIL_never-real@example.invalid"
+}

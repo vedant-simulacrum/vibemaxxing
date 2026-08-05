@@ -32,9 +32,8 @@ validate: $(VENV_PY) ## Run the planning validator suite
 	$(VENV_PY) scripts/repository/validate_planning_artifacts.py --allow-no-postgres
 	$(VENV_PY) scripts/ci/run_evals.py --validate-registry
 	@echo ""
-	@echo "Known failing at HEAD: the cross-reference validator reports three dangling"
-	@echo "references it must not hide — ADR-015, which PF-039 has not authored yet,"
-	@echo "and the superseded SR-001/SR-004 numbering in DOCUMENTATION.md."
+	@echo "The cross-reference dangle set is pinned at empty. Any dangling reference"
+	@echo "this reports is a defect introduced by the change under test."
 	$(VENV_PY) scripts/repository/validate_cross_references.py
 	@echo ""
 	@echo "Skipped locally: the PostgreSQL DDL stage of validate_planning_artifacts.py."

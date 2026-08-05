@@ -43,6 +43,7 @@ The technical-specification completeness authority is `docs/planning/SCHEMA_AND_
 - VibeProof wire/state protocol: `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`, `packages/schemas/vibeproof-claim-v1.cddl`
 - Authoritative mutable state and platform behavior: `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
 - Universal compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`
+- Per-adapter integration contracts, one file per adapter: `docs/integrations/`. The first is `docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, which owns the Claude Code OTLP receive surface, its attribute strip list, its stage mapping and its certification tuple
 - Privacy: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md`
 - Security: `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`, ADR-015
 - Ranking computation and the credited-score model: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, ADR-020
@@ -90,7 +91,7 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 | `product/` | Product surface and metrics | `PRODUCT_SPEC.md`, `ACCOUNTING_AND_TIME_CONTRACT.md`, `TOKEN_ACCOUNTING_SPEC.md`, `CASH_BURN_PRICING_PROVENANCE.md`, `SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, `ONBOARDING_AND_PRIVACY_VERIFICATION.md`, `METRICS.md`, `SOCIAL_RANKING_AND_ABUSE_RESEARCH.md` |
 | `privacy/` | **The boundary.** The invariant everything else serves | `PRIVACY_CONTRACT.md`, `PRIVACY_PRESERVING_USAGE_EVIDENCE.md` |
 | `security/` | Threat, integrity, attestation, abuse | `THREAT_MODEL.md`, `INTEGRITY_MODEL.md`, `EVIDENCE_AND_ATTESTATION_PROFILES.md`, `AUTHENTICATION_AND_RECOVERY.md`, `RANKED_IDENTITY_ELIGIBILITY.md`, `ANTI_CHEAT_ATTACK_CATALOG.md`, `ANTI_CHEAT_RESEARCH_PROGRAM.md`, `ADVERSARIAL_TABLETOPS.md`, `LOCAL_IPC_AND_DEVICE_IDENTITY.md`, `PLATFORM_ISOLATION.md`, `ABUSE_AND_COUNTRY_PRIVACY.md` |
-| `integrations/` | Agent compatibility and certification | `UNIVERSAL_AGENT_COMPATIBILITY.md`, `ADAPTER_CERTIFICATION_POLICY.md`, `AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `T20_CERTIFICATION_AND_SELECTION_SPEC.md`, `T20_MODEL_HARDENING_CONTRACT.md` |
+| `integrations/` | Agent compatibility and certification | `UNIVERSAL_AGENT_COMPATIBILITY.md`, `ADAPTER_CERTIFICATION_POLICY.md`, `ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, `AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `T20_CERTIFICATION_AND_SELECTION_SPEC.md`, `T20_MODEL_HARDENING_CONTRACT.md` |
 | `operations/` | Launch, running, recovery | `OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, `RELEASE_VERIFICATION.md`, `PRODUCTION_READINESS.md`, `COMPETITIVE_BETA_GATE.md`, `INCIDENT_RESPONSE.md`, `SLOS_AND_ALERTS.md`, `OBSERVABILITY_PRIVACY.md`, `DATA_LIFECYCLE_AND_RECOVERY.md` |
 | `implementation/` | Work decomposition | `IMPLEMENTATION_HANDOFF.md`, `PR_SIZED_WORK_BREAKDOWN.md`, `ISSUE_GENERATION.md`, `REPOSITORY_LAYOUT.md` |
 | `engineering/` | Engineering standards and budgets | `ENGINEERING_SYSTEM.md`, `PERFORMANCE_BUDGETS.md`, `COLLECTOR_PERFORMANCE_AND_POWER.md` |
