@@ -11,6 +11,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATOR = ROOT / "scripts" / "repository" / "validate_state_vocabularies.py"
@@ -70,9 +72,11 @@ class StateVocabularyValidatorTests(unittest.TestCase):
 
     def edit_openapi(self, mutate) -> None:
         path = self.copies["OPENAPI_PATH"]
-        spec = json.loads(path.read_text(encoding="utf-8"))
+        spec = yaml.safe_load(path.read_text(encoding="utf-8"))
         mutate(spec["components"]["schemas"])
-        path.write_text(json.dumps(spec, indent=2) + "\n", encoding="utf-8")
+        path.write_text(
+            yaml.safe_dump(spec, sort_keys=False, width=4096), encoding="utf-8"
+        )
 
     def edit_sql(self, old: str, new: str) -> None:
         path = self.copies["SQL_PATH"]
@@ -174,7 +178,7 @@ class StateVocabularyValidatorTests(unittest.TestCase):
             )
 
     def test_appeal_outcome_is_published_and_matches_persistence(self) -> None:
-        spec = json.loads(OPENAPI.read_text(encoding="utf-8"))
+        spec = yaml.safe_load(OPENAPI.read_text(encoding="utf-8"))
         appeal = spec["components"]["schemas"]["Appeal"]
         self.assertIn("decision", appeal["properties"])
         self.assertNotIn("decision", appeal["required"])
