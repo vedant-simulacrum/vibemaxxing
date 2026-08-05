@@ -44,9 +44,13 @@ The technical-specification completeness authority is `docs/planning/SCHEMA_AND_
 - Authoritative mutable state and platform behavior: `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
 - Universal compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`
 - Privacy: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md`
-- Security: `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`
+- Security: `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`, ADR-015
+- Ranking computation and the credited-score model: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, ADR-020
+- Accepted residual risks without a normative owner: ADR-019
 - Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, ADR-010 through ADR-013
 - Operations/release/open source: `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, ADR-013
+- Hosting region, data residency and provider selection: ADR-017
+- Database and migration tooling: ADR-018
 - Future implementation order: `docs/implementation/IMPLEMENTATION_HANDOFF.md`
 - Future PR-sized units: `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`
 - Future repository layout: `docs/implementation/REPOSITORY_LAYOUT.md`
@@ -81,7 +85,7 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 |---|---|---|
 | `project/` | **Top authority.** Product, phase, and this map | `PROJECT.md`, `STATUS.md`, `DOCUMENTATION.md` |
 | `planning/` | Decisions, gates, scope, policy | `DECISION_REGISTER.md`, `TASK_CATALOG.md`, `SCHEMA_AND_INTERFACE_INVENTORY.md`, `ARTIFACT_POLICY.md`, `PRODUCT_SCOPE_FREEZE.md`, `REPOSITORY_OPERATIONS.md`, `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`, `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `CROSS_PLATFORM_COMPLETENESS_AUDIT.md`, `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, `decision-traceability/` (D-001..D-069 + `README.md`) |
-| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-014`, `ADR-016` |
+| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-020` |
 | `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
 | `product/` | Product surface and metrics | `PRODUCT_SPEC.md`, `ACCOUNTING_AND_TIME_CONTRACT.md`, `TOKEN_ACCOUNTING_SPEC.md`, `CASH_BURN_PRICING_PROVENANCE.md`, `SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, `ONBOARDING_AND_PRIVACY_VERIFICATION.md`, `METRICS.md`, `SOCIAL_RANKING_AND_ABUSE_RESEARCH.md` |
 | `privacy/` | **The boundary.** The invariant everything else serves | `PRIVACY_CONTRACT.md`, `PRIVACY_PRESERVING_USAGE_EVIDENCE.md` |
@@ -147,7 +151,14 @@ Structural validation is not semantic review. Semantic review is not runtime pro
 - ADR-012 owns optional privileged supervision.
 - ADR-013 owns mandatory automatic updates.
 - ADR-014 owns bounded prototype visual validation.
+- ADR-015 owns the session authentication scheme, including token format, refresh rotation, revocation, device binding and the OAuth authorization-exchange requirements.
 - ADR-016 owns provider-attested organization evidence.
+- ADR-017 owns hosting region and data residency, and the provider selection procedure.
+- ADR-018 owns the database and migration tooling, and the executable form of the expand-and-contract migration policy.
+- ADR-019 is the register for accepted residual risks that no normative owner has adopted.
+- ADR-020 owns confidence-weighted ranking, the discount function and the raw-versus-credited vocabulary.
+
+The numbering gap at ADR-015 is closed. Every ADR from ADR-001 to ADR-020 exists.
 
 ## Research
 
