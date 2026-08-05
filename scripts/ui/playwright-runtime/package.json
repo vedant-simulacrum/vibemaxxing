@@ -4,7 +4,7 @@
   "private": true,
   "description": "Locked browser runtime used only by ADR-014 prototype visual validation.",
   "dependencies": {
-    "@axe-core/playwright": "4.10.2",
-    "playwright": "1.61.1"
+    "@axe-core/playwright": "4.12.1",
+    "playwright": "1.62.1"
   }
 }
