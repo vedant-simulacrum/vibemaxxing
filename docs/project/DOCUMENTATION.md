@@ -147,6 +147,7 @@ Structural validation is not semantic review. Semantic review is not runtime pro
 - ADR-012 owns optional privileged supervision.
 - ADR-013 owns mandatory automatic updates.
 - ADR-014 owns bounded prototype visual validation.
+- ADR-016 owns provider-attested organization evidence.
 
 ## Research
 

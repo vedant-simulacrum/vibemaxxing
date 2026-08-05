@@ -32,6 +32,11 @@
           "path": "docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md",
           "requires": ["structural P0 open: 0", "structural P1 open: 0", "semantic", "P-1140F"],
           "forbids": []
+        },
+        {
+          "path": "AGENTS.md",
+          "requires": ["P-1140E", "complete-planning"],
+          "forbids": []
         }
       ]
     },
@@ -58,6 +63,11 @@
         {
           "path": "docs/implementation/IMPLEMENTATION_HANDOFF.md",
           "requires": ["P-1140F"],
+          "forbids": []
+        },
+        {
+          "path": "AGENTS.md",
+          "requires": ["P-1140F", "in-progress-planning", "SR-005", "SR-017", "semantic-findings-v1.json"],
           "forbids": []
         }
       ]
@@ -116,6 +126,16 @@
           "path": "docs/implementation/IMPLEMENTATION_HANDOFF.md",
           "requires": ["P-1104", "authorized-open", "gate-authorization-v1.json"],
           "forbids": ["inactive while P-1140F is open", "P-1104 remains blocked"]
+        },
+        {
+          "path": "AGENTS.md",
+          "requires": ["P-1104", "authorized-open", "gate-authorization-v1.json", "not waived"],
+          "forbids": [
+            "P-1104 remains blocked",
+            "product implementation remains unauthorized",
+            "implementation remains unauthorized",
+            "not allowed until explicit P-1104 authorization"
+          ]
         }
       ]
     }

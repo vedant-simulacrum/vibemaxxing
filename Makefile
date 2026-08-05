@@ -40,8 +40,6 @@ plan: $(VENV_PY) ## Regenerate the deterministic work-unit issue plan
 	$(VENV_PY) scripts/repository/generate_issue_plan.py
 
 evals: $(VENV_PY) ## Validate the evaluation registry
-	@echo "Known failing at HEAD: the registry carries authority_class and"
-	@echo "evidence_ceiling keys that run_evals.py rejects. Tracked as PF-056."
 	$(VENV_PY) scripts/ci/run_evals.py --validate-registry
 
 test: $(VENV_PY) ## Run the validator unit tests

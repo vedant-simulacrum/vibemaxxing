@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Validate repaired P-1140D planning coverage and launch scope.
 
-This proves declared structural coverage only; implementation remains unauthorized.
+This proves declared structural coverage only. It is not evidence that any
+covered surface is implemented, correct, or launch-ready.
 """
 from __future__ import annotations
 
@@ -129,7 +130,7 @@ def main() -> None:
         f"({len(REQUIRED_PATHS)} current API paths, {len(REQUIRED_TABLES)} current tables, "
         f"{len(REPAIR_TARGETS)} repaired authority targets)"
     )
-    print("artifact maturity: repaired P-1140D planning contract; implementation remains unauthorized")
+    print("artifact maturity: repaired P-1140D planning contract; declared coverage only, not implementation evidence")
 
 
 if __name__ == "__main__":

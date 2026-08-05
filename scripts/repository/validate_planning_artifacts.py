@@ -840,7 +840,7 @@ def main() -> int:
         return 1
     print("planning artifact validation: pass")
     print(
-        "artifact maturity: structural planning only; implementation remains unauthorized"
+        "artifact maturity: structural planning only; not implementation evidence"
     )
     return 0
 

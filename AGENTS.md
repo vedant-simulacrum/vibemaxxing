@@ -10,14 +10,22 @@ Before changing anything:
 2. Resolve default branch, current branch, working-tree state, current issue/PR, linked issue, and unresolved review threads.
 3. Run `python3 scripts/repository/doctor.py` from a clean checkout. Do not continue past a failure without repairing or documenting it.
 4. Read, in order: `docs/project/PROJECT.md`, `docs/project/STATUS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, then relevant ADRs, contracts, schemas, fixtures, issues, and PR discussions.
-5. Read implementation handoff files only for implementation planning or after explicit P-1104 authorization.
+5. Read `conformance/p1140f/gate-authorization-v1.json` before acting on anything this file says about phase, gate, or authorization state. The record is authoritative; this file restates it.
 6. Use `docs/research/README.md` to locate primary evidence relevant to the active decision.
 
 Do not treat chat history, generated indexes, stale branches, historical completion reports, external notes, another repository, green structural checks, or unexecuted fixtures as authority.
 
 ## Current phase
 
-The repository is in **planning contract repair**. P-1140F is open against current repository authority. Product implementation remains unauthorized and P-1104 remains blocked.
+The repository is in the **implementation** phase. `conformance/p1140f/gate-authorization-v1.json` is the sole authority for phase and gate state. This section restates that record and may never contradict it; when the two disagree, the record is correct and this file is the defect.
+
+- **P-1140E: complete-planning.** It proves structural consistency and nothing else.
+- **P-1140F: in-progress-planning.** Thirteen P1 semantic findings, SR-005 through SR-017, are open in `conformance/p1140f/semantic-findings-v1.json`.
+- **P-1104: authorized-open.** Product implementation is authorized. The gate was opened by owner decision on 2026-08-05 under `https://github.com/vedant-simulacrum/vibemaxxing/issues/44` while those thirteen findings were open and `conformance/p1140f/review-target-v1.json` was not pinned. The documented preconditions were knowingly accepted, not met. The findings are tracked and are not waived.
+
+Opening P-1104 authorizes implementation work. It is not evidence that any component is implemented, correct, secure, private, certified, or launch-ready.
+
+The owner has elected to finish the planning track first. Product code is permitted but is not the active program; the active program remains the semantic closure sequence in `docs/planning/TASK_CATALOG.md`.
 
 The earlier P-1140F four-finding review at `f06f630619427ec7f0576b57c4b3ac914d9a4c87` is stale. Later commits added executable Rust/Go protocol and accounting prototypes and additional machine contracts. The canonical current semantic scope, findings, closed defaults, user decisions, and dependency order live only in `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
 
@@ -26,14 +34,16 @@ Allowed work:
 - primary-source research tied to an unresolved P-1140F finding;
 - repository-wide authority alignment and contradiction repair;
 - normative contract, ADR, schema, state, policy, fixture, and planning-validator refinement;
-- implementation decomposition and issue preparation without product code.
+- implementation decomposition and issue preparation;
+- product code, under an accepted contract and a work unit that names its files and acceptance criteria.
 
-Not allowed until explicit P-1104 authorization:
+Still not allowed, and not unlocked by P-1104:
 
-- product code beyond existing bounded prototypes;
 - production infrastructure or deployments;
 - activation of product CI, fuzz, dependency, security, evaluation, signing, release, or deployment workflows;
-- certified-support, production-hardening, or launch-readiness claims.
+- certified-support, production-hardening, or launch-readiness claims;
+- closing, downgrading, or waiving a P-1140F finding without recorded closure evidence and a review verdict;
+- changing any gate state. Gates are opened and closed by the owner, never by an agent.
 
 ## Evidence discipline
 
@@ -43,7 +53,9 @@ Not allowed until explicit P-1104 authorization:
 - Specifications, mocks, placeholders, skipped checks, empty fixtures, and unexecuted tests are not implementation evidence.
 - Cross-language agreement is not conformance when both implementations consume the wrong authority.
 - A suite name must describe what it actually executes.
-- No agent may mark P-1104 ready while any semantic P0/P1 remains open.
+- An eval suite reported as `not_applicable` is an absence of evidence, never a pass.
+- This file is not authority for phase or gate state. `conformance/p1140f/gate-authorization-v1.json` is. Repair this file when it drifts; do not repair the record to match it.
+- P-1104 being open is a decision, not evidence. No agent may report a P-1140F finding as closed without recorded closure evidence and a review verdict in `conformance/p1140f/semantic-findings-v1.json`, and no agent may claim launch readiness while any semantic P0 or P1 remains open.
 
 ## Binding product rules
 
