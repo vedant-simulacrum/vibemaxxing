@@ -124,7 +124,34 @@ class StateVocabularyValidatorTests(unittest.TestCase):
             checks["ranking_projection_generations.state"], set(machine["states"])
         )
 
+    def test_appeal_outcome_is_published_and_matches_persistence(self) -> None:
+        spec = json.loads(OPENAPI.read_text(encoding="utf-8"))
+        appeal = spec["components"]["schemas"]["Appeal"]
+        self.assertIn("decision", appeal["properties"])
+        self.assertNotIn("decision", appeal["required"])
+        bodies = self.validator.table_bodies(SQL.read_text(encoding="utf-8"))
+        checks = self.validator.sql_check_sets(bodies)
+        self.assertEqual(
+            set(appeal["properties"]["decision"]["enum"]),
+            checks["appeal_decisions.decision"],
+        )
+        # The outcome must not leak back into the lifecycle vocabulary.
+        self.assertFalse(
+            set(appeal["properties"]["decision"]["enum"])
+            & set(appeal["properties"]["state"]["enum"])
+        )
+
     # -- fail-closed behaviour -------------------------------------------------------
+
+    def test_outcome_mirror_drift_fails(self) -> None:
+        self.edit_openapi(
+            lambda schemas: schemas["Appeal"]["properties"]["decision"]["enum"].remove(
+                "partially-upheld"
+            )
+        )
+        code, output = self.run_validator()
+        self.assertEqual(code, 1)
+        self.assertIn("outcome enum Appeal.decision differs", output)
 
     def test_registry_state_drift_fails(self) -> None:
         self.edit_registry(

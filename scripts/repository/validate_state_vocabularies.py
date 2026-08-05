@@ -477,6 +477,12 @@ SQL_LOCAL_VOCABULARIES: dict[str, tuple[str, ...]] = {
     ),
 }
 
+# Sub-entity outcome vocabularies that are also published on the API. Key is the
+# SQL_LOCAL_VOCABULARIES entry that owns the vocabulary; value is the API enum that mirrors it.
+OUTCOME_MIRRORS: dict[str, str] = {
+    "appeal_decisions.decision": "Appeal.decision",
+}
+
 # API enums that report the outcome of a single request rather than a stored aggregate state.
 TRANSIENT_API_ENUMS: dict[str, tuple[tuple[str, ...], str | None]] = {
     "ClaimBatchResult.state": (("accepted", "rejected"), None),
@@ -818,7 +824,31 @@ def validate(report: Report) -> None:
             f"only-in-declaration={sorted(expected - actual)}",
         )
 
-    # 9. Every API state enum is bound, transient, or a declared projection.
+    # 9. Published outcome vocabularies agree with the SQL declaration that owns them.
+    for column, reference in sorted(OUTCOME_MIRRORS.items()):
+        expected = set(SQL_LOCAL_VOCABULARIES.get(column, ()))
+        if not expected:
+            report.check(
+                False,
+                f"outcome mirror names an undeclared sub-entity vocabulary: {column}",
+            )
+            continue
+        if reference not in enums:
+            report.check(False, f"outcome API enum does not exist: {reference}")
+            continue
+        actual = set(enums[reference])
+        report.check(
+            actual == expected,
+            f"outcome enum {reference} differs from {column}: "
+            f"only-in-api={sorted(actual - expected)} only-in-sql={sorted(expected - actual)}",
+        )
+        for value in sorted(actual):
+            report.check(
+                bool(STATE_NAME_PATTERN.fullmatch(value)),
+                f"outcome enum value is not lowercase kebab-case: {reference} = {value!r}",
+            )
+
+    # 10. Every API state enum is bound, transient, or a declared projection.
     projection_refs = {
         reference for _, references, _ in PROJECTIONS for reference in references
     }
@@ -846,7 +876,7 @@ def validate(report: Report) -> None:
                 f"{sorted(actual - machine_states)}",
             )
 
-    # 10. Declared projections cover their machine exactly.
+    # 11. Declared projections cover their machine exactly.
     for machine_id, references, mapping in PROJECTIONS:
         if machine_id not in machines:
             report.check(False, f"projection references unknown machine: {machine_id}")
@@ -874,7 +904,7 @@ def validate(report: Report) -> None:
                 f"only-in-projection={sorted(target - actual)}",
             )
 
-    # 11. The contract document records the same table.
+    # 12. The contract document records the same table.
     report.check(
         set(contract) == set(aggregates),
         f"contract document binding table mismatch: "
@@ -922,8 +952,9 @@ def main() -> int:
     api_bound = sum(len(binding.api) for binding in BINDINGS)
     print(
         "state vocabulary validation: PASS "
-        f"({len(BINDINGS)} aggregates, {machine_bound} registry machines, "
-        f"{sql_bound} SQL state columns, {api_bound} API state enums)"
+        f"({len(BINDINGS)} aggregates, {machine_bound} bound registry machines, "
+        f"{sql_bound} bound SQL columns, {len(SQL_LOCAL_VOCABULARIES)} declared sub-entity "
+        f"vocabularies, {api_bound} bound API enums)"
     )
     print(
         "claim_scope=vocabulary-agreement-only; transitions and workers remain unimplemented"

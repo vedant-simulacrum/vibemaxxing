@@ -3485,6 +3485,13 @@
               "expired"
             ]
           },
+          "decision": {
+            "enum": [
+              "upheld",
+              "partially-upheld",
+              "reversed"
+            ]
+          },
           "revision": {
             "type": "integer",
             "minimum": 0
