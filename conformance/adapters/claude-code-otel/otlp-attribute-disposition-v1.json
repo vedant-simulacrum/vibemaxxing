@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "adapter_id": "claude-code-otel",
+  "specification": "docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md",
+  "metric": "claude_code.token.usage",
+  "instrument": "counter",
+  "unit": "tokens",
+  "assessed_on": "2026-08-06",
+  "evidence_kind": "exercised-on-hardware",
+  "unknown_attribute_disposition": "drop-and-flag",
+  "partial_clean_permitted": false,
+  "attributes": [
+    {
+      "attribute": "model",
+      "disposition": "allow",
+      "reason": "Resolved through the model registry to a registered model_id. An unresolved alias fails closed and the raw alias never advances."
+    },
+    {
+      "attribute": "type",
+      "disposition": "allow",
+      "reason": "Selects the canonical token component. Values are input, output, cacheRead and cacheCreation."
+    },
+    {
+      "attribute": "query_source",
+      "disposition": "allow",
+      "reason": "Participates in the duplicate domain and never in the token arithmetic."
+    },
+    {
+      "attribute": "session.id",
+      "disposition": "transform",
+      "reason": "Consumed inside the adapter process to derive a keyed local commitment. The raw UUID is discarded when the datapoint leaves the adapter process."
+    },
+    {
+      "attribute": "effort",
+      "disposition": "drop",
+      "reason": "Read inside the adapter process and discarded at normalization. No downstream stage consumes it."
+    },
+    {
+      "attribute": "terminal.type",
+      "disposition": "drop",
+      "reason": "Read inside the adapter process and discarded at normalization. No downstream stage consumes it."
+    },
+    {
+      "attribute": "user.email",
+      "disposition": "strip",
+      "reason": "Direct personal identifier. Inside the absolute server boundary and absent from the egress allowlist. No documented setting removes it at the source, so configuration is not a control."
+    },
+    {
+      "attribute": "user.id",
+      "disposition": "strip",
+      "reason": "Stable provider-account identifier. Inside the absolute server boundary and absent from the egress allowlist."
+    },
+    {
+      "attribute": "user.account_id",
+      "disposition": "strip",
+      "reason": "Stable provider-account identifier. OTEL_METRICS_INCLUDE_ACCOUNT_UUID=false removes it at the source; the strip runs whether or not that setting is honoured."
+    },
+    {
+      "attribute": "user.account_uuid",
+      "disposition": "strip",
+      "reason": "Stable provider-account identifier. OTEL_METRICS_INCLUDE_ACCOUNT_UUID=false removes it at the source; the strip runs whether or not that setting is honoured."
+    },
+    {
+      "attribute": "organization.id",
+      "disposition": "strip",
+      "reason": "Discloses employer or team membership. Inside the absolute server boundary and absent from the egress allowlist."
+    }
+  ],
+  "strip_properties": [
+    "The strip runs inside the receiver, on the decoded in-memory datapoint, before admission to the observation queue and therefore before any aggregation, counter-delta state, or grouping.",
+    "A stripped value is never written to disk, a log, a crash report, or a diagnostic capture, and never keys any local structure, cache, or metric.",
+    "A datapoint from which a stripped attribute cannot be removed is rejected whole. There is no partial-clean path.",
+    "The strip does not depend on any environment variable or vendor setting."
+  ],
+  "positive_fixture": "conformance/adapters/claude-code-otel/source-observation.valid.json",
+  "negative_fixtures": [
+    "conformance/adapters/claude-code-otel/source-observation.invalid-user-email.json",
+    "conformance/adapters/claude-code-otel/source-observation.invalid-account-identity.json",
+    "conformance/adapters/claude-code-otel/source-observation.invalid-organization-id.json",
+    "conformance/adapters/claude-code-otel/normalized-event.invalid-user-email.json"
+  ],
+  "discarded_metrics": [
+    {
+      "metric": "claude_code.cost.usage",
+      "reason": "Pricing is server-owned and a claim never carries a price, currency, or cost estimate."
+    },
+    {
+      "metric": "claude_code.session.count",
+      "reason": "Carries no token fact."
+    },
+    {
+      "metric": "claude_code.active_time.total",
+      "reason": "Carries no token fact."
+    }
+  ]
+}

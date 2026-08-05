@@ -3,10 +3,11 @@
   "$id": "https://vibemaxxing.dev/schemas/agent-registry-v1.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "registry_version", "support_tiers", "families", "products", "publication_rule"],
+  "required": ["schema_version", "registry_version", "support_tiers", "families", "products", "publication_rule", "capability_rule"],
   "properties": {
     "schema_version": {"const": 1},
     "registry_version": {"type": "string", "minLength": 1},
+    "capability_rule": {"type": "string", "minLength": 20},
     "support_tiers": {
       "type": "array",
       "minItems": 6,
@@ -45,6 +46,56 @@
         "maintainer": {"type": "string", "minLength": 1}
       }
     },
+    "defect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "effect"],
+      "properties": {
+        "reference": {"type": "string", "minLength": 1},
+        "effect": {"type": "string", "minLength": 1},
+        "measured_magnitude": {"type": "string", "minLength": 1}
+      }
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verdict",
+        "mechanism",
+        "evidence_kind",
+        "assessed_on",
+        "local_collector_sufficient",
+        "plan_tier_required",
+        "provider_attestation"
+      ],
+      "properties": {
+        "verdict": {
+          "enum": [
+            "deterministic-local-capture",
+            "partial-local-capture",
+            "no-deterministic-local-capture"
+          ],
+          "description": "Whether the collector can obtain a deterministic, complete, after-the-fact-stable token count on the user's own machine. This is a statement about the mechanism only and never about certification."
+        },
+        "mechanism": {"enum": ["native-event", "extension-api", "official-hook", "otel", "proxy", "wrapper", "live-log", "provider-receipt", "import", "none"]},
+        "evidence_kind": {
+          "enum": ["exercised-on-hardware", "published-surface-read", "none"],
+          "description": "exercised-on-hardware means a real machine produced the named signal. It is capability evidence, not conformance evidence."
+        },
+        "assessed_on": {"type": "string", "format": "date"},
+        "local_collector_sufficient": {"type": "boolean"},
+        "plan_tier_required": {"type": "string", "minLength": 1},
+        "provider_attestation": {
+          "enum": ["none-for-individual-account", "organization-scoped-only", "available"]
+        },
+        "signals": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "identity_attributes_requiring_strip": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "known_defects": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/defect"}},
+        "coverage_gaps": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "specification": {"type": "string", "minLength": 1},
+        "notes": {"type": "string", "minLength": 1}
+      }
+    },
     "product": {
       "type": "object",
       "additionalProperties": false,
@@ -54,7 +105,8 @@
         "family": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
         "planning_status": {"enum": ["research-required", "specified", "certification-planned"]},
         "target_tier": {"$ref": "#/$defs/tier"},
-        "certifications": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/certification"}}
+        "certifications": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/certification"}},
+        "capability": {"$ref": "#/$defs/capability"}
       }
     }
   }

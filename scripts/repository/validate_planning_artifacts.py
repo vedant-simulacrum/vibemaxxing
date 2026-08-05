@@ -268,6 +268,135 @@ def validate_json_schemas_and_examples() -> None:
             )
 
 
+ADAPTER_ONE_RELATIVE = Path("conformance") / "adapters" / "claude-code-otel"
+ADAPTER_ONE = ROOT / ADAPTER_ONE_RELATIVE
+
+# The five attributes Claude Code puts on every OTLP datapoint that name a person, an
+# account, or an employer. D-099 makes their removal a collector obligation performed
+# at the device boundary rather than a configuration option, because no documented
+# vendor setting removes `user.email`. This tuple is the executable form of that list:
+# the disposition record must strip exactly these, and a fixture carrying any of them
+# must fail the stage schema.
+ADAPTER_ONE_STRIP_LIST = (
+    "organization.id",
+    "user.account_id",
+    "user.account_uuid",
+    "user.email",
+    "user.id",
+)
+
+
+def validate_adapter_one_boundary() -> None:
+    """Prove the Claude Code OTLP identity attributes cannot survive either stage.
+
+    This checks the schemas reject them and that the disposition record and the
+    egress registry agree. It is not evidence that any receiver implements the strip;
+    no receiver exists.
+    """
+    observation_schema = validate_schema_file(
+        SCHEMAS / "source-observation.schema.json"
+    )
+    event_schema = validate_schema_file(SCHEMAS / "normalized-event.schema.json")
+
+    disposition = load_json(ADAPTER_ONE / "otlp-attribute-disposition-v1.json")
+    if disposition.get("metric") != "claude_code.token.usage":
+        raise ValidationFailure("adapter-one disposition names the wrong metric")
+    if disposition.get("partial_clean_permitted") is not False:
+        raise ValidationFailure("adapter-one disposition permits a partial-clean path")
+    if disposition.get("unknown_attribute_disposition") != "drop-and-flag":
+        raise ValidationFailure(
+            "adapter-one disposition fails open on an unknown attribute"
+        )
+
+    attributes = disposition["attributes"]
+    assert_unique(
+        [entry["attribute"] for entry in attributes], "adapter-one attribute names"
+    )
+    stripped = tuple(
+        sorted(
+            entry["attribute"]
+            for entry in attributes
+            if entry["disposition"] == "strip"
+        )
+    )
+    if stripped != ADAPTER_ONE_STRIP_LIST:
+        raise ValidationFailure(
+            f"adapter-one strip list drifted: {list(stripped)} != {list(ADAPTER_ONE_STRIP_LIST)}"
+        )
+
+    allowed_dispositions = {"allow", "transform", "drop", "strip"}
+    unknown = {entry["disposition"] for entry in attributes} - allowed_dispositions
+    if unknown:
+        raise ValidationFailure(
+            f"adapter-one uses unknown dispositions: {sorted(unknown)}"
+        )
+
+    egress_field_ids = {
+        field["field_id"]
+        for field in load_json(SCHEMAS / "egress-allowlist-v1.json")["fields"]
+    }
+    leaked = {
+        attribute
+        for attribute in ADAPTER_ONE_STRIP_LIST
+        if attribute in egress_field_ids
+        or attribute.replace(".", "-") in egress_field_ids
+    }
+    if leaked:
+        raise ValidationFailure(
+            f"stripped identity attributes appear in the egress allowlist: {sorted(leaked)}"
+        )
+
+    validate_instance(
+        observation_schema,
+        load_json(ADAPTER_ONE / "source-observation.valid.json"),
+        "adapter-one source observation",
+    )
+
+    negatives = disposition["negative_fixtures"]
+    if len(negatives) < 4:
+        raise ValidationFailure(
+            "adapter-one declares fewer than four negative fixtures"
+        )
+    covered: set[str] = set()
+    for relative in negatives:
+        declared = Path(relative)
+        # The record cites repository-relative paths so the cross-reference validator
+        # can resolve them, and every one must live in this adapter's own directory.
+        if declared.parent != ADAPTER_ONE_RELATIVE:
+            raise ValidationFailure(
+                f"adapter-one negative fixture is outside the adapter directory: {relative}"
+            )
+        path = ADAPTER_ONE / declared.name
+        if not path.is_file():
+            raise ValidationFailure(
+                f"adapter-one negative fixture is missing: {relative}"
+            )
+        instance = load_json(path)
+        schema = event_schema if "normalized-event" in path.name else observation_schema
+        carried = sorted(set(instance) & set(ADAPTER_ONE_STRIP_LIST))
+        if not carried:
+            raise ValidationFailure(
+                f"adapter-one negative fixture carries no stripped attribute: {relative}"
+            )
+        expect_invalid(schema, instance, f"adapter-one {path.name} carrying {carried}")
+        covered |= set(carried)
+
+    missing = set(ADAPTER_ONE_STRIP_LIST) - covered
+    if missing:
+        raise ValidationFailure(
+            f"strip-list attributes without a negative fixture: {sorted(missing)}"
+        )
+
+    canaries = load_json(CONFORMANCE / "privacy" / "p1140b-boundary-canaries-v1.json")
+    adapter_cases = {
+        case["case_id"] for case in canaries["cases"] if case["boundary"] == "adapter"
+    }
+    if "adapter-negative-otel-identity-attributes" not in adapter_cases:
+        raise ValidationFailure(
+            "adapter boundary lacks the OTLP identity-attribute canary"
+        )
+
+
 def validate_policy_and_observability() -> None:
     policies = load_json(SCHEMAS / "policy-defaults-v1.json")
     required = {
@@ -807,6 +936,7 @@ def main() -> int:
 
     checks = [
         ("JSON schemas, examples, and registries", validate_json_schemas_and_examples),
+        ("adapter-one OTLP identity boundary", validate_adapter_one_boundary),
         ("policy and observability artifacts", validate_policy_and_observability),
         ("OpenAPI", validate_openapi_file),
         ("P-1140D state and platform contracts", validate_p1140d_contracts),
@@ -839,9 +969,7 @@ def main() -> int:
         print("\n".join(failures), file=sys.stderr)
         return 1
     print("planning artifact validation: pass")
-    print(
-        "artifact maturity: structural planning only; not implementation evidence"
-    )
+    print("artifact maturity: structural planning only; not implementation evidence")
     return 0
 
 

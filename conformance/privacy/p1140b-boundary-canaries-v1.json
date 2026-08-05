@@ -23,6 +23,24 @@
       "reason_code": "privacy-forbidden-field"
     },
     {
+      "case_id": "adapter-negative-otel-identity-attributes",
+      "boundary": "adapter",
+      "input": {
+        "forbidden_field": "otel-identity-attributes",
+        "attributes": [
+          "user.email",
+          "user.id",
+          "user.account_id",
+          "user.account_uuid",
+          "organization.id"
+        ],
+        "canary": "VMX-PRIVACY-CANARY-02",
+        "note": "Claude Code puts these five on every claude_code.token.usage datapoint by default and no documented vendor setting removes user.email. The collector strips them at the device boundary before aggregation under D-099. Fixtures: conformance/adapters/claude-code-otel/"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field"
+    },
+    {
       "case_id": "ipc-positive-safe-fields",
       "boundary": "ipc",
       "input": {
