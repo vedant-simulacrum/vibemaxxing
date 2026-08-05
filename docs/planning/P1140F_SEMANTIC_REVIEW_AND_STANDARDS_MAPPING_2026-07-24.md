@@ -81,13 +81,17 @@ Closure requires a narrow shell lifecycle, separate subsystem projections, pre-a
 
 One manifest-wide certificate can authorize untested products, platforms, modes, and accounting profiles. Certification does not bind the exact tuple or expiry. Source observations omit facts required for deterministic normalization and multi-observer deduplication. ACP and OpenTelemetry names alone do not provide competitive accounting authority.
 
+`docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md` now specifies one exact tuple in prose — `claude-code-otel` over loopback OTLP, ceiling `standard-competitive`, attested-local under D-077 — and `packages/schemas/adapter-manifest.schema.json` still has no field that can bind it. The registry entry does not overclaim: its certification list is empty and `capability_rule` states that a capability block is never certification.
+
 Closure requires atomic compatibility tuples, signed result bundles, exact validity and revocation, tuple binding before normalization, canonical hashing, checked accounting, and private-only generic paths until one exact profile is exercised.
 
 ### SR-010 — Ranking authorization, immutable generations, periods, and corrections
 
 One public route structurally serves global, friends, rivals, and board leaderboards without viewer or board identity. Stable definition and mutable generation facts are mixed. SQL cannot retain isolated score generations or durable snapshot pagination. Period, season, contribution, correction, movement, overtake, and streak authorities remain incomplete.
 
-Closure requires separate ranking definition, audience instance, generation, snapshot, authorization, immutable entries, active pointer, exact periods/seasons, contribution ledger, correction/retraction, and PostgreSQL-backed ranking evidence. Historical consolidation follows D-070.
+ADR-020 adds a requirement none of these artifacts meets: rank is ordered on `credited_token_burn`, and `score` is banned as a field name so the claimed and credited figures can never merge. `RankEntry`, `period_scores`, `minute_scores` and `score_snapshots` all still carry `score`.
+
+Closure requires separate ranking definition, audience instance, generation, snapshot, authorization, immutable entries, active pointer, exact periods/seasons, contribution ledger, correction/retraction, the ADR-020 credited-burn field set, and PostgreSQL-backed ranking evidence. Historical consolidation follows D-070.
 
 ### SR-011 — Social relationships, boards, presence, and notifications
 
@@ -105,7 +109,9 @@ Closure requires typed principal and operation scope, versioned request canonica
 
 Asynchronous export/deletion jobs lack durable status and completion interfaces. Export snapshot, manifest, artifact, encryption, checksum, grant, and purge authorities are absent. Server and per-device deletion are conflated. No complete data-disposition or backup-tombstone authority exists.
 
-Closure requires durable job resources, immutable export/deletion plans, coherent snapshots, encrypted self-describing packages, per-effect and per-device results, account mutation restrictions during deletion, honest local execution receipts, complete disposition policy, tombstone reapplication, and D-076 completion wording.
+`docs/privacy/DATA_MAP.md` now owns the disposition half in prose and states real windows — export bundles purged seven days after they become ready, short-lived revocable download grants — until PF-050 moves them into machine-readable form. `packages/schemas/planning-schema.sql` has no download-grant table and no purge schedule to hold them.
+
+Closure requires durable job resources, immutable export/deletion plans, coherent snapshots, encrypted self-describing packages, per-effect and per-device results, account mutation restrictions during deletion, honest local execution receipts, complete disposition policy in machine-readable form, tombstone reapplication, and D-076 completion wording.
 
 ### SR-014 — Release authorization, compatibility, migration, and rollback
 
