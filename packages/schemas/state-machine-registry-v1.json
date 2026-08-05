@@ -3,6 +3,104 @@
   "registry_id": "authoritative-state-machines-v1",
   "machines": [
     {
+      "machine_id": "account-lifecycle",
+      "semantic_owner": "authentication",
+      "persistence_owner": [
+        "accounts",
+        "account-handles"
+      ],
+      "aggregate_key": "account-id",
+      "initial_state": "active",
+      "states": [
+        "active",
+        "restricted",
+        "deletion-pending",
+        "deleted"
+      ],
+      "terminal_states": [
+        "deleted"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "account-restrict",
+          "from": [
+            "active"
+          ],
+          "action": "restrict-account-with-reason-code",
+          "to": "restricted",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "account-restrict.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "moderation-and-ranking-effects"
+        },
+        {
+          "transition_id": "account-restore",
+          "from": [
+            "restricted"
+          ],
+          "action": "restore-account-and-correct-derived-ranks",
+          "to": "active",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "account-restore.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "moderation-and-ranking-effects"
+        },
+        {
+          "transition_id": "account-request-deletion",
+          "from": [
+            "active",
+            "restricted"
+          ],
+          "action": "request-deletion-with-recent-auth",
+          "to": "deletion-pending",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "account-request-deletion.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "account-cancel-deletion",
+          "from": [
+            "deletion-pending"
+          ],
+          "action": "cancel-during-cooling-off",
+          "to": "active",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "account-cancel-deletion.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "account-delete",
+          "from": [
+            "deletion-pending"
+          ],
+          "action": "apply-server-deletion-effects-and-tombstone",
+          "to": "deleted",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "account-delete.audit",
+          "reversal": "none",
+          "transaction_boundary": "deletion-transaction"
+        }
+      ]
+    },
+    {
       "machine_id": "oauth-transaction",
       "semantic_owner": "authentication",
       "persistence_owner": [
@@ -358,6 +456,107 @@
           "audit_event": "native-family-expire.audit",
           "reversal": "none",
           "transaction_boundary": "token-family"
+        }
+      ]
+    },
+    {
+      "machine_id": "device-enrollment",
+      "semantic_owner": "authentication",
+      "persistence_owner": [
+        "devices",
+        "device-keys",
+        "device-key-events"
+      ],
+      "aggregate_key": "device-id",
+      "initial_state": "pending",
+      "states": [
+        "pending",
+        "active",
+        "quarantined",
+        "revoked",
+        "deleted"
+      ],
+      "terminal_states": [
+        "deleted"
+      ],
+      "privacy_boundary": "integrity-private",
+      "transitions": [
+        {
+          "transition_id": "device-enroll",
+          "from": [
+            "pending"
+          ],
+          "action": "consume-enrollment-grant-and-bind-key",
+          "to": "active",
+          "actor": "native-device",
+          "authentication": "device-signature",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "device-enroll.audit",
+          "reversal": "none",
+          "transaction_boundary": "device-and-token-family"
+        },
+        {
+          "transition_id": "device-quarantine",
+          "from": [
+            "active"
+          ],
+          "action": "quarantine-on-fork-or-clone-detection",
+          "to": "quarantined",
+          "actor": "server-verifier",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "device-quarantine.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "moderation-and-ranking-effects"
+        },
+        {
+          "transition_id": "device-requalify",
+          "from": [
+            "quarantined"
+          ],
+          "action": "requalify-after-review-and-correct-derived-ranks",
+          "to": "active",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "device-requalify.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "moderation-and-ranking-effects"
+        },
+        {
+          "transition_id": "device-revoke",
+          "from": [
+            "pending",
+            "active",
+            "quarantined"
+          ],
+          "action": "revoke-device-and-cascade-token-families",
+          "to": "revoked",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "device-revoke.audit",
+          "reversal": "none",
+          "transaction_boundary": "device-and-token-family"
+        },
+        {
+          "transition_id": "device-delete",
+          "from": [
+            "revoked"
+          ],
+          "action": "apply-deletion-effects-and-tombstone",
+          "to": "deleted",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "device-delete.audit",
+          "reversal": "none",
+          "transaction_boundary": "deletion-transaction"
         }
       ]
     },
@@ -1364,6 +1563,21 @@
           "audit_event": "notification-deliver.audit",
           "reversal": "explicit-transition",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "notification-read",
+          "from": [
+            "delivered"
+          ],
+          "action": "mark-read-in-server-inbox",
+          "to": "read",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "notification-read.audit",
+          "reversal": "none",
+          "transaction_boundary": "notification-delivery"
         },
         {
           "transition_id": "notification-retract",

@@ -386,6 +386,38 @@
         "transition_id": "profile-candidate",
         "expected": "reject-without-mutation"
       }
+    },
+    {
+      "machine_id": "account-lifecycle",
+      "positive": {
+        "case_id": "account-lifecycle-valid-transition",
+        "from": "active",
+        "transition_id": "account-restrict",
+        "expected_to": "restricted",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "account-lifecycle-invalid-transition",
+        "from": "deleted",
+        "transition_id": "account-restrict",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "device-enrollment",
+      "positive": {
+        "case_id": "device-enrollment-valid-transition",
+        "from": "pending",
+        "transition_id": "device-enroll",
+        "expected_to": "active",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "device-enrollment-invalid-transition",
+        "from": "revoked",
+        "transition_id": "device-enroll",
+        "expected": "reject-without-mutation"
+      }
     }
   ]
 }
