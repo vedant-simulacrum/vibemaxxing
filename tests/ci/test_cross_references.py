@@ -32,10 +32,10 @@ SAMPLE = "docs/sample/SAMPLE.md"
 # The dangling references the repository knowingly carries at this head. Each is
 # recorded rather than suppressed, so this test fails the moment one is repaired or
 # a new one appears.
-KNOWN_GAPS = {
-    # PF-039 must author ADR-015 before anything may cite it. The gap is the point.
-    ("adr", "ADR-015", "docs/implementation/PR_SIZED_WORK_BREAKDOWN.md"),
-}
+# Empty on purpose. Every cross-reference in the repository resolves; the last
+# recorded gap, ADR-015, closed when ADR-015-SESSION_AUTHENTICATION.md was authored.
+# A new entry here needs a written reason, not just a passing suite.
+KNOWN_GAPS: set[tuple[str, str, str]] = set()
 
 
 def load_validator():
@@ -148,15 +148,48 @@ class CrossReferenceValidatorTests(unittest.TestCase):
             "KNOWN_GAPS with the reason",
         )
 
-    def test_strict_mode_exits_non_zero_and_report_mode_does_not(self) -> None:
+    def test_clean_repository_passes_in_both_modes(self) -> None:
         stdout, stderr = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
             strict = self.validator.main([])
             report = self.validator.main(["--report"])
-        self.assertEqual(strict, 1)
+        self.assertEqual(strict, 0)
         self.assertEqual(report, 0)
-        self.assertIn("cross-reference validation: FAIL", stderr.getvalue())
+        self.assertIn("cross-reference validation: PASS", stdout.getvalue())
         self.assertIn("cross-reference report:", stdout.getvalue())
+
+    def test_strict_mode_exits_non_zero_when_a_dangle_exists(self) -> None:
+        """The exit-code contract, independent of the repository's own state.
+
+        Every other test here proves detection; this one proves that a detected
+        dangle actually turns the process red, so a clean repository can never
+        mask a broken strict mode.
+        """
+        planted = self.validator.Report(
+            dangles=[
+                self.validator.Dangle(
+                    kind="decision",
+                    token="D-900",
+                    path="docs/planning/DECISION_REGISTER.md",
+                    line=1,
+                )
+            ],
+            scanned_files=1,
+            counts={"decision": 1},
+        )
+        original = self.validator.scan
+        self.validator.scan = lambda files=None: planted
+        try:
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                strict = self.validator.main([])
+                report = self.validator.main(["--report"])
+        finally:
+            self.validator.scan = original
+        self.assertEqual(strict, 1)
+        self.assertEqual(report, 0, "--report never fails the build")
+        self.assertIn("cross-reference validation: FAIL", stderr.getvalue())
+        self.assertIn("D-900", stderr.getvalue() + stdout.getvalue())
 
     def test_every_class_is_rendered_in_report_mode(self) -> None:
         stdout = io.StringIO()
