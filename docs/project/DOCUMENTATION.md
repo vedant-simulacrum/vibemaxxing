@@ -45,6 +45,10 @@ The technical-specification completeness authority is `docs/planning/SCHEMA_AND_
 - Universal compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`
 - Per-adapter integration contracts, one file per adapter: `docs/integrations/`. The first is `docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, which owns the Claude Code OTLP receive surface, its attribute strip list, its stage mapping and its certification tuple
 - Privacy: `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md`
+- Personal-data inventory, lawful bases, retention windows and the Article 30 record of processing activities: `docs/privacy/DATA_MAP.md`
+- Participant-facing privacy notice under Articles 13 and 14: `PRIVACY.md`, derived from `docs/privacy/DATA_MAP.md` and never stating more than it
+- Participant-facing service terms, eligibility, acceptable use and the sanction and appeal process: `TERMS.md`
+- Public-by-default publication risk acceptance and the legal analysis behind the three documents above: ADR-021
 - Security: `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`, ADR-015
 - Ranking computation and the credited-score model: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, ADR-020
 - Accepted residual risks without a normative owner: ADR-019
@@ -86,10 +90,10 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 |---|---|---|
 | `project/` | **Top authority.** Product, phase, and this map | `PROJECT.md`, `STATUS.md`, `DOCUMENTATION.md` |
 | `planning/` | Decisions, gates, scope, policy | `DECISION_REGISTER.md`, `TASK_CATALOG.md`, `SCHEMA_AND_INTERFACE_INVENTORY.md`, `ARTIFACT_POLICY.md`, `PRODUCT_SCOPE_FREEZE.md`, `REPOSITORY_OPERATIONS.md`, `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`, `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `CROSS_PLATFORM_COMPLETENESS_AUDIT.md`, `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, `decision-traceability/` (D-001..D-069 + `README.md`) |
-| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-020` |
+| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-021` |
 | `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
 | `product/` | Product surface and metrics | `PRODUCT_SPEC.md`, `ACCOUNTING_AND_TIME_CONTRACT.md`, `TOKEN_ACCOUNTING_SPEC.md`, `CASH_BURN_PRICING_PROVENANCE.md`, `SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, `ONBOARDING_AND_PRIVACY_VERIFICATION.md`, `METRICS.md`, `SOCIAL_RANKING_AND_ABUSE_RESEARCH.md` |
-| `privacy/` | **The boundary.** The invariant everything else serves | `PRIVACY_CONTRACT.md`, `PRIVACY_PRESERVING_USAGE_EVIDENCE.md` |
+| `privacy/` | **The boundary.** The invariant everything else serves, plus the personal-data record that follows from it | `PRIVACY_CONTRACT.md`, `PRIVACY_PRESERVING_USAGE_EVIDENCE.md`, `DATA_MAP.md` |
 | `security/` | Threat, integrity, attestation, abuse | `THREAT_MODEL.md`, `INTEGRITY_MODEL.md`, `EVIDENCE_AND_ATTESTATION_PROFILES.md`, `AUTHENTICATION_AND_RECOVERY.md`, `RANKED_IDENTITY_ELIGIBILITY.md`, `ANTI_CHEAT_ATTACK_CATALOG.md`, `ANTI_CHEAT_RESEARCH_PROGRAM.md`, `ADVERSARIAL_TABLETOPS.md`, `LOCAL_IPC_AND_DEVICE_IDENTITY.md`, `PLATFORM_ISOLATION.md`, `ABUSE_AND_COUNTRY_PRIVACY.md` |
 | `integrations/` | Agent compatibility and certification | `UNIVERSAL_AGENT_COMPATIBILITY.md`, `ADAPTER_CERTIFICATION_POLICY.md`, `ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, `AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `T20_CERTIFICATION_AND_SELECTION_SPEC.md`, `T20_MODEL_HARDENING_CONTRACT.md` |
 | `operations/` | Launch, running, recovery | `OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, `RELEASE_VERIFICATION.md`, `PRODUCTION_READINESS.md`, `COMPETITIVE_BETA_GATE.md`, `INCIDENT_RESPONSE.md`, `SLOS_AND_ALERTS.md`, `OBSERVABILITY_PRIVACY.md`, `DATA_LIFECYCLE_AND_RECOVERY.md` |
@@ -100,9 +104,26 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 | `research/` | Primary evidence, historical | `README.md` (sole entrypoint), `RESEARCH_AUDIT_2026-07{,_WAVE2..5}.md`, `ANTI_CHEAT_SYSTEMS_RESEARCH_2026-07-23.md` |
 | `history/` | **Non-authoritative.** Superseded reports | See `docs/history/README.md` |
 
+### Root-level participant-facing and governance documents
+
+`docs/` holds documents written for the people building this. The repository root holds the ones written for everyone else, and they are listed here so no tracked file is unaccounted for.
+
+| File | Role | Owner it derives from |
+|---|---|---|
+| `README.md` | Repository entry point | `docs/project/PROJECT.md` |
+| `AGENTS.md` | Sole agent initialization manual | Itself; `conformance/p1140f/gate-authorization-v1.json` owns the phase state it restates |
+| `PRIVACY.md` | **Participant-facing privacy notice** under Articles 13 and 14 | `docs/privacy/DATA_MAP.md` |
+| `TERMS.md` | **Participant-facing service terms** | `docs/decisions/ADR-021-PUBLIC_BY_DEFAULT_RISK_ACCEPTANCE.md`, and `PRIVACY.md` on any personal-data question |
+| `SECURITY.md` | Vulnerability reporting and response targets | `docs/security/THREAT_MODEL.md` |
+| `LICENSES.md` | Licensing summary | `docs/decisions/ADR-009-LICENSING_AND_CONTRIBUTION_MODEL.md` |
+| `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` | Contribution process and conduct | `docs/planning/REPOSITORY_OPERATIONS.md` |
+| `CHANGELOG.md` | Release history | `docs/operations/RELEASE_VERIFICATION.md` |
+
+`PRIVACY.md`, `TERMS.md` and `docs/privacy/DATA_MAP.md` are one set and are read together. None of the three has been reviewed by counsel, and D-109 records that review as an unmet release gate alongside the data protection impact assessment, the unfilled controller identity placeholders and the missing sub-processor list.
+
 ### Small directories, with reasons
 
-`privacy/` (2 files) is deliberately isolated: it holds the invariant the whole system exists to serve, and burying it inside `security/` would make it look like one control among many. `project/` (3) is the top authority and must stay at a short, obvious path. `engineering/` (3) and `verification/` (3) are coherent single subjects with room to grow and no better host. No other directory under `docs/` holds fewer than four files.
+`privacy/` (3 files) is deliberately isolated: it holds the invariant the whole system exists to serve, and burying it inside `security/` would make it look like one control among many. `project/` (3) is the top authority and must stay at a short, obvious path. `engineering/` (3) and `verification/` (3) are coherent single subjects with room to grow and no better host. No other directory under `docs/` holds fewer than four files.
 
 ### Structural changes on 2026-08-06
 
@@ -158,8 +179,9 @@ Structural validation is not semantic review. Semantic review is not runtime pro
 - ADR-018 owns the database and migration tooling, and the executable form of the expand-and-contract migration policy.
 - ADR-019 is the register for accepted residual risks that no normative owner has adopted.
 - ADR-020 owns confidence-weighted ranking, the discount function and the raw-versus-credited vocabulary.
+- ADR-021 owns the public-by-default publication risk acceptance and the lawful-basis, erasure, age, ePrivacy, records, representative, United States and portability analysis that `PRIVACY.md`, `TERMS.md` and `docs/privacy/DATA_MAP.md` derive from. It has not been reviewed by counsel and says so.
 
-The numbering gap at ADR-015 is closed. Every ADR from ADR-001 to ADR-020 exists.
+The numbering gap at ADR-015 is closed. Every ADR from ADR-001 to ADR-021 exists.
 
 ## Research
 
