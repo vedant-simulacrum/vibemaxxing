@@ -172,7 +172,7 @@ Every data table requires purpose, owner, basis, visibility, retention, deletion
 
 ## Open-source governance
 
-Licensing follows ADR-009 and `LICENSES.md`: Apache-2.0 original code, CC BY 4.0 docs/specs, DCO and no CLA initially, subject to final dependency/license/counsel review. Third-party notices remain intact.
+Licensing follows ADR-009 and `LICENSES.md`: Apache-2.0 original code, CC BY 4.0 docs/specs, DCO and no CLA initially, subject to final dependency/license/counsel review. That counsel review is unmet, its scope now includes the participant-facing legal documents as well as the licence matrix, and ADR-009 states its current state rather than implying it is pending paperwork. Third-party notices remain intact.
 
 Before public release provide maintainers and succession, real CODEOWNERS, semantic versioning/changelog, public issue workflow, private advisories, contributor guide, code of conduct, adapter ownership/certification/transfer policy, trademark policy and release-key custody.
 
@@ -207,7 +207,7 @@ Require:
 - adversarial campaigns within budgets;
 - accessibility/browser/battery/performance/load/failover/restore evidence;
 - OAuth/recovery/deletion/moderation abuse tests;
-- legal/privacy/governance/support readiness;
+- legal/privacy/governance/support readiness, which at this head is **unmet** and is enumerated as an unmet gate set in `docs/operations/PRODUCTION_READINESS.md` and owned by D-109: counsel review of `PRIVACY.md`, `TERMS.md`, `docs/privacy/DATA_MAP.md` and ADR-009; the mandatory Article 35 data protection impact assessment; the unfilled controller identity and governing-jurisdiction placeholders; and the absent named sub-processor list;
 - no Android/iOS/iPadOS/ChromeOS native release dependency;
 - no unresolved P0/P1 blocker or ownerless accepted risk.
 

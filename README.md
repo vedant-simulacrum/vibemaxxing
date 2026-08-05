@@ -47,7 +47,7 @@ make plan            # regenerate the deterministic work-unit issue plan
 1. [`docs/project/PROJECT.md`](docs/project/PROJECT.md) — what the product is, and the architecture that follows from it
 2. [`docs/project/STATUS.md`](docs/project/STATUS.md) — current phase, what is implemented, what is not
 3. [`docs/project/DOCUMENTATION.md`](docs/project/DOCUMENTATION.md) — the single map of which document owns which decision
-4. [`docs/planning/DECISION_REGISTER.md`](docs/planning/DECISION_REGISTER.md) — every decision D-001..D-078 and its status
+4. [`docs/planning/DECISION_REGISTER.md`](docs/planning/DECISION_REGISTER.md) — every decision D-001..D-109 and its status
 5. [`docs/planning/TASK_CATALOG.md`](docs/planning/TASK_CATALOG.md) — gates, programs, and what blocks what
 
 For the current blocking work, `conformance/p1140f/semantic-findings-v1.json` is the machine-readable truth; prose summarizes it and may not redefine it.
@@ -101,6 +101,12 @@ These are not aspirations. They constrain every change.
 Read [`CONTRIBUTING.md`](CONTRIBUTING.md). Commits require a DCO `Signed-off-by`. Changes to protocol, privacy, security, accounting, identity, release, or governance need review from the code owner.
 
 Security issues: see [`SECURITY.md`](SECURITY.md). Please do not include real prompts, keys, or user data in a report.
+
+## Privacy and terms
+
+[`PRIVACY.md`](PRIVACY.md) is the participant-facing privacy notice and [`TERMS.md`](TERMS.md) the service terms. [`docs/privacy/DATA_MAP.md`](docs/privacy/DATA_MAP.md) is the complete personal-data inventory behind both, and is also the Article 30 record of processing activities.
+
+Read them together with [`docs/decisions/ADR-021-PUBLIC_BY_DEFAULT_RISK_ACCEPTANCE.md`](docs/decisions/ADR-021-PUBLIC_BY_DEFAULT_RISK_ACCEPTANCE.md), which records why the global leaderboard is public by default, what that exposes the controller to, and what the owner accepted. **None of the four has been reviewed by a lawyer**, the controller identity fields are unfilled placeholders, and the mandatory data protection impact assessment has not been carried out. D-109 records all of it as unmet release gates.
 
 ## License
 

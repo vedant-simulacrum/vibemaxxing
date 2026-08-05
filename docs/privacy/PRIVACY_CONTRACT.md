@@ -1,7 +1,17 @@
 # Privacy Contract
 
-Updated: 2026-07-23
-Status: normative planning contract; P-1140B egress contract frozen, P-1140F semantic review is active, and implementation remains blocked by P-1104
+Updated: 2026-08-06
+Status: normative planning contract; P-1140B egress contract frozen, P-1140F semantic review is active, and P-1104 is `authorized-open` under `conformance/p1140f/gate-authorization-v1.json`, which owns gate state
+
+This contract governs the engineering boundary. `docs/privacy/DATA_MAP.md` governs what personal data exists on each side of it, on which lawful basis and for how long, and is also the Article 30 record of processing activities. `PRIVACY.md` is the participant-facing notice derived from that map. Neither has been reviewed by counsel; D-109 records that review as an unmet release gate.
+
+## The boundary is a content guarantee, not a metadata guarantee
+
+Stated here because ADR-019 identified this contract as its owner and required the statement, and because every other section reads as stronger than it is without it.
+
+Everything below is a guarantee about **content**: no prompt, response, transcript, line of code, diff, tool body, filename, path, project name or repository name crosses the device boundary, in any form, including hashed, embedded, summarized or classified. That guarantee is absolute and is enforced by a deny-by-default allowlist.
+
+It is not a guarantee about **metadata**. An allowlist constrains which fields exist; it does not constrain how much information a permitted field carries. Token counts at fine granularity leak a participant's working pattern and the approximate scale of their work, and presence leaks the same timeline from a different field. Both are recorded as accepted, unmitigated residual risks in ADR-019 as RR-002 and RR-001. No surface, claim, support answer or privacy notice may state or imply that presence is safe from monitoring, or that fixed-schema aggregate publication leaks nothing. Those two sentences are false and are permanently unavailable.
 
 ## Absolute server boundary
 
