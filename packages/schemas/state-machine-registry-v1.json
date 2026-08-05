@@ -86,6 +86,23 @@
           "audit_event": "oauth-expire.audit",
           "reversal": "none",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "oauth-fail",
+          "from": [
+            "created",
+            "redirected",
+            "callback-received"
+          ],
+          "action": "reject-invalid-callback",
+          "to": "failed",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "oauth-fail.audit",
+          "reversal": "none",
+          "transaction_boundary": "oauth-transaction"
         }
       ]
     },
@@ -156,6 +173,52 @@
           "recent_auth": true,
           "idempotency": "principal-route-key",
           "audit_event": "web-family-revoke.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        },
+        {
+          "transition_id": "web-rotation-begin",
+          "from": [
+            "active"
+          ],
+          "action": "begin-parent-consumption",
+          "to": "rotating",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "web-rotation-begin.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        },
+        {
+          "transition_id": "web-rotation-commit",
+          "from": [
+            "rotating"
+          ],
+          "action": "commit-single-child-token",
+          "to": "active",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "web-rotation-commit.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        },
+        {
+          "transition_id": "web-family-expire",
+          "from": [
+            "active",
+            "rotating"
+          ],
+          "action": "expire-family",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "web-family-expire.audit",
           "reversal": "none",
           "transaction_boundary": "token-family"
         }
@@ -232,6 +295,69 @@
           "audit_event": "native-device-revoke.audit",
           "reversal": "none",
           "transaction_boundary": "device-and-token-family"
+        },
+        {
+          "transition_id": "native-rotation-begin",
+          "from": [
+            "active"
+          ],
+          "action": "begin-parent-consumption",
+          "to": "rotating",
+          "actor": "native-device",
+          "authentication": "native-session",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "native-rotation-begin.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        },
+        {
+          "transition_id": "native-rotation-commit",
+          "from": [
+            "rotating"
+          ],
+          "action": "commit-single-child-token",
+          "to": "active",
+          "actor": "native-device",
+          "authentication": "native-session",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "native-rotation-commit.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        },
+        {
+          "transition_id": "native-family-revoke",
+          "from": [
+            "active",
+            "rotating",
+            "replay-detected"
+          ],
+          "action": "revoke-family",
+          "to": "revoked",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "native-family-revoke.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
+        },
+        {
+          "transition_id": "native-family-expire",
+          "from": [
+            "active",
+            "rotating"
+          ],
+          "action": "expire-family",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "native-family-expire.audit",
+          "reversal": "none",
+          "transaction_boundary": "token-family"
         }
       ]
     },
@@ -336,6 +462,43 @@
           "audit_event": "identity-reverse.audit",
           "reversal": "inverse-event",
           "transaction_boundary": "identity-and-ranking-effects"
+        },
+        {
+          "transition_id": "identity-consolidate",
+          "from": [
+            "investigating",
+            "restricted"
+          ],
+          "action": "authorize-cross-account-consolidation",
+          "to": "consolidating",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "identity-consolidate.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "ranked-identity"
+        },
+        {
+          "transition_id": "identity-retire",
+          "from": [
+            "unverified",
+            "eligible",
+            "investigating",
+            "restricted",
+            "consolidating",
+            "appealed",
+            "reversed"
+          ],
+          "action": "retire-ranked-identity",
+          "to": "retired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "identity-retire.audit",
+          "reversal": "none",
+          "transaction_boundary": "ranked-identity"
         }
       ]
     },
@@ -351,12 +514,14 @@
         "reserved",
         "committed",
         "conflict",
-        "expired"
+        "expired",
+        "failed"
       ],
       "terminal_states": [
         "committed",
         "conflict",
-        "expired"
+        "expired",
+        "failed"
       ],
       "privacy_boundary": "integrity-private",
       "transitions": [
@@ -405,6 +570,21 @@
           "audit_event": "idempotency-expire.audit",
           "reversal": "none",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "idempotency-fail",
+          "from": [
+            "reserved"
+          ],
+          "action": "release-aborted-reservation",
+          "to": "failed",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "idempotency-fail.audit",
+          "reversal": "none",
+          "transaction_boundary": "idempotency-record"
         }
       ]
     },
@@ -477,6 +657,22 @@
           "audit_event": "projection-supersede.audit",
           "reversal": "projection-rebuild",
           "transaction_boundary": "projection-promotion"
+        },
+        {
+          "transition_id": "projection-fail",
+          "from": [
+            "building",
+            "validating"
+          ],
+          "action": "invariant-or-total-mismatch",
+          "to": "failed",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "projection-fail.audit",
+          "reversal": "projection-rebuild",
+          "transaction_boundary": "ranking-generation"
         }
       ]
     },
@@ -733,6 +929,7 @@
       "initial_state": "invited",
       "states": [
         "invited",
+        "active-viewer",
         "active-member",
         "active-admin",
         "active-owner",
@@ -752,7 +949,7 @@
           "from": [
             "invited"
           ],
-          "action": "accept-invite",
+          "action": "accept-invite-as-member",
           "to": "active-member",
           "actor": "user",
           "authentication": "web-session",
@@ -761,6 +958,21 @@
           "audit_event": "board-join.audit",
           "reversal": "explicit-transition",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "board-join-viewer",
+          "from": [
+            "invited"
+          ],
+          "action": "accept-invite-as-viewer",
+          "to": "active-viewer",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "board-join-viewer.audit",
+          "reversal": "none",
+          "transaction_boundary": "board-membership"
         },
         {
           "transition_id": "board-promote-admin",
@@ -810,6 +1022,7 @@
         {
           "transition_id": "board-remove",
           "from": [
+            "active-viewer",
             "active-member",
             "active-admin"
           ],
@@ -822,6 +1035,56 @@
           "audit_event": "board-remove.audit",
           "reversal": "explicit-transition",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "board-leave",
+          "from": [
+            "active-viewer",
+            "active-member",
+            "active-admin"
+          ],
+          "action": "leave",
+          "to": "left",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "board-leave.audit",
+          "reversal": "none",
+          "transaction_boundary": "board-membership"
+        },
+        {
+          "transition_id": "board-membership-block",
+          "from": [
+            "active-viewer",
+            "invited",
+            "active-member",
+            "active-admin"
+          ],
+          "action": "block-cascade",
+          "to": "blocked",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "board-membership-block.audit",
+          "reversal": "none",
+          "transaction_boundary": "board-membership"
+        },
+        {
+          "transition_id": "board-promote-member",
+          "from": [
+            "active-viewer"
+          ],
+          "action": "promote-member",
+          "to": "active-member",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "board-promote-member.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "board-membership"
         }
       ]
     },
@@ -909,6 +1172,21 @@
           "audit_event": "invite-block-invalidate.audit",
           "reversal": "none",
           "transaction_boundary": "social-pair-cascade"
+        },
+        {
+          "transition_id": "invite-revoke",
+          "from": [
+            "pending"
+          ],
+          "action": "revoke",
+          "to": "revoked",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "invite-revoke.audit",
+          "reversal": "none",
+          "transaction_boundary": "board-invitation"
         }
       ]
     },
@@ -1102,6 +1380,25 @@
           "audit_event": "notification-retract.audit",
           "reversal": "none",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "notification-expire",
+          "from": [
+            "created",
+            "grouped",
+            "ready",
+            "suppressed",
+            "delivered"
+          ],
+          "action": "retention-expiry",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "notification-expire.audit",
+          "reversal": "none",
+          "transaction_boundary": "notification-delivery"
         }
       ]
     },
@@ -1189,6 +1486,23 @@
           "audit_event": "case-reverse.audit",
           "reversal": "inverse-event",
           "transaction_boundary": "moderation-and-ranking-effects"
+        },
+        {
+          "transition_id": "case-close",
+          "from": [
+            "actioned",
+            "awaiting-appeal",
+            "reversed"
+          ],
+          "action": "close-case",
+          "to": "closed",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "case-close.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "moderation-case"
         }
       ]
     },
@@ -1207,12 +1521,15 @@
         "reviewing",
         "approved",
         "denied",
-        "withdrawn"
+        "withdrawn",
+        "needs-information",
+        "expired"
       ],
       "terminal_states": [
         "approved",
         "denied",
-        "withdrawn"
+        "withdrawn",
+        "expired"
       ],
       "privacy_boundary": "integrity-private",
       "transitions": [
@@ -1275,6 +1592,69 @@
           "audit_event": "appeal-deny.audit",
           "reversal": "none",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "appeal-request-information",
+          "from": [
+            "reviewing"
+          ],
+          "action": "request-appellant-information",
+          "to": "needs-information",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "appeal-request-information.audit",
+          "reversal": "none",
+          "transaction_boundary": "appeal"
+        },
+        {
+          "transition_id": "appeal-resume",
+          "from": [
+            "needs-information"
+          ],
+          "action": "supply-requested-information",
+          "to": "reviewing",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "appeal-resume.audit",
+          "reversal": "none",
+          "transaction_boundary": "appeal"
+        },
+        {
+          "transition_id": "appeal-withdraw",
+          "from": [
+            "submitted",
+            "screening",
+            "needs-information",
+            "reviewing"
+          ],
+          "action": "withdraw",
+          "to": "withdrawn",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "appeal-withdraw.audit",
+          "reversal": "none",
+          "transaction_boundary": "appeal"
+        },
+        {
+          "transition_id": "appeal-expire",
+          "from": [
+            "needs-information"
+          ],
+          "action": "expire-unanswered-information-request",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "appeal-expire.audit",
+          "reversal": "none",
+          "transaction_boundary": "appeal"
         }
       ]
     },
@@ -1378,6 +1758,23 @@
           "audit_event": "export-purge.audit",
           "reversal": "none",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "export-fail",
+          "from": [
+            "requested",
+            "snapshotting",
+            "encrypting"
+          ],
+          "action": "abort-export",
+          "to": "failed",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "export-fail.audit",
+          "reversal": "none",
+          "transaction_boundary": "export-job"
         }
       ]
     },
@@ -1397,7 +1794,9 @@
         "processing",
         "rebuilding-projections",
         "complete",
-        "failed"
+        "failed",
+        "cooling-off",
+        "awaiting-local-receipt"
       ],
       "terminal_states": [
         "complete",
@@ -1423,7 +1822,8 @@
         {
           "transition_id": "deletion-process",
           "from": [
-            "recent-auth-verified"
+            "recent-auth-verified",
+            "cooling-off"
           ],
           "action": "apply-hosted-effects-and-tombstone",
           "to": "processing",
@@ -1453,7 +1853,8 @@
         {
           "transition_id": "deletion-complete",
           "from": [
-            "rebuilding-projections"
+            "rebuilding-projections",
+            "awaiting-local-receipt"
           ],
           "action": "complete",
           "to": "complete",
@@ -1464,6 +1865,56 @@
           "audit_event": "deletion-complete.audit",
           "reversal": "none",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "deletion-cooling-off",
+          "from": [
+            "recent-auth-verified"
+          ],
+          "action": "start-reversible-cooling-off",
+          "to": "cooling-off",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "deletion-cooling-off.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "deletion-job"
+        },
+        {
+          "transition_id": "deletion-await-local",
+          "from": [
+            "rebuilding-projections"
+          ],
+          "action": "await-signed-device-receipts",
+          "to": "awaiting-local-receipt",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "deletion-await-local.audit",
+          "reversal": "none",
+          "transaction_boundary": "deletion-job"
+        },
+        {
+          "transition_id": "deletion-fail",
+          "from": [
+            "requested",
+            "recent-auth-verified",
+            "cooling-off",
+            "processing",
+            "rebuilding-projections",
+            "awaiting-local-receipt"
+          ],
+          "action": "abort-deletion",
+          "to": "failed",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "deletion-fail.audit",
+          "reversal": "projection-rebuild",
+          "transaction_boundary": "deletion-job"
         }
       ]
     },
@@ -1535,6 +1986,38 @@
           "audit_event": "local-delete-complete.audit",
           "reversal": "none",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "local-delete-expire",
+          "from": [
+            "issued",
+            "acknowledged"
+          ],
+          "action": "expire-unacknowledged-command",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "local-delete-expire.audit",
+          "reversal": "none",
+          "transaction_boundary": "local-deletion-command"
+        },
+        {
+          "transition_id": "local-delete-fail",
+          "from": [
+            "acknowledged",
+            "executing"
+          ],
+          "action": "device-reports-failure",
+          "to": "failed",
+          "actor": "native-device",
+          "authentication": "device-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "local-delete-fail.audit",
+          "reversal": "none",
+          "transaction_boundary": "local-deletion-command"
         }
       ]
     },
@@ -1845,9 +2328,7 @@
         {
           "transition_id": "update-stage",
           "from": [
-            "available",
-            "deferred",
-            "deadline"
+            "downloading"
           ],
           "action": "download-verify-stage",
           "to": "staged",
@@ -1935,6 +2416,41 @@
           "audit_event": "update-block.audit",
           "reversal": "explicit-transition",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "update-download",
+          "from": [
+            "available",
+            "deferred",
+            "deadline"
+          ],
+          "action": "download-signed-release-set",
+          "to": "downloading",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-download.audit",
+          "reversal": "none",
+          "transaction_boundary": "update-installation"
+        },
+        {
+          "transition_id": "update-fail",
+          "from": [
+            "downloading",
+            "staged",
+            "installing",
+            "health-check"
+          ],
+          "action": "abort-update",
+          "to": "failed",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-fail.audit",
+          "reversal": "none",
+          "transaction_boundary": "update-installation"
         }
       ]
     },
@@ -2041,6 +2557,23 @@
           "audit_event": "release-revoke.audit",
           "reversal": "explicit-transition",
           "transaction_boundary": "release-revoke"
+        },
+        {
+          "transition_id": "release-expire",
+          "from": [
+            "published",
+            "active",
+            "superseded"
+          ],
+          "action": "metadata-expiry",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "release-expire.audit",
+          "reversal": "none",
+          "transaction_boundary": "release-set"
         }
       ]
     },
@@ -2078,7 +2611,10 @@
       "transitions": [
         {
           "transition_id": "shell-start",
-          "from": ["absent", "headless"],
+          "from": [
+            "absent",
+            "headless"
+          ],
           "action": "start-shell",
           "to": "starting",
           "actor": "user",
@@ -2091,7 +2627,11 @@
         },
         {
           "transition_id": "shell-ipc-connect",
-          "from": ["starting", "daemon-unavailable", "stale"],
+          "from": [
+            "starting",
+            "daemon-unavailable",
+            "stale"
+          ],
           "action": "verify-daemon-peer-and-connect",
           "to": "connected",
           "actor": "native-device",
@@ -2104,7 +2644,11 @@
         },
         {
           "transition_id": "shell-daemon-unavailable",
-          "from": ["starting", "connected", "stale"],
+          "from": [
+            "starting",
+            "connected",
+            "stale"
+          ],
           "action": "daemon-peer-unavailable",
           "to": "daemon-unavailable",
           "actor": "system",
@@ -2117,7 +2661,19 @@
         },
         {
           "transition_id": "shell-ui-exit",
-          "from": ["starting", "connected", "daemon-unavailable", "stale", "paused", "offline", "degraded", "auth-required", "update-required", "update-blocked", "permission-repair"],
+          "from": [
+            "starting",
+            "connected",
+            "daemon-unavailable",
+            "stale",
+            "paused",
+            "offline",
+            "degraded",
+            "auth-required",
+            "update-required",
+            "update-blocked",
+            "permission-repair"
+          ],
           "action": "exit-ui-without-daemon-stop",
           "to": "absent",
           "actor": "user",
@@ -2130,7 +2686,19 @@
         },
         {
           "transition_id": "shell-crash",
-          "from": ["starting", "connected", "daemon-unavailable", "stale", "paused", "offline", "degraded", "auth-required", "update-required", "update-blocked", "permission-repair"],
+          "from": [
+            "starting",
+            "connected",
+            "daemon-unavailable",
+            "stale",
+            "paused",
+            "offline",
+            "degraded",
+            "auth-required",
+            "update-required",
+            "update-blocked",
+            "permission-repair"
+          ],
           "action": "crash-without-daemon-stop",
           "to": "crashed",
           "actor": "system",
@@ -2160,7 +2728,9 @@
         "published",
         "degraded",
         "suspended",
-        "retired"
+        "retired",
+        "certified",
+        "blocked"
       ],
       "terminal_states": [
         "retired"
@@ -2200,7 +2770,7 @@
         {
           "transition_id": "profile-publish",
           "from": [
-            "exercised"
+            "certified"
           ],
           "action": "publish-support-claim",
           "to": "published",
@@ -2242,6 +2812,60 @@
           "audit_event": "profile-suspend.audit",
           "reversal": "explicit-transition",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "profile-certify",
+          "from": [
+            "exercised"
+          ],
+          "action": "accept-immutable-certification-results",
+          "to": "certified",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "profile-certify.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "platform-certification"
+        },
+        {
+          "transition_id": "profile-block",
+          "from": [
+            "planned",
+            "candidate",
+            "exercised"
+          ],
+          "action": "block-uncertifiable-profile",
+          "to": "blocked",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "profile-block.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "platform-certification"
+        },
+        {
+          "transition_id": "profile-retire",
+          "from": [
+            "planned",
+            "candidate",
+            "exercised",
+            "certified",
+            "published",
+            "degraded",
+            "blocked",
+            "suspended"
+          ],
+          "action": "retire-profile",
+          "to": "retired",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "profile-retire.audit",
+          "reversal": "none",
+          "transaction_boundary": "platform-certification"
         }
       ]
     }

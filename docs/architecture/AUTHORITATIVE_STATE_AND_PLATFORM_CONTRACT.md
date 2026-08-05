@@ -1,14 +1,99 @@
 # Authoritative State, API, Persistence, Platform, and Release Contract
 
 Status: normative P-1140D planning contract; no implementation or launch evidence
-Version: 1
-Updated: 2026-07-24
+Version: 2
+Updated: 2026-08-06
 
 ## Single ownership rule
 
 `packages/schemas/state-machine-registry-v1.json` is the machine-readable index of every mutable product concept. Its schema is `state-machine-registry-v1.schema.json`. Each machine declares one semantic owner, exact persistence tables, aggregate key, states, terminal states, transitions, actor/authentication/recent-auth requirements, idempotency scope, audit event, reversal semantics and transaction boundary.
 
 Prose may explain a state machine but cannot create a second state vocabulary. OpenAPI operations, SQL checks, workers, local IPC and UI states must reference the registry IDs. An unregistered mutation is forbidden.
+
+## State vocabulary rules
+
+These rules are executable. `scripts/repository/validate_state_vocabularies.py` holds the binding table below as data, refuses to run if this document and the schemas disagree, and exits non-zero on any mismatch.
+
+### Naming convention
+
+Every state value, in every owner, is **lowercase kebab-case** matching `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`. This applies to registry `states`, `initial_state`, `terminal_states`, `from` and `to`; to every SQL `check (column in (...))` literal for a state column; and to every OpenAPI state enum value. `snake_case` state values are prohibited.
+
+The rule follows the registry rather than SQL convention because `state-machine-registry-v1.schema.json` already constrains every identifier to `^[a-z0-9]+(?:[.-][a-z0-9]+)*$`, which cannot express `_`. Making SQL and the API kebab-case therefore produces one literal vocabulary spelled identically in all three files, whereas making the registry `snake_case` would require a second, mechanical `-`/`_` transform at every boundary — which is the defect this section exists to remove. The rule governs *state* values only; event types, scopes, roles and other enums are out of scope for this contract.
+
+### Three-way agreement
+
+For every aggregate:
+
+- the registry machine's `states` set is the canonical vocabulary;
+- the SQL `check` set on the aggregate's state column is **identical** to it — persistence must be able to hold every state a worker can reach;
+- the OpenAPI enum is identical to it **minus the declared internal states** in the table below.
+
+An internal state is one a client must never be shown. Every omission from an API enum must appear in the `Internal-only` column; there is no other way to omit a state. Where an aggregate has no registry machine, no SQL column or no API enum, the table records `—` and the reason is given under Open items.
+
+### Binding table
+
+| Aggregate | Registry machine | SQL state columns | API state enums | Internal-only states |
+|---|---|---|---|---|
+| `oauth-transaction` | `oauth-transaction` | `oauth_transactions.state` | — | — |
+| `web-session-family` | `web-session-family` | `session_families.state` | — | — |
+| `native-session-family` | `native-session-family` | `session_families.state` | — | — |
+| `session-member` | — | `native_sessions.state`, `web_sessions.state` | `Session.state` | — |
+| `ranked-identity-eligibility` | `ranked-identity-eligibility` | — | `AccountProfile.ranked_state`, `PublicProfile.ranked_state` | `appealed`, `consolidating`, `investigating`, `reversed` |
+| `idempotency-ledger` | `idempotency-ledger` | `idempotency_records.state` | — | — |
+| `ranking-projection` | `ranking-projection` | `ranking_projection_generations.state` | — | — |
+| `model-alias-resolution` | `model-alias-resolution` | `cost_interpretations.state`, `pricing_datasets.state` | `PricingDataset.state` | — |
+| `friendship` | `friendship` | `friend_requests.state` | — | — |
+| `rivalry` | `rivalry` | `rival_edges.state` | — | — |
+| `board-membership` | `board-membership` | `board_memberships.state` | — | — |
+| `board-invitation` | `board-invitation` | `board_invites.state` | — | — |
+| `board-container` | — | `boards.state`, `communities.state`, `organizations.state` | `Board.state`, `Community.state`, `Organization.state` | — |
+| `presence-lease` | `presence-lease` | `presence_leases.state` | — | — |
+| `notification-delivery` | `notification-delivery` | `notifications.state` | `Notification.state` | `grouped`, `ready` |
+| `moderation-case` | `moderation-case` | `moderation_cases.state` | `ModerationCase.state` | — |
+| `appeal` | `appeal` | `appeals.state` | `Appeal.state` | `screening` |
+| `export-job` | `export-job` | `exports.state` | `ExportJob.state` | — |
+| `server-deletion` | `server-deletion` | `deletion_jobs.state` | `DeletionJob.state` | `rebuilding-projections` |
+| `local-deletion-command` | `local-deletion-command` | `local_deletion_commands.state` | — | — |
+| `daemon-lifecycle` | `daemon-lifecycle` | — | — | — |
+| `privileged-supervisor` | `privileged-supervisor` | — | — | — |
+| `interactive-shell` | `interactive-shell` | — | — | — |
+| `update-lifecycle` | `update-lifecycle` | `update_installations.state` | — | — |
+| `release-trust` | `release-trust` | `release_sets.state` | — | — |
+| `platform-certification` | `platform-certification` | `platform_profiles.validation_state` | `CompatibilityProfile.validation_state` | — |
+| `account-lifecycle` | — | `accounts.state` | — | — |
+| `device-enrollment` | — | `devices.state` | `Device.state` | — |
+| `device-authorization-grant` | — | `device_enrollment_grants.state` | `DeviceAuthorizationStatus.state` | — |
+| `identity-link` | — | `linked_identities.state` | `Identity.state` | — |
+| `claim-record` | — | — | `ClaimRecord.state` | — |
+
+### Why each state is internal
+
+- `ranked-identity-eligibility.investigating`, `.consolidating`, `.appealed`, `.reversed` are `integrity-private`. Exposing them would tell an adversary whether an anti-abuse investigation is open, which is itself an anti-cheat signal. The public vocabulary is `unverified`, `eligible`, `restricted`, `retired`; `restricted` covers every non-eligible outcome without disclosing its cause. The previous API values `unranked` and `suspended` were synonyms for `unverified` and `restricted` and are removed.
+- `notification-delivery.grouped` and `.ready` exist only between the dedup/hysteresis worker and the delivery worker. A notification is never rendered in either state, so a client that received them would have to invent a display rule. `retracted` is API-visible and required: it is the D-070 correction path, and neither the API nor SQL could previously express it.
+- `appeal.screening` is the automated pre-review pass. It is not a decision and gives the appellant no actionable information; `submitted` is what they see until a human is assigned.
+- `server-deletion.rebuilding-projections` is a ranking-worker implementation detail inside the deletion job.
+
+### Shared, derived, projected and transient vocabularies
+
+- `session_families.state` is shared by the `web-session-family` and `native-session-family` machines. Its `check` set is exactly the union of the two, and each machine's states must be a subset of it. `device-revoked` is native-only.
+- `web_sessions.state`, `native_sessions.state` and `Session.state` describe an individual member row of a token family, not the family. They have no machine of their own and share one vocabulary.
+- `model_alias_facts` derives its state from `effective_at`/`superseded_at` and has no state column.
+- Claims are append-only facts. `ClaimRecord.state` is derived from `claims`, `claim_corrections` and `quarantines`; adding a mutable state column to `claims` would contradict "accepted claims never mutate".
+- `PresenceLease.availability` and `PresenceRenewalRequest.availability` are a declared coarsening of `presence-lease`: `absent`, `expired` and `revoked` all render as `offline`, `active` renders as `online`, `idle` renders as `idle`. The validator requires the mapping to cover every machine state.
+- `ClaimBatchResult.state` and `OAuthCompletion.state` report the outcome of one request rather than a stored aggregate. `OAuthCompletion.state` now carries the machine's terminal value `consumed` rather than the synonym `completed`.
+- `board_memberships.role` is now one-to-one with the machine's `active-*` states, enforced by a table `check`. `active-viewer` was added to the machine because `BoardInvitationRequest.role` already offered `viewer` and no membership state could hold it. The `board_one_active_owner` unique index keys on `state = 'active-owner'`; there is still no board owner column.
+- Sub-entity vocabularies that are not aggregate lifecycles are declared in `SQL_LOCAL_VOCABULARIES` in the validator: `device_keys.state`, `quarantines.state`, `deletion_effects.state`, `platform_certifications.state`, `appeal_decisions.decision`, the assessed `provenance_state`/`continuity_state`/`integrity_state` pair on `evidence_assessments` and `verifier_appraisals`, `evidence_assessments.public_state`, and the lineage `continuity_state` on `device_sequences` and `device_lineages`.
+- `appeal_decisions.decision` records the outcome only — `upheld`, `partially-upheld`, `reversed`. Its previous values `needs_information` and `expired` were appeal *workflow* states and now live in `appeals.state`, which is where the `appeal` machine puts them. Because the outcome is not a state, moving it out of `Appeal.state` would otherwise have removed the appellant's only way to tell `upheld` from `partially-upheld` from `reversed`. `Appeal.decision` publishes it instead: an optional enum, present exactly when `appeals.state` is `approved`, and required by the validator to equal the `appeal_decisions.decision` vocabulary. A `denied` appeal has no decision row and no `decision` field.
+- `platform_certifications.state` records one certification run against one release set. It is not the profile lifecycle; that is `platform_profiles.validation_state`, bound to the `platform-certification` machine.
+
+### Open items
+
+- **No registry machine for account, device, board, or claim.** `claim-record` does not need one: claims are immutable facts, and the registry indexes mutable concepts. `board-container` does not need one: it is a two-value archive flag whose mutable concepts (`board-membership`, `board-invitation`) already have machines. `account-lifecycle` and `device-enrollment` genuinely do need machines — both have authority, recent-auth and reversal requirements the binding table cannot express. Adding them requires coordinated edits to three files outside this contract: the `required_machines` set in `scripts/repository/validate_planning_artifacts.py`, `state_machines` in `conformance/p1140e/validation-matrix-v1.json`, and a fixture pair in `conformance/p1140e/state-machine-fixtures-v1.json`, all of which assert exact machine-set equality.
+- **`ranked-identity-eligibility` has no persistence.** The machine names `ranked-identities`, `identity-investigations` and `identity-events`; none of those tables exist in `planning-schema.sql`. The vocabulary is fixed but nothing can store it.
+- **`certification_state` in the platform profile registry.** `platform-profile-registry-v1.schema.json` pins it to the constant `planned-validation-required`, which is the machine's `planned` state under an older spelling. `platform_profiles.validation_state` and `CompatibilityProfile.validation_state` now use `planned`; the frozen constant, its 34 uses in `platform-profile-registry-v1.json` and its uses in `conformance/p1140e/platform-validation-plan-v1.json` remain to be renamed.
+- **`deletion_state_at_generation` in the export manifest.** `export-manifest-v1.schema.json` carries a fifth deletion vocabulary — `none`, `cooling_off`, `executing`, `completed` — that must become `none`, `cooling-off`, `processing`, `complete` to match the `server-deletion` machine.
+- **Cancellation during deletion cooling-off is unmodelled.** `cooling-off` exists so a deletion is reversible, but the machine has no `cancelled` state and no transition out of it other than forward.
+- **`evidence_assessments.public_state` has no API representation.** Its vocabulary is taken from `evidence-profile-policy-v1.json`; exposing evidence class in the public API is `PF-046`.
 
 ## Authentication and sessions
 
@@ -69,7 +154,7 @@ Required guarantees include:
 - checked non-negative u64-compatible values;
 - append-only protection for accepted protocol, appraisal, receipt, pricing, moderation, ranking and audit facts;
 - typed social/notification/outbox rows rather than arbitrary payload JSON;
-- projection build/validate/promote state and rebuild provenance;
+- projection `building`/`validating`/`active` state and rebuild provenance;
 - deletion tombstones reapplied after restore.
 
 One accepted batch locks authenticated account/lineage, idempotency and challenge/checkpoint rows; inserts claims/appraisals/receipts/outbox; consumes the challenge; advances checkpoint; persists exact response; then commits.
@@ -86,7 +171,7 @@ Pricing interpretations are immutable server facts using the P-1140B schema. Eve
 
 Friendship uses one canonical ordered pair. One pending request exists per pair; crossed requests become active deterministically. Blocking in one transaction removes friendship/rival state, invalidates invitations and pending notifications, revokes presence visibility and appends social events. Unblocking never restores old relationships.
 
-Board ownership is active membership role `owner`; there is no competing owner field. Transfer locks the board and both memberships, requires recent auth, promotes the successor and demotes/removes the prior owner in one transaction. The last owner cannot leave. Policy versions apply prospectively unless a rebuild record explicitly targets prior periods. Organization, community and hacker-house metadata are typed specializations.
+Board ownership is the `board-membership` state `active-owner`, which the `board_one_active_owner` unique index enforces; `board_memberships.role` is constrained to agree with it and there is no competing owner field. Transfer locks the board and both memberships, requires recent auth, promotes the successor and demotes/removes the prior owner in one transaction. The last owner cannot leave. Policy versions apply prospectively unless a rebuild record explicitly targets prior periods. Organization, community and hacker-house metadata are typed specializations.
 
 Presence renews only from an authorized native session and binds a recent qualifying collector activity/accepted-continuity reference, device and privacy policy. Audience visibility is computed per viewer; block, revocation and privacy changes invalidate immediately. Multi-device merge uses deterministic activity precedence and never exposes project/source details.
 
@@ -111,7 +196,7 @@ Server deletion and local deletion are distinct:
 
 ## Native runtime and platform profiles
 
-`packages/schemas/platform-profile-registry-v1.json` freezes exact candidate tuples as of 2026-07-24. Every row is `advertised=false` and `planned-validation-required`; it becomes public only through the `platform-certification` state machine after immutable results pass.
+`packages/schemas/platform-profile-registry-v1.json` freezes exact candidate tuples as of 2026-07-24. Every row is `advertised=false` and sits in the `platform-certification` machine's initial state `planned` — still spelled `planned-validation-required` in that registry's frozen `certification_state` constant, as recorded under Open items. A profile becomes public only through the `platform-certification` machine after immutable results pass: `planned` → `candidate` → `exercised` → `certified` → `published`, with `blocked`, `degraded` and `suspended` as the withdrawal paths.
 
 The registry includes macOS 26/15/14 on Apple silicon and compatible Intel; Windows 11 25H2 x64/ARM64; Windows Server 2025 x64; exact maintained Linux distribution/architecture/environment/package/init tuples; WSL2 Ubuntu 26.04; signed immutable OCI x64/arm64; and ephemeral CI x64/arm64. Windows Server ARM64 is not advertised without an applicable first-party release profile. Android, iOS, iPadOS and ChromeOS remain explicitly outside native scope.
 

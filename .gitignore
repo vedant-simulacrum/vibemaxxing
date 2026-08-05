@@ -18,3 +18,4 @@ apps/api/api
 .cache/go-build/
 __pycache__/
 artifacts/evals/
+artifacts/repository/issue-plan.json

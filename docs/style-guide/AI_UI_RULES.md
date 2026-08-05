@@ -4,7 +4,7 @@ These rules are written for coding agents and apply to every UI change.
 
 ## Before generating code
 
-1. Read this directory, `docs/design/BRAND.md`, and `docs/design/UI_FOUNDATIONS.md`.
+1. Read this directory, starting with `README.md`, `BRAND.md`, and `UI_FOUNDATIONS.md`.
 2. Search `packages/ui`, its public exports, and `COMPONENT_INVENTORY.md` for an existing solution.
 3. List the components, patterns, and tokens the proposed screen will reuse.
 4. Identify any missing state or variant before proposing a new component.

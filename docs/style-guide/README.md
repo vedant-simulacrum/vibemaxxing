@@ -4,20 +4,22 @@ Status: governing structure approved; Leaderboard First direction and implementa
 
 This directory is the entry point for every product-UI decision. It exists to keep human-written and AI-generated interfaces on the same system instead of allowing each page to invent its own controls, spacing, colors, and interaction patterns.
 
+This file is navigation and process only. It states where each decision lives and the order in which work happens; it does not itself define brand values, layout rules, layer boundaries, or component contracts.
+
 ## Source-of-truth map
 
 | Concern | Canonical source |
 |---|---|
-| Brand identity, logo, palette, voice | `docs/design/BRAND.md` |
-| Product layout and interaction foundations | `docs/design/UI_FOUNDATIONS.md` |
+| Brand identity, logo, palette, voice | `BRAND.md` |
+| Product layout, interaction, and screen-composition foundations | `UI_FOUNDATIONS.md` |
 | Font provenance and licensing | `assets/brand/FONT_PROVENANCE.md` |
 | Machine-readable CSS and TypeScript tokens | `packages/ui/src/` |
 | Isolated component states, controls, and accessibility checks | `packages/ui/.storybook/` and `*.stories.tsx` |
-| Component ownership and composition | `ARCHITECTURE.md` |
-| Definition of a reusable component | `COMPONENT_STANDARD.md` |
+| System layers, dependency direction, ownership, and documentation architecture | `UI_ARCHITECTURE.md` |
+| Definition of a reusable component and its required contract | `COMPONENT_STANDARD.md` |
 | AI/vibe-coding rules | `AI_UI_RULES.md` |
-| Approved, proposed, and deprecated UI | `COMPONENT_INVENTORY.md` |
-| Implemented component usage contracts | `COMPONENTS.md` |
+| What exists, at which lifecycle stage, with which usage contract | `COMPONENT_INVENTORY.md` |
+| Governed asset resolution | `ASSET_SYSTEM.md` |
 | Curated brand and product-system reference | `/style-guide` |
 | Research and source rationale | `RESEARCH.md` |
 | Current gaps and migration sequence | `MIGRATION.md` |
@@ -38,28 +40,9 @@ Before writing UI code:
 
 Pages consume the system. Pages do not become a second design system.
 
-## Documentation surfaces
+## Enforcement
 
-Storybook and `/style-guide` are complementary and must never substitute for one another:
-
-- **Storybook is the engineering source for executable component states.** Every public component has isolated stories covering its meaningful variants, edge cases, responsive behavior, and interaction or accessibility states.
-- **`/style-guide` is the curated brand reference.** It explains the approved visual language and shows representative compositions using the same `@vibemaxxing/ui` exports.
-- **`@vibemaxxing/ui` is the implementation source.** Neither documentation surface owns a duplicate component implementation.
-
-A change that adds a public component without a story fails `npm run ui:check`. Removing either documentation surface also fails the check.
-
-## System layers
-
-| Layer | Examples | Owned by |
-|---|---|---|
-| Tokens | color, type, spacing, radius, motion | `packages/ui/src/tokens.source.json` |
-| Primitives | Button, Link, Text, Icon, Stack | `packages/ui/src/primitives/` |
-| Components | Tabs, Avatar, StatusTag, Dialog | `packages/ui/src/components/` |
-| Product patterns | LedgerRow, RankMovement, EvidenceBadge | `packages/ui/src/patterns/` |
-| Templates | LeaderboardShell, ProfileShell | `packages/ui/src/templates/` |
-| Pages | route data and composition only | `apps/*` |
-
-Folders for unapproved component layers are created when the first approved implementation enters them. Empty folders are not used as evidence of implementation.
+A change that adds a public component without a story fails `npm run ui:check`. Removing either documentation surface — Storybook or `/style-guide` — also fails the check. The three non-interchangeable documentation layers and the system-layer table are defined in `UI_ARCHITECTURE.md`.
 
 ## Change rule
 

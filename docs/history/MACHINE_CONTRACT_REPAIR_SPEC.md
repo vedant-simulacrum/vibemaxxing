@@ -1,7 +1,10 @@
 # Machine Contract Repair Specification
 
 Updated: 2026-07-23
-Status: normative P-1140B–E planning input; does not authorize implementation
+Archived: 2026-08-06
+Status: **historical. Not authority.**
+
+> This was a normative planning input for P-1140B through P-1140E. All four gates are now `complete-planning`, so the specification is spent: its exit condition was reached and the repaired contracts it demanded live in `packages/schemas/` and are indexed by `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`. Field-level requirements below are retained as the record of what each contract was required to satisfy; they are not a current checklist. Do not cite anything below to justify a decision or establish state.
 
 ## Purpose
 

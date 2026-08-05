@@ -1,9 +1,16 @@
 # PR-Sized Implementation Work Breakdown
 
 Status: canonical planning decomposition; inactive until P-1140F closes and P-1104 is explicitly authorized
-Updated: 2026-08-04
+Updated: 2026-08-05
 
 This file decomposes `IMPLEMENTATION_HANDOFF.md`. It does not authorize product code. Units prefixed `PF-` are planning repairs permitted in the current phase. All other units are future implementation work and remain blocked.
+
+This file has two parts, and they are not the same kind of object:
+
+1. **Active plan** — units specified to the standard below. These can be picked up and produced as a mergeable change without further design work.
+2. **Frozen backlog** — the remaining epic headings. These are a *scope inventory*, retained so the launch scope in `docs/planning/PRODUCT_SCOPE_FREEZE.md` is not silently narrowed. **They are not executable units** and must be promoted into the active plan, with the four required fields, before being worked.
+
+Nothing in the frozen backlog has been removed from scope. Promotion is the only path from backlog to work.
 
 ## Global rules
 
@@ -18,6 +25,63 @@ Every unit must be independently reviewable and must name:
 - disable, revoke, recovery, or reversal path.
 
 A unit cannot start because its predecessor document exists. Its dependency must be accepted on the exact branch/head and must not retain an open semantic P1.
+
+### Required unit fields
+
+Every unit in the **active plan** must carry these four lines verbatim, in this order, immediately under its heading. They exist so plan quality is machine-checkable rather than aspirational.
+
+- `Files:` — the exact paths the change touches. Not a component name, not a directory. If the paths are unknown, the unit is not yet specified.
+- `Acceptance:` — one runnable assertion. A command, a query, or a grep whose result decides done. Prose descriptions of intent are not acceptance criteria.
+- `Depends:` — unit IDs only, comma-separated, or `none`. Prose dependencies ("implemented product paths") are not resolvable and are not permitted.
+- `Est:` — hours, as an integer or a range. A unit estimated above 16 hours must be split.
+
+A unit missing any of the four is not ready to start, regardless of how well its prose reads.
+
+`scripts/repository/generate_issue_plan.py` currently validates key format and uniqueness only; it neither reads nor requires these fields, so a file of empty records passes CI today. Extending it to parse the four fields and fail on any active-plan unit missing them is tracked as `PF-037`, and until that lands this standard is enforced by review rather than by tooling.
+
+### Why the active plan is short
+
+The 195-unit decomposition below records scope faithfully but is not executable: 159 units are a heading plus a dependency line, and no unit anywhere names a file path, schema, table, or endpoint — the first item this document's own Global rules require. Expanding all 195 to the standard above before any of them is exercised would repeat the failure this repository is currently repairing. The active plan is therefore sized to what can be specified against artifacts that actually exist, and grows by promotion as each vertical slice teaches what the next one needs.
+
+## Active plan
+
+Units below are specified to the required-fields standard and are ordered by execution sequence. `PF-` units are planning repairs permitted in the current phase. Units marked **gated** are fully specified but must not start until P-1104 is authorized.
+
+Ordering principle: each specification is paired with the artifact or code that consumes it, rather than batched into a specification phase. A contract with no consumer cannot be validated, and validating contracts against each other is what produced the current finding set.
+
+| Unit | Work | Depends | Est (h) |
+|---|---|---|---|
+| `PF-037` | Enforce required unit fields in the issue plan generator | none | 4-6 |
+| `PF-038` | Reconcile state vocabularies across API, SQL and registry | none | 12-16 |
+| `PF-039` | Decide and specify the session authentication scheme | none | 6-8 |
+| `PF-040` | Specify accounting arithmetic | PF-038 | 8-12 |
+| `PF-041` | Specify the OpenTelemetry accounting profile | PF-040 | 8-12 |
+| `PF-042` | Author the source receipt contract | PF-041 | 6-8 |
+| `PF-043` | Author the appraisal result and policy contracts | PF-038 | 8-10 |
+| `PF-044` | Add pagination to unpaginated list operations | none | 3-4 |
+| `PF-045` | Specify the error response matrix | PF-038 | 8-10 |
+| `PF-046` | Represent evidence class in the public API | PF-043 | 4-6 |
+| `PF-047` | Expand profile and rank entry schemas to the rendered product | PF-046 | 6-8 |
+| `PF-048` | Author the indexing and partitioning plan | PF-038 | 8-12 |
+| `PF-049` | Repair the idempotency contract | PF-038 | 4-6 |
+| `PF-050` | Populate retention and disposition policy | PF-038 | 6-8 |
+| `PF-051` | Specify multi-observer deduplication | PF-042 | 6-8 |
+| `PF-052` | Author ranking generation, entry and snapshot contracts | PF-038, PF-048 | 10-14 |
+| `PF-053` | Decide provider-attested evidence for organizations | none | 4-6 |
+| `PF-054` | Author the negative CBOR corpus | none | 4-6 |
+| `PF-055` | Repair the P-1140F authority validator | none | 3-4 |
+| `PF-056` | Restore executable evaluation gates | PF-055 | 4-6 |
+| `PF-057` | Specify the P-1104 gate transition | PF-055 | 4-6 |
+| `PF-058` | Author the system narrative in PROJECT.md | none | 6-8 |
+| `PF-059` | Merge duplicated UI and design documentation | none | 6-8 |
+| `PF-060` | Collapse single-purpose documentation directories | PF-059 | 4-6 |
+| `PF-061` | Archive spent planning specifications | none | 4-6 |
+| `PF-062` | Make the decision register and task catalog machine-readable | PF-053, PF-055 | 12-16 |
+| `PF-063` | Validate decision and work-unit traceability | PF-062 | 6-8 |
+| `PF-064` | Remove stale dates from living document filenames | PF-057 | 2-3 |
+| `PF-065` | Correct the OpenAPI file extension | PF-038 | 2-3 |
+
+Full specifications for these units are in **Current planning program** below, in unit-number order after `PF-036`.
 
 ## Current planning program
 
@@ -338,11 +402,281 @@ Dependencies: PF-034.
 Dependencies: PF-001 through PF-035.
 
 - pin exact commit;
-- independent manual review of SR-005 through SR-016;
+- independent manual review of SR-005 through SR-017;
 - record any P0/P1 with exact normative owner;
 - require zero open P0/P1 before considering P-1104.
 
-## Future implementation epics — blocked until P-1104
+### PF-037 — Enforce required unit fields in the issue plan generator
+Files: `scripts/repository/generate_issue_plan.py`, `docs/implementation/ISSUE_GENERATION.md`, `tests/ci/test_generate_issue_plan.py`
+Acceptance: `python3 scripts/repository/generate_issue_plan.py` exits non-zero when any unit under `## Active plan` lacks `Files:`, `Acceptance:`, `Depends:`, or `Est:`; exits 0 on the current file; emitted records carry all four fields.
+Depends: none
+Est: 4-6
+
+Also corrects three defects in the generator: `labels` hardcodes `blocked` and `phase_gate` hardcodes `P-1104-explicit-implementation-approval` with no gate-state input, so every generated record is mislabeled the moment the gate moves; `POST_LAUNCH_HEADING` and the `PL-` branch are dead code matching a heading that does not exist; and `ISSUE_GENERATION.md:11-15` documents stable keys in two-digit form (`F-01`, `N-15`) which the generator's own `\d{3}` pattern rejects.
+
+### PF-038 — Reconcile state vocabularies across API, SQL and registry
+Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
+Acceptance: a script asserts that for every aggregate with a `state` column, an API enum, and a registry machine, the three value sets are identical; zero mismatches reported.
+Depends: none
+Est: 12-16
+
+Nine aggregates currently disagree. `Appeal` shares exactly one state name between API and registry. `ranking-projection` is `building/published/superseded/failed` in SQL against `building/validating/active/superseded/failed` in the registry, so the projection worker has no valid target state. `Notification` cannot express `retracted`, which is the D-070 correction path. `idempotency_records` is `reserved/committed/failed` in SQL against `reserved/committed/conflict/expired` in the registry — neither is a superset. Export, deletion, certification, update-lifecycle, and web-session-family also diverge; certification has four vocabularies across three files plus the inventory.
+
+This unit also fixes the absence of a naming-convention rule: SQL uses `snake_case`, the registry uses `kebab-case`, and no document specifies which wins. Highest-leverage unit in the plan — every code generator, migration, and worker depends on its output.
+
+### PF-039 — Decide and specify the session authentication scheme
+Files: `docs/decisions/ADR-015-SESSION_AUTHENTICATION.md` (new), `packages/schemas/openapi-v1.yaml`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+Acceptance: `openapi-v1.yaml` declares a `securitySchemes` entry matching the ADR; a refresh operation exists if the ADR requires one; `grep -c "bearerAuth" openapi-v1.yaml` no longer returns a global-only result.
+Depends: none
+Est: 6-8
+
+`AUTHENTICATION_AND_RECOVERY.md:63-66` specifies HTTP-only same-site cookies with refresh-token rotation. `openapi-v1.yaml:13-16,1710-1715` declares a single global opaque `bearerAuth` with no cookie scheme, no OAuth2 flows, no scopes, and no refresh endpoint among its 39 paths. These are two different architectures and the first authenticated request cannot be implemented until one is chosen. The `web-session-family` machine has a `replay-detected` state that neither SQL nor the API can persist.
+
+### PF-040 — Specify accounting arithmetic
+Files: `packages/schemas/accounting-profile.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/arithmetic-vectors-v1.json` (new)
+Acceptance: two independent implementations reproduce every vector in the new fixture byte-for-byte, including the profile digest.
+Depends: PF-038
+Est: 8-12
+
+`accounting-profile.schema.json` defines no rounding, overflow, precision, or unit-conversion rules, and no canonical digest algorithm — yet `accounting_profile_sha256` is a signed claim field. `retry_policy`, `cancellation_policy`, and `nested_execution_policy` at `:209-228` are enum labels with no defined behavior. Two implementations cannot currently agree on a token total, which makes cross-language parity meaningless.
+
+### PF-041 — Specify the OpenTelemetry accounting profile
+Files: `packages/schemas/accounting-profile-otel-v1.json` (new), `docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `conformance/accounting/otel-capture-vectors-v1.json` (new)
+Acceptance: the profile maps a captured OTLP payload to a `NormalizedAccountingEvent` deterministically; fixture includes at least one real capture per supported metric.
+Depends: PF-040
+Est: 8-12
+
+Empirically verified capture surface, 2026-08-05: Claude Code emits `claude_code.token.usage` as a counter with attributes `model`, `query_source` (`main`/`subagent`/`auxiliary`), and `type` (`input`/`output`/`cacheRead`/`cacheCreation`). Gemini CLI emits `gemini_cli.token.usage`; Codex emits `codex.turn.token_usage`. Prompt and response content appears only on the logs channel and is redacted unless explicitly enabled, so metrics-only capture keeps the collector out of L0 entirely.
+
+Three hazards this profile must encode: every Claude Code metric carries `organization.id`, `user.account_uuid`, `user.account_id`, `user.email`, and `user.id`, which must be dropped at ingest rather than trusted for identity; Gemini CLI's `logPrompts` defaults to **true**; and Codex's `metrics_exporter` defaults to `statsig`, not `none`.
+
+### PF-042 — Author the source receipt contract
+Files: `packages/schemas/source-receipt-v1.schema.json` (new), `packages/schemas/source-observation.schema.json`, `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
+Acceptance: every `NormalizedAccountingEvent` fixture resolves to exactly one source receipt; schema validates the full existing observation corpus.
+Depends: PF-041
+Est: 6-8
+
+Inventory line `:35`. Provenance for every claim, and the first of the 33 `planned-missing` contracts that blocks real work. Note the inventory maps this to `PF-021/PF-022`, which are ranking units; the accounting owners are `PF-017`/`PF-018`.
+
+### PF-043 — Author the appraisal result and policy contracts
+Files: `packages/schemas/appraisal-result-v1.schema.json` (new), `packages/schemas/appraisal-policy-v1.schema.json` (new), `packages/schemas/openapi-v1.yaml`
+Acceptance: `ClaimRecord.appraisal_id` resolves to a defined schema and a retrievable operation; no dangling reference remains.
+Depends: PF-038
+Est: 8-10
+
+Inventory lines `:37-38`. `ClaimRecord.appraisal_id` already references an appraisal today and there is no `/appraisals/{id}` path and no schema behind it.
+
+### PF-044 — Add pagination to unpaginated list operations
+Files: `packages/schemas/openapi-v1.yaml`
+Acceptance: every operation returning a collection declares `cursor` and `limit` parameters with the contract's default 50 and maximum 200; zero collection operations without both.
+Depends: none
+Est: 3-4
+
+Twelve operations lack both: `listSessions:279`, `listIdentities:339`, `listDevices:446`, `listFriends:868`, `listFriendRequests:894`, `listBlocks:959`, `listRivals:1024`, `listBoards:1089`, `listOrganizations:1198`, `listCommunities:1263`, `listModerationCases:1427`, `listAppeals:1492`. `SERVER_API_DATA_AND_RANKING_CONTRACT.md:44` already specifies the contract they violate.
+
+### PF-045 — Specify the error response matrix
+Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
+Acceptance: every operation declares its 4xx responses; every reason code maps to exactly one HTTP status and one registered state machine.
+Depends: PF-038
+Est: 8-10
+
+No operation currently declares 401, 403, 404, 409, or 422 — only 200, 429, and default. `reason-codes-v1.json` has 20 codes for a 39-path API and 24 state machines, and all 20 reference `state_machine: "vibeproof-v1"`, which is not one of the registered machines. Every code dangles.
+
+### PF-046 — Represent evidence class in the public API
+Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/evidence-disclosure-v1.schema.json` (new), `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`
+Acceptance: `grep -c evidence_class packages/schemas/openapi-v1.yaml` returns non-zero; the disclosure projection defines exactly what a viewer may see.
+Depends: PF-043
+Est: 4-6
+
+The string `evidence_class` does not appear in 3,780 lines of OpenAPI. The product's central differentiator is currently unrepresentable in its own API. Four vocabularies exist for this concept — `packages/ui` uses `Hardened|Standard|Imported`, `crates/vibeproof-core` uses `Authoritative|Structured|Observed|Estimated|Imported`, `evidence-profile-policy-v1.json` uses `authoritative-profile`, and the API has none. Reconcile to one.
+
+### PF-047 — Expand profile and rank entry schemas to the rendered product
+Files: `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
+Acceptance: every field rendered by `packages/ui/src/concepts/product-storyboards.tsx` and `src/patterns/product-system.tsx` resolves to an API field; no storyboard depends on a value the API cannot return.
+Depends: PF-046
+Est: 6-8
+
+`PublicProfile` has 4 fields and `RankEntry` has 7, both `additionalProperties: false`. The finished 2,900-LOC design system renders avatars, evidence badges, rank movement, sparklines, and board standings that no operation can supply. This unit also removes the banned copy at `product-storyboards.tsx:56,105,111` ("Verified competitor", "All sources verified", "Rankings are based on verified Token Burn"), which `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md:134-138` and `docs/product/PRODUCT_SPEC.md:109` prohibit.
+
+### PF-048 — Author the indexing and partitioning plan
+Files: `packages/schemas/planning-schema.sql`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
+Acceptance: every foreign key and every documented query path has a supporting index; claims are partitioned as the contract states; `grep -c "CREATE INDEX" planning-schema.sql` is greater than 3.
+Depends: PF-038
+Est: 8-12
+
+73 tables carry 3 indexes total at `:651-653` and zero `PARTITION BY`, while `SERVER_API_DATA_AND_RANKING_CONTRACT.md:70` states claims are partitioned by receipt month. `friend_edges:275` and `rival_edges:289` have no reverse-direction index, so bidirectional queries sequential-scan. The 300 ms leaderboard SLO is unreachable as written.
+
+### PF-049 — Repair the idempotency contract
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`
+Acceptance: a replayed request returns the original response body byte-for-byte; the ledger expresses `conflict` and `expired`.
+Depends: PF-038
+Est: 4-6
+
+`planning-schema.sql:420-430` stores a nullable `response_digest` with no response-body column, so exact replay cannot return the original response. The primary key at `:426` is `(actor_account_id, idempotency_key)` with no global uniqueness, and the principal is account-only.
+
+### PF-050 — Populate retention and disposition policy
+Files: `packages/schemas/policy-defaults-v1.json`, `packages/schemas/data-disposition-v1.json` (new), `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
+Acceptance: every one of the 73 tables has a declared retention class; no `expires_at` column exists without a documented enforcement owner.
+Depends: PF-038
+Est: 6-8
+
+Inventory `:106-107` assigns retention to `policy-defaults-v1.json`, which currently contains 16 knobs and zero retention windows. `expires_at` is stored in several tables and enforced nowhere.
+
+### PF-051 — Specify multi-observer deduplication
+Files: `packages/schemas/normalized-event-v1.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/dedup-vectors-v1.json` (new)
+Acceptance: two collectors observing one session produce a single counted event; fixture covers the colliding and non-colliding commitment cases.
+Depends: PF-042
+Est: 6-8
+
+Inventory `:74`. `TOKEN_ACCOUNTING_SPEC.md:74-76` currently relies on the collector's own `duplicate_domain_commitment`, so two collectors on one real session can choose non-colliding commitments and double-count. Double counting is a scoring defect, not a data-quality defect.
+
+### PF-052 — Author ranking generation, entry and snapshot contracts
+Files: `packages/schemas/ranking-generation-v1.schema.json` (new), `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`
+Acceptance: `LeaderboardPage.snapshot_id` and `revision` and `RankEntry.ranking_view_id` all resolve; a generation can be pinned, superseded, and read back.
+Depends: PF-038, PF-048
+Est: 10-14
+
+Inventory `:88`. Three fields dangle in the API today. This is also where `getLeaderboard` gains a viewer parameter and loses its unauthenticated `security: []` while the `Scope` enum at `:1775` still admits `friends|rivals|board`.
+
+### PF-053 — Decide provider-attested evidence for organizations
+Files: `docs/decisions/ADR-016-PROVIDER_ATTESTED_ORG_EVIDENCE.md` (new), `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/planning/DECISION_REGISTER.md`
+Acceptance: the ADR states whether org boards use provider admin APIs, and `EVIDENCE_AND_ATTESTATION_PROFILES.md` reflects the resulting E1 availability.
+Depends: none
+Est: 4-6
+
+Research on 2026-08-05 established that Anthropic's Admin API (`/v1/organizations/usage_report/messages` plus the Claude Code analytics endpoint), OpenAI's `/v1/organization/usage/completions`, and Cursor's team usage API all return provider-attested counts that a user cannot fabricate — but all three require org-admin credentials, and no provider offers an OAuth scope permitting an individual to authorize third-party read of their own consumption. Anthropic's documentation states the Admin API is unavailable for individual accounts.
+
+Consequence: E1 evidence is reachable **today for organizations and unreachable for individuals**. This bears directly on the ranking-integrity limits recorded in `docs/security/THREAT_MODEL.md` and determines whether a credible evidence tier exists at all. It affects the identity and board data model, so it is decided before ranking contracts are frozen rather than after.
+
+### PF-054 — Author the negative CBOR corpus
+Files: `conformance/vibeproof/v1/negative-vectors.json` (new), `docs/protocol/VIBEPROOF_V1_CANONICAL_PROFILE.md`
+Acceptance: a decoder rejects every vector for the stated reason; duplicate keys, non-minimal integers, indefinite-length containers, and trailing bytes are each covered.
+Depends: none
+Est: 4-6
+
+`vibeproof-claim-v1.cddl` is the strongest artifact in the repository — all nine types resolve, COSE alg −8 and tag 18 are pinned, byte-exact positive vectors exist. Its gap is that only positive vectors exist, and canonicalization, nesting depth, and allocation ceilings live in prose rather than in testable form. Batch, rotation, gap, and correction vectors are also absent.
+
+### PF-055 — Repair the P-1140F authority validator
+Files: `scripts/repository/validate_p1140f_authority.py`, `tests/ci/test_validate_p1140f_authority.py` (new)
+Acceptance: closing a finding in `conformance/p1140f/semantic-findings-v1.json` leaves the validator green; the validator fails when the open count increases.
+Depends: none
+Est: 3-4
+
+`:53` raises unless exactly 13 P1 findings are open; `:139` raises unless zero are open for a review to pass. The two conditions cannot both hold, so closing a finding correctly turns CI red and the only routes to green are inaction or editing the validator. Replace the exact-count check with monotonic non-regression.
+
+### PF-056 — Restore executable evaluation gates
+Files: `.github/workflows/planning-checks.yml`, `evals/suites/suites.yaml`, `scripts/ci/run_evals.py`
+Acceptance: `run_evals.py --validate-registry`, `verify_repository.py`, and `python -m unittest discover -s tests` all run in CI and exit 0.
+Depends: PF-055
+Est: 4-6
+
+Four validators fail at HEAD and no workflow invokes them, so nothing detected the failure. Commit `31a6539` added `authority_class` and `evidence_ceiling` to satisfy `validate_p1140f_authority.py:124`, while `run_evals.py` rejected any key outside its allowlist — one validator required exactly what another forbade.
+
+**Partially repaired 2026-08-06.** The allowlist now admits both keys, which resolves the first contradiction. A second one remains and needs a decision rather than a patch: `shadow-codec-parity` carries `reason: "…not normative VibeProof conformance"`, which is a **scope disclaimer**, while `run_evals.py:156` treats `reason` purely as a not-applicable excuse and requires it blank on `ready` suites. One key is serving two purposes. Either split the disclaimer into a distinct field such as `scope_note` — which `validate_p1140f_authority.py` must then read for the evidence-ceiling justification — or relax the blank-reason rule when `authority_class` is present. Choose deliberately; both validators depend on the answer.
+
+Until that is settled, `run_evals.py --validate-registry`, `generate_gate_ledger.py`, `verify_repository.py`, and one test in `tests/ci/test_run_evals.py` still fail. 1,255 of 3,206 Python lines never execute in automation, including the fixture-digest binding, argv shell-injection refusal, path-traversal containment, and evidence-freshness checks. This unit also removes the `paths:` filters that currently exempt `apps/`, `crates/`, `Cargo.toml`, and `.github/workflows/ci.yml` from every check.
+
+### PF-057 — Specify the P-1104 gate transition
+Files: `scripts/repository/doctor.py`, `docs/project/STATUS.md`, `docs/planning/TASK_CATALOG.md`, `docs/implementation/IMPLEMENTATION_HANDOFF.md`
+Acceptance: `doctor.py` derives phase state from `conformance/p1140f/*.json` rather than from prose substrings; opening or closing the gate requires no edit to `doctor.py`.
+Depends: PF-055
+Est: 4-6
+
+The gate is currently enforced by prose substring assertions in four files: `doctor.py:90` requires `STATUS.md` to contain the literal string "implementation remains unauthorized", `:95` requires "blocked-approval" in `TASK_CATALOG.md`, `:105` requires "P-1104: blocked", and `:110` requires "inactive" and "blocked" in the handoff. Moving the gate therefore requires editing the validator that enforces it, which is the same defect as PF-055 in a different place. The machine-readable state already exists in `conformance/p1140f/`; the validator should read it.
+
+### PF-058 — Author the system narrative in PROJECT.md
+Files: `docs/project/PROJECT.md`, `docs/project/DOCUMENTATION.md`
+Acceptance: a reader who has read only `PROJECT.md` can state the full path a token takes from an agent process to a public rank, and name the component that owns each step.
+Depends: none
+Est: 6-8
+
+No document explains how the system works end to end. Understanding it currently requires reading eight files in a prescribed order, which is why `AGENTS.md:12` has to prescribe that order. `PROJECT.md` should carry one narrative — install, adapter observes, collector normalizes, sync signs, verifier appraises, ledger records, projection ranks — with a diagram, and every other document should read as detail hanging off it.
+
+This is the single highest-value change for anyone, human or agent, encountering the repository for the first time. It does not replace any normative contract; it gives them a spine.
+
+### PF-059 — Merge duplicated UI and design documentation
+Files: `docs/style-guide/COMPONENTS.md`, `docs/style-guide/COMPONENT_INVENTORY.md`, `docs/style-guide/COMPONENT_STANDARD.md`, `docs/style-guide/README.md`, `docs/style-guide/ARCHITECTURE.md`, `docs/design/design.md`, `docs/design/UI_FOUNDATIONS.md`, `docs/design/BRAND.md`, `docs/project/DOCUMENTATION.md`
+Acceptance: one owner per concept; no two files in `docs/style-guide/` or `docs/design/` describe the same component surface; `DOCUMENTATION.md` names the surviving owner for each.
+Depends: none
+Est: 6-8
+
+Three files describe components (`COMPONENTS.md`, `COMPONENT_INVENTORY.md`, `COMPONENT_STANDARD.md`) and three describe design foundations (`design/design.md`, `design/UI_FOUNDATIONS.md`, `style-guide/README.md`). Additionally `docs/architecture/ARCHITECTURE.md` and `docs/style-guide/ARCHITECTURE.md` share a filename while describing unrelated scopes, which makes every reference to "ARCHITECTURE.md" ambiguous.
+
+Merge unique content into one owner per concept, repair references, and delete or clearly mark the duplicates, per the rule already stated in `DOCUMENTATION.md`.
+
+### PF-060 — Collapse single-purpose documentation directories
+Files: `docs/protocol/`, `docs/qa/`, `docs/evals/`, `docs/design/`, `docs/project/DOCUMENTATION.md`, `README.md`, `AGENTS.md`
+Acceptance: no directory under `docs/` holds fewer than four files without a recorded reason; every moved path resolves; `doctor.py` passes.
+Depends: PF-059
+Est: 4-6
+
+Eighteen directories hold 82 files, and seven of them hold one to three: `protocol/` (1), `qa/` (1), `evals/` (2), `privacy/` (2), `design/` (3), `engineering/` (3), `project/` (3). Fold `protocol/` into `architecture/`, combine `qa/` and `evals/` into one verification directory, and fold `design/` into `style-guide/`. Keep `privacy/` and `project/` where they are — both are small but load-bearing, and `privacy/` deliberately isolates the invariant everything else serves.
+
+Every move must repair inbound references. `AGENTS.md` and `doctor.py`'s REQUIRED list both name paths.
+
+### PF-061 — Archive spent planning specifications
+Files: `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md`, `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`, `docs/history/`, `docs/project/DOCUMENTATION.md`, `AGENTS.md`, `README.md`
+Acceptance: both files are in `docs/history/` with unique content merged into a living owner; no inbound reference is broken; `doctor.py` passes.
+Depends: none
+Est: 4-6
+
+`MACHINE_CONTRACT_REPAIR_SPEC.md` (521 lines) declares itself a "normative P-1140B–E planning input"; P-1140E is closed, so it is spent. `REPOSITORY_ALIGNMENT_2026-07-23.md` (366 lines) restates decisions owned by `DECISION_REGISTER.md` and is cited in the `AGENTS.md` initialization order and in `DOCUMENTATION.md`, so both must be updated when it moves. Roughly 890 lines leave the active planning surface.
+
+Unlike the nine files archived on 2026-08-05, these two have live inbound references. Merge before moving; do not orphan a reference.
+
+### PF-062 — Make the decision register and task catalog machine-readable
+Files: `conformance/planning/decisions-v1.json` (new), `conformance/planning/decisions-v1.schema.json` (new), `conformance/planning/tasks-v1.json` (new), `conformance/planning/tasks-v1.schema.json` (new), `scripts/repository/generate_planning_docs.py` (new), `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`
+Acceptance: the Markdown register and catalog are generated from JSON and byte-identical to the committed files; a validator fails on drift between source and generated output.
+Depends: PF-053, PF-055
+Est: 12-16
+
+`conformance/p1140f/*.json` is the pattern that works in this repository: validators read structure. But 77 decisions and every planning gate live in Markdown tables, and validators reach them by substring matching — `validate_p1140f_authority.py:131` greps prose for a count, and `doctor.py` asserts that literal strings appear somewhere in a document. That is why the phase gate could only be moved by editing its own validator.
+
+Make JSON the source and generate the Markdown, so prose can no longer drift from state and validators can assert on structure. This unit is what makes PF-063 possible.
+
+### PF-063 — Validate decision and work-unit traceability
+Files: `scripts/repository/validate_traceability.py` (new), `tests/ci/test_validate_traceability.py` (new), `docs/planning/decision-traceability/`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
+Acceptance: the validator resolves every `D-` identifier and every work-unit identifier referenced anywhere under `docs/planning/` and `docs/implementation/`, and exits non-zero on any that does not resolve. It reports zero unresolved identifiers.
+Depends: PF-062
+Est: 6-8
+
+There are currently 126 dangling work-unit references across 74 unique identifiers. Three prefixes cited in the traceability matrix — `I-`, `PL-`, `U-` — do not exist anywhere in the 195-unit breakdown. `D-01` through `D-10` are used as work-unit identifiers in the same documents where `D-001` through `D-010` are decision identifiers. Decisions D-070 through D-077 have no traceability rows at all, because `validate_p1140e_contracts.py:52-59` freezes its matrix at `range(1, 70)` and delegates the remainder to a validator that never references a `D-` identifier.
+
+No validator reads these files' content today. This one closes the class of defect permanently rather than enumerating instances of it.
+
+### PF-064 — Remove stale dates from living document filenames
+Files: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `scripts/repository/doctor.py`, `AGENTS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/TASK_CATALOG.md`
+Acceptance: no file that is still being updated carries a date in its filename; every inbound reference resolves; `doctor.py` passes.
+Depends: PF-057
+Est: 2-3
+
+`P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md` is live and was last updated 2026-08-04, but its filename says July 24. A date in a filename should mean the document is a point-in-time record; using it for a living document teaches readers to distrust the convention. It has nine inbound references including `doctor.py`'s REQUIRED list.
+
+Archived point-in-time reports in `docs/history/` keep their dates. That is what the convention is for.
+
+### PF-065 — Correct the OpenAPI file extension
+Files: `packages/schemas/openapi-v1.yaml`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_planning_coverage.py`, `scripts/repository/validate_p1140e_contracts.py`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
+Acceptance: the file's extension matches its contents; every reader resolves it; all planning validators pass.
+Depends: PF-038
+Est: 2-3
+
+`openapi-v1.yaml` contains JSON. YAML is a superset of JSON so parsers accept it, but the first tool that selects a parser by extension, or any human opening it expecting YAML, will be wrong. Either rename to `.json` or convert the contents to YAML — decide deliberately and record which, since several validators reference the path by name.
+
+## Frozen backlog — scope inventory, not executable units
+
+Everything below is retained to hold the launch scope in `docs/planning/PRODUCT_SCOPE_FREEZE.md`. **These are headings, not units.** None carries `Files:`, `Acceptance:`, `Depends:` in resolvable form, or `Est:`, and none names a file path, schema, table, or endpoint. They must be promoted into the active plan against the required-fields standard before being worked, and they are all blocked until P-1104 regardless.
+
+Known defects in this section, recorded rather than silently carried:
+
+- **Six units declare prose dependencies that do not resolve**: `PF-001`, `PF-004`, `O-005`, `X-001`, `X-009`, `X-010` depend on phrases such as "implemented product paths" and "all launch paths". Prose dependencies cannot be ordered.
+- **Eleven units are orphans** that nothing depends on: `F-008`, `L-014`, `N-018`, `N-019`, `P-010`, `S-001`, `S-004`, `S-015`, `W-001`, `W-010`, `X-011`. `S-001` is the Go service foundation, and `S-002` through `S-015` do not depend on it.
+- **`X-011` does not gate launch.** P-1105 readiness transitively depends on 162 of 194 units, excluding all ten Epic W units — the entire hosted web product — plus `O-012`, `R-012`, `M-011`, `S-015`, `N-018`, `N-019`, `P-010`, and `F-008`. Launch readiness is currently declarable with no web application.
+- **52 of the 73 tables in `packages/schemas/planning-schema.sql` are named nowhere in this file or in `IMPLEMENTATION_HANDOFF.md`.** Organizations and communities have four OpenAPI operations and two tables, and the words "organization" and "community" do not appear in this document at all. Passkeys, recovery codes, `model_alias_facts`, `minute_scores`, `social_integrity_events`, `audit_events`, and `adapter_installations` have no owning unit.
+- **Thirteen categories have no unit anywhere**: local development environment, product CI/CD, logging and metrics and tracing, error taxonomy, API versioning and deprecation, rate limiting, data migration and backfill, load testing, runbooks and on-call, staging environment, cost modeling, feature-flag mechanics, and product analytics.
+
+Promotion of any unit below must resolve the defects that apply to it.
+
+### Future implementation epics — blocked until P-1104
 
 ## Epic F — Reproducible foundation
 
@@ -861,4 +1195,10 @@ The following are not launch units:
 
 ## Current next unit
 
-PF-001 only. All `F-` through `X-` units remain blocked.
+`PF-001`, `PF-037`, `PF-053`, `PF-054`, and `PF-055` are startable now. Each has no unit dependency, and none requires P-1104.
+
+All `F-` through `X-` units remain blocked until P-1104.
+
+An earlier revision of this section stated "PF-001 only", and a companion claim placed `PF-002`/`PF-003` immediately after `PF-001` on the critical path. Both were wrong by this file's own dependency lines: `PF-002` and `PF-003` are leaves that nothing depends on, and the longest `PF-` chain begins at `PF-004`, which does not depend on `PF-001`. The corrected chain to `PF-036` is `PF-004 → PF-021 → PF-022 → PF-023 → PF-029 → PF-033 → PF-034 → PF-035 → PF-036`, a depth of nine.
+
+For reference, the longest chains in the frozen backlog, measured in units rather than time: 19 to `S-010` (first claim accepted server-side), 26 to `V-004` (first working adapter), 28 to `W-003` (leaderboard visible in a browser), 36 to `X-011`, and 37 to `W-010`. A 26-unit serial chain before one real token reaches a board is the specific reason the active plan is sequenced by vertical slice rather than by layer.

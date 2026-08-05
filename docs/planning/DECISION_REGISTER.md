@@ -1,6 +1,6 @@
 # VibeMaxxing Decision Register
 
-Updated: 2026-08-04
+Updated: 2026-08-06
 
 Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `rejected`, `superseded`.
 
@@ -83,6 +83,7 @@ Allowed statuses: `accepted`, `provisional`, `research-required`, `deferred`, `r
 | D-075 | High-impact idempotency records retain the exact replayable result for at least 30 days; claim-batch results remain replayable until a later acknowledged checkpoint safely supersedes them; expired keys are rejected rather than silently treated as new mutations | accepted | measured retention cost or recovery evidence supports a safer operation-specific window |
 | D-076 | Hosted deletion and each local-device deletion are reported independently; the product never claims all local data erased while any device is offline, expired, unreachable, waived, or unverified | accepted | explicit user reversal or stronger independently verifiable local-erasure evidence |
 | D-077 | Only provider-signed receipts or server-side retrieval under verified account binding may be labelled source-bound; device-signed, adapter-certified, or locally observed evidence is attested-local and cannot be elevated to source-bound by an SLM or client assertion | accepted | a new provider or platform attestation standard proves equivalent external-event authority |
+| D-078 | E1 splits into E1-S provider-signed receipts, which remain unavailable, and E1-R provider-retrieved organization aggregates, which organization, hacker-house and community boards may enrol under ADR-016 as a board-scope corroboration input that never binds an individual claim, alters raw score, or reaches Hardened; individual and global boards remain self-reported because no provider exposes an individual usage authorization scope | accepted | a provider ships an individual usage authorization scope or a signed per-claim receipt, or withdraws administrative usage retrieval |
 
 ## Register rules
 

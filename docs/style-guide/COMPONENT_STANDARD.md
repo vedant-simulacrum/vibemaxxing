@@ -1,5 +1,7 @@
 # Component Standard
 
+This file owns the rules a component must satisfy. It does not list components: the registry of what exists, at which lifecycle stage, with which usage contract, is owned by `COMPONENT_INVENTORY.md`.
+
 ## Admission test
 
 A new reusable component is justified only when at least one is true:
@@ -27,7 +29,7 @@ Every implemented component documents:
 | Responsive behavior | Reflow and minimum viable content |
 | Accessibility | Element semantics, name, keyboard behavior, focus, announcements |
 | Tests | Behavior plus applicable accessibility and visual coverage |
-| Status | Proposed, approved-design, implemented, stable, deprecated |
+| Status | One lifecycle stage from `COMPONENT_INVENTORY.md`, recorded there rather than here |
 
 ## Component file contract
 

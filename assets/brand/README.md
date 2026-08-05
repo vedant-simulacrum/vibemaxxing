@@ -62,4 +62,4 @@ The exact generation font is **Nimbus Sans Bold, Version 1.00, PostScript name `
 
 The identity shown here was explicitly approved by the project owner. Any change to the wordmark, `vm` geometry, ledger rule, palette, asset naming, or export matrix must be visually shown to the owner before it is committed.
 
-See [`docs/design/BRAND.md`](../../docs/design/BRAND.md) for the full brand standard and [`docs/design/UI_FOUNDATIONS.md`](../../docs/design/UI_FOUNDATIONS.md) for the product UI framework.
+See [`docs/style-guide/BRAND.md`](../../docs/style-guide/BRAND.md) for the full brand standard and [`docs/style-guide/UI_FOUNDATIONS.md`](../../docs/style-guide/UI_FOUNDATIONS.md) for the product UI framework.

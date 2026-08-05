@@ -14,7 +14,7 @@ This package owns the canonical design tokens and reusable interface components.
 import { tokens } from "@vibemaxxing/ui/tokens";
 ```
 
-Canonical product behavior and composition rules live in `docs/design/UI_FOUNDATIONS.md`.
+Canonical product behavior and composition rules live in `docs/style-guide/UI_FOUNDATIONS.md`.
 
 ## Component development
 

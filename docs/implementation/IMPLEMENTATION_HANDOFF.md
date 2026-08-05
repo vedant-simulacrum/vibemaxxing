@@ -1,15 +1,15 @@
 # VibeMaxxing Implementation Handoff
 
-Status: canonical future implementation plan; inactive while P-1140F is open and P-1104 is blocked
-Version: 11
-Updated: 2026-08-04
+Status: canonical implementation plan; active — P-1104 is `authorized-open` as of 2026-08-05 while P-1140F is still open
+Version: 12
+Updated: 2026-08-05
 
 ## Purpose
 
-This file is the sole future implementation handoff. It does not authorize implementation. It defines:
+This file is the sole implementation handoff. It does not itself authorize implementation; authorization is recorded only in `conformance/p1140f/gate-authorization-v1.json`. It defines:
 
 1. the remaining planning-closure program;
-2. the dependency-safe build sequence after explicit P-1104 authorization;
+2. the dependency-safe build sequence under P-1104 authorization;
 3. the evidence required before any support, security, production, or launch claim.
 
 `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` decomposes this plan into review-sized units. It is subordinate to this file, accepted decisions, ADRs, repaired normative contracts, and the exact-head P-1140F verdict.
@@ -32,8 +32,9 @@ The GitHub connector does not expose a reliable single recursive repository-tree
 
 - P-1140A through P-1140E are historical planning/structural stages.
 - P-1140F owns current semantic closure.
-- SR-005 through SR-016 are open semantic P1 clusters.
-- P-1104 remains blocked and requires a separate explicit user authorization after P-1140F closes.
+- SR-005 through SR-017 are open semantic P1 clusters.
+- P-1104 is `authorized-open`. The owner opened it on 2026-08-05 under GitHub issue 44, before P-1140F closed and with all 13 P1 clusters open. The gate's documented preconditions were accepted, not met. The clusters remain open, remain tracked, and are not waived.
+- Authorization permits implementation work. It supplies no evidence: nothing in this repository is implemented, secure, certified, or launch-ready because P-1104 is open.
 
 ### Implemented artifacts
 
@@ -199,23 +200,35 @@ Objectives:
 
 Exit criteria:
 
-- SR-005 through SR-016 are closed in every normative and machine-readable owner;
+- SR-005 through SR-017 are closed in every normative and machine-readable owner;
 - planning validators pass from a clean checkout;
-- P-1104 remains a separate explicit user decision.
+- P-1104 is a separate explicit user decision, granted on 2026-08-05.
 
 ## P-1104 implementation entrance gate
 
-Implementation may begin only when all are true:
+State: `authorized-open`. Owner: `vedant-simulacrum`. Date: 2026-08-05. Reference: GitHub issue 44. Machine-readable record: `conformance/p1140f/gate-authorization-v1.json`.
+
+The gate as originally written required all of the following:
 
 1. P-1140F is `complete-planning`;
-2. SR-005 through SR-016 are closed;
+2. SR-005 through SR-017 are closed;
 3. one exact commit is recorded as the approved implementation base;
 4. canonical docs, schemas, SQL, Protobuf/CDDL, fixtures, decisions, tasks, and review issue agree;
 5. all planning-only checks pass from a clean checkout;
 6. no stale branch, prototype, generated artifact, or issue comment is treated as authority;
 7. the user explicitly authorizes P-1104.
 
-## Future post-approval implementation program
+Only 5, 6 and 7 held at authorization. Conditions 1, 2, 3 and 4 did not, and 1 and 2 still do not. The owner opened the gate anyway, with that stated, on the reasoning that the 13 open findings are contradictions between documents whose closure is largely unfalsifiable without running code, and that most become testable once behaviour exists.
+
+Consequences that remain in force:
+
+- SR-005 through SR-017 stay open and tracked in `conformance/p1140f/semantic-findings-v1.json`. Closing them is still required for P-1140F; they are not waived, deferred, or reclassified.
+- No claim of support, security, privacy conformance, certification, production readiness, or launch readiness is authorized by this gate. Those are governed by `P-1105` and `P-1131` and are unmet.
+- The **Not implemented** list above is unchanged.
+- Product, security, evaluation, release, signing and deployment automation stays disabled under `P-1007`.
+- Work performed under this authorization is prototype-grade until it carries its own evidence. Authorization is not evidence.
+
+## Post-approval implementation program
 
 ### Wave 0 — Reproducible engineering foundation
 
