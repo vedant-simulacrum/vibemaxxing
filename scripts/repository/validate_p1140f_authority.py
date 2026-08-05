@@ -1,5 +1,23 @@
 #!/usr/bin/env python3
-"""Validate machine-readable P-1140F authority, maturity, bundles, and review state."""
+"""Validate machine-readable P-1140F authority, maturity, bundles, and review state.
+
+Findings carry evidence rules this validator owns, because a JSON Schema can express
+their shape but not why the shape matters:
+
+* `conflicting_artifacts` may not be empty — a finding that names nothing it
+  contradicts cannot be falsified by anyone but its author;
+* no artifact may be both a finding's normative owner and its conflicting artifact,
+  which is what a self-owned finding looks like in machine-readable form;
+* a `path#fragment` citation must resolve to a fragment the file contains;
+* `planned_artifacts` names artifacts that deliberately do not exist yet, so each one
+  must be absent from the filesystem and recorded `planned-missing` in the schema
+  inventory;
+* a finding classified as anything other than a contradiction must record the
+  restatement that reclassified it.
+
+None of this proves a finding is correct. It proves only that the finding says what
+would contradict it.
+"""
 
 from __future__ import annotations
 
@@ -12,6 +30,11 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[2]
 P1140F = ROOT / "conformance" / "p1140f"
+INVENTORY = ROOT / "docs" / "planning" / "SCHEMA_AND_INTERFACE_INVENTORY.md"
+
+# A path in inline code on an inventory row. Rows are matched by their
+# `planned-missing` status cell, so this only ever reads paths off a planned row.
+PLANNED_MISSING_RE = re.compile(r"`([A-Za-z0-9_./-]+\.[A-Za-z0-9]+)`")
 
 
 def load_json(path: Path):
@@ -42,6 +65,94 @@ def validate(schema_name: str, instance_name: str) -> dict:
 def path_exists(reference: str) -> bool:
     path = reference.split("#", 1)[0]
     return (ROOT / path).exists()
+
+
+def fragment_resolves(reference: str) -> bool:
+    """A `path#fragment` citation must name something the file actually contains.
+
+    The fragment is a literal token — a SQL table, an OpenAPI `operationId` or schema
+    name, a CDDL rule, a Protobuf field, a state-machine ID, a commit. Requiring it to
+    occur in the cited file is what makes a citation rot visibly instead of silently
+    pointing at a file that no longer says what the finding claims.
+    """
+    path, _, fragment = reference.partition("#")
+    if not fragment:
+        return True
+    target = ROOT / path
+    if not target.is_file():
+        return False
+    return fragment in target.read_text(encoding="utf-8", errors="replace")
+
+
+def planned_missing_artifacts() -> set[str]:
+    """Paths the schema inventory records as `planned-missing`."""
+    if not INVENTORY.is_file():
+        raise RuntimeError(f"missing schema inventory: {INVENTORY.name}")
+    planned: set[str] = set()
+    for line in INVENTORY.read_text(encoding="utf-8").splitlines():
+        if "planned-missing" in line:
+            planned.update(PLANNED_MISSING_RE.findall(line))
+    return planned
+
+
+def check_finding_evidence(finding_rows: list[dict]) -> None:
+    """Every finding must name what it contradicts, and every citation must resolve.
+
+    These rules live here rather than in the JSON Schema so each failure can say why
+    the shape matters. An empty `conflicting_artifacts` is indistinguishable from an
+    unexamined one, which is how twelve findings sat unfalsifiable while every
+    validator stayed green.
+    """
+    planned_inventory = planned_missing_artifacts()
+    for row in finding_rows:
+        identifier = row["finding_id"]
+        if not row["conflicting_artifacts"]:
+            raise RuntimeError(
+                f"{identifier} lists no conflicting artifact: a finding that names nothing "
+                "it contradicts is unfalsifiable, so no evidence can close it"
+            )
+        owners = {reference.split("#", 1)[0] for reference in row["normative_owners"]}
+        conflicts = {
+            reference.split("#", 1)[0] for reference in row["conflicting_artifacts"]
+        }
+        self_owned = sorted(owners & conflicts)
+        if self_owned:
+            raise RuntimeError(
+                f"{identifier} is self-owned: {self_owned} is both its normative authority "
+                "and the artifact it contradicts, so its closure evidence would be its own "
+                "definition"
+            )
+        for reference in row["normative_owners"] + row["conflicting_artifacts"]:
+            if not path_exists(reference):
+                raise RuntimeError(
+                    f"{identifier} references missing artifact: {reference}"
+                )
+            if not fragment_resolves(reference):
+                raise RuntimeError(
+                    f"{identifier} cites {reference} but that file does not contain the "
+                    "cited fragment"
+                )
+        for reference in row.get("planned_artifacts", []):
+            if "#" in reference:
+                raise RuntimeError(
+                    f"{identifier} plans {reference} with a fragment; an artifact that does "
+                    "not exist cannot have one"
+                )
+            if path_exists(reference):
+                raise RuntimeError(
+                    f"{identifier} lists {reference} as planned, but it exists; a live "
+                    "artifact belongs in conflicting_artifacts"
+                )
+            if reference not in planned_inventory:
+                raise RuntimeError(
+                    f"{identifier} plans {reference}, which {INVENTORY.name} does not record "
+                    "as planned-missing"
+                )
+        if row["finding_class"] != "contradiction" and "restatement" not in row:
+            raise RuntimeError(
+                f"{identifier} is classified {row['finding_class']} rather than a "
+                "contradiction and records no restatement explaining what it is instead"
+            )
 
 
 def main() -> int:
@@ -83,12 +194,7 @@ def main() -> int:
         row["state"] == "closed" and not row["closure_evidence"] for row in finding_rows
     ):
         raise RuntimeError("closed finding lacks closure evidence")
-    for row in finding_rows:
-        for reference in row["normative_owners"] + row["conflicting_artifacts"]:
-            if not path_exists(reference):
-                raise RuntimeError(
-                    f"{row['finding_id']} references missing artifact: {reference}"
-                )
+    check_finding_evidence(finding_rows)
 
     artifact_rows = artifacts["artifacts"]
     paths = [row["path"] for row in artifact_rows]

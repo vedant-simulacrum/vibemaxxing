@@ -45,6 +45,14 @@ The Rust and Go protocol/accounting code is exploratory executable prototype mat
 
 ## Consolidated semantic P1 register
 
+Every finding in `conformance/p1140f/semantic-findings-v1.json` names the artifacts it contradicts, not only the authorities that own it. Twelve findings previously named none, which made them unfalsifiable: no reader could tell what would close them. `scripts/repository/validate_p1140f_authority.py` now rejects an empty conflicting-artifact set, a `path#fragment` citation whose file does not contain the fragment, and a finding that names one artifact as both its authority and its conflict.
+
+Findings are classified. A `contradiction` is two authorities that disagree today. A `specification-gap` requires artifacts to be authored; those are carried in a separate `planned_artifacts` field and must already be recorded `planned-missing` in `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, because a path that does not exist cannot be cited as a conflict. A `cross-cutting-invariant` is a rule that must hold at many boundaries rather than a defect in one aggregate. A `record-integrity` finding is about what this repository claims about itself.
+
+SR-015, SR-016 and SR-017 were restated on 2026-08-06 because their original form could not be closed by evidence. Each records its previous form and the reason in its own registry row; nothing was closed, deleted, or downgraded.
+
+Every finding still carries P1. That uniformity is not a graded judgement and must not be read as one: severity here means only "open and blocking this gate". Grading them against each other would change the open-P1 count pinned in `conformance/p1140f/gate-authorization-v1.json`, so it is an owner decision and remains open.
+
 ### SR-005 — Protocol authority and executable drift
 
 The normative VibeProof v1 authority is the deterministic 31-field CBOR payload and mandatory COSE_Sign1 profile in `packages/schemas/vibeproof-claim-v1.cddl` and `conformance/vibeproof/v1/`. The later Rust/Go prototype and `conformance/protocol/vibeproof-v1-vectors.json` implement an unsigned 11-field shadow protocol, including client-selected evidence and `billable` values.
@@ -105,23 +113,29 @@ The release set lacks a proper external trust envelope and component/path model.
 
 Closure requires TUF-backed authorization, typed components and paths, compatibility/migration graph, health and rollback classes, trusted client state, and D-074 migration-aware rollback.
 
-### SR-015 — Privacy-safe projection and current authorization
+### SR-015 — Current-authorization recheck at every display and delivery boundary
 
-Historical snapshots and events are not consistently separated from current authorization. Blocks, privacy changes, board removal, deletion, moderation reversal, and consolidation must immediately invalidate current display and delivery across ranking, presence, notifications, social/board views, exports, cursors, caches, and grants.
+Restated 2026-08-06 as a `cross-cutting-invariant`. The earlier wording described a repairable cluster that owned no artifacts of its own: every aggregate it named belongs to SR-010, SR-011 or SR-013, so no repair it exclusively owned could close it. What it actually asserts is an invariant. Every display and delivery boundary rechecks current authorization instead of replaying a historical snapshot, so that blocks, privacy changes, board removal, deletion, moderation reversal and consolidation invalidate current display and delivery immediately across ranking, presence, notifications, social and board views, exports, cursors, caches and grants.
 
-Closure requires current authorization checks at every display/delivery boundary and append-only correction/retraction rather than rewriting accepted evidence.
+It now cites the boundaries where that recheck is absent: the leaderboard, public-profile, presence, notification and export operations in `packages/schemas/openapi-v1.yaml`, and durable snapshot pagination in `packages/schemas/planning-schema.sql`. That set intersects SR-010, SR-011 and SR-013 at different sites by construction — those findings own their aggregates, this one owns the boundary.
 
-### SR-016 — Review, conformance, and launch-evidence integrity
+Closure requires one enumerated boundary matrix, a current-authorization check at every boundary in it, and append-only correction and retraction rather than rewriting accepted evidence. Repairing any single aggregate does not close it.
 
-Status and issue records reviewed a stale head. Some suites called conformance or ranking evidence only check schema presence, first transitions, symbolic races, or the shadow protocol. Named persistence owners are not always present.
+### SR-016 — Review-record integrity: reviewed head, evidence class, and named owners
 
-Closure requires an exact repaired-head review, honest evidence classification, one reachable lifecycle and persistence owner per mutable aggregate, aligned vocabularies, suite names that match execution, and runtime evidence only after implementation authorization.
+Restated 2026-08-06 as `record-integrity`. The finding was self-owned: its normative owners were this document and the schema inventory, so its closure evidence would have been the same prose that defines it, and no external record could contradict it. Reviewed-head authority moves to `conformance/p1140f/review-target-v1.json` and evidence-class authority to `conformance/p1140f/artifact-authority-v1.json`; the prose review records become the artifacts they govern.
+
+Three head claims disagree: `conformance/p1140f/REPAIR_HEAD_REVIEW.md` pins commit `e1320a6`, this document states review base `41ecb77`, and the review target is `not-pinned` with a null commit. Suites named for conformance or ranking evidence execute schema presence, first transitions, symbolic races, or the shadow protocol. `packages/schemas/state-machine-registry-v1.json` names persistence owners for 19 of its 26 machines that `packages/schemas/planning-schema.sql` does not define.
+
+Closure requires a pinned review target whose commit exists and whose verdict is recorded, prose head claims equal to it, honest evidence classification, suite names that match what each suite executes, one resolved lifecycle and persistence owner per mutable aggregate, aligned vocabularies, and runtime evidence only after implementation authorization.
 
 ### SR-017 — Source-bound evidence and verifier appraisal authority
 
-Device signatures authenticate a key and bytes; OAuth authenticates provider-account control; adapter certification authenticates an exercised artifact/configuration. None independently proves that an external source event occurred. Current claims can assert provider, model, source, adapter and evidence-related fields without a typed provider receipt or immutable verifier appraisal binding the exact claim, evidence, policy, references and result.
+Restated 2026-08-06 as a `specification-gap`. The earlier wording asked for four unwritten schemas and cited nothing that exists, which is a design task rather than a disagreement between authorities and could not be falsified. The finding is split into the two things it contains.
 
-Closure requires D-077 semantics and explicit machine contracts for:
+The contradiction half is live. Device signatures authenticate a key and bytes; OAuth authenticates provider-account control; adapter certification authenticates an exercised artifact and configuration. None independently proves that an external source event occurred, yet claims assert provider, model, source, adapter and evidence-related fields with no typed provider receipt. One appraisal aggregate is described three ways: `packages/schemas/vibeproof-claim-v1.cddl` carries seven classification dimensions, `packages/schemas/evidence-profile-policy-v1.json` enumerates the same seven as server-verifier authority, and `packages/schemas/planning-schema.sql` persists only provenance, continuity and integrity state with no claim digest, evidence digest, validity interval or supersession.
+
+The design half is carried in `planned_artifacts` against the rows already recorded `planned-missing` in `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`. Closure requires both halves, under D-077 semantics, with explicit machine contracts for:
 
 - `SourceReceipt` or server-observation records with issuer/provider subject, audience/resource, event/object identifier, event time, nonce or receipt ID, canonical digest, validity and signature or server-retrieval metadata;
 - `EvidenceBundle` binding the claim to minimized source evidence without content leakage;

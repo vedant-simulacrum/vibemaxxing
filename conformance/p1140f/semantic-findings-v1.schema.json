@@ -14,15 +14,27 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["finding_id", "severity", "state", "title", "repair_task", "normative_owners", "conflicting_artifacts", "closure_evidence"],
+        "required": ["finding_id", "severity", "state", "title", "repair_task", "finding_class", "normative_owners", "conflicting_artifacts", "closure_evidence"],
         "properties": {
           "finding_id": {"type": "string", "pattern": "^SR-[0-9]{3}$"},
           "severity": {"enum": ["P0", "P1", "P2"]},
           "state": {"enum": ["open", "repair-in-progress", "repaired-pending-review", "closed", "deferred", "superseded"]},
           "title": {"type": "string", "minLength": 3},
           "repair_task": {"type": "string", "pattern": "^P-1140F-[1-5]$"},
+          "finding_class": {"enum": ["contradiction", "specification-gap", "cross-cutting-invariant", "record-integrity"]},
           "normative_owners": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
           "conflicting_artifacts": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "planned_artifacts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "restatement": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["restated_at", "previous_form", "rationale"],
+            "properties": {
+              "restated_at": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+              "previous_form": {"type": "string", "minLength": 3},
+              "rationale": {"type": "string", "minLength": 40}
+            }
+          },
           "closure_evidence": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
           "reviewed_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
           "review_verdict": {"enum": [null, "pending", "pass", "fail"]}
