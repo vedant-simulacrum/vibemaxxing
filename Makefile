@@ -28,9 +28,13 @@ validate: $(VENV_PY) ## Run the planning validator suite
 	$(VENV_PY) scripts/repository/validate_t20_contract.py
 	$(VENV_PY) scripts/repository/validate_p1140e_contracts.py
 	$(VENV_PY) scripts/repository/validate_planning_coverage.py
+	$(VENV_PY) scripts/repository/validate_state_vocabularies.py
+	$(VENV_PY) scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+	$(VENV_PY) scripts/ci/run_evals.py --validate-registry
 	@echo ""
-	@echo "Not run: validate_planning_artifacts.py — requires a live PostgreSQL"
-	@echo "instance. CI provides one; set a database URL to run it locally."
+	@echo "Skipped locally: the PostgreSQL DDL stage of validate_planning_artifacts.py."
+	@echo "CI runs it against a real instance; set PLANNING_DATABASE_URL to run it here."
+	@echo "Run 'make test' for the unit suite and 'make evals' for the eval registry."
 
 plan: $(VENV_PY) ## Regenerate the deterministic work-unit issue plan
 	$(VENV_PY) scripts/repository/generate_issue_plan.py

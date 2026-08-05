@@ -80,6 +80,8 @@ Ordering principle: each specification is paired with the artifact or code that 
 | `PF-063` | Validate decision and work-unit traceability | PF-062 | 6-8 |
 | `PF-064` | Remove stale dates from living document filenames | PF-057 | 2-3 |
 | `PF-065` | Correct the OpenAPI file extension | PF-038 | 2-3 |
+| `PF-066` | Repair unreachable states and false terminal states | none | 6-8 |
+| `PF-067` | Make state-vocabulary binding coverage self-checking | none | 4-6 |
 
 Full specifications for these units are in **Current planning program** below, in unit-number order after `PF-036`.
 
@@ -661,6 +663,32 @@ Depends: PF-038
 Est: 2-3
 
 `openapi-v1.yaml` contains JSON. YAML is a superset of JSON so parsers accept it, but the first tool that selects a parser by extension, or any human opening it expecting YAML, will be wrong. Either rename to `.json` or convert the contents to YAML — decide deliberately and record which, since several validators reference the path by name.
+
+### PF-066 — Repair unreachable states and false terminal states
+Files: `packages/schemas/state-machine-registry-v1.json`, `tests/ci/test_state_vocabularies.py`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
+Acceptance: every state in every registry machine is reachable from its initial state, and no state listed in `terminal_states` has an outgoing transition. A test asserts both across all 26 machines, not only those bound to SQL or an API enum.
+Depends: none
+Est: 6-8
+
+Two defect classes found by a reachability sweep during the PF-038 follow-up. Both are invisible to `validate_state_vocabularies.py`, which compares vocabularies across three sources and does not examine transitions.
+
+**Unreachable states.** `daemon-lifecycle` cannot reach `degraded`, `offline`, `stopped`, or `stopping`. `privileged-supervisor` cannot reach `degraded`. `interactive-shell` cannot reach **10 of its 15 states**. These machines bind to neither a SQL column nor an API enum, so the existing three-way check never looks at them. A declared state no transition can produce is a specification that cannot be implemented.
+
+One instance of this class was already fixed: `Notification.state` exposed `read` with no transition reaching it — all three sources agreed on a state no worker could produce. The `notification-read` transition closed it, and a scoped reachability guard now covers bound machines. This unit extends that guard to all 26.
+
+**False terminal states.** Four machines declare a state terminal while giving it an outgoing transition: `idempotency-ledger.committed → expired`, `moderation-case.reversed → closed`, `update-lifecycle.failed → rolled-back`, `release-trust.superseded → expired`. A worker that trusts `terminal_states` will refuse a legal transition, and one that trusts the transition list will violate the terminal declaration. Decide which is authoritative per machine and make the registry say it once.
+
+### PF-067 — Make state-vocabulary binding coverage self-checking
+Files: `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_state_vocabularies.py`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
+Acceptance: the validator fails when a declared aggregate has an unpopulated `sql=` or `api=` binding that could have been populated, and reports its true three-way coverage rather than an aggregate count.
+Depends: none
+Est: 4-6
+
+`validate_state_vocabularies.py` is a genuine check — its drift-injection tests prove it catches renames, deletions, and dropped enum values. But its guarantee is narrower than its name implies. Of 31 declared aggregates, only **7** receive a real three-way registry + SQL + API comparison. 19 are two-way, usually legitimately because there is no API surface, and 5 are format-only.
+
+Coverage is driven by a hardcoded `BINDINGS` table, so an aggregate whose `sql=` or `api=` field was simply never populated silently escapes the identity checks while still counting toward the reported total. The validator does fail closed on newly orphaned columns and enums, which is what prevents regression — the gap is that a binding omitted at authoring time is indistinguishable from one that is legitimately absent.
+
+Make omission explicit: require every aggregate to declare either a binding or a recorded reason for having none, and have the summary line state three-way, two-way, and format-only counts separately so a green run cannot be read as more than it is.
 
 ## Frozen backlog — scope inventory, not executable units
 
