@@ -222,7 +222,7 @@ Only 5, 6 and 7 held at authorization. Conditions 1, 2, 3 and 4 did not, and 1 a
 
 Consequences that remain in force:
 
-- SR-005 through SR-017 stay open and tracked in `conformance/p1140f/semantic-findings-v1.json`. Closing them is still required for P-1140F; they are not waived, deferred, or reclassified.
+- SR-005 through SR-017 stay open and tracked in `conformance/p1140f/semantic-findings-v1.json`. Closing them is still required for P-1140F; they are not waived, deferred, or downgraded in severity or state. SR-015, SR-016 and SR-017 were restated on 2026-08-06 so that evidence can close them — a class and an artifact set, not a lowered bar — and each records its previous form and reason in its own registry row.
 - No claim of support, security, privacy conformance, certification, production readiness, or launch readiness is authorized by this gate. Those are governed by `P-1105` and `P-1131` and are unmet.
 - The **Not implemented** list above is unchanged.
 - Product, security, evaluation, release, signing and deployment automation stays disabled under `P-1007`.

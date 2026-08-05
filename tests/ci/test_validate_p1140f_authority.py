@@ -137,6 +137,103 @@ class ValidateP1140fAuthorityTests(unittest.TestCase):
 
         self.assertIn("names findings outside the registry", str(raised.exception))
 
+    def finding(self, findings: dict, finding_id: str) -> dict:
+        return next(
+            row for row in findings["findings"] if row["finding_id"] == finding_id
+        )
+
+    def test_a_finding_naming_no_conflicting_artifact_fails(self) -> None:
+        """The defect this rule exists for: an empty list used to pass silently."""
+        findings = self.read(FINDINGS)
+        self.finding(findings, "SR-011")["conflicting_artifacts"] = []
+        self.write(FINDINGS, findings)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        self.assertIn("SR-011 lists no conflicting artifact", str(raised.exception))
+
+    def test_a_conflicting_artifact_that_does_not_exist_fails(self) -> None:
+        findings = self.read(FINDINGS)
+        self.finding(findings, "SR-011")["conflicting_artifacts"] = [
+            "packages/schemas/not-a-real-schema-v1.json"
+        ]
+        self.write(FINDINGS, findings)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        self.assertIn("references missing artifact", str(raised.exception))
+
+    def test_a_well_formed_conflicting_artifact_does_not_fire(self) -> None:
+        """A path that exists, with a fragment that file contains, stays green."""
+        findings = self.read(FINDINGS)
+        self.finding(findings, "SR-011")["conflicting_artifacts"] = [
+            "packages/schemas/planning-schema.sql#blocks"
+        ]
+        self.write(FINDINGS, findings)
+
+        self.assertEqual(self.run_main(), 0)
+
+    def test_a_fragment_the_cited_file_does_not_contain_fails(self) -> None:
+        findings = self.read(FINDINGS)
+        self.finding(findings, "SR-011")["conflicting_artifacts"] = [
+            "packages/schemas/planning-schema.sql#no_such_table_anywhere"
+        ]
+        self.write(FINDINGS, findings)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        self.assertIn("does not contain the cited fragment", str(raised.exception))
+
+    def test_a_self_owned_finding_fails(self) -> None:
+        """A finding may not cite its own authority as the thing it contradicts."""
+        findings = self.read(FINDINGS)
+        row = self.finding(findings, "SR-011")
+        row["conflicting_artifacts"] = [row["normative_owners"][0]]
+        self.write(FINDINGS, findings)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        self.assertIn("SR-011 is self-owned", str(raised.exception))
+
+    def test_a_planned_artifact_that_already_exists_fails(self) -> None:
+        findings = self.read(FINDINGS)
+        self.finding(findings, "SR-017")["planned_artifacts"] = [
+            "packages/schemas/openapi-v1.yaml"
+        ]
+        self.write(FINDINGS, findings)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        self.assertIn("but it exists", str(raised.exception))
+
+    def test_a_planned_artifact_absent_from_the_inventory_fails(self) -> None:
+        findings = self.read(FINDINGS)
+        self.finding(findings, "SR-017")["planned_artifacts"] = [
+            "packages/schemas/unplanned-v1.schema.json"
+        ]
+        self.write(FINDINGS, findings)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        self.assertIn("does not record as planned-missing", str(raised.exception))
+
+    def test_a_reclassified_finding_without_a_restatement_fails(self) -> None:
+        findings = self.read(FINDINGS)
+        row = self.finding(findings, "SR-015")
+        row.pop("restatement")
+        self.write(FINDINGS, findings)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        self.assertIn("records no restatement", str(raised.exception))
+
     def test_review_cannot_pass_while_p1_findings_are_open(self) -> None:
         review = self.read("review-target-v1.json")
         review["state"] = "reviewed"
