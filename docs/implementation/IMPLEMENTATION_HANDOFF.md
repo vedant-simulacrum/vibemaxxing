@@ -32,7 +32,7 @@ The GitHub connector does not expose a reliable single recursive repository-tree
 
 - P-1140A through P-1140E are historical planning/structural stages.
 - P-1140F owns current semantic closure.
-- SR-005 through SR-016 are open semantic P1 clusters.
+- SR-005 through SR-017 are open semantic P1 clusters.
 - P-1104 remains blocked and requires a separate explicit user authorization after P-1140F closes.
 
 ### Implemented artifacts
@@ -199,7 +199,7 @@ Objectives:
 
 Exit criteria:
 
-- SR-005 through SR-016 are closed in every normative and machine-readable owner;
+- SR-005 through SR-017 are closed in every normative and machine-readable owner;
 - planning validators pass from a clean checkout;
 - P-1104 remains a separate explicit user decision.
 
@@ -208,7 +208,7 @@ Exit criteria:
 Implementation may begin only when all are true:
 
 1. P-1140F is `complete-planning`;
-2. SR-005 through SR-016 are closed;
+2. SR-005 through SR-017 are closed;
 3. one exact commit is recorded as the approved implementation base;
 4. canonical docs, schemas, SQL, Protobuf/CDDL, fixtures, decisions, tasks, and review issue agree;
 5. all planning-only checks pass from a clean checkout;
