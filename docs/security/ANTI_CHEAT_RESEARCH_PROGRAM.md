@@ -122,7 +122,7 @@ Every confirmed weakness becomes a regression case. Publish broad integrity prin
 ## Required outputs
 
 - `docs/security/ANTI_CHEAT_ATTACK_CATALOG.md`
-- `conformance/adversarial/anti-cheat-cases.json`
+- `conformance/adversarial/anti-cheat-registry-v1.json`
 - deterministic reason-code registry;
 - SLM feasibility report and benchmark plan;
 - privacy-safe fixture policy;

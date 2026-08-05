@@ -7,13 +7,7 @@ Updated: 2026-07-23
 
 ## Stable keys
 
-Implementation issue keys are the stable work-unit headings already present in the work breakdown, such as:
-
-- `F-01` for foundation contracts;
-- `P-06` for protocol vectors;
-- `N-15` for mandatory-update coordination;
-- `O-04` for limited-input/headless device authorization;
-- `L-10` for uninstall, export, and diagnostics.
+Implementation issue keys are the stable work-unit headings already present in the work breakdown, in `<EPIC>-<NNN>` form — `PF-001`, `F-001`, `N-016` and the rest. `PR_SIZED_WORK_BREAKDOWN.md` owns the list; do not restate it here.
 
 Do not generate a parallel `IMP-###` numbering system. Renumbering by list position is prohibited because it silently changes issue identity when units are inserted or reorganized.
 
