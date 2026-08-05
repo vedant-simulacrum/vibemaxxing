@@ -11,6 +11,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = ROOT / "scripts" / "ci" / "generate_gate_ledger.py"
 COMMIT = "a" * 40
+# A component that must never exist, so these suites stay legitimately not_applicable.
+ABSENT = "evals/fixtures/ledger-test-component-that-never-exists.rs"
 
 
 class GateLedgerTests(unittest.TestCase):
@@ -18,8 +20,8 @@ class GateLedgerTests(unittest.TestCase):
         registry = {
             "version": "1",
             "suites": [
-                {"id": "first", "owner": "security", "blocking_milestone": "g0", "status": "not_applicable", "reason": "Not built."},
-                {"id": "second", "owner": "backend", "blocking_milestone": "g1", "status": "not_applicable", "reason": "Not built."},
+                {"id": "first", "owner": "security", "blocking_milestone": "g0", "status": "not_applicable", "reason": "Not built.", "not_applicable_until": [ABSENT]},
+                {"id": "second", "owner": "backend", "blocking_milestone": "g1", "status": "not_applicable", "reason": "Not built.", "not_applicable_until": [ABSENT]},
             ],
         }
         with tempfile.TemporaryDirectory() as temporary_directory:

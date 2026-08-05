@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import hashlib
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -15,18 +16,31 @@ from scripts.ci.eval_validation import ReadySuite, evidence_is_current, validate
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "scripts" / "ci" / "run_evals.py"
+REGISTRY = ROOT / "evals" / "suites" / "suites.yaml"
+BASELINE = ROOT / "evals" / "suites" / "status-baseline-v1.json"
 FIXTURE_MANIFEST = "evals/fixtures/runner-test-fixtures.json"
 FIXTURE_COMMAND = "evals/fixtures/runner-test-command.py"
+# A path that must never exist, so a synthetic not_applicable suite's justification is
+# always still standing. Real suites name real absent components.
+ABSENT_COMPONENT = "evals/fixtures/runner-test-component-that-never-exists.rs"
 RegistryValue: TypeAlias = str | list[str] | list[dict[str, str | list[str]]]
 
 
 class RunEvalsTests(unittest.TestCase):
-    def run_runner(self, registry: dict[str, RegistryValue], *args: str) -> subprocess.CompletedProcess[str]:
+    def run_runner(self, registry: dict[str, RegistryValue], *args: str, baseline: object = None) -> subprocess.CompletedProcess[str]:
+        """Run the runner over a synthetic registry and its sibling status baseline.
+
+        When no baseline is supplied the registry's own statuses are recorded, which is
+        the no-drift case: whatever the registry declares is exactly what the ceiling
+        remembers. Tests that care about drift pass one explicitly.
+        """
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             registry_path = temp_path / "suites.yaml"
             output_path = temp_path / "evals"
             registry_path.write_text(json.dumps(registry))
+            recorded = baseline if isinstance(baseline, str) else json.dumps(baseline if baseline is not None else self.baseline_for(registry))
+            (temp_path / "status-baseline-v1.json").write_text(recorded)
             return subprocess.run(
                 [
                     sys.executable,
@@ -73,20 +87,7 @@ class RunEvalsTests(unittest.TestCase):
                 self.assertIn(field, result.stderr)
 
     def test_validate_registry_does_not_require_a_suite(self) -> None:
-        registry = {
-            "version": "1",
-            "suites": [
-                {
-                    "id": "sample",
-                    "owner": "security",
-                    "blocking_milestone": "vertical-slice",
-                    "status": "not_applicable",
-                    "reason": "No implementation exists.",
-                }
-            ],
-        }
-
-        result = self.run_runner(registry, "--validate-registry")
+        result = self.run_runner(self.not_applicable_registry(), "--validate-registry")
 
         self.assertEqual(result.returncode, 0, result.stderr)
 
@@ -375,6 +376,159 @@ class RunEvalsTests(unittest.TestCase):
                 self.assert_timestamped(payload)
             self.assertEqual(sorted(output.glob("*/" + self.current_commit() + "/result.json")), sorted(output / suite / self.current_commit() / "result.json" for suite in suites))
 
+    # -- status regression gate --------------------------------------------------------
+    #
+    # The registry is trivially made greener by downgrading a suite: delete the command,
+    # write a sentence of prose, and the runner returns 0 for a suite that now executes
+    # nothing. These tests prove the recorded ceiling in
+    # evals/suites/status-baseline-v1.json turns that into a failure, and that the
+    # opposite move never does.
+
+    def test_downgrading_a_ready_suite_fails_registry_validation(self) -> None:
+        result = self.run_runner(self.not_applicable_registry(), "--validate-registry", baseline={"schema_version": 1, "suites": {"sample": "ready"}})
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("regressed from ready to not_applicable", result.stderr)
+
+    def test_upgrading_a_suite_to_ready_never_fails_registry_validation(self) -> None:
+        result = self.run_runner(self.ready_registry(self.fixture_command()), "--validate-registry", baseline={"schema_version": 1, "suites": {"sample": "not_applicable"}})
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("baseline may be tightened", result.stdout)
+
+    def test_an_unchanged_registry_passes_registry_validation(self) -> None:
+        for name, registry in (("ready", self.ready_registry(self.fixture_command())), ("not_applicable", self.not_applicable_registry())):
+            with self.subTest(name=name):
+                result = self.run_runner(registry, "--validate-registry")
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("eval registry validation: PASS", result.stdout)
+
+    def test_deleting_a_recorded_suite_fails_registry_validation(self) -> None:
+        # Otherwise the gate is evaded by removing the suite instead of downgrading it.
+        result = self.run_runner(self.not_applicable_registry(), "--validate-registry", baseline={"schema_version": 1, "suites": {"sample": "not_applicable", "vanished": "ready"}})
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("no longer declares it", result.stderr)
+
+    def test_an_unrecorded_suite_fails_registry_validation(self) -> None:
+        # Otherwise the gate is evaded by renaming the suite.
+        result = self.run_runner(self.not_applicable_registry(), "--validate-registry", baseline={"schema_version": 1, "suites": {"other": "not_applicable"}})
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("is not recorded in the status baseline", result.stderr)
+
+    def test_a_malformed_baseline_fails_closed(self) -> None:
+        malformed = {
+            "not JSON": "{",
+            "not an object": json.dumps([{"sample": "ready"}]),
+            "wrong schema version": json.dumps({"schema_version": 2, "suites": {"sample": "not_applicable"}}),
+            "no schema version": json.dumps({"suites": {"sample": "not_applicable"}}),
+            "empty suites": json.dumps({"schema_version": 1, "suites": {}}),
+            "suites not an object": json.dumps({"schema_version": 1, "suites": []}),
+            "invalid recorded status": json.dumps({"schema_version": 1, "suites": {"sample": "skipped"}}),
+            "non-string recorded status": json.dumps({"schema_version": 1, "suites": {"sample": None}}),
+        }
+        for name, recorded in malformed.items():
+            with self.subTest(name=name):
+                result = self.run_runner(self.not_applicable_registry(), "--validate-registry", baseline=recorded)
+
+                self.assertEqual(result.returncode, 2, result.stdout)
+                self.assertIn("invalid eval status baseline", result.stderr)
+
+    def test_a_missing_baseline_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            registry_path = Path(temp_dir) / "suites.yaml"
+            registry_path.write_text(json.dumps(self.not_applicable_registry()))
+            result = subprocess.run([sys.executable, str(RUNNER), "--registry", str(registry_path), "--validate-registry"], cwd=ROOT, capture_output=True, text=True, check=False)
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("unreadable status baseline", result.stderr)
+
+    def test_the_committed_registry_matches_the_committed_baseline(self) -> None:
+        recorded = json.loads(BASELINE.read_text())["suites"]
+
+        result = subprocess.run([sys.executable, str(RUNNER), "--validate-registry"], cwd=ROOT, capture_output=True, text=True, check=False)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(sorted(recorded), sorted(re.findall(r"^- id: (\S+)$", REGISTRY.read_text(), re.M)))
+        self.assertEqual(
+            sorted(name for name, status in recorded.items() if status == "ready"),
+            ["ranking-accounting", "shadow-codec-parity", "token-accounting-conformance"],
+            "the recorded ready set changed; update the baseline deliberately",
+        )
+
+    # -- not_applicable justification --------------------------------------------------
+
+    def test_not_applicable_requires_a_machine_checkable_justification(self) -> None:
+        registry = self.not_applicable_registry()
+        del registry["suites"][0]["not_applicable_until"]
+
+        result = self.run_runner(registry, "--validate-registry")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not_applicable_until", result.stderr)
+
+    def test_not_applicable_fails_once_the_named_component_exists(self) -> None:
+        registry = self.not_applicable_registry()
+        registry["suites"][0]["not_applicable_until"] = ["scripts/ci/run_evals.py"]
+
+        result = self.run_runner(registry, "--validate-registry")
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("its owning component exists", result.stderr)
+
+    def test_running_a_stale_not_applicable_suite_fails_rather_than_skipping(self) -> None:
+        registry = self.not_applicable_registry()
+        registry["suites"][0]["not_applicable_until"] = ["scripts/ci/run_evals.py"]
+
+        result = self.run_runner(registry, "--suite", "sample")
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["status"], "fail")
+        self.assertIn("its owning component exists", payload["reason"])
+
+    def test_rejects_unusable_not_applicable_until_paths(self) -> None:
+        for candidate in ("/etc/passwd", "../outside/thing.rs", "crates\\core\\lib.rs", "crates/vibeproof-sync/", " crates/vibeproof-sync/src/lib.rs"):
+            with self.subTest(candidate=candidate):
+                registry = self.not_applicable_registry()
+                registry["suites"][0]["not_applicable_until"] = [candidate]
+
+                result = self.run_runner(registry, "--validate-registry")
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("unusable", result.stderr)
+
+    def test_rejects_repeated_and_empty_not_applicable_until_entries(self) -> None:
+        for name, value in (("repeated", [ABSENT_COMPONENT, ABSENT_COMPONENT]), ("empty list", []), ("empty string", [""]), ("not a list", ABSENT_COMPONENT)):
+            with self.subTest(name=name):
+                registry = self.not_applicable_registry()
+                registry["suites"][0]["not_applicable_until"] = value
+
+                result = self.run_runner(registry, "--validate-registry")
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("not_applicable_until", result.stderr)
+
+    def test_a_ready_suite_cannot_declare_an_absence_justification(self) -> None:
+        registry = self.ready_registry(self.fixture_command())
+        registry["suites"][0]["not_applicable_until"] = [ABSENT_COMPONENT]
+
+        result = self.run_runner(registry, "--validate-registry")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cannot declare not_applicable_until", result.stderr)
+
+    def test_every_committed_not_applicable_suite_names_an_absent_component(self) -> None:
+        declared = re.findall(r"^  not_applicable_until: (\[.*\])$", REGISTRY.read_text(), re.M)
+        recorded = json.loads(BASELINE.read_text())["suites"]
+
+        self.assertEqual(len(declared), sum(1 for status in recorded.values() if status == "not_applicable"), "every not_applicable suite must name what its status waits on")
+        for entry in declared:
+            for candidate in json.loads(entry):
+                self.assertFalse((ROOT / candidate).exists(), f"{candidate} exists, so the suite waiting on it is no longer not_applicable")
+
     @staticmethod
     def not_applicable_registry() -> dict[str, RegistryValue]:
         return {
@@ -386,8 +540,19 @@ class RunEvalsTests(unittest.TestCase):
                     "blocking_milestone": "vertical-slice",
                     "status": "not_applicable",
                     "reason": "No implementation exists.",
+                    "not_applicable_until": [ABSENT_COMPONENT],
                 }
             ],
+        }
+
+    @staticmethod
+    def baseline_for(registry: dict[str, RegistryValue]) -> dict[str, object]:
+        """Record exactly what the registry declares, so nothing has drifted."""
+        suites = registry["suites"]
+        assert isinstance(suites, list)
+        return {
+            "schema_version": 1,
+            "suites": {suite["id"]: suite["status"] for suite in suites if isinstance(suite.get("id"), str) and isinstance(suite.get("status"), str)},
         }
 
     @staticmethod

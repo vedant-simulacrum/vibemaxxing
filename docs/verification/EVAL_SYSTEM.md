@@ -83,6 +83,49 @@ Every suite writes JSON with:
 
 `not_applicable` requires a documented milestone reason. It must not be used after the owning component is introduced.
 
+That rule was prose with nothing enforcing it until the status baseline and the absence justification below were added. A `not_applicable` result is not a pass; `scripts/ci/verify_repository.py` reports it as its own outcome so the verification matrix cannot count a suite that executed nothing as coverage.
+
+## Suite status is a recorded ceiling
+
+`evals/suites/status-baseline-v1.json` records the status every declared suite carried when it was written. `scripts/ci/run_evals.py --validate-registry` compares the registry against it and exits non-zero when:
+
+- a suite recorded `ready` is declared `not_applicable`;
+- a recorded suite disappears from the registry;
+- the registry declares a suite the baseline does not record.
+
+The last two exist because without them the gate is evaded by deleting or renaming the suite rather than downgrading it. Raising a suite from `not_applicable` to `ready` never fails validation, so improving coverage cannot turn CI red; lowering the recorded ceiling afterwards is optional and manual. A baseline that is missing, unparseable, or carries an unrecognised status fails closed with exit code 2 — a broken constraint is treated as a violated one, not an absent one.
+
+Recording a downgrade is deliberately a file edit, so it leaves a reviewable diff. An undeclared downgrade turns validation red.
+
+## `not_applicable` names what it is waiting for
+
+Every `not_applicable` suite declares `not_applicable_until`: the repository-relative paths whose *absence* is the justification for the status. Validation fails as soon as any one of them exists, which is what makes "must not be used after the owning component is introduced" checkable rather than aspirational. A reviewer decides whether the justification still holds by asking whether the named paths exist, not by reading the prose reason.
+
+Paths must be repository-relative, without traversal or a trailing separator, and are allowed — required, in fact — to name something that does not exist yet. A `ready` suite may not declare the field. Running a suite whose named component has appeared produces `fail`, not a benign skip.
+
+## Verification outcomes are also a recorded ceiling
+
+`scripts/ci/verify_repository.py` distinguishes five lane outcomes:
+
+| Outcome | Meaning | Recordable |
+| --- | --- | --- |
+| `pass` | the lane ran and every command exited 0 | yes |
+| `partial` | the lane ran and part of it had nothing to execute | yes |
+| `not_applicable` | nothing exists for the lane to run | yes |
+| `uncovered` | something exists for the lane to run and no lane runs it | yes |
+| `fail` | the lane ran and a command exited non-zero | **no** |
+
+They are ordered `uncovered` < `not_applicable` < `partial` < `pass`. `scripts/ci/coverage-baseline-v1.json` records what every lane produced, and the matrix exits non-zero only when coverage gets *worse* than that record:
+
+- a lane drops below its recorded outcome;
+- a recorded lane disappears from the matrix;
+- a lane appears that the baseline does not record;
+- any lane actually fails.
+
+A lane sitting at its recorded outcome does not fail the build, so a hole the repository has knowingly accepted stays visible without holding a required check red. Improving a lane never fails either, and the matrix prints which lanes now beat their record. `fail` is not a recordable outcome, so a genuinely broken lane can never be baselined into silence. A missing or malformed baseline exits 2.
+
+Every lane recorded as anything other than `pass` must carry a justification naming a reference and a note, so a recorded hole is always attributable to a decision somebody can go and read. Two are recorded today: `evaluator-all-suites` is `partial` because 24 of 27 suites execute nothing, and `node` is `uncovered` because no root `package.json` exists while `apps/web`, `packages/ui` and `scripts/brand` are npm workspaces with lockfiles that nothing builds.
+
 ## Performance and efficiency suite
 
 The `performance-efficiency` suite owns:

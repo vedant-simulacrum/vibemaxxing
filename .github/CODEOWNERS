@@ -1,4 +1,11 @@
 # Planning-phase ownership. Expand to area maintainers before public release.
+#
+# Every rule below names the same owner, who is also the sole maintainer with admin
+# bypass, so today this file is documentation of intent rather than enforcement: it
+# cannot require a second pair of eyes that does not exist. The paths are still named
+# explicitly because a path that falls through to the catch-all becomes real review
+# for nobody the moment a second maintainer is added, whereas a named path becomes
+# real review immediately.
 * @vedant-simulacrum
 
 /AGENTS.md @vedant-simulacrum
@@ -13,3 +20,11 @@
 /conformance/ @vedant-simulacrum
 /.github/workflows/ @vedant-simulacrum
 /scripts/repository/ @vedant-simulacrum
+
+# The evidence machinery. These three paths decide what the repository is allowed to
+# claim it has verified, and every one of them fell through to the catch-all. `crates/`
+# and `apps/` still do; they are product code and are named when product code is
+# authorized to grow beyond the current bounded prototypes.
+/evals/ @vedant-simulacrum
+/scripts/ci/ @vedant-simulacrum
+/tests/ @vedant-simulacrum
