@@ -9,7 +9,7 @@ Before changing anything:
 1. Confirm the repository is `vedant-simulacrum/vibemaxxing` or an authorized fork.
 2. Resolve default branch, current branch, working-tree state, current issue/PR, linked issue, and unresolved review threads.
 3. Run `python3 scripts/repository/doctor.py` from a clean checkout. Do not continue past a failure without repairing or documenting it.
-4. Read, in order: `docs/project/PROJECT.md`, `docs/project/STATUS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md`, `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, then relevant ADRs, contracts, schemas, fixtures, issues, and PR discussions.
+4. Read, in order: `docs/project/PROJECT.md`, `docs/project/STATUS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, then relevant ADRs, contracts, schemas, fixtures, issues, and PR discussions.
 5. Read implementation handoff files only for implementation planning or after explicit P-1104 authorization.
 6. Use `docs/research/README.md` to locate primary evidence relevant to the active decision.
 

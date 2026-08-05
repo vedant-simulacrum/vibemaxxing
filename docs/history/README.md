@@ -23,8 +23,12 @@ Point-in-time reports that are no longer authority. They are retained because th
 | `CONSOLIDATED_AUDIT_2026-07-23.md` | First repository-wide audit | Superseded by `REPOSITORY_ALIGNMENT_2026-07-23.md`, then by P-1140E and P-1140F |
 | `LAUNCH_POLICY_DECISIONS_2026-07-23.md` | Launch policy decisions | Fully absorbed into `DECISION_REGISTER.md` |
 | `INDEPENDENT_ARCHITECTURE_REVIEWS.md` | One-off architecture review record | Point-in-time, 2026-07-19; formerly the sole file in `docs/reviews/` |
+| `REPOSITORY_ALIGNMENT_2026-07-23.md` | Canonical P-1140A authority alignment audit and reconciliation record | Spent: P-1140A–E are all `complete-planning`; its decisions are owned by `DECISION_REGISTER.md` and its gates by `TASK_CATALOG.md`. Its canonical authority hierarchy was merged into `docs/project/DOCUMENTATION.md` before the move |
+| `MACHINE_CONTRACT_REPAIR_SPEC.md` | Normative P-1140B–E machine-contract repair requirements | Spent: its exit condition was reached; the repaired contracts live in `packages/schemas/` and are indexed by `SCHEMA_AND_INTERFACE_INVENTORY.md` |
 
-All nine had zero inbound references from any document, script, workflow, or registry when they were moved here on 2026-08-05.
+The first nine had zero inbound references from any document, script, workflow, or registry when they were moved here on 2026-08-05.
+
+The last two were moved on 2026-08-06 and, unlike the first nine, did have live inbound references. Those references — the `AGENTS.md` initialization order, the `docs/project/DOCUMENTATION.md` initialization order and file map, and `TRACEABILITY_AND_DRY_RUN_AUDIT.md` — were repaired in the same change. Neither file is referenced by any script, workflow, or machine registry.
 
 ## Related historical material kept in place
 

@@ -11,9 +11,9 @@ A local daemon watches your agent, counts tokens, signs the count on-device, and
 
 ---
 
-## Status: planning, not shipping
+## Status: authorized to build, nothing built
 
-This repository is in **planning contract repair**. Implementation is gated behind `P-1104`, which is not yet open.
+Gate `P-1104` is **open** as of 2026-08-05 — implementation is authorized. It was opened deliberately with its preconditions unmet: 13 P1 semantic findings remain open and tracked, and they are not waived. Authorization is a decision, not evidence. The record is `conformance/p1140f/gate-authorization-v1.json`, and `make doctor` derives phase from it rather than from prose.
 
 What exists today:
 
@@ -23,7 +23,7 @@ What exists today:
 | Executable code | ~4,400 lines |
 | Running product | **None.** A `GET /healthz`, a fixture-driven Storybook/Next.js prototype, a Rust CBOR codec, and Python planning validators |
 
-There is no daemon, adapter, collector, OAuth, database, or API yet. `docs/project/STATUS.md` is the authority on what is and is not implemented, and it is deliberately blunt about it.
+There is no daemon, adapter, collector, OAuth, database, or API yet, and opening the gate did not change that. `docs/project/STATUS.md` is the authority on what is and is not implemented, and it is deliberately blunt about it.
 
 **Be skeptical of green checks.** A passing validator here proves structural consistency, not security, privacy, conformance, or runtime behavior. That rule is written into `AGENTS.md` and it applies to this README too.
 
@@ -47,7 +47,7 @@ make plan            # regenerate the deterministic work-unit issue plan
 1. [`docs/project/PROJECT.md`](docs/project/PROJECT.md) — what the product is, and the architecture that follows from it
 2. [`docs/project/STATUS.md`](docs/project/STATUS.md) — current phase, what is implemented, what is not
 3. [`docs/project/DOCUMENTATION.md`](docs/project/DOCUMENTATION.md) — the single map of which document owns which decision
-4. [`docs/planning/DECISION_REGISTER.md`](docs/planning/DECISION_REGISTER.md) — every decision D-001..D-077 and its status
+4. [`docs/planning/DECISION_REGISTER.md`](docs/planning/DECISION_REGISTER.md) — every decision D-001..D-078 and its status
 5. [`docs/planning/TASK_CATALOG.md`](docs/planning/TASK_CATALOG.md) — gates, programs, and what blocks what
 
 For the current blocking work, `conformance/p1140f/semantic-findings-v1.json` is the machine-readable truth; prose summarizes it and may not redefine it.
@@ -66,6 +66,10 @@ docs/
   integrations/   agent compatibility, adapter certification
   operations/     launch, SLOs, incident response, release verification
   implementation/ active plan and frozen backlog
+  engineering/    engineering system, performance and power budgets
+  verification/   acceptance gates, evaluation and benchmark protocol
+  style-guide/    brand, UI foundations, component registry and rules
+  research/       primary evidence waves — README.md is the only entrypoint
   history/        superseded reports, retained as evidence, NOT authority
 
 packages/schemas/ the real contract surface — OpenAPI, SQL, CDDL, JSON Schema
@@ -89,7 +93,7 @@ These are not aspirations. They constrain every change.
 - OAuth proves control of a provider account, not that you are one unique human.
 - Deterministic controls are authoritative. Statistical and model-based detection is local-only, advisory, and post-launch — it cannot rewrite totals or ban anyone.
 - Competitive support requires exercised certification evidence against an exact version, mode, platform, and artifact. A registry entry is not support.
-- **The words "verified", "proof", "cheat-proof", and "attested" are banned from user-facing claims.** No score here is cryptographic proof of real usage; someone who controls their own machine can inflate their own number. See `docs/security/THREAT_MODEL.md`.
+- **Claims of verification, cryptographic proof, or cheat-proofing are forbidden unless a provider mechanism actually supports them** — and none does today. No score here is proof of real usage; someone who controls their own machine can inflate their own number. See `docs/security/THREAT_MODEL.md` and `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md`.
 - Specifications, mocks, fixtures, and runnable prototypes are not implementation evidence and are not launch evidence.
 
 ## Contributing

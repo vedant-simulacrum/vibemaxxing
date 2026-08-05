@@ -173,6 +173,19 @@ def load_record(root: Path, relative_path: str = PHASE_RECORD) -> dict:
         raise RecordError("recorded_at must be an ISO date")
     _text(record.get("finding_registry"), "finding_registry")
     _strings(record.get("registry_summary_documents"), "registry_summary_documents", 1)
+    for index, pattern in enumerate(
+        _strings(record.get("open_p1_claim_patterns"), "open_p1_claim_patterns", 1)
+    ):
+        try:
+            compiled = re.compile(pattern, re.IGNORECASE)
+        except re.error as error:
+            raise RecordError(
+                f"open_p1_claim_patterns[{index}] is not a regular expression: {error}"
+            ) from error
+        if compiled.groups != 1:
+            raise RecordError(
+                f"open_p1_claim_patterns[{index}] must have exactly one capturing group"
+            )
 
     baseline = _mapping(record.get("open_p1_baseline"), "open_p1_baseline")
     if baseline.get("severity") != "P1":
@@ -330,6 +343,37 @@ def check_documents(root: Path, gate: dict, errors: list[str]) -> None:
                 )
 
 
+def check_open_p1_claims(
+    relative_path: str,
+    text: str,
+    active: int,
+    patterns: list[re.Pattern[str]],
+    errors: list[str],
+) -> None:
+    """Require every open-P1 count a document states to equal the live registry count.
+
+    A bare substring search for the count is both too weak and too strong: `"12" in
+    text` is satisfied by an unrelated `2026-07-12`, so a document could keep claiming
+    13 while the registry held 12. Matching the claim itself, and reporting the number
+    the document actually states, makes a stale count a precise and self-evident prose
+    defect rather than a puzzle about which digits are missing.
+    """
+    claims = sorted(
+        {int(match) for pattern in patterns for match in pattern.findall(text)}
+    )
+    if not claims:
+        errors.append(
+            f"{relative_path} states no open P1 count matching any recorded claim pattern"
+        )
+        return
+    for claim in claims:
+        if claim != active:
+            errors.append(
+                f"{relative_path} claims {claim} open P1 findings; the registry has {active}. "
+                f"Update the prose, not the validator."
+            )
+
+
 def evaluate_phase(root: Path) -> tuple[list[str], str]:
     """Derive phase state from the record and check that prose agrees with it.
 
@@ -352,6 +396,11 @@ def evaluate_phase(root: Path) -> tuple[list[str], str]:
             f"in {PHASE_RECORD}"
         )
 
+    patterns = [
+        re.compile(pattern, re.IGNORECASE)
+        for pattern in record["open_p1_claim_patterns"]
+    ]
+
     for gate in record["gates"]:
         check_documents(root, gate, errors)
 
@@ -360,12 +409,14 @@ def evaluate_phase(root: Path) -> tuple[list[str], str]:
         if not path.is_file():
             errors.append(f"missing registry summary document: {relative_path}")
             continue
-        text = path.read_text(encoding="utf-8").lower()
-        for token in (str(active), identifiers[0], identifiers[-1]):
+        raw = path.read_text(encoding="utf-8")
+        text = raw.lower()
+        for token in (identifiers[0], identifiers[-1]):
             if token.lower() not in text:
                 errors.append(
                     f"{relative_path} does not summarize the finding registry: missing {token}"
                 )
+        check_open_p1_claims(relative_path, raw, active, patterns, errors)
 
     summary = "phase={} gates={} open_p1={}/{}".format(
         record["phase"],

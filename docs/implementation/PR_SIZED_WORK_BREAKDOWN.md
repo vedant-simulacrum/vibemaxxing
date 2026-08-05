@@ -570,7 +570,11 @@ Acceptance: `run_evals.py --validate-registry`, `verify_repository.py`, and `pyt
 Depends: PF-055
 Est: 4-6
 
-Four validators fail at HEAD and no workflow invokes them, so nothing detected the failure. Commit `31a6539` added `authority_class` and `evidence_ceiling` to satisfy `validate_p1140f_authority.py:124`, while `run_evals.py:98-101` rejects any key outside its allowlist — one validator now requires exactly what another forbids. 1,255 of 3,206 Python lines never execute in automation, including the fixture-digest binding, argv shell-injection refusal, path-traversal containment, and evidence-freshness checks. This unit also removes the `paths:` filters that currently exempt `apps/`, `crates/`, `Cargo.toml`, and `.github/workflows/ci.yml` from every check.
+Four validators fail at HEAD and no workflow invokes them, so nothing detected the failure. Commit `31a6539` added `authority_class` and `evidence_ceiling` to satisfy `validate_p1140f_authority.py:124`, while `run_evals.py` rejected any key outside its allowlist — one validator required exactly what another forbade.
+
+**Partially repaired 2026-08-06.** The allowlist now admits both keys, which resolves the first contradiction. A second one remains and needs a decision rather than a patch: `shadow-codec-parity` carries `reason: "…not normative VibeProof conformance"`, which is a **scope disclaimer**, while `run_evals.py:156` treats `reason` purely as a not-applicable excuse and requires it blank on `ready` suites. One key is serving two purposes. Either split the disclaimer into a distinct field such as `scope_note` — which `validate_p1140f_authority.py` must then read for the evidence-ceiling justification — or relax the blank-reason rule when `authority_class` is present. Choose deliberately; both validators depend on the answer.
+
+Until that is settled, `run_evals.py --validate-registry`, `generate_gate_ledger.py`, `verify_repository.py`, and one test in `tests/ci/test_run_evals.py` still fail. 1,255 of 3,206 Python lines never execute in automation, including the fixture-digest binding, argv shell-injection refusal, path-traversal containment, and evidence-freshness checks. This unit also removes the `paths:` filters that currently exempt `apps/`, `crates/`, `Cargo.toml`, and `.github/workflows/ci.yml` from every check.
 
 ### PF-057 — Specify the P-1104 gate transition
 Files: `scripts/repository/doctor.py`, `docs/project/STATUS.md`, `docs/planning/TASK_CATALOG.md`, `docs/implementation/IMPLEMENTATION_HANDOFF.md`

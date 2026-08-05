@@ -1,5 +1,22 @@
 # UI System Architecture
 
+Renamed from `docs/style-guide/ARCHITECTURE.md` on 2026-08-06 so it can no longer be confused with `docs/architecture/ARCHITECTURE.md`, which covers the system architecture of the product and has nothing to do with the UI layer model.
+
+This file owns the UI system's layer model, dependency direction, ownership boundary, and documentation architecture.
+
+## System layers
+
+| Layer | Examples | Owned by |
+|---|---|---|
+| Tokens | color, type, spacing, radius, motion | `packages/ui/src/tokens.source.json` |
+| Primitives | Button, Link, Text, Icon, Stack | `packages/ui/src/primitives/` |
+| Components | Tabs, Avatar, StatusTag, Dialog | `packages/ui/src/components/` |
+| Product patterns | LedgerRow, RankMovement, EvidenceBadge | `packages/ui/src/patterns/` |
+| Templates | LeaderboardShell, ProfileShell | `packages/ui/src/templates/` |
+| Pages | route data and composition only | `apps/*` |
+
+Folders for unapproved component layers are created when the first approved implementation enters them. Empty folders are not used as evidence of implementation. Which named components currently occupy each layer is recorded in `COMPONENT_INVENTORY.md`, not here.
+
 ## One-way dependency rule
 
 Dependencies flow downward:
@@ -55,10 +72,10 @@ Responsiveness is part of the component contract. Components define how their ow
 
 ## Documentation architecture
 
-The UI system has three non-interchangeable layers:
+The UI system has three non-interchangeable layers, and none may substitute for another:
 
-1. `@vibemaxxing/ui` owns implementation.
-2. Storybook owns isolated executable states, controls, accessibility checks, and future visual-regression baselines.
-3. `/style-guide` owns the curated brand and product-system narrative.
+1. **`@vibemaxxing/ui` owns implementation.** Neither documentation surface holds a duplicate component implementation.
+2. **Storybook owns isolated executable states**, controls, accessibility checks, and visual-regression baselines. Every public component has stories covering its meaningful variants, edge cases, responsive behavior, and interaction or accessibility states.
+3. **`/style-guide` owns the curated brand and product-system narrative.** It explains the approved visual language and shows representative compositions using the same `@vibemaxxing/ui` exports.
 
-Stories and `/style-guide` import the package public API. They never copy component markup or styling. A component is not implemented until its required Storybook states exist; appearing on `/style-guide` alone is insufficient.
+Stories and `/style-guide` import the package public API. They never copy component markup or styling. A component is not implemented until its required Storybook states exist; appearing on `/style-guide` alone is insufficient. `npm run ui:check` enforces both directions.

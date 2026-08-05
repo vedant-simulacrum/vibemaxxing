@@ -5,7 +5,7 @@
   "description": "Sole machine-readable owner of repository phase, gate state, and the open-P1 non-regression ceiling. Validators derive gate state from this file; prose documents summarize it and may not independently redefine it.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "phase", "recorded_at", "finding_registry", "open_p1_baseline", "registry_summary_documents", "gates"],
+  "required": ["schema_version", "phase", "recorded_at", "finding_registry", "open_p1_baseline", "registry_summary_documents", "open_p1_claim_patterns", "gates"],
   "properties": {
     "schema_version": {"const": 1},
     "phase": {"enum": ["planning-contract-repair", "implementation"]},
@@ -32,6 +32,13 @@
       }
     },
     "registry_summary_documents": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "open_p1_claim_patterns": {
+      "description": "Regular expressions, each with one capturing group, that locate an open-P1 count claim in a registry summary document. Every claim found must equal the live registry count. Patterns are data so that rephrasing prose never requires editing a validator.",
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,

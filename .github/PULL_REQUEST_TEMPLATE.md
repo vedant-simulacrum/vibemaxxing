@@ -14,7 +14,7 @@
 
 ## Design review
 
-- [ ] Matches `docs/design/design.md`
+- [ ] Matches `docs/style-guide/UI_FOUNDATIONS.md` and `docs/style-guide/BRAND.md`
 - [ ] No generic dashboard filler
 - [ ] Complete states included
 

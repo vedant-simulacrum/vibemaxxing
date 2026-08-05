@@ -5,7 +5,7 @@
 
 create table accounts (
   account_id uuid primary key,
-  state text not null,
+  state text not null check (state in ('active','restricted','deletion-pending','deleted')),
   created_at timestamptz not null
 );
 
@@ -21,6 +21,7 @@ create table linked_identities (
   account_id uuid not null references accounts(account_id),
   provider text not null check (provider in ('github','x')),
   provider_subject text not null,
+  state text not null check (state in ('linked','unlink-pending','unlinked')),
   unique (provider, provider_subject)
 );
 
@@ -29,7 +30,7 @@ create table web_sessions (
   account_id uuid not null references accounts(account_id),
   token_family_id uuid not null,
   token_hash bytea not null unique,
-  state text not null,
+  state text not null check (state in ('active','rotated','revoked','expired')),
   expires_at timestamptz not null
 );
 
@@ -54,6 +55,7 @@ create table oauth_transactions (
   state_hash bytea not null unique,
   pkce_verifier_ciphertext bytea,
   intended_action text not null,
+  state text not null check (state in ('created','redirected','callback-received','consumed','expired','failed')),
   expires_at timestamptz not null,
   consumed_at timestamptz
 );
@@ -64,7 +66,7 @@ create table devices (
   installation_id uuid not null unique,
   lineage_id uuid not null,
   platform_profile_id text not null,
-  state text not null
+  state text not null check (state in ('pending','active','quarantined','revoked','deleted'))
 );
 
 create table device_keys (
@@ -73,7 +75,7 @@ create table device_keys (
   public_key bytea not null,
   algorithm text not null check (algorithm = 'Ed25519'),
   protection_class text not null,
-  state text not null
+  state text not null check (state in ('active','rotated','revoked'))
 );
 
 create table device_enrollment_grants (
@@ -81,6 +83,7 @@ create table device_enrollment_grants (
   account_id uuid not null references accounts(account_id),
   public_key_hash bytea not null,
   collector_digest bytea not null,
+  state text not null check (state in ('pending','approved','denied','expired','consumed')),
   expires_at timestamptz not null,
   consumed_at timestamptz
 );
@@ -110,7 +113,7 @@ create table device_sequences (
   next_sequence bigint not null,
   local_commitment_head bytea,
   server_checkpoint_head bytea,
-  continuity_state text not null
+  continuity_state text not null check (continuity_state in ('continuous','gap-declared','broken','revoked'))
 );
 
 create table claims (
@@ -156,14 +159,14 @@ create table quarantines (
   device_id uuid references devices(device_id),
   claim_id uuid references claims(claim_id),
   reason_code text not null,
-  state text not null
+  state text not null check (state in ('active','released'))
 );
 
 create table evidence_assessments (
   evidence_assessment_id uuid primary key,
   claim_id uuid not null references claims(claim_id),
   verifier_profile_id text not null,
-  public_state text not null,
+  public_state text not null check (public_state in ('hardened','standard','imported','private-analytics')),
   provenance_state text not null check (provenance_state in ('verified','partial','unverified','rejected')),
   continuity_state text not null check (continuity_state in ('continuous','gap-declared','broken')),
   integrity_state text not null check (integrity_state in ('verified','degraded','failed')),
@@ -174,7 +177,7 @@ create table evidence_assessments (
 create table moderation_cases (
   case_id uuid primary key,
   account_id uuid references accounts(account_id),
-  state text not null,
+  state text not null check (state in ('open','investigating','actioned','awaiting-appeal','reversed','closed')),
   policy_version text not null,
   created_at timestamptz not null
 );
@@ -192,7 +195,7 @@ create table appeals (
   appeal_id uuid primary key,
   case_id uuid not null references moderation_cases(case_id),
   account_id uuid not null references accounts(account_id),
-  state text not null,
+  state text not null check (state in ('submitted','screening','needs-information','reviewing','approved','denied','withdrawn','expired')),
   created_at timestamptz not null
 );
 
@@ -238,6 +241,7 @@ create table ranking_corrections (
 
 create table pricing_datasets (
   pricing_dataset_id text primary key,
+  state text not null check (state in ('active','superseded','revoked')),
   effective_at timestamptz not null,
   provenance text not null,
   content_hash bytea not null
@@ -255,7 +259,7 @@ create table cost_interpretations (
   cost_interpretation_id uuid primary key,
   claim_id uuid not null references claims(claim_id),
   pricing_dataset_id text references pricing_datasets(pricing_dataset_id),
-  state text not null,
+  state text not null check (state in ('active','superseded','revoked')),
   estimated_cost numeric(30,12)
 );
 
@@ -269,7 +273,7 @@ create table friend_requests (
   friend_request_id uuid primary key,
   requester_account_id uuid not null references accounts(account_id),
   target_account_id uuid not null references accounts(account_id),
-  state text not null
+  state text not null check (state in ('none','pending-a-to-b','pending-b-to-a','active','blocked','ended'))
 );
 
 create table friend_edges (
@@ -289,20 +293,22 @@ create table blocks (
 create table rival_edges (
   account_id uuid not null references accounts(account_id),
   rival_account_id uuid not null references accounts(account_id),
-  state text not null,
+  state text not null check (state in ('none','active','ended','blocked')),
   primary key (account_id, rival_account_id)
 );
 
 create table organizations (
   organization_id uuid primary key,
   owner_account_id uuid not null references accounts(account_id),
-  name text not null
+  name text not null,
+  state text not null check (state in ('active','archived'))
 );
 
 create table communities (
   community_id uuid primary key,
   owner_account_id uuid not null references accounts(account_id),
-  name text not null
+  name text not null,
+  state text not null check (state in ('active','archived'))
 );
 
 create table boards (
@@ -315,22 +321,29 @@ create table boards (
 create table board_memberships (
   board_id uuid not null references boards(board_id),
   account_id uuid not null references accounts(account_id),
-  role text not null,
-  state text not null,
-  primary key (board_id, account_id)
+  role text not null check (role in ('owner','admin','member','viewer')),
+  state text not null check (state in ('invited','active-viewer','active-member','active-admin','active-owner','left','removed','blocked')),
+  primary key (board_id, account_id),
+  check (
+    (state = 'active-owner' and role = 'owner')
+    or (state = 'active-admin' and role = 'admin')
+    or (state = 'active-member' and role = 'member')
+    or (state = 'active-viewer' and role = 'viewer')
+    or state in ('invited','left','removed','blocked')
+  )
 );
 
 create table board_invites (
   board_invite_id uuid primary key,
   board_id uuid not null references boards(board_id),
-  state text not null,
+  state text not null check (state in ('pending','accepted','declined','expired','revoked','invalidated-by-block')),
   expires_at timestamptz not null
 );
 
 create table presence_leases (
   account_id uuid not null references accounts(account_id),
   device_id uuid not null references devices(device_id),
-  state text not null,
+  state text not null check (state in ('absent','active','idle','expired','revoked')),
   expires_at timestamptz not null,
   primary key (account_id, device_id)
 );
@@ -339,7 +352,7 @@ create table notifications (
   notification_id uuid primary key,
   account_id uuid not null references accounts(account_id),
   event_type text not null check (event_type in ('friend_request','board_invitation','rank_overtake','moderation','appeal','security','compatibility','release')),
-  state text not null check (state in ('queued','delivered','read','suppressed','expired')),
+  state text not null check (state in ('created','grouped','ready','delivered','read','suppressed','retracted','expired')),
   actor_account_id uuid references accounts(account_id),
   scope_id uuid,
   grouping_digest bytea not null check (octet_length(grouping_digest) = 32),
@@ -389,15 +402,15 @@ create table audit_events (
 create table exports (
   export_id uuid primary key,
   account_id uuid not null references accounts(account_id),
-  state text not null,
+  state text not null check (state in ('requested','snapshotting','encrypting','ready','downloaded','purged','failed')),
   expires_at timestamptz
 );
 
 create table deletion_jobs (
   deletion_job_id uuid primary key,
   account_id uuid not null references accounts(account_id),
-  scope text not null,
-  state text not null
+  scope text not null check (scope in ('server','local','everything')),
+  state text not null check (state in ('requested','recent-auth-verified','cooling-off','processing','rebuilding-projections','awaiting-local-receipt','complete','failed'))
 );
 
 create table feature_flags (
@@ -424,7 +437,7 @@ create table idempotency_records (
   operation_id text not null,
   request_digest bytea not null check (octet_length(request_digest) = 32),
   response_digest bytea,
-  state text not null check (state in ('reserved','committed','failed')),
+  state text not null check (state in ('reserved','committed','conflict','expired','failed')),
   expires_at timestamptz not null,
   primary key (actor_account_id, idempotency_key)
 );
@@ -432,7 +445,7 @@ create table idempotency_records (
 create table session_families (
   token_family_id uuid primary key,
   account_id uuid not null references accounts(account_id),
-  state text not null check (state in ('active','revoked','compromised','expired')),
+  state text not null check (state in ('active','rotating','replay-detected','revoked','device-revoked','expired')),
   created_at timestamptz not null,
   revoked_at timestamptz
 );
@@ -468,9 +481,9 @@ create table verifier_appraisals (
   appraisal_id uuid primary key,
   claim_id uuid not null references claims(claim_id),
   evidence_profile_id text not null,
-  provenance_state text not null,
-  continuity_state text not null,
-  integrity_state text not null,
+  provenance_state text not null check (provenance_state in ('verified','partial','unverified','rejected')),
+  continuity_state text not null check (continuity_state in ('continuous','gap-declared','broken')),
+  integrity_state text not null check (integrity_state in ('verified','degraded','failed')),
   reason_codes text[] not null default '{}',
   policy_digest bytea not null check (octet_length(policy_digest) = 32),
   created_at timestamptz not null
@@ -504,7 +517,7 @@ create table ranking_views (
 create table ranking_projection_generations (
   ranking_view_id text not null references ranking_views(ranking_view_id),
   generation bigint not null check (generation >= 0),
-  state text not null check (state in ('building','published','superseded','failed')),
+  state text not null check (state in ('building','validating','active','superseded','failed')),
   source_revision bigint not null check (source_revision >= 0),
   published_at timestamptz,
   primary key (ranking_view_id, generation)
@@ -547,7 +560,7 @@ create table moderation_effects (
 create table appeal_decisions (
   appeal_decision_id uuid primary key,
   appeal_id uuid not null references appeals(appeal_id),
-  decision text not null check (decision in ('needs_information','upheld','partially_upheld','reversed','expired')),
+  decision text not null check (decision in ('upheld','partially-upheld','reversed')),
   decision_digest bytea not null check (octet_length(decision_digest) = 32),
   decided_at timestamptz not null
 );
@@ -566,7 +579,7 @@ create table export_artifacts (
 create table deletion_effects (
   deletion_job_id uuid not null references deletion_jobs(deletion_job_id),
   subsystem text not null,
-  state text not null check (state in ('pending','executing','completed','failed','not-applicable')),
+  state text not null check (state in ('pending','executing','complete','failed','not-applicable')),
   effect_digest bytea,
   completed_at timestamptz,
   primary key (deletion_job_id, subsystem)
@@ -577,6 +590,7 @@ create table local_deletion_commands (
   deletion_job_id uuid not null references deletion_jobs(deletion_job_id),
   device_id uuid not null references devices(device_id),
   command_digest bytea not null check (octet_length(command_digest) = 32),
+  state text not null check (state in ('issued','acknowledged','executing','complete','expired','failed')),
   expires_at timestamptz not null
 );
 
@@ -594,7 +608,7 @@ create table platform_profiles (
   architecture text not null,
   environment text not null,
   advertised boolean not null default false check (not advertised),
-  validation_state text not null check (validation_state in ('planned-validation-required','certified','blocked','retired'))
+  validation_state text not null check (validation_state in ('planned','candidate','exercised','certified','published','degraded','blocked','suspended','retired'))
 );
 
 create table tuf_roots (
@@ -609,7 +623,7 @@ create table release_sets (
   version text not null unique,
   tuf_root_version bigint not null references tuf_roots(root_version),
   compatibility_registry_digest bytea not null check (octet_length(compatibility_registry_digest) = 32),
-  state text not null check (state in ('draft','signed','published','revoked','expired')),
+  state text not null check (state in ('draft','threshold-signed','published','active','superseded','revoked','expired')),
   published_at timestamptz,
   mandatory_after timestamptz
 );
@@ -630,7 +644,7 @@ create table platform_certifications (
   platform_profile_id text not null references platform_profiles(platform_profile_id),
   release_set_id uuid not null references release_sets(release_set_id),
   test_run_digest bytea not null check (octet_length(test_run_digest) = 32),
-  state text not null check (state in ('candidate','certified','failed','revoked')),
+  state text not null check (state in ('candidate','exercised','certified','failed','revoked')),
   certified_at timestamptz
 );
 
@@ -638,7 +652,7 @@ create table update_installations (
   update_installation_id uuid primary key,
   device_id uuid not null references devices(device_id),
   release_set_id uuid not null references release_sets(release_set_id),
-  state text not null check (state in ('available','downloading','verified','installing','active','rolled_back','blocked','failed')),
+  state text not null check (state in ('current','available','deferred','deadline','downloading','staged','installing','health-check','complete','rolled-back','blocked-version','failed')),
   previous_release_set_id uuid references release_sets(release_set_id),
   revision bigint not null check (revision >= 0),
   updated_at timestamptz not null
@@ -646,7 +660,7 @@ create table update_installations (
 
 create unique index board_one_active_owner
   on board_memberships (board_id)
-  where role = 'owner' and state = 'active';
+  where state = 'active-owner';
 
 create index claims_account_received_idx on claims (account_id, received_at desc);
 create index notifications_account_created_idx on notifications (account_id, created_at desc);

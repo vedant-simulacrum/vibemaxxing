@@ -18,6 +18,10 @@
     "docs/planning/TASK_CATALOG.md",
     "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md"
   ],
+  "open_p1_claim_patterns": [
+    "([0-9]+) active P1 clusters",
+    "P1 clusters open: ([0-9]+)"
+  ],
   "gates": [
     {
       "gate": "P-1140E",

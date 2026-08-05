@@ -15,7 +15,12 @@ P1140F = ROOT / "conformance" / "p1140f"
 
 
 def load_json(path: Path):
-    return json.loads(path.read_text(encoding="utf-8"))
+    if not path.is_file():
+        raise RuntimeError(f"missing required P-1140F record: {path.name}")
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"unreadable P-1140F record {path.name}: {error}") from error
 
 
 def validate(schema_name: str, instance_name: str) -> dict:
@@ -199,9 +204,11 @@ def main() -> int:
                 f"{gate['gate']} authorization lists a finding set that contradicts its recorded count"
             )
 
+    # Prose-versus-record count agreement is owned by scripts/repository/doctor.py so
+    # that exactly one validator holds it. This one owns registry range and ordering.
     for relative_path in authorization["registry_summary_documents"]:
         text = (ROOT / relative_path).read_text(encoding="utf-8")
-        for token in (str(open_p1), ids[0], ids[-1]):
+        for token in (ids[0], ids[-1]):
             if token not in text:
                 raise RuntimeError(
                     f"{relative_path} does not summarize the registry range/count: missing {token}"

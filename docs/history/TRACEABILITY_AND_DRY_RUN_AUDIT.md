@@ -11,8 +11,8 @@ This file preserves the July 19 traceability and implementation dry-run snapshot
 The later repository-wide audit found missing or contradictory machine contracts across evidence appraisal, accounting profiles, protocol batching and continuity, device lineage, OAuth/session state, ranking-view identity, social state machines, platform support and release/update behavior. Current authority is:
 
 - `docs/planning/decision-traceability/` for D-001 through D-069 mappings;
-- `docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md` for reconciliation;
-- `docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md` for required schema/state repairs;
+- `docs/history/REPOSITORY_ALIGNMENT_2026-07-23.md` for reconciliation;
+- `docs/history/MACHINE_CONTRACT_REPAIR_SPEC.md` for required schema/state repairs;
 - `docs/planning/TASK_CATALOG.md` for P-1140B through P-1140E gates;
 - the implementation handoff only after those gates pass and P-1104 is explicitly approved.
 

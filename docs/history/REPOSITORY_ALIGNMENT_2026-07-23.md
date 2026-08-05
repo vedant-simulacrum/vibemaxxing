@@ -1,7 +1,10 @@
 # Repository-wide authority alignment audit
 
 Updated: 2026-07-24
-Status: canonical planning audit and reconciliation record
+Archived: 2026-08-06
+Status: **historical. Not authority.**
+
+> This document was the canonical planning audit and reconciliation record for P-1140A. Every gate it programmed — P-1140A through P-1140E — is now `complete-planning`, and its findings were absorbed by `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`. Its one piece of still-live unique content, the canonical authority hierarchy used to resolve artifact conflicts, was merged into `docs/project/DOCUMENTATION.md` before this file moved here. Do not cite anything below to justify a decision or establish state.
 
 ## Purpose
 
@@ -127,7 +130,7 @@ When repository artifacts conflict, use this order:
 8. research and audit evidence;
 9. historical completion reports, generated artifacts, stale branches and closed planning assumptions.
 
-`docs/planning/REPOSITORY_ALIGNMENT_2026-07-23.md` records the reconciliation but does not override the product authority or decision register.
+This file (now `docs/history/REPOSITORY_ALIGNMENT_2026-07-23.md`) recorded the reconciliation but never overrode the product authority or decision register. The live copy of this hierarchy is in `docs/project/DOCUMENTATION.md`.
 
 ## Locked product and architecture decisions
 
