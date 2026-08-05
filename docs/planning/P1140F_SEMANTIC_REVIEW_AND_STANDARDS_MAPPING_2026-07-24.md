@@ -109,7 +109,9 @@ Closure requires typed principal and operation scope, versioned request canonica
 
 Asynchronous export/deletion jobs lack durable status and completion interfaces. Export snapshot, manifest, artifact, encryption, checksum, grant, and purge authorities are absent. Server and per-device deletion are conflated. No complete data-disposition or backup-tombstone authority exists.
 
-Closure requires durable job resources, immutable export/deletion plans, coherent snapshots, encrypted self-describing packages, per-effect and per-device results, account mutation restrictions during deletion, honest local execution receipts, complete disposition policy, tombstone reapplication, and D-076 completion wording.
+`docs/privacy/DATA_MAP.md` now owns the disposition half in prose and states real windows — export bundles purged seven days after they become ready, short-lived revocable download grants — until PF-050 moves them into machine-readable form. `packages/schemas/planning-schema.sql` has no download-grant table and no purge schedule to hold them.
+
+Closure requires durable job resources, immutable export/deletion plans, coherent snapshots, encrypted self-describing packages, per-effect and per-device results, account mutation restrictions during deletion, honest local execution receipts, complete disposition policy in machine-readable form, tombstone reapplication, and D-076 completion wording.
 
 ### SR-014 — Release authorization, compatibility, migration, and rollback
 
