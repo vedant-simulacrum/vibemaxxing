@@ -1,46 +1,13 @@
 name: Planning checks
 
+# Path filters were removed under PF-056. They exempted apps/, crates/, Cargo.toml,
+# and .github/workflows/ci.yml from every check, so a pull request touching only
+# product code triggered nothing at all.
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - 'AGENTS.md'
-      - 'README.md'
-      - 'LICENSES.md'
-      - 'SECURITY.md'
-      - 'CONTRIBUTING.md'
-      - 'requirements-planning.txt'
-      - '.github/CODEOWNERS'
-      - '.github/workflows/planning-checks.yml'
-      - '.github/workflows/storyboard-visuals.yml'
-      - 'docs/**'
-      - 'packages/schemas/**'
-      - 'conformance/**'
-      - 'evals/**'
-      - 'scripts/repository/**'
-      - 'scripts/ci/run_phase1_evidence.py'
-      - 'scripts/ci/repository_policy.py'
-      - 'scripts/ui/playwright-runtime/**'
   pull_request:
-    paths:
-      - 'AGENTS.md'
-      - 'README.md'
-      - 'LICENSES.md'
-      - 'SECURITY.md'
-      - 'CONTRIBUTING.md'
-      - 'requirements-planning.txt'
-      - '.github/CODEOWNERS'
-      - '.github/workflows/planning-checks.yml'
-      - '.github/workflows/storyboard-visuals.yml'
-      - 'docs/**'
-      - 'packages/schemas/**'
-      - 'conformance/**'
-      - 'evals/**'
-      - 'scripts/repository/**'
-      - 'scripts/ci/run_phase1_evidence.py'
-      - 'scripts/ci/repository_policy.py'
-      - 'scripts/ui/playwright-runtime/**'
 
 permissions:
   contents: read
@@ -83,6 +50,14 @@ jobs:
         run: python3 scripts/repository/validate_p1140e_contracts.py
       - name: Validate current launch API, SQL, and repaired authority coverage
         run: python3 scripts/repository/validate_planning_coverage.py
+      - name: Validate state vocabularies across API, SQL, and the machine registry
+        run: python3 scripts/repository/validate_state_vocabularies.py
+      - name: Validate the evaluation registry
+        run: python3 scripts/ci/run_evals.py --validate-registry
+      - name: Run the validator unit tests
+        run: python3 -m unittest discover -s tests
+      - name: Verification matrix
+        run: python3 scripts/ci/verify_repository.py
       - name: Validate deterministic stable work-unit generation
         run: |
           python3 scripts/repository/generate_issue_plan.py --output /tmp/vibemaxxing-issue-plan.json
@@ -106,4 +81,8 @@ jobs:
           print(f'issue plan: pass ({len(keys)} stable work units)')
           PY
 
-# This workflow validates planning artifacts only. It does not build or implement the product.
+# This workflow validates planning artifacts, and — since PF-056 — also runs the
+# verification matrix, which exercises the Rust and Go lanes when those toolchains are
+# present and reports them as not_applicable when they are not. Neither language was
+# reached by any workflow before this. It still does not deploy, release, or sign
+# anything, and a green run remains evidence of structural consistency only.

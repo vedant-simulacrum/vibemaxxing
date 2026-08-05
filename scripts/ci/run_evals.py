@@ -127,6 +127,7 @@ def add_suite(suites: dict[str, Suite], record: dict[str, JsonValue]) -> None:
         "fixture_ids",
         "authority_class",
         "evidence_ceiling",
+        "scope_note",
     }
     extra = record.keys() - allowed
     if extra:
