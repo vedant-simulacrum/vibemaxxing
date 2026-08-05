@@ -1223,7 +1223,7 @@ The following are not launch units:
 
 ## Current next unit
 
-`PF-001`, `PF-037`, `PF-053`, `PF-054`, and `PF-055` are startable now. Each has no unit dependency, and none requires P-1104.
+The currently-unstarted active-plan units are `PF-001`, `PF-037`, `PF-039` through `PF-052`, `PF-053`, `PF-054`, and `PF-062` through `PF-067`. (Checked against `git log --oneline origin/main`: PF-055 and PF-056 have landed; none of PF-001, PF-037, PF-053, PF-054 appear in recent commits, confirming they remain unstarted.)
 
 All `F-` through `X-` units remain blocked until P-1104.
 
