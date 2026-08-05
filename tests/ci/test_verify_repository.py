@@ -12,7 +12,9 @@ VERIFIER = ROOT / "scripts" / "ci" / "verify_repository.py"
 
 
 def load_verifier() -> object:
-    specification = importlib.util.spec_from_file_location("verify_repository", VERIFIER)
+    specification = importlib.util.spec_from_file_location(
+        "verify_repository", VERIFIER
+    )
     assert specification is not None
     assert specification.loader is not None
     module = importlib.util.module_from_spec(specification)
@@ -38,7 +40,11 @@ class VerifyRepositoryTests(unittest.TestCase):
 
     def test_root_python_tests_run_from_repository_root(self) -> None:
         verifier = load_verifier()
-        evaluator_unit = next(check for check in verifier.planned_checks(ROOT) if check.name == "evaluator-unit")
+        evaluator_unit = next(
+            check
+            for check in verifier.planned_checks(ROOT)
+            if check.name == "evaluator-unit"
+        )
         with patch.object(verifier.subprocess, "run") as run:
             run.return_value.returncode = 0
             verifier.run_check(evaluator_unit, ROOT)
@@ -50,12 +56,17 @@ class VerifyRepositoryTests(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
 
         self.assertIn("workflow_dispatch", workflow)
-        self.assertIn("Automated build, eval, security, dependency, and release checks are intentionally disabled.", workflow)
+        self.assertIn(
+            "Automated build, eval, security, dependency, and release checks are intentionally disabled.",
+            workflow,
+        )
         self.assertEqual((ROOT / ".node-version").read_text().strip(), "22.23.1")
         self.assertIn('channel = "1.96.0"', (ROOT / "rust-toolchain.toml").read_text())
-        self.assertIn("go 1.26.0", (ROOT / "apps" / "api" / "go.mod").read_text())
+        self.assertIn("go 1.26.5", (ROOT / "apps" / "api" / "go.mod").read_text())
 
-    def test_gitignore_excludes_generated_outputs_without_excluding_eval_fixtures(self) -> None:
+    def test_gitignore_excludes_generated_outputs_without_excluding_eval_fixtures(
+        self,
+    ) -> None:
         ignored = (ROOT / ".gitignore").read_text().splitlines()
 
         self.assertIn("apps/api/api", ignored)
