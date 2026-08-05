@@ -24,7 +24,7 @@ P-1140F owns all open semantic findings, and all 13 remain open. P-1104 is `auth
 
 Gate and finding state are owned by `conformance/p1140f/*.json`. This note summarizes them and may not redefine them — if the two disagree, the registries win and this paragraph is the defect.
 
-The earlier SR-001 through SR-004-only review is superseded by the current consolidated semantic register.
+The earlier four-finding review is superseded by the current consolidated semantic register.
 
 The technical-specification completeness authority is `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`. A concept is not planning-complete merely because prose mentions it; the inventory must name its normative owner, machine owner or planned path, lifecycle/persistence owner, repair dependency, implementation dependency and evidence gate.
 

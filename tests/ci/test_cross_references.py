@@ -35,9 +35,6 @@ SAMPLE = "docs/sample/SAMPLE.md"
 KNOWN_GAPS = {
     # PF-039 must author ADR-015 before anything may cite it. The gap is the point.
     ("adr", "ADR-015", "docs/implementation/PR_SIZED_WORK_BREAKDOWN.md"),
-    # DOCUMENTATION.md still names the superseded SR-001..SR-004 finding numbering.
-    ("finding", "SR-001", "docs/project/DOCUMENTATION.md"),
-    ("finding", "SR-004", "docs/project/DOCUMENTATION.md"),
 }
 
 
