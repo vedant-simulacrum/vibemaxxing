@@ -960,6 +960,53 @@ def validate_p1140d_contracts() -> None:
             )
 
 
+def validate_inventory_register() -> None:
+    """Every inventory row must be unique and carry a declared status.
+
+    The decision register grew a duplicate-id check after a rebase replayed the
+    same row once per commit. The inventory has the same shape and had no such
+    check, so the same rebase duplicated a specification family four times and a
+    stale `planned-missing` row survived beside the current one that superseded
+    it — found by hand, twice, which is not a control.
+
+    A duplicated family is worse than untidy: the completeness count is read off
+    this table, and two rows for one family means the count is wrong in whichever
+    direction the duplicate leans.
+    """
+    inventory = ROOT / "docs" / "planning" / "SCHEMA_AND_INTERFACE_INVENTORY.md"
+    text = inventory.read_text(encoding="utf-8")
+
+    allowed = set(re.findall(r"^- \*\*([a-z-]+)\*\* —", text, re.MULTILINE))
+    if not allowed:
+        raise ValidationFailure(
+            "SCHEMA_AND_INTERFACE_INVENTORY.md declares no status vocabulary"
+        )
+
+    seen: dict[str, int] = {}
+    for number, line in enumerate(text.split("\n"), start=1):
+        if not line.startswith("| ") or line.startswith("| ---"):
+            continue
+        cells = [cell.strip() for cell in line.split("|")[1:-1]]
+        if len(cells) != 5 or cells[0] in {"Specification family", ""}:
+            continue
+        family, status = cells[0], cells[3]
+        if set(family) <= {"-", " "}:
+            continue
+        if status not in allowed:
+            raise ValidationFailure(
+                f"SCHEMA_AND_INTERFACE_INVENTORY.md:{number} {family!r} has status "
+                f"{status!r}, which is not one of {sorted(allowed)}"
+            )
+        if family in seen:
+            raise ValidationFailure(
+                f"SCHEMA_AND_INTERFACE_INVENTORY.md:{number} repeats the "
+                f"specification family {family!r}, first recorded at line "
+                f"{seen[family]}; the completeness count is read off this table, so "
+                f"a duplicated family makes it wrong"
+            )
+        seen[family] = number
+
+
 def validate_decision_register() -> None:
     """Every decision row must parse as four cells with a legal status.
 
@@ -3746,6 +3793,7 @@ def main() -> int:
         ("origin validation and loopback controls", validate_origin_policy),
         ("conformance suite manifests", validate_conformance_manifests),
         ("decision register table integrity", validate_decision_register),
+        ("inventory table integrity", validate_inventory_register),
         ("CDDL grammar parse and required rules", validate_cddl_file),
         ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),
         ("VibeProof vector reproducibility", validate_vector_reproducibility),
