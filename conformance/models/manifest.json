@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "suite_id": "models",
+  "case_prefix": "MD",
+  "eval_suite_ids": [],
+  "authorities": [
+    "conformance/models/t20-model-registry-v1.schema.json",
+    "conformance/models/t20-optimization-evidence-v1.schema.json"
+  ],
+  "subjects": [
+    "python"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "scripts/repository/validate_t20_contract.py executes these fixtures as a validator stage. No eval suite consumes the directory, so eval_suite_ids is empty and no result document exists for it."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "cases": [
+    {
+      "case_id": "MD-001",
+      "title": "Accept the T20 registry with zero selection runs and zero certified slots",
+      "fixtures": [
+        {
+          "path": "conformance/models/t20-model-registry-v1.json",
+          "sha256": "b66a295e64dac0c13ca06001fa4f1561b4f6e0c0490a158c22dc6edc389ecf96"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "conformance/models/t20-model-registry-v1.schema.json",
+      "negative": false,
+      "state": "active",
+      "note": "selection_status is prelaunch-pending and every slot list is empty. The case proves the registry cannot advertise a selection it has not made."
+    },
+    {
+      "case_id": "MD-002",
+      "title": "Accept optimization evidence that reports full fidelity across its declared vectors",
+      "fixtures": [
+        {
+          "path": "conformance/models/fixtures/t20-optimization-evidence.valid.json",
+          "sha256": "dba41a54716b5c19aeb9e336f5b156b3d7f3a120705b39b36259c4a9a4d7bedb"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "conformance/models/t20-optimization-evidence-v1.schema.json",
+      "negative": false,
+      "state": "active"
+    },
+    {
+      "case_id": "MD-003",
+      "title": "Refuse evidence claiming a pass while recording failures",
+      "fixtures": [
+        {
+          "path": "conformance/models/fixtures/t20-optimization-evidence.invalid-pass.json",
+          "sha256": "d43bae42acdfd8e3dff561d3bc3f1950f262cf1f28eb910a33e61ee5874bc3d9"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_ACCOUNTING_INCONSISTENT",
+      "authority_ref": "conformance/models/t20-optimization-evidence-v1.schema.json",
+      "negative": true,
+      "state": "active",
+      "note": "A passing result with recorded failures is the shape of every eval suite that reports not_applicable as a pass."
+    }
+  ]
+}

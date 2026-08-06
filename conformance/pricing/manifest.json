@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "suite_id": "pricing",
+  "case_prefix": "PC",
+  "eval_suite_ids": [
+    "pricing-provenance"
+  ],
+  "authorities": [
+    "docs/product/CASH_BURN_PRICING_PROVENANCE.md",
+    "packages/schemas/pricing-interpretation.schema.json"
+  ],
+  "subjects": [
+    "go"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "The eval registry's not_applicable_until names conformance/pricing/pricing-v1-signature.json, which does not exist, so the dataset in this directory is unsigned and its provenance is asserted by a manifest rather than proved by a signature."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "cases": [
+    {
+      "case_id": "PC-001",
+      "title": "Accept the test-only pricing dataset and match its recorded digest",
+      "fixtures": [
+        {
+          "path": "conformance/pricing/pricing-v1-manifest.json",
+          "sha256": "c63b088d89ea7973ba5fee92b5e2daa99dd67c3a858c5f9e1561c530509a7483"
+        },
+        {
+          "path": "conformance/pricing/pricing-v1.json",
+          "sha256": "aef0dff8e6b39cc38d95e3457066a036492a64165a8e729fc5bde95c2fce9485"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/pricing-interpretation.schema.json",
+      "negative": false,
+      "state": "active",
+      "note": "The rates are deliberately synthetic — one microunit in, two out — so no run of this suite can be mistaken for a real cost figure. Estimated Cash Burn is always labelled estimated and server interpreted."
+    }
+  ],
+  "negative_case_gap": {
+    "work_unit": "OS-009",
+    "reason": "The dataset is unsigned, so the two refusals that matter — a digest that does not match the data it names, and an entry outside its effective date — have nothing to be checked against. conformance/pricing/pricing-v1-signature.json is the file the pricing-provenance eval waits on."
+  },
+  "note": "The suite has no negative case and no signature, and both absences are the reason the pricing-provenance eval is not_applicable rather than failing."
+}

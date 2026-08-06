@@ -3,7 +3,7 @@
 Status: normative planning contract
 Version: 1
 Updated: 2026-08-06
-Decisions: D-242
+Decisions: D-242, D-441
 
 ## The problem this addresses
 
@@ -30,26 +30,40 @@ conformance/<suite>/
 
 The manifest is the only thing a runner reads. It names the authority the suite tests against, so a suite cannot drift into testing an implementation against itself.
 
+The schema is `packages/schemas/conformance-manifest-v1.schema.json` and the fifteen instances are validated by `scripts/repository/validate_planning_artifacts.py` under D-441.
+
 | Field | Meaning |
 |---|---|
 | `schema_version` | integer, 1 |
-| `suite_id` | matches the directory name and the `id` in `evals/suites/suites.yaml` |
+| `suite_id` | matches the directory name |
+| `case_prefix` | the two-letter abbreviation every `case_id` in the suite carries |
+| `eval_suite_ids` | every `id` in `evals/suites/suites.yaml` this suite's results feed; may be empty |
 | `authorities` | repository-relative paths to the normative documents and machine contracts this suite tests conformance *to* |
-| `subjects` | which implementations must run it: any of `rust`, `go`, `typescript`, `sql` |
+| `subjects` | which implementations must run it: any of `rust`, `go`, `typescript`, `sql`, `python` |
+| `reason_authority` | the registry every `expect_reason_code` resolves in |
+| `runner` | `state` of `absent` or `present`, the `command`, and the work unit that owns it |
+| `fixture_state` | `populated` or `empty` |
 | `cases` | the case list, below |
+| `negative_case_gap` | present exactly when a populated suite declares no negative case |
 | `generated_by` | the deterministic generator path, or `null` for hand-authored fixtures |
+| `tooling` | files in the directory that are neither fixture nor authority |
+
+**`suite_id` is not the eval registry id.** A first draft of this contract said the two were the same string. No directory in this repository satisfies that: the directory is `sandbox` and the eval suite is `sandbox-enforcement`, `conformance/accounting/` feeds two registry entries, and `conformance/evidence/`, `conformance/models/` and `conformance/vibeproof/` feed none. `eval_suite_ids` carries the link and an empty list is a finding rather than a formality — a suite whose fixtures reach no registry entry produces evidence nothing reads.
+
+**`reason_authority` is not always the API reason registry.** `packages/schemas/reason-codes-v1.json` requires every wire-visible code to bind to a declared OpenAPI operation, and a loopback listener declares none. The `sandbox` suite therefore resolves its codes in `packages/schemas/origin-policy-v1.json`, which owns the loopback refusal vocabulary under D-231. The validator fails if a loopback code is ever added to the API registry.
 
 Each case:
 
 | Field | Meaning |
 |---|---|
-| `case_id` | `<SUITE>-<NNN>`, uppercase suite abbreviation, three digits, never reused |
+| `case_id` | `<PREFIX>-<NNN>`, two-letter suite abbreviation, three digits, never reused |
 | `title` | one line, imperative |
-| `fixtures` | repository-relative paths, each with its SHA-256 |
+| `fixtures` | repository-relative paths inside the suite directory, each with its SHA-256 |
 | `expect` | `accept` or `reject` |
-| `expect_reason_code` | required when `expect` is `reject`; must resolve in `packages/schemas/reason-codes-v1.json` |
-| `authority_ref` | the specific clause, section or schema member this case exists to enforce |
+| `expect_reason_code` | required when `expect` is `reject`, forbidden otherwise; must resolve in the suite's `reason_authority` |
+| `authority_ref` | the specific clause, section or schema member this case exists to enforce, as a path with a heading slug or a JSON pointer |
 | `negative` | boolean; true when the case exists to prove something fails |
+| `state` | `active` or `retired` |
 
 Three of those fields carry most of the weight.
 
@@ -57,7 +71,9 @@ Three of those fields carry most of the weight.
 
 **The fixture digest.** A fixture is data, and data edited without its expectation being revisited is the standard way a conformance suite becomes self-confirming. Recording the SHA-256 in the manifest means changing a fixture requires changing the manifest in the same diff, where a reviewer sees the expectation next to it.
 
-**`negative`.** Every suite must contain at least one case with `negative: true`, and a manifest without one fails validation. A suite composed entirely of things that should work proves that the happy path exists; it does not prove that the boundary rejects anything, and the boundary is what conformance is about.
+**`negative`.** Every populated suite must contain at least one case with `negative: true`, and a manifest with neither that nor a recorded `negative_case_gap` fails validation. A suite composed entirely of things that should work proves that the happy path exists; it does not prove that the boundary rejects anything, and the boundary is what conformance is about.
+
+Four suites cannot satisfy that today and record why. `onboarding` holds a study template and no result, so there is nothing a malformed result could be contrasted with. `pricing` holds an unsigned dataset, so a digest that does not match its data has nothing to be checked against. `social` holds ten scenario names and no vectors, so it has no executable case of either polarity. `protocol` holds a corpus that should not be normative at all, and adding rejecting vectors to it would deepen the substitution described below rather than repair it. A `negative_case_gap` is not a waiver: the validator refuses one on a suite that does have a negative case, so the excuse cannot outlive the hole it explained, and the suite still may not be cited as boundary evidence.
 
 ## Runners
 
@@ -128,15 +144,21 @@ The five directories that carried three-line READMEs, with the specific content 
 
 The manifest format can be validated today, against fixture data that no runner executes, and that validation is worth having because it catches the failures that would otherwise be discovered by the first runner:
 
-- every path in `authorities`, `fixtures` and `authority_ref` resolves;
-- every `expect_reason_code` resolves in `packages/schemas/reason-codes-v1.json`;
-- every fixture's recorded digest matches the file;
-- `case_id` values are unique, correctly prefixed and unreused;
-- every suite declares at least one `negative` case;
-- every `suite_id` matches an `id` in `evals/suites/suites.yaml`.
+- every path in `authorities`, `tooling`, `generated_by`, `fixtures` and `authority_ref` resolves, and a fragment resolves to a real markdown heading or a real JSON pointer rather than to a plausible-looking one;
+- every `expect_reason_code` resolves in the suite's declared `reason_authority`, and no loopback refusal code has been added to the API reason registry;
+- every fixture's recorded digest matches the file, and every fixture lies inside its own suite directory;
+- every file in the suite directory is named by a case, an authority or a tooling entry, so a fixture cannot hide from the record;
+- `case_id` values are unique across the repository, correctly prefixed and unreused;
+- every populated suite declares at least one `negative` case or records a `negative_case_gap`, and never both;
+- every id in `eval_suite_ids` resolves in `evals/suites/suites.yaml`;
+- every directory under `conformance/` other than `p1140e` and `p1140f` declares exactly one manifest and a README.
+
+That last one is the check that would have caught the substitution this document exists to describe. `evals/fixtures/protocol-conformance.json` records `conformance/vibeproof/v1/exact-byte-vectors.json` as its `normative_owner` and then runs `conformance/protocol/vibeproof-v1-vectors.json` — an unsigned eleven-field shadow codec whose `authority_class` is `exploratory-prototype`. The normative corpus has never been executed by anything, and until each directory carried a manifest there was no artifact in which that fact was written down.
 
 **Passing that validation is not conformance and does not change any suite's status.** It proves a manifest is well-formed. A suite whose manifest validates and whose runner does not exist stays `not_applicable`, and the `not_applicable_until` paths in the eval registry keep naming the runner whose absence is the justification — which means the moment a runner appears, the registry fails until the status is raised. That mechanism already exists; this document supplies the thing it is waiting for.
 
 ## Evidence
 
-No runner exists in any language. No manifest exists in any suite. The five suites named above hold no executable fixture. Three eval suites are `ready` and 24 are `not_applicable`. Everything in this document is a design for a harness that has never run, and nothing in it may be cited as coverage.
+No runner exists in any language. Fifteen manifests now exist, one per suite directory, and every one of them is validated and none of them is executed by a runner this document would recognise. Fourteen declare `runner.state: absent`; the fifteenth, `accounting`, declares the one present runner, and that runner reads one of the suite's eleven files.
+
+Three suites — `auth`, `release` and `sandbox` — hold no fixture at all and say so with `fixture_state: empty`. Four more record a `negative_case_gap`. Three eval suites are `ready` and 24 are `not_applicable`. Everything in this document is a design for a harness that has never run, and nothing in it may be cited as coverage. A validated manifest is a well-formed description of a suite; it is not a run of one.

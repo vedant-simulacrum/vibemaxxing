@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "suite_id": "onboarding",
+  "case_prefix": "ON",
+  "eval_suite_ids": [
+    "onboarding-trust"
+  ],
+  "authorities": [
+    "docs/product/ONBOARDING_AND_PRIVACY_VERIFICATION.md"
+  ],
+  "subjects": [
+    "typescript"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "The eval registry's not_applicable_until names conformance/onboarding/study-results-v1.json, which does not exist. The template below is the shape that file will take and holds no result."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "cases": [
+    {
+      "case_id": "ON-001",
+      "title": "Accept the onboarding study template as the declared result shape",
+      "fixtures": [
+        {
+          "path": "conformance/onboarding/study-template.json",
+          "sha256": "33e78d33587646acc8359ca9e6ec1e4076f45addc03a980b174d1bfe305c7114"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/ONBOARDING_AND_PRIVACY_VERIFICATION.md#study-measures",
+      "negative": false,
+      "state": "active",
+      "note": "status is not_run and participants is zero. This case proves the shape and is not evidence that any participant has ever seen the flow. It carries no negative sibling, which is recorded as a defect against this suite rather than hidden: a template with no rejecting counterpart cannot show that a malformed study result would be caught."
+    }
+  ],
+  "negative_case_gap": {
+    "work_unit": "OS-009",
+    "reason": "The directory holds a study template and no study result, so there is nothing a malformed result could be contrasted with. The negative case this suite owes is a study result that claims a comprehension rate its own participant count cannot support."
+  }
+}

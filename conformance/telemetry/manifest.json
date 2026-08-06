@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "suite_id": "telemetry",
+  "case_prefix": "TM",
+  "eval_suite_ids": [
+    "telemetry-canary-leakage",
+    "observability-privacy"
+  ],
+  "authorities": [
+    "packages/schemas/observability-allowlist-v1.yaml",
+    "docs/operations/OBSERVABILITY_PRIVACY.md",
+    "docs/operations/LOGGING_AND_INSTRUMENTATION.md"
+  ],
+  "subjects": [
+    "rust",
+    "go",
+    "typescript"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "The canary strings exist; nothing emits a datapoint or a log line for them to be found in. A canary that is never planted is a string in a file."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "cases": [
+    {
+      "case_id": "TM-001",
+      "title": "Find no canary string in any emitted datapoint or log line",
+      "fixtures": [
+        {
+          "path": "conformance/telemetry/canaries.json",
+          "sha256": "a02f86694d9ff7e072991296fa1d22456674601a22168903c2c784784785e7c2"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_PRIVACY_SCAN_FAILED",
+      "authority_ref": "docs/operations/OBSERVABILITY_PRIVACY.md#forbidden-telemetry",
+      "negative": true,
+      "state": "active",
+      "note": "Five canaries: prompt, secret key, file path, repository name and transcript. The case is negative because its whole content is that these must never appear; a run that finds one is the failure it exists to detect."
+    }
+  ],
+  "note": "The suite is missing every positive case the harness contract names — the five OTLP identity attributes stripped inside the receiver, an unknown attribute dropped and flagged rather than passed, and a high-entropy value in an allowed field caught by the entropy scan."
+}

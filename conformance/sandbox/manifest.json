@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "suite_id": "sandbox",
+  "case_prefix": "SB",
+  "eval_suite_ids": [
+    "sandbox-enforcement",
+    "local-ipc-identity"
+  ],
+  "authorities": [
+    "docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md",
+    "docs/security/PLATFORM_ISOLATION.md",
+    "docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+    "packages/schemas/origin-policy-v1.json"
+  ],
+  "subjects": [
+    "rust",
+    "go"
+  ],
+  "reason_authority": "packages/schemas/origin-policy-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-002",
+    "note": "The fixtures this suite needs are named by OS-002 as conformance/sandbox/loopback-vectors-v1.json and do not exist. packages/schemas/origin-policy-v1.json now states every control and every refusal code they must assert, which is what makes them authorable; authoring them is product-adjacent fixture work and is not done here."
+  },
+  "fixture_state": "empty",
+  "generated_by": null,
+  "cases": [],
+  "note": "The reason authority is the origin policy rather than the API reason registry, because a loopback refusal never crosses the API wire and packages/schemas/reason-codes-v1.json requires every wire-visible code to bind to a declared OpenAPI operation. The five refusals this suite will assert are LOOPBACK_HOST_NOT_ALLOWED for a rebinding-shaped Host, LOOPBACK_ORIGIN_NOT_ALLOWED for a foreign Origin on a state-changing route, LOOPBACK_PREFLIGHT_REFUSED for a preflight, LOOPBACK_TOKEN_EXPIRED past the idle window, and LOOPBACK_RATE_LIMIT_EXCEEDED past the ten-per-minute probe limit. The public-API preflight case — a non-allowlisted origin receiving no Access-Control-* header — belongs here too and resolves against packages/schemas/openapi-v1.yaml#/components/responses/Preflight."
+}

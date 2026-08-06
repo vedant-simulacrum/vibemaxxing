@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "suite_id": "privacy",
+  "case_prefix": "PV",
+  "eval_suite_ids": [
+    "privacy-boundary"
+  ],
+  "authorities": [
+    "docs/privacy/PRIVACY_CONTRACT.md",
+    "packages/schemas/normalized-event.schema.json"
+  ],
+  "subjects": [
+    "rust"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "The eval registry's not_applicable_until names crates/vibeproof-sync/src/lib.rs and evals/fixtures/privacy-boundary.json; neither exists."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "cases": [
+    {
+      "case_id": "PV-001",
+      "title": "Carry every safe field and refuse every forbidden one across all ten boundaries",
+      "fixtures": [
+        {
+          "path": "conformance/privacy/p1140b-boundary-canaries-v1.json",
+          "sha256": "40c62417005be3979927ca98209e135771dc855991110d522242d7e77e7bc1ff"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_PRIVACY_SCAN_FAILED",
+      "authority_ref": "docs/privacy/PRIVACY_CONTRACT.md#absolute-server-boundary",
+      "negative": true,
+      "state": "active",
+      "note": "One fixture, ten boundaries — adapter, ipc, local-store, detector, claim, http, telemetry, notification, moderation and export — each carrying a positive and a reject-before-egress pair. The pairing is enforced today by scripts/repository/validate_planning_artifacts.py; nothing drives the boundaries themselves, because none of them exist."
+    }
+  ]
+}

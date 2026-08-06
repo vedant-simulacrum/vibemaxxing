@@ -2278,6 +2278,482 @@ def validate_erasure_contract() -> None:
             )
 
 
+def validate_origin_policy() -> None:
+    """Prove the origin contract has one machine owner and that the API document agrees.
+
+    D-230 and D-231 were prose. `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md` named
+    three exact origins, eight loopback controls and a `Host` allowlist, and no
+    generator could read any of it: the inventory recorded that the OpenAPI document
+    declared no `Origin` parameter and no preflight response, so the origin arm of the
+    ADR-015 requirement had no implementable form.
+
+    Four checks. The policy record validates against its schema. The `x-origin-policy`
+    block in the OpenAPI document is compared field by field against the record, in the
+    same way `derive_operation_classes` compares the reason registry's recorded classes
+    against the ones the document actually declares — a hand-maintained copy keeps
+    passing after the thing it describes changes shape, and a derived one cannot. The
+    `Origin` parameter is declared by exactly the operations whose security includes
+    `csrfToken`, which is the state-changing cookie-authenticated set PF-039 already
+    marked, so the origin arm binds to it by construction rather than by a second list.
+    And every loopback listener binds all eight controls, sends no CORS header, and
+    treats its input as untrusted.
+
+    This proves the contract resolves. No server validates a `Host` header, no dashboard
+    exists, and no CORS configuration exists, so nothing here is security evidence.
+    """
+    schema = validate_schema_file(SCHEMAS / "origin-policy-v1.schema.json")
+    policy = load_json(SCHEMAS / "origin-policy-v1.json")
+    validate_instance(schema, policy, "origin policy")
+
+    spec = load_yaml(SCHEMAS / "openapi-v1.yaml")
+    block = spec.get("x-origin-policy")
+    if not isinstance(block, dict):
+        raise ValidationFailure("OpenAPI declares no x-origin-policy block")
+    if block.get("contract") != "packages/schemas/origin-policy-v1.json":
+        raise ValidationFailure("x-origin-policy does not name the policy record")
+    if block.get("normative_owner") != policy["normative_owner"]:
+        raise ValidationFailure("x-origin-policy names a different normative owner")
+
+    api = policy["public_api"]
+    for key in (
+        "wildcard_origin",
+        "origin_reflection",
+        "subdomain_wildcard",
+        "allowed_origins",
+        "preflight",
+        "state_changing_checks",
+        "bearer_exemption",
+    ):
+        if block.get(key) != api[key]:
+            raise ValidationFailure(
+                f"x-origin-policy diverges from the policy record at {key}"
+            )
+    binding = api["openapi_binding"]
+    projected = block.get("parameter_binding") or {}
+    for key in (
+        "origin_parameter",
+        "preflight_response",
+        "required_on_security_scheme",
+        "preflight_routing",
+    ):
+        if projected.get(key) != binding[key]:
+            raise ValidationFailure(
+                f"x-origin-policy parameter binding diverges at {key}"
+            )
+
+    # A wildcard, a path, a userinfo section or an uppercase host is refused by the
+    # `origin` pattern in origin-policy-v1.schema.json rather than here, so that the
+    # refusal lives with the shape it constrains and no second, weaker copy of the rule
+    # can drift away from it.
+    local = [
+        origin
+        for origin in api["allowed_origins"]
+        if origin["environments"] == ["local"]
+    ]
+    if not local:
+        raise ValidationFailure("no origin is confined to the local environment")
+    for origin in local:
+        if origin["production_build"] != "compiled-out":
+            raise ValidationFailure(
+                "the development origin is disabled by configuration rather than "
+                f"compiled out of the production build: {origin['origin']}"
+            )
+    for origin in api["allowed_origins"]:
+        if (
+            origin["environments"] != ["local"]
+            and origin["production_build"] != "included"
+        ):
+            raise ValidationFailure(
+                f"a production origin is compiled out: {origin['origin']}"
+            )
+
+    reason_codes = {
+        item["code"] for item in load_json(SCHEMAS / "reason-codes-v1.json")["codes"]
+    }
+    orders = [check["order"] for check in api["state_changing_checks"]]
+    if orders != sorted(orders) or len(set(orders)) != len(orders):
+        raise ValidationFailure("state-changing checks are not a strict order")
+    for check in api["state_changing_checks"]:
+        code = check["on_failure"]["reason_code"]
+        if check["enforced_by"] == "browser":
+            if code is not None:
+                raise ValidationFailure(
+                    f"a browser-enforced check carries a server reason code: {check['check_id']}"
+                )
+            continue
+        if code not in reason_codes:
+            raise ValidationFailure(
+                f"state-changing check names an unknown reason code: {code}"
+            )
+    known_checks = {check["check_id"] for check in api["state_changing_checks"]}
+    unknown = sorted(set(api["bearer_exemption"]["exempt_checks"]) - known_checks)
+    if unknown:
+        raise ValidationFailure(f"bearer exemption names unknown checks: {unknown}")
+    for check_id in api["bearer_exemption"]["exempt_checks"]:
+        check = next(
+            item
+            for item in api["state_changing_checks"]
+            if item["check_id"] == check_id
+        )
+        if check["enforced_by"] != "server":
+            raise ValidationFailure(
+                f"bearer exemption exempts a check no server performs: {check_id}"
+            )
+
+    parameters = spec["components"]["parameters"]
+    if "Origin" not in parameters:
+        raise ValidationFailure("OpenAPI declares no Origin parameter")
+    declared_origins = set(parameters["Origin"]["schema"]["enum"])
+    recorded_origins = {origin["origin"] for origin in api["allowed_origins"]}
+    if declared_origins != recorded_origins:
+        raise ValidationFailure(
+            "the Origin parameter enum differs from the allowlist: "
+            f"only-in-openapi={sorted(declared_origins - recorded_origins)} "
+            f"only-in-policy={sorted(recorded_origins - declared_origins)}"
+        )
+    if "Preflight" not in spec["components"]["responses"]:
+        raise ValidationFailure("OpenAPI declares no Preflight response component")
+    preflight_headers = set(spec["components"]["responses"]["Preflight"]["headers"])
+    required_headers = {
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-Methods",
+        "Access-Control-Allow-Headers",
+        "Access-Control-Expose-Headers",
+        "Access-Control-Allow-Credentials",
+        "Access-Control-Max-Age",
+    }
+    missing_headers = sorted(required_headers - preflight_headers)
+    if missing_headers:
+        raise ValidationFailure(
+            f"the Preflight response omits declared headers: {missing_headers}"
+        )
+    for header in preflight_headers:
+        if spec["components"]["responses"]["Preflight"]["headers"][header].get(
+            "required"
+        ):
+            raise ValidationFailure(
+                "a preflight header is declared required, which contradicts the rule "
+                f"that a non-allowlisted origin receives none of them: {header}"
+            )
+
+    scheme = binding["required_on_security_scheme"]
+    reference = binding["origin_parameter"]
+    for path, item in spec["paths"].items():
+        for method, operation in item.items():
+            if method.lower() not in {"get", "post", "put", "patch", "delete"}:
+                continue
+            security = operation.get("security") or []
+            expected = any(scheme in alternative for alternative in security)
+            refs = {
+                entry.get("$ref")
+                for entry in operation.get("parameters", [])
+                if isinstance(entry, dict)
+            }
+            if expected and reference not in refs:
+                raise ValidationFailure(
+                    "a state-changing cookie-authenticated operation declares no "
+                    f"Origin parameter: {operation['operationId']}"
+                )
+            if not expected and reference in refs:
+                raise ValidationFailure(
+                    "an operation declares an Origin parameter without the "
+                    f"{scheme} scheme that binds it: {operation['operationId']}"
+                )
+
+    control_ids = {control["control_id"] for control in policy["loopback_controls"]}
+    if len(control_ids) != 8:
+        raise ValidationFailure(
+            "the loopback control vocabulary is not the eight D-231 controls"
+        )
+    numbers = sorted(control["number"] for control in policy["loopback_controls"])
+    if numbers != list(range(1, 9)):
+        raise ValidationFailure("loopback control numbers are not 1 through 8")
+    refusal_codes = {item["code"] for item in policy["loopback_refusal_codes"]}
+    for item in policy["loopback_refusal_codes"]:
+        if item["control_id"] not in control_ids:
+            raise ValidationFailure(
+                f"a loopback refusal code names an unknown control: {item['code']}"
+            )
+        if item["code"] in reason_codes:
+            raise ValidationFailure(
+                "a loopback refusal code was added to the API reason registry, where "
+                f"every wire-visible code must bind to a declared operation: {item['code']}"
+            )
+    for listener in policy["loopback_listeners"]:
+        bound = {binding["control_id"] for binding in listener["controls"]}
+        if bound != control_ids:
+            raise ValidationFailure(
+                f"{listener['listener_id']} does not bind every loopback control: "
+                f"missing={sorted(control_ids - bound)} unknown={sorted(bound - control_ids)}"
+            )
+        for entry in listener["controls"]:
+            code = entry.get("refusal_code")
+            if code is not None and code not in refusal_codes:
+                raise ValidationFailure(
+                    f"{listener['listener_id']} names an unknown refusal code: {code}"
+                )
+            if entry["state"] == "not-applicable" and code is not None:
+                raise ValidationFailure(
+                    f"{listener['listener_id']} refuses with a control it does not apply: {code}"
+                )
+        if listener["cors_headers"] != "none":
+            raise ValidationFailure(
+                f"{listener['listener_id']} sends CORS headers on a loopback surface"
+            )
+        if listener["input_trust"] != "untrusted":
+            raise ValidationFailure(
+                f"{listener['listener_id']} trusts its own input; an origin control is "
+                "not a substitute for validating what a local process can post"
+            )
+        if listener["authentication"] == "none" and "residual_exposure" not in listener:
+            raise ValidationFailure(
+                "an unauthenticated loopback listener records no residual exposure: "
+                f"{listener['listener_id']}"
+            )
+
+
+CONFORMANCE_EXEMPT_SUITES = ("p1140e", "p1140f")
+
+# The two registries an `expect_reason_code` may resolve in, and where the codes live in
+# each. `reason-codes-v1.json` is the API wire vocabulary and requires every code to bind
+# to a declared OpenAPI operation, so a loopback refusal cannot live there; the origin
+# policy owns that second vocabulary and this map is what keeps both checkable.
+CONFORMANCE_REASON_AUTHORITIES = {
+    "packages/schemas/reason-codes-v1.json": ("codes", "code"),
+    "packages/schemas/origin-policy-v1.json": ("loopback_refusal_codes", "code"),
+}
+
+
+def _heading_slugs(text: str) -> set[str]:
+    """GitHub-flavoured anchor slugs for every heading in a markdown document."""
+    slugs = set()
+    for line in text.splitlines():
+        match = re.match(r"^#{1,6}\s+(.*?)\s*$", line)
+        if not match:
+            continue
+        title = match.group(1).replace("`", "")
+        title = re.sub(r"[^\w\s-]", "", title).strip().lower()
+        slugs.add(re.sub(r"\s+", "-", title))
+    return slugs
+
+
+def _pointer_resolves(document: Any, pointer: str) -> bool:
+    node = document
+    for token in pointer.lstrip("#").strip("/").split("/"):
+        if token == "":
+            continue
+        token = token.replace("~1", "/").replace("~0", "~")
+        if isinstance(node, dict):
+            if token not in node:
+                return False
+            node = node[token]
+        elif isinstance(node, list):
+            if not token.isdigit() or int(token) >= len(node):
+                return False
+            node = node[int(token)]
+        else:
+            return False
+    return True
+
+
+def _assert_reference_resolves(reference: str, label: str) -> None:
+    path, _, fragment = reference.partition("#")
+    target = ROOT / path
+    if not target.is_file():
+        raise ValidationFailure(f"{label} names a path that does not resolve: {path}")
+    if not fragment:
+        return
+    if path.endswith(".md"):
+        if fragment not in _heading_slugs(target.read_text(encoding="utf-8")):
+            raise ValidationFailure(
+                f"{label} names a heading that does not exist: {reference}"
+            )
+        return
+    if path.endswith(".json"):
+        document = load_json(target)
+    elif path.endswith((".yaml", ".yml")):
+        document = load_yaml(target)
+    else:
+        raise ValidationFailure(
+            f"{label} carries a fragment on a file with no addressable members: {reference}"
+        )
+    if not _pointer_resolves(document, fragment):
+        raise ValidationFailure(f"{label} names an unresolved pointer: {reference}")
+
+
+def validate_conformance_manifests() -> None:
+    """Prove every conformance suite declares a manifest and that it resolves.
+
+    D-242 designed the manifest and nothing had one. Forty-five files of fixture data
+    sat under `conformance/` with no machine record of what tests what, which is how
+    `conformance/vibeproof/v1/` — the normative corpus — went unexecuted while
+    `conformance/protocol/`, an exploratory shadow codec, ran in its place under a
+    suite name that did not describe what it executed.
+
+    Six invariants, all mechanical. Every suite directory holds exactly one manifest
+    and a README. Every path in `authorities`, `tooling`, `generated_by`, `fixtures`
+    and `authority_ref` resolves, and a fragment resolves to a real heading or a real
+    pointer rather than to a plausible-looking one. Every recorded fixture digest
+    matches the file, so a fixture cannot be edited without its expectation being
+    revisited in the same diff. Every file in the suite directory is named by the
+    manifest, so a fixture cannot hide from the record. Case identifiers are unique
+    across the repository, correctly prefixed and three digits. And a populated suite
+    declares at least one negative case, because a suite composed entirely of things
+    that should work does not prove that the boundary rejects anything.
+
+    Passing this is not conformance and changes no eval suite status. It proves a
+    manifest is well formed. A suite whose manifest validates and whose runner does not
+    exist stays `not_applicable`.
+    """
+    schema = validate_schema_file(SCHEMAS / "conformance-manifest-v1.schema.json")
+    eval_suites = {
+        suite["id"]
+        for suite in load_yaml(ROOT / "evals" / "suites" / "suites.yaml")["suites"]
+    }
+
+    manifests = sorted(CONFORMANCE.glob("**/manifest.json"))
+    if not manifests:
+        raise ValidationFailure("no conformance suite declares a manifest")
+
+    covered_roots: dict[str, Path] = {}
+    for path in manifests:
+        top = path.relative_to(CONFORMANCE).parts[0]
+        if top in CONFORMANCE_EXEMPT_SUITES:
+            raise ValidationFailure(
+                f"a planning-review registry declares a conformance manifest: {top}"
+            )
+        if top in covered_roots:
+            raise ValidationFailure(f"two manifests claim the same suite: {top}")
+        covered_roots[top] = path.parent
+
+    for child in sorted(CONFORMANCE.iterdir()):
+        if not child.is_dir() or child.name in CONFORMANCE_EXEMPT_SUITES:
+            continue
+        if child.name not in covered_roots:
+            raise ValidationFailure(
+                f"conformance suite declares no manifest: {child.name}"
+            )
+
+    all_case_ids: list[str] = []
+    for path in manifests:
+        relative = path.relative_to(ROOT).as_posix()
+        manifest = load_json(path)
+        validate_instance(schema, manifest, relative)
+        suite = manifest["suite_id"]
+        top = path.relative_to(CONFORMANCE).parts[0]
+        if suite != top:
+            raise ValidationFailure(
+                f"{relative}: suite_id {suite} is not the directory name {top}"
+            )
+        if not (path.parent / "README.md").is_file():
+            raise ValidationFailure(f"{relative}: the suite declares no README")
+
+        unknown_evals = sorted(set(manifest["eval_suite_ids"]) - eval_suites)
+        if unknown_evals:
+            raise ValidationFailure(
+                f"{relative}: names eval suites the registry does not declare: {unknown_evals}"
+            )
+        for authority in manifest["authorities"]:
+            _assert_reference_resolves(authority, f"{relative} authority")
+        for tool in manifest.get("tooling", []):
+            _assert_reference_resolves(tool, f"{relative} tooling")
+        if manifest["generated_by"]:
+            _assert_reference_resolves(
+                manifest["generated_by"], f"{relative} generated_by"
+            )
+
+        authority_name, code_key = CONFORMANCE_REASON_AUTHORITIES[
+            manifest["reason_authority"]
+        ]
+        authority_record = load_json(ROOT / manifest["reason_authority"])
+        valid_codes = {item[code_key] for item in authority_record[authority_name]}
+
+        cases = manifest["cases"]
+        if manifest["fixture_state"] == "empty":
+            if cases:
+                raise ValidationFailure(
+                    f"{relative}: declares cases while recording an empty fixture state"
+                )
+            if manifest["runner"]["state"] != "absent":
+                raise ValidationFailure(
+                    f"{relative}: declares a runner for a suite with no fixture"
+                )
+        else:
+            if not cases:
+                raise ValidationFailure(
+                    f"{relative}: holds fixtures and declares no case"
+                )
+            has_negative = any(
+                case["negative"] for case in cases if case["state"] == "active"
+            )
+            declares_gap = "negative_case_gap" in manifest
+            if not has_negative and not declares_gap:
+                raise ValidationFailure(
+                    f"{relative}: declares no negative case and no negative_case_gap, "
+                    "so it cannot show that the boundary rejects anything and does not "
+                    "say so"
+                )
+            if has_negative and declares_gap:
+                raise ValidationFailure(
+                    f"{relative}: declares a negative_case_gap it no longer has; a "
+                    "justification that outlives the hole it explained is a stale excuse"
+                )
+
+        named: set[str] = set(manifest.get("tooling", []))
+        for case in cases:
+            case_id = case["case_id"]
+            all_case_ids.append(case_id)
+            if not case_id.startswith(manifest["case_prefix"] + "-"):
+                raise ValidationFailure(
+                    f"{relative}: case {case_id} does not carry the suite prefix "
+                    f"{manifest['case_prefix']}"
+                )
+            _assert_reference_resolves(case["authority_ref"], f"{relative} {case_id}")
+            code = case["expect_reason_code"]
+            if code is not None and code not in valid_codes:
+                raise ValidationFailure(
+                    f"{relative}: case {case_id} names a reason code that does not "
+                    f"resolve in {manifest['reason_authority']}: {code}"
+                )
+            for fixture in case["fixtures"]:
+                fixture_path = ROOT / fixture["path"]
+                if not fixture_path.is_file():
+                    raise ValidationFailure(
+                        f"{relative}: case {case_id} names a missing fixture: {fixture['path']}"
+                    )
+                if not fixture_path.resolve().is_relative_to(path.parent.resolve()):
+                    raise ValidationFailure(
+                        f"{relative}: case {case_id} names a fixture outside its suite: "
+                        f"{fixture['path']}"
+                    )
+                digest = hashlib.sha256(fixture_path.read_bytes()).hexdigest()
+                if digest != fixture["sha256"]:
+                    raise ValidationFailure(
+                        f"{relative}: case {case_id} records a stale digest for "
+                        f"{fixture['path']}: recorded {fixture['sha256']}, computed {digest}"
+                    )
+                named.add(fixture["path"])
+
+        for authority in manifest["authorities"]:
+            if (ROOT / authority).resolve().is_relative_to(path.parent.resolve()):
+                named.add(authority)
+
+        present = {
+            candidate.relative_to(ROOT).as_posix()
+            for candidate in path.parent.rglob("*")
+            if candidate.is_file()
+            and candidate.name not in {"manifest.json", "README.md"}
+        }
+        unnamed = sorted(present - named)
+        if unnamed:
+            raise ValidationFailure(
+                f"{relative}: the suite holds files no case, authority or tooling entry "
+                f"names: {unnamed}"
+            )
+
+    assert_unique(all_case_ids, "conformance case IDs")
+
+
 def validate_postgres_ddl(database_url: str) -> None:
     sql = (SCHEMAS / "planning-schema.sql").read_text(encoding="utf-8")
     if "P-1140D REPAIRED PLANNING MIGRATION CONTRACT" not in sql:
@@ -3246,6 +3722,8 @@ def main() -> int:
             "disclosure projections and exceptional surface states",
             validate_presentation_contracts,
         ),
+        ("origin validation and loopback controls", validate_origin_policy),
+        ("conformance suite manifests", validate_conformance_manifests),
         ("decision register table integrity", validate_decision_register),
         ("CDDL grammar parse and required rules", validate_cddl_file),
         ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),

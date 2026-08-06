@@ -40,6 +40,76 @@ x-idempotency-contract:
     retention_hours: 168
     condition: The key was committed and its record aged past the retention window, so the response bytes no longer exist to replay. The request is not re-executed under the same key.
   open_finding: SR-012 stays open. This block is the API half. The persistence half — the nullable response_digest, the missing response-body column and the account-only primary key in packages/schemas/planning-schema.sql — is not repaired here and no closure evidence is recorded.
+x-origin-policy:
+  contract: packages/schemas/origin-policy-v1.json
+  normative_owner: docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md
+  description: 'The origin arm of the ADR-015 requirement that every state-changing request carry either an allowlisted Origin or a session-bound CSRF token. PF-039 landed the token arm as the csrfToken scheme; this block is the other half, expressed where a middleware generator can consume it. Every value here is a projection of packages/schemas/origin-policy-v1.json and scripts/repository/validate_planning_artifacts.py asserts the two are identical field by field, in the same way the reason registry records its own copy of the operation classes and has it derived and compared rather than trusted. The contract file additionally covers the loopback listeners, which are not the public API and have no presence in this document at all.'
+  parameter_binding:
+    origin_parameter: '#/components/parameters/Origin'
+    preflight_response: '#/components/responses/Preflight'
+    required_on_security_scheme: csrfToken
+    preflight_routing: edge-before-routing
+    rule: Every operation whose security includes csrfToken declares the Origin parameter, and no operation that omits csrfToken may declare it. Preflight is answered by the edge before routing rather than by an options operation on every path, because no CORS implementation routes a preflight to an operation.
+  wildcard_origin: never
+  origin_reflection: never
+  subdomain_wildcard: never
+  allowed_origins:
+    - origin: https://vibemaxxing.dev
+      purpose: the hosted web application
+      credentials: allowed
+      environments: [production, staging, local]
+      production_build: included
+    - origin: https://www.vibemaxxing.dev
+      purpose: canonical redirect target
+      credentials: allowed
+      environments: [production, staging, local]
+      production_build: included
+    - origin: http://localhost:3000
+      purpose: local development only
+      credentials: allowed
+      environments: [local]
+      production_build: compiled-out
+  preflight:
+    allow_methods: [GET, POST, DELETE]
+    allow_headers: [Content-Type, Idempotency-Key, If-Match]
+    expose_headers: [Retry-After, RateLimit, RateLimit-Policy, X-Request-Id]
+    allow_credentials: 'true'
+    max_age_seconds: 600
+    unlisted_origin_response:
+      status: 204
+      access_control_headers: none
+      body: none
+  state_changing_checks:
+    - order: 1
+      check_id: origin-exact-match
+      applies_to: cookie-session
+      enforced_by: server
+      on_failure:
+        status: 403
+        reason_code: ORIGIN_NOT_ALLOWED
+      missing_header: refuse
+      rationale: Scheme, host and port must match an allowlist entry exactly. Origin is a header and a request that is not from a browser can set it to anything, which is why it is not sufficient alone against a native attacker.
+    - order: 2
+      check_id: double-submitted-csrf-token
+      applies_to: cookie-session
+      enforced_by: server
+      on_failure:
+        status: 403
+        reason_code: CSRF_TOKEN_INVALID
+      missing_header: refuse
+      rationale: The csrfToken scheme in packages/schemas/openapi-v1.yaml, carried in X-VibeMaxxing-CSRF and compared against the value stored with the session. It is the only one of the three an attacker cannot produce without already reading a response from the allowlisted origin.
+    - order: 3
+      check_id: samesite-lax-session-cookie
+      applies_to: cookie-session
+      enforced_by: browser
+      on_failure:
+        status: 403
+        reason_code: null
+      missing_header: not-applicable
+      rationale: ADR-015 sets SameSite=Lax on the session cookie, which stops a cross-site POST before the request is dispatched. It carries no reason code because a browser that enforces it produces no server response.
+  bearer_exemption:
+    exempt_checks: [origin-exact-match, double-submitted-csrf-token]
+    rationale: A cross-site request cannot attach a bearer credential the attacking page does not hold, so cross-site request forgery does not apply. Native client requests are exempt from these two checks and from nothing else; the native client is not a browser and has no origin at all.
 paths:
   /auth/github/start:
     post:
@@ -288,6 +358,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SessionRefreshRequest'
+      parameters:
+        - $ref: '#/components/parameters/Origin'
   /sessions:
     get:
       operationId: listSessions
@@ -359,6 +431,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/IdempotencyKey'
   /sessions/revoke-all:
@@ -401,6 +474,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
   /identities:
     get:
@@ -475,6 +549,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -525,6 +600,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -578,6 +654,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -658,6 +735,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -710,6 +788,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -759,6 +838,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/IdempotencyKey'
   /claim-challenges:
@@ -1032,6 +1112,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1141,6 +1222,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1220,6 +1302,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1299,6 +1382,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1378,6 +1462,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1430,6 +1515,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -1510,6 +1596,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1589,6 +1676,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1668,6 +1756,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1833,6 +1922,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1912,6 +2002,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -1962,6 +2053,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -2012,6 +2104,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -2139,6 +2232,17 @@ components:
         type: string
         format: uuid
       description: Client-generated idempotency key. It is unique per (principal, operationId) rather than per account, so the same key presented against a different operation is a different ledger row. See the x-idempotency-contract block at the document root.
+    Origin:
+      name: Origin
+      in: header
+      required: false
+      schema:
+        type: string
+        enum:
+          - https://vibemaxxing.dev
+          - https://www.vibemaxxing.dev
+          - http://localhost:3000
+      description: 'Browser-set request origin, matched against the exact allowlist in the x-origin-policy block. Required under the cookie-session security alternative and refused when absent there, because every browser sends Origin on POST and DELETE, so its absence means the request did not come from one; not sent under the bearer alternative, because a native client is not a browser and has no origin. OpenAPI cannot make a parameter required under one security alternative and absent under another, so the parameter is declared optional here and the conditional rule is carried by packages/schemas/origin-policy-v1.json, whose state_changing_checks entry for origin-exact-match records missing_header as refuse. A value outside the enum answers 403 with reason code ORIGIN_NOT_ALLOWED. The third entry is present only in the local build and is compiled out of the production artifact rather than configured off.'
     Scope:
       name: scope
       in: path
@@ -2193,6 +2297,44 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Problem'
+    Preflight:
+      description: 'CORS preflight answer. It is produced by the edge before routing and never by an operation, which is why this component is referenced by the x-origin-policy block rather than by an options entry on every path. An allowlisted origin receives 204 with the six headers below. An origin that is not on the list receives 204 with no Access-Control-* header at all and no body, and the browser blocks the request itself: an error body would tell a probing page whether an origin is known. There is no third response, because a preflight that is refused loudly is a preflight that answers a question the caller was not entitled to ask.'
+      headers:
+        Access-Control-Allow-Origin:
+          required: false
+          description: The exact request origin when it is on the allowlist, never a wildcard and never reflected without a match. Absent entirely for an origin that is not on the list.
+          schema:
+            type: string
+            enum:
+              - https://vibemaxxing.dev
+              - https://www.vibemaxxing.dev
+              - http://localhost:3000
+        Access-Control-Allow-Methods:
+          required: false
+          schema:
+            type: string
+            const: GET, POST, DELETE
+        Access-Control-Allow-Headers:
+          required: false
+          schema:
+            type: string
+            const: Content-Type, Idempotency-Key, If-Match
+        Access-Control-Expose-Headers:
+          required: false
+          schema:
+            type: string
+            const: Retry-After, RateLimit, RateLimit-Policy, X-Request-Id
+        Access-Control-Allow-Credentials:
+          required: false
+          schema:
+            type: string
+            const: 'true'
+        Access-Control-Max-Age:
+          required: false
+          description: Ten minutes is long enough to remove the preflight from an interactive session and short enough that revoking an origin takes effect within a coffee break.
+          schema:
+            type: integer
+            const: 600
     RateLimited:
       description: Rate limit exceeded
       headers:

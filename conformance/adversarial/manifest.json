@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "suite_id": "adversarial",
+  "case_prefix": "AV",
+  "eval_suite_ids": [
+    "adversarial-integrity"
+  ],
+  "authorities": [
+    "docs/security/ANTI_CHEAT_ATTACK_CATALOG.md",
+    "packages/schemas/reason-codes-v1.json",
+    "conformance/adversarial/anti-cheat-registry-v1.schema.json"
+  ],
+  "subjects": [
+    "go"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "The registry's twenty-five rows already state attack, control, expected outcome and confounder, which is a case definition in all but format. Converting them into cases is the largest and most mechanical of the five empty-suite tasks and is not done here."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "cases": [
+    {
+      "case_id": "AV-001",
+      "title": "Accept the anti-cheat registry and resolve every recorded reason code",
+      "fixtures": [
+        {
+          "path": "conformance/adversarial/anti-cheat-registry-v1.json",
+          "sha256": "59c4a30001836543715d0c8bb556c9db514e0a21dcb2629b27586c76a3b52f55"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "conformance/adversarial/anti-cheat-registry-v1.schema.json#/properties/cases",
+      "negative": false,
+      "state": "active",
+      "note": "Twenty-five catalogued attacks. This case proves the registry resolves; it executes none of the attacks, and the twenty-five per-attack cases the harness contract requires do not exist."
+    },
+    {
+      "case_id": "AV-002",
+      "title": "Refuse each wave-four codec and sequence malformation",
+      "fixtures": [
+        {
+          "path": "conformance/adversarial/wave4-cases.json",
+          "sha256": "7356ec251f81912775290541c9824e9bbc30f84d5c3b12b6a54166ac1634c6c9"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING",
+      "authority_ref": "docs/architecture/VIBEPROOF_V1_PROTOCOL.md#canonical-cbor",
+      "negative": true,
+      "state": "active",
+      "note": "Ten cases: duplicate map key, non-minimal integer, indefinite-length map and their siblings. All ten share the one refusal class, which is why they are one manifest case over one fixture rather than ten."
+    }
+  ]
+}

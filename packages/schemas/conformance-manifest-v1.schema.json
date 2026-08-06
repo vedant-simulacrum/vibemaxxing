@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/conformance-manifest-v1.schema.json",
+  "title": "Conformance suite manifest v1",
+  "description": "The per-suite machine contract designed by docs/verification/CONFORMANCE_HARNESS.md under D-242. One manifest per suite directory under conformance/. The manifest is the only thing a runner reads, and it names the authority the suite tests against so a suite cannot drift into testing an implementation against itself. A manifest that declares a suite has no runner is honest; a suite with no manifest is invisible, which is how conformance/vibeproof/v1/ sat unexecuted while conformance/protocol/ ran in its place under a name that did not describe what it executed. Validating a manifest is not conformance and changes no eval suite status.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "suite_id",
+    "case_prefix",
+    "eval_suite_ids",
+    "authorities",
+    "subjects",
+    "reason_authority",
+    "runner",
+    "fixture_state",
+    "generated_by",
+    "cases"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "suite_id": {
+      "description": "The suite directory name. It is deliberately not the eval registry id: the directory is sandbox and the eval suite is sandbox-enforcement, and an earlier draft of the harness contract asserted the two were the same string, which no directory in this repository satisfies. eval_suite_id carries the registry link instead.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "case_prefix": {
+      "description": "The uppercase abbreviation every case_id in this suite carries, from the case identifier scheme in docs/verification/CONFORMANCE_HARNESS.md. Two letters, so it can never be read as a work-unit identifier by scripts/repository/validate_cross_references.py.",
+      "type": "string",
+      "pattern": "^[A-Z]{2}$"
+    },
+    "eval_suite_ids": {
+      "description": "Every id in evals/suites/suites.yaml this suite's results feed. An empty list is a finding rather than a formality: a suite whose fixtures reach no registry entry produces evidence nothing reads. It is a list because conformance/accounting/ feeds two registry entries and because the directory name is not the registry id — the directory is sandbox and the eval suite is sandbox-enforcement, so a one-to-one string equality was never satisfiable.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+    },
+    "authorities": {
+      "description": "Repository-relative paths to the normative documents and machine contracts this suite tests conformance to. Every path must resolve. A suite with no authority is a regression suite.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/repositoryPath" }
+    },
+    "subjects": {
+      "description": "The implementations that must run the suite. A case passes only when every declared subject produces the expected outcome and the subjects agree with each other.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["rust", "go", "typescript", "sql", "python"] }
+    },
+    "reason_authority": {
+      "description": "The registry every expect_reason_code in this suite resolves in. Two are recognised. packages/schemas/reason-codes-v1.json holds the API wire vocabulary and requires every code to bind to a declared OpenAPI operation. packages/schemas/origin-policy-v1.json holds the loopback refusal vocabulary, which never crosses the API wire and therefore cannot live in the first registry without breaking its binding rule.",
+      "enum": [
+        "packages/schemas/reason-codes-v1.json",
+        "packages/schemas/origin-policy-v1.json"
+      ]
+    },
+    "runner": { "$ref": "#/$defs/runner" },
+    "fixture_state": {
+      "description": "populated means the suite directory holds fixture data and the manifest must declare cases over it, including at least one negative case. empty means the directory holds no fixture at all, in which case cases must be empty and runner.work_unit names the unit that will author them. Recording empty is what makes an unwritten suite countable instead of absent.",
+      "enum": ["populated", "empty"]
+    },
+    "generated_by": {
+      "description": "The deterministic generator that produces this suite's fixtures, or null when they are hand-authored.",
+      "oneOf": [{ "$ref": "#/$defs/repositoryPath" }, { "type": "null" }]
+    },
+    "tooling": {
+      "description": "Files inside the suite directory that are neither fixtures nor authorities: oracle programs, module manifests, helper sources. Declared so that the every-file-is-named rule stays exact rather than acquiring an extension allowlist.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/repositoryPath" }
+    },
+    "cases": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/case" }
+    },
+    "negative_case_gap": {
+      "description": "Present exactly when a populated suite declares no active negative case, and forbidden otherwise. The harness contract requires every suite to prove that its boundary rejects something; four suites in this repository cannot, because they hold only a positive corpus. Recording the gap with an owner keeps it countable and keeps a stale excuse from outliving the hole it explained, which is the correspondence rule D-411 applies to verification lanes. It is not a waiver: the suite still cannot be cited as boundary evidence.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["work_unit", "reason"],
+      "properties": {
+        "work_unit": { "type": "string", "pattern": "^[A-Z]{1,2}-[0-9]{3}$" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "note": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "repositoryPath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+$"
+    },
+    "runner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "command", "work_unit"],
+      "properties": {
+        "state": {
+          "description": "absent means nothing executes this suite today and the manifest says so rather than implying otherwise. present requires a command, and a present runner is the moment the eval registry's not_applicable_until path stops justifying a not_applicable status.",
+          "enum": ["absent", "present"]
+        },
+        "command": {
+          "description": "The argv a runner is invoked with, or null when the runner is absent.",
+          "oneOf": [
+            { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            { "type": "null" }
+          ]
+        },
+        "work_unit": {
+          "description": "The work unit in docs/implementation/PR_SIZED_WORK_BREAKDOWN.md that owns the runner or the missing fixtures. Two letters and three digits.",
+          "type": "string",
+          "pattern": "^[A-Z]{1,2}-[0-9]{3}$"
+        },
+        "note": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "present" } }, "required": ["state"] },
+          "then": { "properties": { "command": { "type": "array" } } }
+        },
+        {
+          "if": { "properties": { "state": { "const": "absent" } }, "required": ["state"] },
+          "then": { "properties": { "command": { "type": "null" } } }
+        }
+      ]
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "title",
+        "fixtures",
+        "expect",
+        "expect_reason_code",
+        "authority_ref",
+        "negative",
+        "state"
+      ],
+      "properties": {
+        "case_id": {
+          "description": "The suite prefix, a hyphen and three digits. Identifiers are permanent: a retired case keeps its number and is marked retired rather than deleted, because a result document from six months ago cites the number and must remain readable.",
+          "type": "string",
+          "pattern": "^[A-Z]{2}-[0-9]{3}$"
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "fixtures": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/fixture" }
+        },
+        "expect": { "enum": ["accept", "reject"] },
+        "expect_reason_code": {
+          "description": "Required when expect is reject; must be null when expect is accept. Resolves in the registry named by reason_authority.",
+          "type": ["string", "null"],
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "authority_ref": {
+          "description": "The specific clause, section or schema member this case exists to enforce, written as a repository path with a fragment. A case with no pointer to the rule it enforces is a regression test: when the rule changes nothing tells the engineer the case must change too, so the suite quietly starts enforcing the old rule against the new specification.",
+          "type": "string",
+          "minLength": 3
+        },
+        "negative": {
+          "description": "True when the case exists to prove something fails. A suite composed entirely of things that should work proves the happy path exists; it does not prove the boundary rejects anything, and the boundary is what conformance is about.",
+          "type": "boolean"
+        },
+        "state": { "enum": ["active", "retired"] },
+        "note": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "expect": { "const": "reject" } }, "required": ["expect"] },
+          "then": { "properties": { "expect_reason_code": { "type": "string" } } }
+        },
+        {
+          "if": { "properties": { "expect": { "const": "accept" } }, "required": ["expect"] },
+          "then": { "properties": { "expect_reason_code": { "type": "null" } } }
+        }
+      ]
+    },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/repositoryPath" },
+        "sha256": {
+          "description": "SHA-256 of the file's bytes. Recording it here means changing a fixture requires changing the manifest in the same diff, where a reviewer sees the expectation next to it. Data edited without its expectation being revisited is the standard way a conformance suite becomes self-confirming.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}
