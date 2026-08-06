@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/otel-capture-vectors-v1.json",
+  "title": "OtelCaptureVectors v1",
+  "description": "Vectors that take a cumulative OTLP counter series to canonical token components under a named producer binding. They exercise the three things an OTLP counter makes easy to get wrong: reading a cumulative value as a delta, missing a series reset, and admitting a datapoint that still carries an identity attribute. `validate_planning_artifacts.py` replays each series against the binding rather than reading the expectation back.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "vectors_id",
+    "binding_id",
+    "metric",
+    "vectors"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "vectors_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "binding_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "metric": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/series_vector"
+          },
+          {
+            "$ref": "#/$defs/rejection_vector"
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "uint64_decimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "attributes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 200
+      }
+    },
+    "datapoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "export_ordinal",
+        "start_time_unix_nano",
+        "time_unix_nano",
+        "attributes",
+        "cumulative_value"
+      ],
+      "properties": {
+        "export_ordinal": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "start_time_unix_nano": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "time_unix_nano": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "attributes": {
+          "$ref": "#/$defs/attributes"
+        },
+        "cumulative_value": {
+          "$ref": "#/$defs/uint64_decimal"
+        }
+      }
+    },
+    "canonical_components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_uncached",
+        "output_visible",
+        "cache_read",
+        "cache_write",
+        "reasoning",
+        "multimodal_input",
+        "multimodal_output"
+      ],
+      "properties": {
+        "input_uncached": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "output_visible": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "cache_read": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "cache_write": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "reasoning": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "multimodal_input": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "multimodal_output": {
+          "$ref": "#/$defs/uint64_decimal"
+        }
+      }
+    },
+    "series_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "kind",
+        "series",
+        "expected_components",
+        "expected_token_burn",
+        "expected_final_runtime_generation"
+      ],
+      "properties": {
+        "vector_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "kind": {
+          "const": "datapoint-series"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "series": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/datapoint"
+          }
+        },
+        "expected_components": {
+          "$ref": "#/$defs/canonical_components"
+        },
+        "expected_token_burn": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "expected_final_runtime_generation": {
+          "$ref": "#/$defs/uint64_decimal"
+        }
+      }
+    },
+    "rejection_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "kind",
+        "series",
+        "expected_rejection"
+      ],
+      "properties": {
+        "vector_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "kind": {
+          "const": "rejection"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "series": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/datapoint"
+          }
+        },
+        "expected_rejection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "condition",
+            "disposition"
+          ],
+          "properties": {
+            "condition": {
+              "enum": [
+                "identity-attribute-present",
+                "unknown-attribute",
+                "unmapped-category-value"
+              ]
+            },
+            "disposition": {
+              "enum": [
+                "reject-whole",
+                "drop-and-flag"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,521 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/accounting-arithmetic-v1.json",
+  "title": "AccountingArithmetic v1",
+  "description": "The arithmetic every accounting profile is evaluated under. An accounting profile states which source fields exist and how they contain one another; this record states what is summed, in what order, at what width, with what rounding, and what happens on overflow. The two together are what two independent implementations need in order to agree on a token total. D-193 forbids floats, so every quantity here is an integer with a stated scale.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "arithmetic_id",
+    "semantic_version",
+    "content_sha256",
+    "digest",
+    "integer_domain",
+    "canonical_component_order",
+    "containment_resolution",
+    "token_burn",
+    "estimated_cash_burn",
+    "execution_semantics",
+    "correction_semantics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "arithmetic_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "semantic_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "content_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "digest": {
+      "description": "The canonical digest rule. `accounting_profile_sha256` is a signed claim field, so the preimage cannot be left to an implementation's JSON serializer. The preimage is the same deterministic CBOR the signed claim uses, restricted to integers, text strings, arrays, maps and the simple value `null`. Floats are refused because RFC 8949 Section 4.2.2 leaves their determinism to the protocol and D-193 declines to define one; booleans are refused because a two-valued field written as a named enum stays legible inside the preimage. `null` is permitted because an absent value needs a representation and has exactly one deterministic encoding.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "preimage_encoding",
+        "map_ordering",
+        "key_encoding",
+        "excluded_fields",
+        "forbidden_preimage_types",
+        "applies_to"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "sha-256"
+        },
+        "preimage_encoding": {
+          "const": "cbor-core-deterministic"
+        },
+        "map_ordering": {
+          "const": "rfc8949-4.2.1-bytewise"
+        },
+        "key_encoding": {
+          "const": "text-string"
+        },
+        "excluded_fields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "const": "content_sha256"
+          }
+        },
+        "forbidden_preimage_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 3,
+          "items": {
+            "enum": [
+              "float",
+              "boolean",
+              "null",
+              "tag",
+              "indefinite-length"
+            ]
+          }
+        },
+        "applies_to": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/registered_id"
+          }
+        }
+      }
+    },
+    "integer_domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "representation",
+        "wire_width",
+        "minimum",
+        "maximum",
+        "addition",
+        "subtraction",
+        "overflow_disposition",
+        "underflow_disposition"
+      ],
+      "properties": {
+        "representation": {
+          "const": "decimal-string"
+        },
+        "wire_width": {
+          "const": "uint64"
+        },
+        "minimum": {
+          "const": "0"
+        },
+        "maximum": {
+          "const": "18446744073709551615"
+        },
+        "addition": {
+          "const": "checked"
+        },
+        "subtraction": {
+          "const": "checked"
+        },
+        "overflow_disposition": {
+          "description": "A sum that leaves the domain is a defect, not a number. Saturating would silently cap a total and wrapping would silently invert one.",
+          "const": "reject"
+        },
+        "underflow_disposition": {
+          "const": "reject"
+        }
+      }
+    },
+    "canonical_component_order": {
+      "description": "The summation order. Addition over a bounded checked domain is not associative with respect to failure: a different order can overflow at a different step. Fixing the order fixes which vector fails and where.",
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/canonical_component"
+      }
+    },
+    "containment_resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "traversal",
+        "operation",
+        "cycle_disposition",
+        "multiple_container_disposition",
+        "underflow_disposition",
+        "unknown_category_encoding",
+        "unmapped_source_field_disposition"
+      ],
+      "properties": {
+        "traversal": {
+          "const": "container-before-member-topological"
+        },
+        "operation": {
+          "const": "checked-subtract"
+        },
+        "cycle_disposition": {
+          "const": "reject"
+        },
+        "multiple_container_disposition": {
+          "description": "A source field contained by two containers cannot be subtracted once without choosing a container, and choosing one is a hidden semantic mapping.",
+          "const": "reject"
+        },
+        "underflow_disposition": {
+          "description": "A member larger than its container is the contradiction case: the source reported a containment its own numbers deny.",
+          "const": "reject"
+        },
+        "unknown_category_encoding": {
+          "const": "absent-never-zero"
+        },
+        "unmapped_source_field_disposition": {
+          "const": "reject"
+        }
+      }
+    },
+    "token_burn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "definition",
+        "scale",
+        "unit",
+        "summation_order",
+        "disabled_component_value",
+        "disabled_component_meaning"
+      ],
+      "properties": {
+        "definition": {
+          "const": "checked-sum-of-enabled-canonical-components"
+        },
+        "scale": {
+          "const": 0
+        },
+        "unit": {
+          "const": "tokens"
+        },
+        "summation_order": {
+          "const": "canonical-component-order"
+        },
+        "disabled_component_value": {
+          "const": "0"
+        },
+        "disabled_component_meaning": {
+          "description": "A component the profile does not enable is written as zero and read as `the profile declares this unavailable`. It is never read as `the source reported nothing`.",
+          "const": "profile-declared-unavailable"
+        }
+      }
+    },
+    "estimated_cash_burn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scale",
+        "unit",
+        "unit_price_scale",
+        "unit_price_unit",
+        "product",
+        "reduction",
+        "divisor",
+        "rounding",
+        "rounding_sites",
+        "unpriced_disposition",
+        "label"
+      ],
+      "properties": {
+        "scale": {
+          "const": 6
+        },
+        "unit": {
+          "const": "pricing-currency-micro-units"
+        },
+        "unit_price_scale": {
+          "const": 9
+        },
+        "unit_price_unit": {
+          "const": "pricing-currency-nano-units-per-token"
+        },
+        "product": {
+          "description": "Integer units multiplied by an integer nano-unit price is an exact integer. No intermediate value is ever inexact.",
+          "const": "exact-integer"
+        },
+        "reduction": {
+          "const": "sum-of-exact-products-then-single-divide"
+        },
+        "divisor": {
+          "description": "Nano-units per micro-unit. Units multiplied by a nano-unit price give a nano-unit sum; dividing by 1000 once yields the micro-unit estimate.",
+          "const": "1000"
+        },
+        "rounding": {
+          "const": "round-half-even"
+        },
+        "rounding_sites": {
+          "description": "Rounding once, at the end, is what makes the estimate reproducible. Rounding per category makes the total depend on how the categories were grouped.",
+          "const": 1
+        },
+        "unpriced_disposition": {
+          "const": "unpriced-never-zero"
+        },
+        "label": {
+          "const": "estimated"
+        }
+      }
+    },
+    "execution_semantics": {
+      "description": "The behaviour behind the three policy enums in `accounting-profile.schema.json`. Those enums were labels; these are the rules an implementation follows when it reads one.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retry",
+        "cancellation",
+        "nested_execution"
+      ],
+      "properties": {
+        "retry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "each-model-execution",
+            "caller-visible-only",
+            "provider-total-authoritative"
+          ],
+          "properties": {
+            "each-model-execution": {
+              "$ref": "#/$defs/retry_rule"
+            },
+            "caller-visible-only": {
+              "$ref": "#/$defs/retry_rule"
+            },
+            "provider-total-authoritative": {
+              "$ref": "#/$defs/retry_rule"
+            }
+          }
+        },
+        "cancellation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "count-reported-consumption",
+            "count-terminal-total",
+            "quarantine-unknown"
+          ],
+          "properties": {
+            "count-reported-consumption": {
+              "$ref": "#/$defs/cancellation_rule"
+            },
+            "count-terminal-total": {
+              "$ref": "#/$defs/cancellation_rule"
+            },
+            "quarantine-unknown": {
+              "$ref": "#/$defs/cancellation_rule"
+            }
+          }
+        },
+        "nested_execution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "children-exclusive",
+            "parent-total-contains-children",
+            "independent-with-dedup-domain"
+          ],
+          "properties": {
+            "children-exclusive": {
+              "$ref": "#/$defs/nested_rule"
+            },
+            "parent-total-contains-children": {
+              "$ref": "#/$defs/nested_rule"
+            },
+            "independent-with-dedup-domain": {
+              "$ref": "#/$defs/nested_rule"
+            }
+          }
+        }
+      }
+    },
+    "correction_semantics": {
+      "description": "How a correction changes a previously accepted total. It does not: an accepted claim is immutable and a correction is a new contribution that a later generation composes.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accepted_total_mutability",
+        "mechanism",
+        "directions",
+        "magnitude_representation",
+        "negative_encoding",
+        "composition",
+        "period_effect",
+        "pricing_effect",
+        "reversal",
+        "floor"
+      ],
+      "properties": {
+        "accepted_total_mutability": {
+          "const": "immutable"
+        },
+        "mechanism": {
+          "const": "append-only-contribution"
+        },
+        "directions": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "add",
+              "retract"
+            ]
+          }
+        },
+        "magnitude_representation": {
+          "description": "The domain is unsigned, so a retraction carries a direction and an unsigned magnitude rather than a negative integer.",
+          "const": "unsigned-magnitude-with-direction"
+        },
+        "negative_encoding": {
+          "const": "forbidden"
+        },
+        "composition": {
+          "const": "checked-sum-of-additions-minus-checked-sum-of-retractions"
+        },
+        "period_effect": {
+          "const": "rebuild-generation-and-supersede"
+        },
+        "pricing_effect": {
+          "const": "new-interpretation-record"
+        },
+        "reversal": {
+          "const": "append-only"
+        },
+        "floor": {
+          "description": "Retractions summing past the additions they correct is an accounting defect and rejects rather than clamping to zero, because clamping hides the arithmetic that produced it.",
+          "const": "reject-below-zero"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "canonical_component": {
+      "enum": [
+        "input_uncached",
+        "output_visible",
+        "cache_read",
+        "cache_write",
+        "reasoning",
+        "multimodal_input",
+        "multimodal_output"
+      ]
+    },
+    "retry_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "counted_attempts",
+        "requires_distinct_execution",
+        "attempt_identity",
+        "double_count_control"
+      ],
+      "properties": {
+        "counted_attempts": {
+          "enum": [
+            "every-attempt-that-consumed",
+            "caller-observed-attempts-only",
+            "terminal-attempt-only"
+          ]
+        },
+        "requires_distinct_execution": {
+          "enum": [
+            "yes",
+            "no"
+          ]
+        },
+        "attempt_identity": {
+          "enum": [
+            "retry-scope-and-ordinal",
+            "source-total-only"
+          ]
+        },
+        "double_count_control": {
+          "enum": [
+            "duplicate-domain",
+            "source-total-authority"
+          ]
+        }
+      }
+    },
+    "cancellation_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "counted_quantity",
+        "unknown_remainder",
+        "disposition"
+      ],
+      "properties": {
+        "counted_quantity": {
+          "enum": [
+            "reported-consumption",
+            "terminal-total",
+            "none"
+          ]
+        },
+        "unknown_remainder": {
+          "enum": [
+            "absent-never-zero",
+            "quarantine-event"
+          ]
+        },
+        "disposition": {
+          "enum": [
+            "count",
+            "quarantine"
+          ]
+        }
+      }
+    },
+    "nested_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "child_attribution",
+        "parent_total_treatment",
+        "dedup_control"
+      ],
+      "properties": {
+        "child_attribution": {
+          "const": "initiating-account-and-device-lineage"
+        },
+        "parent_total_treatment": {
+          "enum": [
+            "children-counted-parent-excludes-them",
+            "parent-total-authoritative-children-excluded",
+            "each-observation-counted-once-under-equivalence"
+          ]
+        },
+        "dedup_control": {
+          "enum": [
+            "parent-child-edge",
+            "source-total-authority",
+            "observer-equivalence"
+          ]
+        }
+      }
+    }
+  }
+}

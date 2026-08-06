@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "arithmetic_id": "accounting-arithmetic-v1",
+  "semantic_version": "1.0.0",
+  "content_sha256": "c2f84c0a8f7dc89547e84b58e75e3719a119ba30d0eda9c5fe536ed4cac589c9",
+  "digest": {
+    "algorithm": "sha-256",
+    "preimage_encoding": "cbor-core-deterministic",
+    "map_ordering": "rfc8949-4.2.1-bytewise",
+    "key_encoding": "text-string",
+    "excluded_fields": [
+      "content_sha256"
+    ],
+    "forbidden_preimage_types": [
+      "boolean",
+      "float",
+      "indefinite-length",
+      "tag"
+    ],
+    "applies_to": [
+      "accounting-arithmetic-v1",
+      "accounting-profile-v1",
+      "appraisal-policy-v1",
+      "observer-equivalence-v1",
+      "producer-accounting-binding-v1"
+    ]
+  },
+  "integer_domain": {
+    "representation": "decimal-string",
+    "wire_width": "uint64",
+    "minimum": "0",
+    "maximum": "18446744073709551615",
+    "addition": "checked",
+    "subtraction": "checked",
+    "overflow_disposition": "reject",
+    "underflow_disposition": "reject"
+  },
+  "canonical_component_order": [
+    "input_uncached",
+    "output_visible",
+    "cache_read",
+    "cache_write",
+    "reasoning",
+    "multimodal_input",
+    "multimodal_output"
+  ],
+  "containment_resolution": {
+    "traversal": "container-before-member-topological",
+    "operation": "checked-subtract",
+    "cycle_disposition": "reject",
+    "multiple_container_disposition": "reject",
+    "underflow_disposition": "reject",
+    "unknown_category_encoding": "absent-never-zero",
+    "unmapped_source_field_disposition": "reject"
+  },
+  "token_burn": {
+    "definition": "checked-sum-of-enabled-canonical-components",
+    "scale": 0,
+    "unit": "tokens",
+    "summation_order": "canonical-component-order",
+    "disabled_component_value": "0",
+    "disabled_component_meaning": "profile-declared-unavailable"
+  },
+  "estimated_cash_burn": {
+    "scale": 6,
+    "unit": "pricing-currency-micro-units",
+    "unit_price_scale": 9,
+    "unit_price_unit": "pricing-currency-nano-units-per-token",
+    "product": "exact-integer",
+    "reduction": "sum-of-exact-products-then-single-divide",
+    "divisor": "1000",
+    "rounding": "round-half-even",
+    "rounding_sites": 1,
+    "unpriced_disposition": "unpriced-never-zero",
+    "label": "estimated"
+  },
+  "execution_semantics": {
+    "retry": {
+      "each-model-execution": {
+        "counted_attempts": "every-attempt-that-consumed",
+        "requires_distinct_execution": "yes",
+        "attempt_identity": "retry-scope-and-ordinal",
+        "double_count_control": "duplicate-domain"
+      },
+      "caller-visible-only": {
+        "counted_attempts": "caller-observed-attempts-only",
+        "requires_distinct_execution": "yes",
+        "attempt_identity": "retry-scope-and-ordinal",
+        "double_count_control": "duplicate-domain"
+      },
+      "provider-total-authoritative": {
+        "counted_attempts": "terminal-attempt-only",
+        "requires_distinct_execution": "no",
+        "attempt_identity": "source-total-only",
+        "double_count_control": "source-total-authority"
+      }
+    },
+    "cancellation": {
+      "count-reported-consumption": {
+        "counted_quantity": "reported-consumption",
+        "unknown_remainder": "absent-never-zero",
+        "disposition": "count"
+      },
+      "count-terminal-total": {
+        "counted_quantity": "terminal-total",
+        "unknown_remainder": "absent-never-zero",
+        "disposition": "count"
+      },
+      "quarantine-unknown": {
+        "counted_quantity": "none",
+        "unknown_remainder": "quarantine-event",
+        "disposition": "quarantine"
+      }
+    },
+    "nested_execution": {
+      "children-exclusive": {
+        "child_attribution": "initiating-account-and-device-lineage",
+        "parent_total_treatment": "children-counted-parent-excludes-them",
+        "dedup_control": "parent-child-edge"
+      },
+      "parent-total-contains-children": {
+        "child_attribution": "initiating-account-and-device-lineage",
+        "parent_total_treatment": "parent-total-authoritative-children-excluded",
+        "dedup_control": "source-total-authority"
+      },
+      "independent-with-dedup-domain": {
+        "child_attribution": "initiating-account-and-device-lineage",
+        "parent_total_treatment": "each-observation-counted-once-under-equivalence",
+        "dedup_control": "observer-equivalence"
+      }
+    }
+  },
+  "correction_semantics": {
+    "accepted_total_mutability": "immutable",
+    "mechanism": "append-only-contribution",
+    "directions": [
+      "add",
+      "retract"
+    ],
+    "magnitude_representation": "unsigned-magnitude-with-direction",
+    "negative_encoding": "forbidden",
+    "composition": "checked-sum-of-additions-minus-checked-sum-of-retractions",
+    "period_effect": "rebuild-generation-and-supersede",
+    "pricing_effect": "new-interpretation-record",
+    "reversal": "append-only",
+    "floor": "reject-below-zero"
+  }
+}

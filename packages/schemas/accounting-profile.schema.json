@@ -17,6 +17,7 @@
     "effective_interval",
     "source_fields",
     "containment_edges",
+    "component_map",
     "canonical_outputs",
     "source_total_authority",
     "cache_semantics",
@@ -156,6 +157,38 @@
             "type": "string",
             "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
             "maxLength": 128
+          }
+        }
+      }
+    },
+    "component_map": {
+      "description": "Which canonical component each declared source field resolves to. Without this the arithmetic in packages/schemas/accounting-arithmetic-v1.json has no way to place a source field, and two implementations can produce different totals from the same profile while both look conformant. Every entry in source_fields appears exactly once, and every canonical component named here appears in canonical_outputs.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_field",
+          "canonical_component"
+        ],
+        "properties": {
+          "source_field": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+            "maxLength": 128
+          },
+          "canonical_component": {
+            "enum": [
+              "input_uncached",
+              "output_visible",
+              "cache_read",
+              "cache_write",
+              "reasoning",
+              "multimodal_input",
+              "multimodal_output"
+            ]
           }
         }
       }

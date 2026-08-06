@@ -1,0 +1,443 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/appraisal-result-v1.json",
+  "title": "VerifierAppraisalResult v1",
+  "description": "One appraisal record. Three authorities described this aggregate three ways: `verifier-appraisal-v1` in packages/schemas/vibeproof-claim-v1.cddl carries seven classification dimensions as unnamed integers, packages/schemas/evidence-profile-policy-v1.json enumerates the same seven dimensions as names with no ordinals, and packages/schemas/planning-schema.sql stores three states that appear in neither. This schema is the record all three describe: the seven dimensions by name, the evaluated evidence the CDDL carries beside them, and the claim digest, evidence digest, validity interval and supersession that the aggregate needs and none of the three had. packages/schemas/appraisal-policy-v1.json binds the names to the CDDL ordinals and records the distance still remaining to the SQL table.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "appraisal_id",
+    "claim_id",
+    "canonical_claim_sha256",
+    "evidence_bundle_sha256",
+    "policy",
+    "authority",
+    "client_influence",
+    "attestation",
+    "acceptance_outcome",
+    "dimensions",
+    "evaluated",
+    "awarded_profile_id",
+    "public_state",
+    "ranking_eligibility",
+    "reason_codes",
+    "validity",
+    "supersession"
+  ],
+  "allOf": [
+    {
+      "description": "A source class of E1 is not a designation on its own. D-078 splits it into limbs of different availability, and an appraisal records which limb applied.",
+      "if": {
+        "properties": {
+          "dimensions": {
+            "properties": {
+              "source_class": {
+                "enum": [
+                  "E1-S",
+                  "E1-R"
+                ]
+              }
+            },
+            "required": [
+              "source_class"
+            ]
+          }
+        },
+        "required": [
+          "dimensions"
+        ]
+      },
+      "then": {
+        "properties": {
+          "awarded_profile_id": {
+            "description": "Neither limb reaches Hardened. E1-S is unavailable and E1-R supplies no per-member runtime, model, mode, platform, adapter or collector certification and cannot close an observation gap.",
+            "not": {
+              "const": "hardened-source-bound-v1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "An E5 source is imported and private. The evidence policy's own rule maps it there before any profile evaluation runs.",
+      "if": {
+        "properties": {
+          "dimensions": {
+            "properties": {
+              "source_class": {
+                "const": "E5"
+              }
+            },
+            "required": [
+              "source_class"
+            ]
+          }
+        },
+        "required": [
+          "dimensions"
+        ]
+      },
+      "then": {
+        "properties": {
+          "ranking_eligibility": {
+            "const": "private-analytics"
+          },
+          "awarded_profile_id": {
+            "enum": [
+              "imported-v1",
+              null
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "appraisal_id": {
+      "$ref": "#/$defs/uuid7"
+    },
+    "claim_id": {
+      "$ref": "#/$defs/uuid7"
+    },
+    "canonical_claim_sha256": {
+      "description": "The digest of the exact signed claim bytes the appraisal evaluated. Without it an appraisal names a claim without pinning which encoding of it was assessed.",
+      "$ref": "#/$defs/sha256"
+    },
+    "evidence_bundle_sha256": {
+      "description": "The device-local evidence bundle that explains the claim. It is null when the device retained none, which is itself an input to the capture dimension rather than a neutral absence.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_bundle_id",
+        "content_sha256",
+        "implementation_sha256"
+      ],
+      "properties": {
+        "policy_bundle_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "implementation_sha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "authority": {
+      "const": "server-verifier"
+    },
+    "client_influence": {
+      "const": "none"
+    },
+    "attestation": {
+      "description": "D-100. The appraisal assesses how good a self-report is. It is not a statement that a provider confirmed anything.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class",
+        "basis",
+        "assesses"
+      ],
+      "properties": {
+        "class": {
+          "const": "none"
+        },
+        "basis": {
+          "const": "self-reported-at-source"
+        },
+        "assesses": {
+          "const": "self-report-quality"
+        }
+      }
+    },
+    "acceptance_outcome": {
+      "enum": [
+        "accepted",
+        "accepted-with-downgrade",
+        "accepted-private-analytics",
+        "idempotent-replay",
+        "quarantined",
+        "rejected",
+        "superseded",
+        "retracted"
+      ]
+    },
+    "dimensions": {
+      "description": "The seven independent dimensions. Evaluation is dimensional: a stronger value in one never compensates for a failed mandatory requirement in another.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_class",
+        "capture_class",
+        "accounting_class",
+        "device_key_class",
+        "continuity_class",
+        "environment_class",
+        "freshness_class"
+      ],
+      "properties": {
+        "source_class": {
+          "enum": [
+            "E1-S",
+            "E1-R",
+            "E2",
+            "E3",
+            "E4",
+            "E5"
+          ]
+        },
+        "capture_class": {
+          "enum": [
+            "certified-structured",
+            "certified-gateway",
+            "certified-reconstruction",
+            "uncertified"
+          ]
+        },
+        "accounting_class": {
+          "enum": [
+            "authoritative-profile",
+            "exact-reconstruction",
+            "approximate",
+            "contradictory"
+          ]
+        },
+        "device_key_class": {
+          "enum": [
+            "K1",
+            "K2",
+            "K3",
+            "K4",
+            "K5",
+            "KU"
+          ]
+        },
+        "continuity_class": {
+          "enum": [
+            "C0",
+            "C1",
+            "C2",
+            "C3",
+            "C4"
+          ]
+        },
+        "environment_class": {
+          "enum": [
+            "A0",
+            "A1",
+            "A2",
+            "A3",
+            "A4"
+          ]
+        },
+        "freshness_class": {
+          "enum": [
+            "anchored",
+            "bounded-delayed",
+            "unbounded",
+            "contradictory"
+          ]
+        }
+      }
+    },
+    "evaluated": {
+      "description": "The evidence the dimensions were read from. The CDDL carries these beside the seven dimensions and the prose contract lists them as things every appraisal records independently.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "certification_bundle_sha256",
+        "deterministic_rule_bundle_id",
+        "accounting_profile_id",
+        "observer_equivalence_rule_id",
+        "anomaly_disposition"
+      ],
+      "properties": {
+        "certification_bundle_sha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deterministic_rule_bundle_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "accounting_profile_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "observer_equivalence_rule_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "anomaly_disposition": {
+          "description": "A detector signal is advisory. It never alters a total, awards a profile, or produces a permanent sanction on its own.",
+          "enum": [
+            "not-evaluated",
+            "no-signal",
+            "advisory-signal",
+            "under-review",
+            "shadow-only"
+          ]
+        }
+      }
+    },
+    "awarded_profile_id": {
+      "oneOf": [
+        {
+          "enum": [
+            "hardened-source-bound-v1",
+            "standard-competitive-v1",
+            "imported-v1"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "public_state": {
+      "description": "The consumer-facing label. It follows from the awarded profile and is null when no profile was awarded; a client never selects it.",
+      "oneOf": [
+        {
+          "enum": [
+            "hardened",
+            "standard",
+            "imported"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "ranking_eligibility": {
+      "enum": [
+        "competitive",
+        "competitive-pending-finalization",
+        "private-analytics",
+        "quarantined",
+        "excluded",
+        "retracted"
+      ]
+    },
+    "reason_codes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/registered_id"
+      }
+    },
+    "validity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effective_from",
+        "effective_until"
+      ],
+      "properties": {
+        "effective_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "effective_until": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "supersession": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supersedes_appraisal_id",
+        "superseded_by_appraisal_id",
+        "re_evaluation_trigger"
+      ],
+      "properties": {
+        "supersedes_appraisal_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/uuid7"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "superseded_by_appraisal_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/uuid7"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "re_evaluation_trigger": {
+          "oneOf": [
+            {
+              "enum": [
+                "policy-revision",
+                "implementation-revision",
+                "certification-change",
+                "correction-record",
+                "appeal-decision",
+                "operator-review"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "uuid7": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    }
+  }
+}

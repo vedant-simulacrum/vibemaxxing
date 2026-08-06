@@ -1,0 +1,596 @@
+{
+  "schema_version": 1,
+  "vectors_id": "dedup-vectors-v1",
+  "rule_id": "observer-equivalence-v1",
+  "vectors": [
+    {
+      "vector_id": "two-collectors-strong-collision-counts-once",
+      "note": "Two collector installations on one device lineage watch one hook and read the same execution name out of the source. The preimage contains no observer-derived input, so both commitments are equal and exactly one observation counts.",
+      "observations": [
+        {
+          "observation_id": "alpha-hook",
+          "mode": "official-hook",
+          "equivalence_class": "strong",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_execution_identity",
+            "retry_scope",
+            "retry_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-one",
+            "source_id": "claude-code",
+            "provider_id": "anthropic",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-one",
+            "runtime_generation": "0",
+            "source_execution_identity": "execution-one",
+            "retry_scope": "none",
+            "retry_ordinal": "0"
+          },
+          "token_burn": "210"
+        },
+        {
+          "observation_id": "beta-hook",
+          "mode": "official-hook",
+          "equivalence_class": "strong",
+          "collector_instance": "beta",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_execution_identity",
+            "retry_scope",
+            "retry_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-one",
+            "source_id": "claude-code",
+            "provider_id": "anthropic",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-one",
+            "runtime_generation": "0",
+            "source_execution_identity": "execution-one",
+            "retry_scope": "none",
+            "retry_ordinal": "0"
+          },
+          "token_burn": "210"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "alpha-hook": "counted",
+          "beta-hook": "superseded"
+        },
+        "counted_token_burn": "210"
+      }
+    },
+    {
+      "vector_id": "two-collectors-source-cursor-collision-counts-once",
+      "note": "The colliding case named by PF-051. Two collectors on one metrics stream read the same source-produced cursor, so their commitment sets are identical and collision deduplicates them despite the tied precedence rank.",
+      "observations": [
+        {
+          "observation_id": "alpha-otel",
+          "mode": "otel",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_runtime_id",
+            "runtime_generation",
+            "source_cursor_domain",
+            "source_cursor_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-one",
+            "source_id": "claude-code",
+            "provider_id": "anthropic",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-two",
+            "runtime_generation": "0",
+            "source_cursor_domain": "claude-code-otel-metrics",
+            "source_cursor_ordinal": "7"
+          },
+          "token_burn": "210"
+        },
+        {
+          "observation_id": "beta-otel",
+          "mode": "otel",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "beta",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_runtime_id",
+            "runtime_generation",
+            "source_cursor_domain",
+            "source_cursor_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-one",
+            "source_id": "claude-code",
+            "provider_id": "anthropic",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-two",
+            "runtime_generation": "0",
+            "source_cursor_domain": "claude-code-otel-metrics",
+            "source_cursor_ordinal": "7"
+          },
+          "token_burn": "210"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "alpha-otel": "counted",
+          "beta-otel": "superseded"
+        },
+        "counted_token_burn": "210"
+      }
+    },
+    {
+      "vector_id": "two-collectors-non-colliding-quarantines",
+      "note": "The non-colliding case named by PF-051, and the one the old collector-chosen commitment turned into a 420-token score. One collector missed an export and its cursor set differs, so the two observers cannot be shown to have seen the same execution or different ones. The unit quarantines; nothing is summed.",
+      "observations": [
+        {
+          "observation_id": "alpha-otel-complete",
+          "mode": "otel",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_runtime_id",
+            "runtime_generation",
+            "source_cursor_domain",
+            "source_cursor_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-one",
+            "source_id": "claude-code",
+            "provider_id": "anthropic",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-three",
+            "runtime_generation": "0",
+            "source_cursor_domain": "claude-code-otel-metrics",
+            "source_cursor_ordinal": "7"
+          },
+          "token_burn": "210"
+        },
+        {
+          "observation_id": "beta-otel-partial",
+          "mode": "otel",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "beta",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_runtime_id",
+            "runtime_generation",
+            "source_cursor_domain",
+            "source_cursor_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-one",
+            "source_id": "claude-code",
+            "provider_id": "anthropic",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-three",
+            "runtime_generation": "0",
+            "source_cursor_domain": "claude-code-otel-metrics",
+            "source_cursor_ordinal": "8"
+          },
+          "token_burn": "210"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "alpha-otel-complete": "quarantined",
+          "beta-otel-partial": "quarantined"
+        },
+        "counted_token_burn": "0"
+      }
+    },
+    {
+      "vector_id": "direct-and-proxy-one-execution",
+      "note": "A native event and a local gateway observe one request. Both read the execution name the source assigned, so the commitments collide across two different modes and the stronger mode is the one that counts.",
+      "observations": [
+        {
+          "observation_id": "native",
+          "mode": "native-event",
+          "equivalence_class": "strong",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_execution_identity",
+            "retry_scope",
+            "retry_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-two",
+            "source_id": "registered-agent",
+            "provider_id": "registered-provider",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-four",
+            "runtime_generation": "0",
+            "source_execution_identity": "execution-four",
+            "retry_scope": "none",
+            "retry_ordinal": "0"
+          },
+          "token_burn": "100"
+        },
+        {
+          "observation_id": "gateway",
+          "mode": "proxy",
+          "equivalence_class": "strong",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_execution_identity",
+            "retry_scope",
+            "retry_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-two",
+            "source_id": "registered-agent",
+            "provider_id": "registered-provider",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-four",
+            "runtime_generation": "0",
+            "source_execution_identity": "execution-four",
+            "retry_scope": "none",
+            "retry_ordinal": "0"
+          },
+          "token_burn": "100"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "native": "counted",
+          "gateway": "superseded"
+        },
+        "counted_token_burn": "100"
+      }
+    },
+    {
+      "vector_id": "metrics-supersede-session-file-fallback",
+      "note": "The adapter-one case. The session-file observation is weak class: the file is rewritten after the fact, so no cursor it exposes is stable. It becomes private analytics and is never added to the metrics observation.",
+      "observations": [
+        {
+          "observation_id": "metrics",
+          "mode": "otel",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_runtime_id",
+            "runtime_generation",
+            "source_cursor_domain",
+            "source_cursor_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-three",
+            "source_id": "claude-code",
+            "provider_id": "anthropic",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-five",
+            "runtime_generation": "0",
+            "source_cursor_domain": "claude-code-otel-metrics",
+            "source_cursor_ordinal": "1"
+          },
+          "token_burn": "150"
+        },
+        {
+          "observation_id": "session-file",
+          "mode": "live-log",
+          "equivalence_class": "weak",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-three",
+            "source_id": "claude-code",
+            "source_runtime_id": "runtime-five",
+            "runtime_generation": "0"
+          },
+          "token_burn": "3"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "metrics": "counted",
+          "session-file": "private-analytics"
+        },
+        "counted_token_burn": "150"
+      }
+    },
+    {
+      "vector_id": "subagent-and-parent-are-distinct-executions",
+      "note": "One collector, one mode, two execution names. Distinct commitments here mean distinct executions rather than an observer disagreement, so both count and the total is their sum.",
+      "observations": [
+        {
+          "observation_id": "parent",
+          "mode": "official-hook",
+          "equivalence_class": "strong",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_execution_identity",
+            "retry_scope",
+            "retry_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-four",
+            "source_id": "registered-agent",
+            "provider_id": "registered-provider",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-six",
+            "runtime_generation": "0",
+            "source_execution_identity": "execution-parent",
+            "retry_scope": "none",
+            "retry_ordinal": "0"
+          },
+          "token_burn": "100"
+        },
+        {
+          "observation_id": "subagent",
+          "mode": "official-hook",
+          "equivalence_class": "strong",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_execution_identity",
+            "retry_scope",
+            "retry_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-four",
+            "source_id": "registered-agent",
+            "provider_id": "registered-provider",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-six",
+            "runtime_generation": "0",
+            "source_execution_identity": "execution-subagent",
+            "retry_scope": "none",
+            "retry_ordinal": "0"
+          },
+          "token_burn": "30"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "parent": "counted",
+          "subagent": "counted"
+        },
+        "counted_token_burn": "130"
+      }
+    },
+    {
+      "vector_id": "acp-supersedes-otel-by-precedence",
+      "note": "Two modes with different precedence ranks covering one source runtime. Neither can be compared with the other by commitment, because their cursors are different things, so the ranking decides and the weaker record is discarded rather than retained alongside.",
+      "observations": [
+        {
+          "observation_id": "acp-channel",
+          "mode": "acp",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_runtime_id",
+            "runtime_generation",
+            "source_cursor_domain",
+            "source_cursor_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-five",
+            "source_id": "registered-agent",
+            "provider_id": "registered-provider",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-seven",
+            "runtime_generation": "0",
+            "source_cursor_domain": "acp-session-updates",
+            "source_cursor_ordinal": "4"
+          },
+          "token_burn": "80"
+        },
+        {
+          "observation_id": "otel-channel",
+          "mode": "otel",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_runtime_id",
+            "runtime_generation",
+            "source_cursor_domain",
+            "source_cursor_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-five",
+            "source_id": "registered-agent",
+            "provider_id": "registered-provider",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-seven",
+            "runtime_generation": "0",
+            "source_cursor_domain": "otel-metrics",
+            "source_cursor_ordinal": "2"
+          },
+          "token_burn": "80"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "acp-channel": "counted",
+          "otel-channel": "superseded"
+        },
+        "counted_token_burn": "80"
+      }
+    },
+    {
+      "vector_id": "distinct-runtime-generations-both-count",
+      "note": "A restart splits one source runtime into two exclusivity units. Observations either side of the restart are not observations of one execution and are not deduplicated against each other.",
+      "observations": [
+        {
+          "observation_id": "before-restart",
+          "mode": "otel",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_runtime_id",
+            "runtime_generation",
+            "source_cursor_domain",
+            "source_cursor_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-six",
+            "source_id": "claude-code",
+            "provider_id": "anthropic",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-eight",
+            "runtime_generation": "0",
+            "source_cursor_domain": "claude-code-otel-metrics",
+            "source_cursor_ordinal": "1"
+          },
+          "token_burn": "40"
+        },
+        {
+          "observation_id": "after-restart",
+          "mode": "otel",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "provider_id",
+            "model_id",
+            "accounting_profile_id",
+            "source_runtime_id",
+            "runtime_generation",
+            "source_cursor_domain",
+            "source_cursor_ordinal"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-six",
+            "source_id": "claude-code",
+            "provider_id": "anthropic",
+            "model_id": "registered-model-family",
+            "accounting_profile_id": "cloud-separate-cache-v1",
+            "source_runtime_id": "runtime-eight",
+            "runtime_generation": "1",
+            "source_cursor_domain": "claude-code-otel-metrics",
+            "source_cursor_ordinal": "1"
+          },
+          "token_burn": "20"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "before-restart": "counted",
+          "after-restart": "counted"
+        },
+        "counted_token_burn": "60"
+      }
+    },
+    {
+      "vector_id": "observer-derived-preimage-input-rejects",
+      "note": "The defect itself, as a fixture. A commitment built over the collector's own instance identifier can never collide with another observer's, which is how a client decided for itself that its observation was not a duplicate. The rule forbids the input and the observation is rejected rather than counted.",
+      "observations": [
+        {
+          "observation_id": "self-scoped-commitment",
+          "mode": "otel",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "alpha",
+          "preimage_inputs": [
+            "device_lineage_id",
+            "source_id",
+            "source_runtime_id",
+            "runtime_generation",
+            "collector_instance_id"
+          ],
+          "facts": {
+            "device_lineage_id": "lineage-seven",
+            "source_id": "claude-code",
+            "source_runtime_id": "runtime-nine",
+            "runtime_generation": "0",
+            "collector_instance_id": "alpha"
+          },
+          "token_burn": "500"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "self-scoped-commitment": "rejected"
+        },
+        "counted_token_burn": "0"
+      }
+    }
+  ]
+}

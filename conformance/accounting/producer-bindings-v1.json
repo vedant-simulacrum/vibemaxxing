@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "registry_id": "producer-bindings-v1",
+  "digest_scope": "canonical binding object excluding content_sha256",
+  "publication_rule": "A binding in this file is a specification of a mechanism, not a support claim. `effective_ceiling` is what the mechanism reaches today; only a certification `state` of `active` permits it to exceed `private-analytics`. Every binding here is below that state, so every one of them is private analytics today.",
+  "bindings": [
+    {
+      "schema_version": 1,
+      "binding_id": "claude-code-otel-v1",
+      "semantic_version": "1.0.0",
+      "content_sha256": "fd81ca3d6fdf474830a31ee9f6a47c569a7e4604ab52b3d5c08648c0f2c2140f",
+      "producer_kind": "otel",
+      "accounting_profile": {
+        "id": "cloud-separate-cache-v1",
+        "content_sha256": "03657889358304190a9d89ba65936e45023799223592ece03908cbe5c7f7edb0"
+      },
+      "arithmetic": {
+        "id": "accounting-arithmetic-v1",
+        "content_sha256": "c2f84c0a8f7dc89547e84b58e75e3719a119ba30d0eda9c5fe536ed4cac589c9"
+      },
+      "certification": {
+        "state": "candidate",
+        "tuple": {
+          "source_product_id": "claude-code",
+          "source_version_range": ">=1 <2",
+          "platform_profile_ids": [
+            "macos-26-arm64-user-launchd",
+            "ubuntu-26.04-x86-64-headless",
+            "windows-11-25h2-x86-64-user-service"
+          ],
+          "mode": "otel",
+          "suite_version": "unassigned",
+          "bundle_sha256": null
+        }
+      },
+      "capability_ceiling": "standard-competitive",
+      "effective_ceiling": "private-analytics",
+      "attestation": {
+        "class": "none",
+        "basis": "self-reported-at-source"
+      },
+      "attribute_policy": {
+        "default": "deny",
+        "unknown_attribute_disposition": "drop-and-flag",
+        "partial_clean_permitted": "no",
+        "entries": [
+          {
+            "attribute": "model",
+            "disposition": "allow",
+            "use": "Resolved through the model registry to a registered model_id. An alias that does not resolve fails closed and the raw alias never advances."
+          },
+          {
+            "attribute": "type",
+            "disposition": "allow",
+            "use": "Selects the canonical component through category_map."
+          },
+          {
+            "attribute": "query_source",
+            "disposition": "allow",
+            "use": "Participates in observer equivalence and never in the token arithmetic."
+          },
+          {
+            "attribute": "session.id",
+            "disposition": "transform",
+            "use": "Consumed inside the adapter process to derive a keyed local commitment. The raw identifier is discarded when the datapoint leaves that process."
+          },
+          {
+            "attribute": "organization.id",
+            "disposition": "strip",
+            "use": "Discloses employer or team membership."
+          },
+          {
+            "attribute": "user.account_id",
+            "disposition": "strip",
+            "use": "Stable provider-account identifier."
+          },
+          {
+            "attribute": "user.account_uuid",
+            "disposition": "strip",
+            "use": "Stable provider-account identifier."
+          },
+          {
+            "attribute": "user.email",
+            "disposition": "strip",
+            "use": "Direct personal identifier. No documented producer setting removes it, so the strip is a receiver obligation rather than a configuration option."
+          },
+          {
+            "attribute": "user.id",
+            "disposition": "strip",
+            "use": "Stable provider-account identifier."
+          },
+          {
+            "attribute": "effort",
+            "disposition": "drop",
+            "use": "Read inside the adapter process and discarded at normalization."
+          },
+          {
+            "attribute": "terminal.type",
+            "disposition": "drop",
+            "use": "Read inside the adapter process and discarded at normalization."
+          }
+        ]
+      },
+      "otel": {
+        "schema_url": null,
+        "semantic_conventions_version": null,
+        "instrumentation_scope": {
+          "name": "com.anthropic.claude_code",
+          "version_range": ">=1 <2"
+        },
+        "metrics": [
+          {
+            "name": "claude_code.token.usage",
+            "instrument_kind": "counter",
+            "unit": "tokens",
+            "temporality": "cumulative",
+            "monotonicity": "monotonic",
+            "reset_detection": "value-decrease-or-start-time-change",
+            "category_attribute": "type",
+            "category_map": [
+              {
+                "attribute_value": "input",
+                "profile_source_field": "input-tokens",
+                "canonical_component": "input_uncached"
+              },
+              {
+                "attribute_value": "output",
+                "profile_source_field": "output-tokens",
+                "canonical_component": "output_visible"
+              },
+              {
+                "attribute_value": "cacheRead",
+                "profile_source_field": "cache-read-tokens",
+                "canonical_component": "cache_read"
+              },
+              {
+                "attribute_value": "cacheCreation",
+                "profile_source_field": "cache-write-tokens",
+                "canonical_component": "cache_write"
+              }
+            ]
+          }
+        ],
+        "discarded_metrics": [
+          {
+            "name": "claude_code.cost.usage",
+            "reason": "server-owned-pricing"
+          },
+          {
+            "name": "claude_code.session.count",
+            "reason": "carries-no-token-fact"
+          },
+          {
+            "name": "claude_code.active_time.total",
+            "reason": "carries-no-token-fact"
+          }
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "binding_id": "generic-otel-v1",
+      "semantic_version": "1.0.0",
+      "content_sha256": "80a4a17307712449436dc8b014529e9c4a2079ce5d773164519b66a08df49b3d",
+      "producer_kind": "otel",
+      "accounting_profile": {
+        "id": "cloud-separate-cache-v1",
+        "content_sha256": "03657889358304190a9d89ba65936e45023799223592ece03908cbe5c7f7edb0"
+      },
+      "arithmetic": {
+        "id": "accounting-arithmetic-v1",
+        "content_sha256": "c2f84c0a8f7dc89547e84b58e75e3719a119ba30d0eda9c5fe536ed4cac589c9"
+      },
+      "certification": {
+        "state": "uncertified",
+        "tuple": {
+          "source_product_id": "unregistered-otel-producer",
+          "source_version_range": "unknown",
+          "platform_profile_ids": [],
+          "mode": "otel",
+          "suite_version": "none",
+          "bundle_sha256": null
+        }
+      },
+      "capability_ceiling": "private-analytics",
+      "effective_ceiling": "private-analytics",
+      "attestation": {
+        "class": "none",
+        "basis": "self-reported-at-source"
+      },
+      "attribute_policy": {
+        "default": "deny",
+        "unknown_attribute_disposition": "drop-and-flag",
+        "partial_clean_permitted": "no",
+        "entries": [
+          {
+            "attribute": "model",
+            "disposition": "drop",
+            "use": "An unregistered producer's model attribute resolves to nothing, so it is dropped rather than carried."
+          }
+        ]
+      },
+      "otel": {
+        "schema_url": null,
+        "semantic_conventions_version": null,
+        "instrumentation_scope": {
+          "name": "unknown",
+          "version_range": "unknown"
+        },
+        "metrics": [],
+        "discarded_metrics": [
+          {
+            "name": "*",
+            "reason": "unrecognised-schema"
+          }
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "binding_id": "generic-acp-v1",
+      "semantic_version": "1.0.0",
+      "content_sha256": "32ec1fc06fa10f3870e3f7dc39527492b37f426c193a5700f7798ecfa54a455e",
+      "producer_kind": "acp",
+      "accounting_profile": {
+        "id": "cloud-separate-cache-v1",
+        "content_sha256": "03657889358304190a9d89ba65936e45023799223592ece03908cbe5c7f7edb0"
+      },
+      "arithmetic": {
+        "id": "accounting-arithmetic-v1",
+        "content_sha256": "c2f84c0a8f7dc89547e84b58e75e3719a119ba30d0eda9c5fe536ed4cac589c9"
+      },
+      "certification": {
+        "state": "uncertified",
+        "tuple": {
+          "source_product_id": "unregistered-acp-agent",
+          "source_version_range": "unknown",
+          "platform_profile_ids": [],
+          "mode": "acp",
+          "suite_version": "none",
+          "bundle_sha256": null
+        }
+      },
+      "capability_ceiling": "private-analytics",
+      "effective_ceiling": "private-analytics",
+      "attestation": {
+        "class": "none",
+        "basis": "self-reported-at-source"
+      },
+      "attribute_policy": {
+        "default": "deny",
+        "unknown_attribute_disposition": "drop-and-flag",
+        "partial_clean_permitted": "no",
+        "entries": [
+          {
+            "attribute": "session_id",
+            "disposition": "transform",
+            "use": "Consumed inside the adapter process to derive a keyed local commitment."
+          }
+        ]
+      },
+      "acp": {
+        "protocol_version_range": "unknown",
+        "transport": "stdio-jsonrpc",
+        "usage_message": null,
+        "usage_fields": [],
+        "session_identity": "keyed-commitment-over-session-id"
+      }
+    }
+  ]
+}

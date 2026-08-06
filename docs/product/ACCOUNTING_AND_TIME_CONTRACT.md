@@ -11,7 +11,9 @@ Token Burn is the checked sum of the mutually exclusive outputs declared by the 
 
 Source totals and provider categories are observations, not universal addends. The profile containment graph determines whether cache is contained in input, reasoning is contained in output, modality units are separate, or parent totals contain child execution. A contained category is subtracted from its container before both appear as canonical outputs. Unknown categories are absent, never encoded as zero. Contradictory or overflowing containment rejects, quarantines, or becomes private analytics under the profile's fixed policy.
 
-The machine contract is `packages/schemas/accounting-profile.schema.json`; registered planning profiles and representative no-double-count fixtures live under `conformance/accounting/`.
+The machine contract is `packages/schemas/accounting-profile.schema.json`; registered planning profiles and representative no-double-count fixtures live under `conformance/accounting/`. A profile states which fields exist, how they contain one another, and through `component_map` which canonical component each field resolves to. It does not state the arithmetic those declarations are evaluated under: `packages/schemas/accounting-arithmetic-v1.json` owns that, and `docs/product/TOKEN_ACCOUNTING_SPEC.md` is its prose owner. The two together are what two independent implementations need in order to reach the same total.
+
+Under D-241 a profile's `content_sha256`, which the signed claim carries as `accounting_profile_sha256`, is SHA-256 over the profile's RFC 8949 core deterministic CBOR encoding with that field omitted.
 
 Tool calls are not a separate token category. Tokens consumed by tool definitions, arguments, results, context, compaction, summaries, retries, and subagents are counted in the provider-reported categories that incurred them.
 
@@ -30,7 +32,13 @@ Tool calls are not a separate token category. Tokens consumed by tool definition
 - Images, audio, and video use provider-reported token-equivalent units and retain modality fields.
 - Subagent usage is attributed to the initiating user and source device, with parent/child IDs. Parent totals that already include child usage must not be added to child totals.
 - Compaction and summarization calls count as normal model calls.
-- Host/guest, IDE/CLI, proxy/provider, and orchestrator/subagent duplication is resolved through source-authority rules and stable request fingerprints.
+- Host/guest, IDE/CLI, proxy/provider, and orchestrator/subagent duplication is resolved by `packages/schemas/observer-equivalence-v1.json`, which fixes the commitment preimage to source-derived facts, forbids every observer-derived input, and gives the server the scope, the survivor order and the disposition. Equivalent observations are never summed.
+
+## Producer bindings
+
+A telemetry producer pins its schema surface, instrumentation scope, metric or message shape, attribute disposition and accounting profile in `packages/schemas/producer-accounting-binding-v1.schema.json` before its numbers are read as accounting input. Registered bindings live in `conformance/accounting/producer-bindings-v1.json`.
+
+The binding separates two ceilings that reading a registry casually would merge. `capability_ceiling` is the strongest public profile the mechanism could reach if it were certified, and is a property of the mechanism. `effective_ceiling` is what it reaches today, and the schema holds it at `private-analytics` for every certification state other than `active`. Generic OpenTelemetry, generic ACP, proxy, wrapper and unknown-version integrations are therefore private analytics by construction rather than by convention. No binding in the registry is `active`.
 
 ## Comparability
 
@@ -119,7 +127,11 @@ The 2,000-millisecond refusal threshold is set an order of magnitude above the 2
 
 Every `NormalizedAccountingEvent` binds collector-generated IDs; adapter artifact/manifest and certification digests; registered source/provider/model IDs; accounting-profile ID/digest; monotonic domain/generation and bounded wall-time uncertainty; mutually exclusive canonical components; separately retained source observations with containment labels; count/reconstruction authority; retry/outcome and duplicate-domain semantics; deterministic rule result; and privacy policy result. It is local-only and has `network_eligible=false`.
 
-All integer additions use checked arithmetic. Negative, overflowed, internally inconsistent, or duplicate usage is rejected or quarantined with a stable reason code.
+All integer additions use checked arithmetic. Negative, overflowed, internally inconsistent, or duplicate usage is rejected or quarantined with a stable reason code. `packages/schemas/accounting-arithmetic-v1.json` states the domain, the evaluation order and the rejection conditions; `conformance/accounting/arithmetic-vectors-v1.json` is the executable form and the planning validator recomputes every vector rather than reading its answer back.
+
+Each accepted event has exactly one `packages/schemas/source-receipt-v1.schema.json` receipt, which is device-local, records every observation that saw the execution and which single one counted, and asserts no provider attestation under D-100. `packages/schemas/evidence-bundle-v1.cddl` binds the signed claim bytes, that receipt, the profile and arithmetic digests, the provenance chain, the privacy decision and the equivalence record into one at-rest record that never crosses the device boundary.
+
+Corrections do not rewrite accepted totals. Under D-243 they are append-only contributions with a direction and an unsigned magnitude, composed as the checked sum of additions minus the checked sum of retractions, rejecting rather than clamping when retractions exceed what they correct.
 
 ## Required tests
 

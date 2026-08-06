@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "rule_id": "observer-equivalence-v1",
+  "semantic_version": "1.0.0",
+  "content_sha256": "1d367933405aade7401ff5df2ae513b23ba10a6fad3f01022f994c0e396c6a4c",
+  "authority": "server-verifier",
+  "client_authority": "facts-only",
+  "server_decides": [
+    "commitment-preimage",
+    "equivalence-scope",
+    "equivalence-class",
+    "survivor-selection",
+    "overlap-disposition"
+  ],
+  "wire_binding": {
+    "claim_field": "duplicate_domain_commitment",
+    "egress_field_id": "duplicate-domain-commitment",
+    "new_egress_fields": []
+  },
+  "key_derivation": {
+    "function": "hkdf-sha256",
+    "key_scope": "device-lineage",
+    "info_label": "vibemaxxing.observer-equivalence.v1",
+    "preimage_encoding": "cbor-core-deterministic",
+    "output": "digest32"
+  },
+  "equivalence_classes": [
+    {
+      "class": "strong",
+      "preimage_inputs": [
+        "device_lineage_id",
+        "source_id",
+        "provider_id",
+        "model_id",
+        "accounting_profile_id",
+        "source_execution_identity",
+        "retry_scope",
+        "retry_ordinal"
+      ],
+      "decided_by": "commitment-collision",
+      "competitive": "yes",
+      "note": "The source names the execution and the observer only reads that name. Any two observers that can read it produce the same commitment, whatever mode they are in, so a direct observation and a proxy observation of one request collide and one of them counts."
+    },
+    {
+      "class": "source-cursor",
+      "preimage_inputs": [
+        "device_lineage_id",
+        "source_id",
+        "provider_id",
+        "model_id",
+        "accounting_profile_id",
+        "source_runtime_id",
+        "runtime_generation",
+        "source_cursor_domain",
+        "source_cursor_ordinal"
+      ],
+      "decided_by": "exclusivity-enforcement",
+      "competitive": "yes",
+      "note": "The source exposes no execution name, but it does expose an ordered cursor that belongs to the source rather than to the observer. Two observers in one mode watching one source runtime read the same cursor and collide. Two observers in different modes read different cursors and cannot be compared, which is why this class needs the exclusivity rule as well as the collision."
+    },
+    {
+      "class": "weak",
+      "preimage_inputs": [
+        "device_lineage_id",
+        "source_id"
+      ],
+      "decided_by": "none",
+      "competitive": "no",
+      "note": "No source-derived identity of any kind is available. Nothing distinguishes a duplicate from a distinct execution, so the observation is private analytics and never enters competition. The session-file fallback of adapter one is this class."
+    }
+  ],
+  "observation_modes": [
+    {
+      "mode": "native-event",
+      "execution_identity_observable": "yes",
+      "achievable_class": "strong",
+      "precedence_rank": 1,
+      "note": "A runtime-native structured event carries the execution the source itself named."
+    },
+    {
+      "mode": "official-hook",
+      "execution_identity_observable": "yes",
+      "achievable_class": "strong",
+      "precedence_rank": 2
+    },
+    {
+      "mode": "extension-api",
+      "execution_identity_observable": "sometimes",
+      "achievable_class": "strong",
+      "precedence_rank": 3
+    },
+    {
+      "mode": "local-runtime",
+      "execution_identity_observable": "yes",
+      "achievable_class": "strong",
+      "precedence_rank": 4,
+      "note": "A local runtime names its own executions and the collector observes the naming rather than inventing one."
+    },
+    {
+      "mode": "acp",
+      "execution_identity_observable": "sometimes",
+      "achievable_class": "source-cursor",
+      "precedence_rank": 5
+    },
+    {
+      "mode": "otel",
+      "execution_identity_observable": "no",
+      "achievable_class": "source-cursor",
+      "precedence_rank": 6,
+      "note": "A metrics counter carries no execution name. Its cursor is the attribute-set key with the counter start time and the export ordinal, all of which the source produces."
+    },
+    {
+      "mode": "proxy",
+      "execution_identity_observable": "sometimes",
+      "achievable_class": "source-cursor",
+      "precedence_rank": 7
+    },
+    {
+      "mode": "wrapper",
+      "execution_identity_observable": "sometimes",
+      "achievable_class": "source-cursor",
+      "precedence_rank": 8
+    },
+    {
+      "mode": "live-log",
+      "execution_identity_observable": "no",
+      "achievable_class": "weak",
+      "precedence_rank": 9,
+      "note": "A file the source rewrites after the fact carries no stable cursor, because the ordinal an observer read can change under it."
+    }
+  ],
+  "exclusivity": {
+    "unit": [
+      "device_lineage_id",
+      "source_runtime_id",
+      "runtime_generation"
+    ],
+    "channel_identity": [
+      "observation_mode",
+      "collector_instance"
+    ],
+    "multiple_channel_disposition": "precedence-then-collision-then-quarantine",
+    "tied_channel_resolution": "identical-commitment-set-deduplicates",
+    "strong_class_exception": "collision-decides",
+    "detection": "server-side-over-accepted-claims"
+  },
+  "survivor_selection": {
+    "primary": "lowest-precedence-rank",
+    "tie_break": "lowest-collector-instance-commitment",
+    "loser_disposition": "superseded-and-discarded",
+    "summation": "forbidden"
+  },
+  "forbidden": {
+    "preimage_inputs": [
+      "adapter_instance_id",
+      "collector_artifact_sha256",
+      "collector_instance_id",
+      "device_local_random",
+      "installation_nonce",
+      "observer_process_id",
+      "wall_clock_receive_time"
+    ],
+    "client_selected_scope": "forbidden",
+    "client_selected_class": "forbidden"
+  }
+}

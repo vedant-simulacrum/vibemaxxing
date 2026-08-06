@@ -1,0 +1,450 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/source-receipt-v1.json",
+  "title": "SourceReceipt v1",
+  "description": "The provenance record for one NormalizedAccountingEvent: which observations produced it, which of them counted, under which profile, arithmetic and equivalence rule, and at what capture quality. It is a device-local record and it does not cross the device boundary — `egress` is `denied` and every field here would be inadmissible in packages/schemas/egress-allowlist-v1.json if it tried. D-100 forbids it from asserting that any figure was verified by a provider; the strongest thing a receipt records is that a certified adapter observed a self-report at the source. The record encodes no boolean and no float, so packages/schemas/accounting-arithmetic-v1.json's canonical CBOR digest rule applies to it unchanged.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "event_id",
+    "scope",
+    "egress",
+    "created_at",
+    "observations",
+    "accounting_profile",
+    "arithmetic",
+    "canonical_tokens",
+    "token_burn_total",
+    "count_authority",
+    "reconstruction_method",
+    "observer_equivalence",
+    "certification",
+    "source_class",
+    "attestation",
+    "privacy",
+    "retention",
+    "sensitivity"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "receipt_id": {
+      "$ref": "#/$defs/uuid7"
+    },
+    "event_id": {
+      "description": "Exactly one receipt exists per normalized accounting event, and the event is what the receipt explains.",
+      "$ref": "#/$defs/uuid7"
+    },
+    "scope": {
+      "const": "device-local"
+    },
+    "egress": {
+      "const": "denied"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "observations": {
+      "description": "Every observation that saw this execution, including the ones that lost. A receipt that recorded only the survivor could not explain why the others did not count.",
+      "type": "array",
+      "minItems": 1,
+      "contains": {
+        "type": "object",
+        "properties": {
+          "disposition": {
+            "const": "counted"
+          }
+        },
+        "required": [
+          "disposition"
+        ]
+      },
+      "minContains": 1,
+      "maxContains": 1,
+      "items": {
+        "$ref": "#/$defs/observation_reference"
+      }
+    },
+    "accounting_profile": {
+      "$ref": "#/$defs/digest_ref"
+    },
+    "arithmetic": {
+      "$ref": "#/$defs/digest_ref"
+    },
+    "canonical_tokens": {
+      "$ref": "#/$defs/canonical_components"
+    },
+    "token_burn_total": {
+      "$ref": "#/$defs/uint64_decimal"
+    },
+    "count_authority": {
+      "enum": [
+        "provider-reported",
+        "runtime-reported",
+        "source-reported",
+        "exact-reconstruction"
+      ]
+    },
+    "reconstruction_method": {
+      "enum": [
+        "none",
+        "exact-tokenizer",
+        "runtime-token-ids"
+      ]
+    },
+    "observer_equivalence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule",
+        "equivalence_class",
+        "commitment",
+        "exclusivity_unit"
+      ],
+      "properties": {
+        "rule": {
+          "$ref": "#/$defs/digest_ref"
+        },
+        "equivalence_class": {
+          "enum": [
+            "strong",
+            "source-cursor",
+            "weak"
+          ]
+        },
+        "commitment": {
+          "description": "The same value the claim carries as `duplicate_domain_commitment`. The receipt records it so a device-side audit can show the commitment was derived from the rule's preimage and not from anything the collector chose.",
+          "$ref": "#/$defs/sha256"
+        },
+        "exclusivity_unit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "device_lineage_id",
+            "source_runtime_id",
+            "runtime_generation"
+          ],
+          "properties": {
+            "device_lineage_id": {
+              "$ref": "#/$defs/uuid7"
+            },
+            "source_runtime_id": {
+              "$ref": "#/$defs/opaque_ref"
+            },
+            "runtime_generation": {
+              "$ref": "#/$defs/uint64_decimal"
+            }
+          }
+        }
+      }
+    },
+    "certification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundle_sha256",
+        "platform_profile_id",
+        "capture_mode",
+        "state",
+        "producer_binding_id"
+      ],
+      "properties": {
+        "bundle_sha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "platform_profile_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "capture_mode": {
+          "enum": [
+            "native-event",
+            "extension-api",
+            "official-hook",
+            "otel",
+            "acp",
+            "proxy",
+            "wrapper",
+            "live-log",
+            "local-runtime"
+          ]
+        },
+        "state": {
+          "enum": [
+            "uncertified",
+            "candidate",
+            "active",
+            "degraded",
+            "suspended",
+            "expired",
+            "revoked"
+          ]
+        },
+        "producer_binding_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/registered_id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "source_class": {
+      "description": "The evidence source class from packages/schemas/evidence-profile-policy-v1.json. The receipt records the class the capture path supports; the server verifier decides what it is worth.",
+      "enum": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5"
+      ]
+    },
+    "attestation": {
+      "description": "D-100. No provider offers a usage-attestation path for an individual account, so no receipt records a provider-verified figure. `assesses` names what a downstream appraisal is actually appraising.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class",
+        "basis",
+        "assesses"
+      ],
+      "properties": {
+        "class": {
+          "const": "none"
+        },
+        "basis": {
+          "const": "self-reported-at-source"
+        },
+        "assesses": {
+          "const": "self-report-quality"
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_id",
+        "result",
+        "raw_content"
+      ],
+      "properties": {
+        "policy_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "result": {
+          "const": "pass"
+        },
+        "raw_content": {
+          "const": "absent"
+        }
+      }
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_id",
+        "deletion_scope"
+      ],
+      "properties": {
+        "policy_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "deletion_scope": {
+          "enum": [
+            "device-local-only",
+            "device-local-and-export"
+          ]
+        }
+      }
+    },
+    "sensitivity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "network_eligible"
+      ],
+      "properties": {
+        "classification": {
+          "const": "L0"
+        },
+        "network_eligible": {
+          "const": "no"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "opaque_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{8,128}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "uuid7": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "uint64_decimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "digest_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "content_sha256"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "canonical_components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_uncached",
+        "output_visible",
+        "cache_read",
+        "cache_write",
+        "reasoning",
+        "multimodal_input",
+        "multimodal_output"
+      ],
+      "properties": {
+        "input_uncached": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "output_visible": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "cache_read": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "cache_write": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "reasoning": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "multimodal_input": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "multimodal_output": {
+          "$ref": "#/$defs/uint64_decimal"
+        }
+      }
+    },
+    "observation_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter_id",
+        "adapter_artifact_sha256",
+        "adapter_manifest_sha256",
+        "source_product_id",
+        "source_version",
+        "execution_mode",
+        "source_cursor",
+        "source_event_ref",
+        "disposition"
+      ],
+      "properties": {
+        "adapter_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "adapter_artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "adapter_manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_product_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "source_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "execution_mode": {
+          "enum": [
+            "native-event",
+            "extension-api",
+            "official-hook",
+            "otel",
+            "acp",
+            "proxy",
+            "wrapper",
+            "live-log",
+            "local-runtime"
+          ]
+        },
+        "source_cursor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "domain",
+            "generation",
+            "ordinal"
+          ],
+          "properties": {
+            "domain": {
+              "$ref": "#/$defs/registered_id"
+            },
+            "generation": {
+              "$ref": "#/$defs/uint64_decimal"
+            },
+            "ordinal": {
+              "$ref": "#/$defs/uint64_decimal"
+            }
+          }
+        },
+        "source_event_ref": {
+          "$ref": "#/$defs/opaque_ref"
+        },
+        "disposition": {
+          "enum": [
+            "counted",
+            "superseded",
+            "quarantined",
+            "private-analytics"
+          ]
+        },
+        "disposition_reason": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        }
+      }
+    }
+  }
+}

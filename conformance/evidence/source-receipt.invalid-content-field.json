@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "receipt_id": "018f3b2c-4a51-7c3d-9e00-1a2b3c4d5e6f",
+  "event_id": "018f3b2c-4a52-7c3d-9e00-1a2b3c4d5e70",
+  "scope": "device-local",
+  "egress": "denied",
+  "created_at": "2026-08-06T12:00:00Z",
+  "prompt": "refactor the auth module in ~/work/acme-payments",
+  "observations": [
+    {
+      "adapter_id": "claude-code-otel",
+      "adapter_artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "adapter_manifest_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "source_product_id": "claude-code",
+      "source_version": "1.0.0",
+      "execution_mode": "otel",
+      "source_cursor": {
+        "domain": "claude-code-otel-metrics",
+        "generation": "0",
+        "ordinal": "7"
+      },
+      "source_event_ref": "b3RlbC1leHBvcnQtb3JkaW5hbC03",
+      "disposition": "counted"
+    }
+  ],
+  "accounting_profile": {
+    "id": "cloud-separate-cache-v1",
+    "content_sha256": "03657889358304190a9d89ba65936e45023799223592ece03908cbe5c7f7edb0"
+  },
+  "arithmetic": {
+    "id": "accounting-arithmetic-v1",
+    "content_sha256": "60ce2416cdba28c16766dd66f778053a2ea86e0f8a71f70d027707fcdb9a68f3"
+  },
+  "canonical_tokens": {
+    "input_uncached": "100",
+    "output_visible": "40",
+    "cache_read": "60",
+    "cache_write": "10",
+    "reasoning": "0",
+    "multimodal_input": "0",
+    "multimodal_output": "0"
+  },
+  "token_burn_total": "210",
+  "count_authority": "runtime-reported",
+  "reconstruction_method": "none",
+  "observer_equivalence": {
+    "rule": {
+      "id": "observer-equivalence-v1",
+      "content_sha256": "1d367933405aade7401ff5df2ae513b23ba10a6fad3f01022f994c0e396c6a4c"
+    },
+    "equivalence_class": "source-cursor",
+    "commitment": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+    "exclusivity_unit": {
+      "device_lineage_id": "018f3b2c-4a53-7c3d-9e00-1a2b3c4d5e71",
+      "source_runtime_id": "cnVudGltZS10d28",
+      "runtime_generation": "0"
+    }
+  },
+  "certification": {
+    "bundle_sha256": null,
+    "platform_profile_id": "macos-26-arm64-user-launchd",
+    "capture_mode": "otel",
+    "state": "candidate",
+    "producer_binding_id": "claude-code-otel-v1"
+  },
+  "source_class": "E2",
+  "attestation": {
+    "class": "none",
+    "basis": "self-reported-at-source",
+    "assesses": "self-report-quality"
+  },
+  "privacy": {
+    "policy_id": "claim-egress-v1",
+    "result": "pass",
+    "raw_content": "absent"
+  },
+  "retention": {
+    "policy_id": "claim-ledger-v1",
+    "deletion_scope": "device-local-and-export"
+  },
+  "sensitivity": {
+    "classification": "L0",
+    "network_eligible": "no"
+  }
+}

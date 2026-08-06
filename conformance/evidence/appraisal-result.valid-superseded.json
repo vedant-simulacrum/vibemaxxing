@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "appraisal_id": "018f3b2c-5b01-7c3d-9e00-1a2b3c4d5e6f",
+  "claim_id": "018f3b2c-5a02-7c3d-9e00-1a2b3c4d5e70",
+  "canonical_claim_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "evidence_bundle_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "policy": {
+    "policy_bundle_id": "appraisal-policy-v1",
+    "content_sha256": "b900c3b148efc9b72b5cf8e165b711edae69734410e6a18f097be826b228e6a3",
+    "implementation_sha256": null
+  },
+  "authority": "server-verifier",
+  "client_influence": "none",
+  "attestation": {
+    "class": "none",
+    "basis": "self-reported-at-source",
+    "assesses": "self-report-quality"
+  },
+  "acceptance_outcome": "superseded",
+  "dimensions": {
+    "source_class": "E2",
+    "capture_class": "certified-structured",
+    "accounting_class": "authoritative-profile",
+    "device_key_class": "K3",
+    "continuity_class": "C2",
+    "environment_class": "A1",
+    "freshness_class": "bounded-delayed"
+  },
+  "evaluated": {
+    "certification_bundle_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "deterministic_rule_bundle_id": "deterministic-rules-v1",
+    "accounting_profile_id": "cloud-separate-cache-v1",
+    "observer_equivalence_rule_id": "observer-equivalence-v1",
+    "anomaly_disposition": "not-evaluated"
+  },
+  "awarded_profile_id": "standard-competitive-v1",
+  "public_state": "standard",
+  "ranking_eligibility": "competitive-pending-finalization",
+  "reason_codes": [],
+  "validity": {
+    "effective_from": "2026-08-05T09:00:00Z",
+    "effective_until": "2026-08-06T12:00:00Z"
+  },
+  "supersession": {
+    "supersedes_appraisal_id": null,
+    "superseded_by_appraisal_id": "018f3b2c-5a01-7c3d-9e00-1a2b3c4d5e6f",
+    "re_evaluation_trigger": "policy-revision"
+  }
+}

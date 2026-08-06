@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "binding_id": "generic-otel-claiming-competitive-v1",
+  "semantic_version": "1.0.0",
+  "content_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "producer_kind": "otel",
+  "accounting_profile": {
+    "id": "cloud-separate-cache-v1",
+    "content_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "arithmetic": {
+    "id": "accounting-arithmetic-v1",
+    "content_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "certification": {
+    "state": "candidate",
+    "tuple": {
+      "source_product_id": "unregistered-otel-producer",
+      "source_version_range": "unknown",
+      "platform_profile_ids": [],
+      "mode": "otel",
+      "suite_version": "none",
+      "bundle_sha256": null
+    }
+  },
+  "capability_ceiling": "standard-competitive",
+  "effective_ceiling": "standard-competitive",
+  "attestation": {
+    "class": "none",
+    "basis": "self-reported-at-source"
+  },
+  "attribute_policy": {
+    "default": "deny",
+    "unknown_attribute_disposition": "drop-and-flag",
+    "partial_clean_permitted": "no",
+    "entries": [
+      {
+        "attribute": "model",
+        "disposition": "allow"
+      }
+    ]
+  },
+  "otel": {
+    "schema_url": null,
+    "semantic_conventions_version": null,
+    "instrumentation_scope": {
+      "name": "unknown",
+      "version_range": "unknown"
+    },
+    "metrics": [],
+    "discarded_metrics": []
+  }
+}

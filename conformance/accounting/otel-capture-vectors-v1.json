@@ -1,0 +1,309 @@
+{
+  "schema_version": 1,
+  "vectors_id": "otel-capture-vectors-v1",
+  "binding_id": "claude-code-otel-v1",
+  "metric": "claude_code.token.usage",
+  "vectors": [
+    {
+      "vector_id": "four-types-one-export",
+      "kind": "datapoint-series",
+      "note": "One export carrying the four category values of the `type` attribute. The counter is cumulative and this is its first observation, so each delta equals its value.",
+      "series": [
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "input",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "100"
+        },
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "output",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "40"
+        },
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "cacheRead",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "60"
+        },
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "cacheCreation",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "10"
+        }
+      ],
+      "expected_components": {
+        "input_uncached": "100",
+        "output_visible": "40",
+        "cache_read": "60",
+        "cache_write": "10",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "210",
+      "expected_final_runtime_generation": "0"
+    },
+    {
+      "vector_id": "cumulative-second-export-is-a-delta",
+      "kind": "datapoint-series",
+      "note": "The defect this vector exists for: the second export of a cumulative counter carries the running total, not the increment. Reading 250 as an increment reports 350 tokens where 250 were consumed.",
+      "series": [
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "input",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "100"
+        },
+        {
+          "export_ordinal": "2",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1120000000",
+          "attributes": {
+            "type": "input",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "250"
+        }
+      ],
+      "expected_components": {
+        "input_uncached": "250",
+        "output_visible": "0",
+        "cache_read": "0",
+        "cache_write": "0",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "250",
+      "expected_final_runtime_generation": "0"
+    },
+    {
+      "vector_id": "counter-decrease-is-a-reset",
+      "kind": "datapoint-series",
+      "note": "A cumulative counter that decreases has restarted. The new value is the delta and the runtime generation advances, so the post-reset series is not confused with the pre-reset one during deduplication.",
+      "series": [
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "output",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "500"
+        },
+        {
+          "export_ordinal": "2",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1120000000",
+          "attributes": {
+            "type": "output",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "20"
+        }
+      ],
+      "expected_components": {
+        "input_uncached": "0",
+        "output_visible": "520",
+        "cache_read": "0",
+        "cache_write": "0",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "520",
+      "expected_final_runtime_generation": "1"
+    },
+    {
+      "vector_id": "start-time-change-is-a-reset",
+      "kind": "datapoint-series",
+      "note": "A restarted process can re-export an equal or larger value under a new start time. Without the start-time check that looks like an ordinary increase and the pre-restart consumption is lost.",
+      "series": [
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "input",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "80"
+        },
+        {
+          "export_ordinal": "2",
+          "start_time_unix_nano": "2000000000",
+          "time_unix_nano": "2060000000",
+          "attributes": {
+            "type": "input",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "90"
+        }
+      ],
+      "expected_components": {
+        "input_uncached": "170",
+        "output_visible": "0",
+        "cache_read": "0",
+        "cache_write": "0",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "170",
+      "expected_final_runtime_generation": "1"
+    },
+    {
+      "vector_id": "subagent-and-main-are-separate-series",
+      "kind": "datapoint-series",
+      "note": "`query_source` is part of the attribute-set key, so main-thread and subagent consumption are separate cumulative series. Collapsing them would make one series' running total look like a decrease in the other.",
+      "series": [
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "input",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "100"
+        },
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "input",
+            "model": "registered-model-family",
+            "query_source": "subagent"
+          },
+          "cumulative_value": "30"
+        },
+        {
+          "export_ordinal": "2",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1120000000",
+          "attributes": {
+            "type": "input",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "140"
+        }
+      ],
+      "expected_components": {
+        "input_uncached": "170",
+        "output_visible": "0",
+        "cache_read": "0",
+        "cache_write": "0",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "170",
+      "expected_final_runtime_generation": "0"
+    },
+    {
+      "vector_id": "identity-attribute-rejects-whole-datapoint",
+      "kind": "rejection",
+      "note": "`user.email` is on every datapoint this producer emits by default. There is no partial-clean path: a datapoint the receiver cannot fully clean is rejected whole rather than admitted with the attribute removed downstream.",
+      "series": [
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "input",
+            "model": "registered-model-family",
+            "query_source": "main",
+            "user.email": "person@example.invalid"
+          },
+          "cumulative_value": "100"
+        }
+      ],
+      "expected_rejection": {
+        "condition": "identity-attribute-present",
+        "disposition": "reject-whole"
+      }
+    },
+    {
+      "vector_id": "unknown-attribute-drops-and-flags",
+      "kind": "rejection",
+      "note": "An attribute in neither the allowlist nor the strip list is dropped and flagged. The receiver never fails open on an attribute a future producer version adds.",
+      "series": [
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "input",
+            "model": "registered-model-family",
+            "query_source": "main",
+            "unrecognised.future.attribute": "value"
+          },
+          "cumulative_value": "100"
+        }
+      ],
+      "expected_rejection": {
+        "condition": "unknown-attribute",
+        "disposition": "drop-and-flag"
+      }
+    },
+    {
+      "vector_id": "unmapped-category-value-rejects",
+      "kind": "rejection",
+      "note": "A `type` value the binding's category map does not carry cannot be placed in a canonical component. Dropping it would produce a total that looks complete and is not.",
+      "series": [
+        {
+          "export_ordinal": "1",
+          "start_time_unix_nano": "1000000000",
+          "time_unix_nano": "1060000000",
+          "attributes": {
+            "type": "toolUse",
+            "model": "registered-model-family",
+            "query_source": "main"
+          },
+          "cumulative_value": "100"
+        }
+      ],
+      "expected_rejection": {
+        "condition": "unmapped-category-value",
+        "disposition": "reject-whole"
+      }
+    }
+  ]
+}

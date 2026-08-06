@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/appraisal-policy-v1.json",
+  "title": "AppraisalPolicyBundle v1",
+  "description": "The exact policy an appraisal was produced under. It does not restate the dimension enums, the named profiles, the downgrade order or the rules: packages/schemas/evidence-profile-policy-v1.json owns those and this bundle binds that file by path and content digest, so there is one authority and a change to it changes this bundle's identity. What the bundle adds is what evaluating a claim needs and that file does not carry — the wire ordinals that make the CBOR appraisal and the JSON appraisal the same record, the E1 limb refinement that D-078 introduced and left in prose, the validity interval, the verifier implementation digest, the supersession chain, and the persistence binding for the appraisal aggregate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_bundle_id",
+    "semantic_version",
+    "content_sha256",
+    "authority",
+    "client_influence",
+    "attestation",
+    "dimension_source",
+    "dimension_refinements",
+    "wire_ordinals",
+    "verifier_implementation_sha256",
+    "effective_interval",
+    "supersedes",
+    "appraisal_record"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "policy_bundle_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "semantic_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "content_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "authority": {
+      "const": "server-verifier"
+    },
+    "client_influence": {
+      "description": "The client submits facts. It does not select a public state, a dimension value, an awarded profile or an eligibility.",
+      "const": "none"
+    },
+    "attestation": {
+      "description": "D-100. An appraisal assesses the quality of a self-report; it never certifies that a provider verified a figure, because no provider offers an individual-account path by which one could.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class",
+        "basis",
+        "assesses"
+      ],
+      "properties": {
+        "class": {
+          "const": "none"
+        },
+        "basis": {
+          "const": "self-reported-at-source"
+        },
+        "assesses": {
+          "const": "self-report-quality"
+        }
+      }
+    },
+    "dimension_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "content_sha256"
+      ],
+      "properties": {
+        "path": {
+          "const": "packages/schemas/evidence-profile-policy-v1.json"
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "dimension_refinements": {
+      "description": "A refinement splits one dimension value into limbs of different availability without changing the enum the source file owns. The source enum stays the base vocabulary; the refinement is what the wire and the appraisal record use.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source"
+      ],
+      "properties": {
+        "source": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "base_value",
+              "limbs"
+            ],
+            "properties": {
+              "base_value": {
+                "type": "string",
+                "maxLength": 16
+              },
+              "limbs": {
+                "type": "array",
+                "minItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "limb",
+                    "availability",
+                    "binds_individual_claim",
+                    "alters_raw_score",
+                    "reaches_hardened"
+                  ],
+                  "properties": {
+                    "limb": {
+                      "type": "string",
+                      "maxLength": 16
+                    },
+                    "availability": {
+                      "enum": [
+                        "unavailable",
+                        "organization-scope-only",
+                        "available"
+                      ]
+                    },
+                    "binds_individual_claim": {
+                      "enum": [
+                        "yes",
+                        "no"
+                      ]
+                    },
+                    "alters_raw_score": {
+                      "enum": [
+                        "yes",
+                        "no"
+                      ]
+                    },
+                    "reaches_hardened": {
+                      "enum": [
+                        "yes",
+                        "no"
+                      ]
+                    },
+                    "note": {
+                      "type": "string",
+                      "maxLength": 500
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "wire_ordinals": {
+      "description": "The integer each vocabulary value takes in the CBOR appraisal. `verifier-appraisal-v1` in packages/schemas/vibeproof-claim-v1.cddl declares an integer range per dimension and names none of the values; without this table the CBOR record and the JSON record are two different appraisals that happen to share a field count. Ordinals are dense from zero and fit inside the CDDL range.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "acceptance_outcome",
+        "source_class",
+        "capture_class",
+        "accounting_class",
+        "device_key_class",
+        "continuity_class",
+        "environment_class",
+        "freshness_class",
+        "ranking_eligibility",
+        "anomaly_disposition"
+      ],
+      "properties": {
+        "acceptance_outcome": {
+          "$ref": "#/$defs/ordinal_map"
+        },
+        "source_class": {
+          "$ref": "#/$defs/ordinal_map"
+        },
+        "capture_class": {
+          "$ref": "#/$defs/ordinal_map"
+        },
+        "accounting_class": {
+          "$ref": "#/$defs/ordinal_map"
+        },
+        "device_key_class": {
+          "$ref": "#/$defs/ordinal_map"
+        },
+        "continuity_class": {
+          "$ref": "#/$defs/ordinal_map"
+        },
+        "environment_class": {
+          "$ref": "#/$defs/ordinal_map"
+        },
+        "freshness_class": {
+          "$ref": "#/$defs/ordinal_map"
+        },
+        "ranking_eligibility": {
+          "$ref": "#/$defs/ordinal_map"
+        },
+        "anomaly_disposition": {
+          "$ref": "#/$defs/ordinal_map"
+        }
+      }
+    },
+    "verifier_implementation_sha256": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "effective_interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "starts_at",
+        "ends_at"
+      ],
+      "properties": {
+        "starts_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ends_at": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "supersedes": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/registered_id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "appraisal_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "aggregate",
+        "mutability",
+        "revision_model",
+        "sql_binding"
+      ],
+      "properties": {
+        "aggregate": {
+          "const": "verifier-appraisal"
+        },
+        "mutability": {
+          "description": "Changing policy produces a new appraisal that supersedes the previous one. It never edits an appraisal in place, because an appraisal is the record of a decision taken under a policy that no longer applies.",
+          "const": "immutable-superseded"
+        },
+        "revision_model": {
+          "const": "append-only-supersession-chain"
+        },
+        "sql_binding": {
+          "description": "The persistence owner and the exact distance between the record this bundle governs and the table that stores it. `unbound_fields` are fields the appraisal carries that the table cannot hold; `dropped_columns` are columns the table holds that no other authority names. Both lists are checked against the DDL, so closing the gap requires moving an entry rather than editing prose.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "table",
+            "bound_columns",
+            "unbound_fields",
+            "dropped_columns",
+            "defect_reference"
+          ],
+          "properties": {
+            "table": {
+              "type": "string",
+              "pattern": "^[a-z0-9_]+$",
+              "maxLength": 64
+            },
+            "bound_columns": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "maxLength": 64
+              }
+            },
+            "unbound_fields": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "maxLength": 64
+              }
+            },
+            "dropped_columns": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "maxLength": 64
+              }
+            },
+            "defect_reference": {
+              "type": "string",
+              "pattern": "^SR-[0-9]{3}$"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "ordinal_map": {
+      "type": "object",
+      "minProperties": 2,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*$",
+        "maxLength": 64
+      },
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 63
+      }
+    }
+  }
+}

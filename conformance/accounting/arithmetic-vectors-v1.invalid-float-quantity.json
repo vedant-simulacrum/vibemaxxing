@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "vectors_id": "arithmetic-vectors-v1-invalid-float-quantity",
+  "arithmetic_id": "accounting-arithmetic-v1",
+  "profile_registry_id": "accounting-profiles-v1",
+  "vectors": [
+    {
+      "vector_id": "float-token-count",
+      "kind": "token-burn",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "D-193 bans floats in a signed profile. A vector that expresses a token count as a JSON number, or as a decimal string with a fractional part, must fail the schema rather than reach an encoder that would have to choose a float representation for it.",
+      "source_fields": {
+        "input-tokens": "100.5",
+        "output-tokens": "40",
+        "cache-read-tokens": "60",
+        "cache-write-tokens": "10"
+      },
+      "expected_components": {
+        "input_uncached": "100.5",
+        "output_visible": "40",
+        "cache_read": "60",
+        "cache_write": "10",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "210.5"
+    }
+  ]
+}
