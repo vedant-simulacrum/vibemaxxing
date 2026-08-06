@@ -14,12 +14,12 @@
     "python-planning-tooling": {
       "language": "python",
       "metric": "line-and-branch",
-      "percent": 55.23,
-      "covered_units": 3794,
-      "total_units": 6870,
+      "percent": 55.89,
+      "covered_units": 3969,
+      "total_units": 7102,
       "floor_percent": 55.0,
       "floor_source": "docs/verification/TEST_STRATEGY.md",
-      "note": "scripts/ci and scripts/repository under coverage.py, driven by the tests/ unit suite. TEST_STRATEGY.md had no Python row at all until this measurement: the floor table named Rust, Go, packages/ui and apps/web and omitted the only code in this repository that executes on every pull request. The 55% floor is the first measurement rounded down. It is a floor that was absent being written for the first time, not a floor lowered to fit a number, and it is stated with the intent to raise it as the modules below gain tests. Ten of the twenty-one modules in these two directories are at 0%: generate_gate_ledger.py, repository_policy.py, run_evals.py, run_phase1_evidence.py, generate_issue_plan.py, generate_repository_metadata.py, run_ed25519_oracles.py, validate_p1140e_contracts.py, validate_planning_coverage.py and validate_t20_contract.py. Every one of them runs in CI under make validate. Two of them, run_evals.py and generate_gate_ledger.py, are in fact exercised — by tests that invoke them as a child process, which in-process coverage cannot see — so this number is a lower bound on what the suite executes rather than an estimate of it.",
+      "note": "scripts/ci and scripts/repository under coverage.py, driven by the tests/ unit suite. TEST_STRATEGY.md had no Python row at all until this measurement: the floor table named Rust, Go, packages/ui and apps/web and omitted the only code in this repository that executes on every pull request. The 55% floor is the first measurement rounded down. It is a floor that was absent being written for the first time, not a floor lowered to fit a number, and it is stated with the intent to raise it as the modules below gain tests. Ten of the twenty-two modules in these two directories are at 0%: generate_gate_ledger.py, repository_policy.py, run_evals.py, run_phase1_evidence.py, generate_issue_plan.py, generate_repository_metadata.py, run_ed25519_oracles.py, validate_p1140e_contracts.py, validate_planning_coverage.py and validate_t20_contract.py. Every one of them runs in CI under make validate. Two of them, run_evals.py and generate_gate_ledger.py, are in fact exercised — by tests that invoke them as a child process, which in-process coverage cannot see — so this number is a lower bound on what the suite executes rather than an estimate of it.",
       "undercount_note": "Child-process capture via coverage.py's patch = subprocess was tried and rejected. It reported about six points higher on one run and nothing on the next, depending on whether the site-packages .pth fired, which would make the recorded ceiling a measurement of the environment. A stable undercount that names what it missed is worth more than an unstable number that flatters."
     },
     "rust-vibeproof-core": {

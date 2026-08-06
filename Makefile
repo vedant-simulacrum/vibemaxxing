@@ -3,7 +3,7 @@ PY ?= python3
 VENV := .venv
 VENV_PY := $(VENV)/bin/python3
 
-.PHONY: help doctor validate plan evals test venv clean-venv
+.PHONY: help doctor validate plan evals test coverage venv clean-venv
 
 help: ## Show available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -30,6 +30,7 @@ validate: $(VENV_PY) ## Run the planning validator suite
 	$(VENV_PY) scripts/repository/validate_planning_coverage.py
 	$(VENV_PY) scripts/repository/validate_state_vocabularies.py
 	$(VENV_PY) scripts/repository/validate_work_unit_status.py
+	$(VENV_PY) scripts/repository/validate_load_scenarios.py
 	$(VENV_PY) scripts/repository/validate_planning_artifacts.py --allow-no-postgres
 	$(VENV_PY) scripts/ci/run_evals.py --validate-registry
 	@echo ""
@@ -49,6 +50,17 @@ evals: $(VENV_PY) ## Validate the evaluation registry
 
 test: $(VENV_PY) ## Run the validator unit tests
 	$(VENV_PY) -m unittest discover -s tests
+
+coverage: $(VENV_PY) ## Measure coverage per surface against the recorded ceiling
+	@echo "Measuring Python, Rust and Go. This re-runs the unit suite under coverage"
+	@echo "and builds the Rust workspace instrumented, so it takes minutes rather than"
+	@echo "seconds. It is deliberately not part of 'make validate'."
+	@echo ""
+	@echo "Rust needs 'rustup component add llvm-tools-preview'. Without it the Rust"
+	@echo "surface reports unmeasured, which fails: an absent toolchain is an absence"
+	@echo "of evidence, never a pass. Pass --allow-unmeasured only when that is true"
+	@echo "and you are saying so."
+	$(VENV_PY) scripts/ci/measure_coverage.py
 
 clean-venv: ## Remove the planning virtualenv
 	rm -rf $(VENV)

@@ -27,7 +27,7 @@ Numeric quotas that a deployment can tune live in `packages/schemas/policy-defau
 
 Every quota below is derived from a load the product actually generates, not from a round number. The derivation matters because a limit set above the real load protects nothing and a limit set below it breaks the product.
 
-The reference population is the invite-only private beta of D-180. The owner issues every invite personally, so the ring is bounded by how many invitations one person sends; the planning figure used here is **200 participants, one enrolled device each**. Under D-093 the whole deployment runs under 100 USD per month, which is a single small managed container against a single managed PostgreSQL instance, so the aggregate admission ceiling is set from what that shape sustains rather than from what the product would like.
+The reference population is the invite-only private beta of D-180. The owner issues every invite personally, so the ring is bounded by how many invitations one person sends; the planning figure used here is **200 participants, one enrolled device each**, which is the `invite_outstanding_max` quota rather than a chosen number. The deployment shape is a single small managed container against a single managed PostgreSQL instance, so the aggregate admission ceiling is set from what that shape sustains rather than from what the product would like. That shape was originally fixed by the sub-100-USD ceiling of D-093; D-093 is superseded by D-360, which sets the ceiling at the measured steady-state monthly cost of the configuration selected under D-361. The deployment shape the quotas below are derived from is unchanged by that amendment, and the quotas are therefore unchanged.
 
 Derived steady-state load at that population:
 
@@ -212,6 +212,6 @@ After **20 consecutive failures** against the same host, a client opens a circui
 
 Nothing here is implemented. No rate limiter exists, no client implements this backoff, no deprecation has ever been issued, and there is no measurement behind the derived load table beyond the arithmetic shown. The quotas are planning figures derived from a planning population, and the first real traffic is expected to move them. The conformance obligations that would make them evidence are:
 
-- a load scenario that drives a single principal at ten times its class limit and asserts that other principals are unaffected, specified in `docs/verification/TEST_STRATEGY.md`;
+- a load scenario that drives a single principal at ten times its class limit and asserts that other principals are unaffected. This is now specified operation by operation as `ratelimit-breach` in `evals/load/load-scenarios-v1.json`, with every rate resolved back to a policy key in `packages/schemas/policy-defaults-v1.json`, and it has not been written as a script or run. A specified scenario is not a satisfied obligation;
 - a client-side test that asserts backoff, jitter distribution, budget exhaustion and circuit state transitions against a fault-injecting server;
 - a deprecation fixture that asserts the header set and the 180-day minimum.
