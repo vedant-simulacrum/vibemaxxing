@@ -70,6 +70,7 @@ An internal state is one a client must never be shown. Every omission from an AP
 | `identity-investigation` | `identity-investigation` | `identity_investigations.state` | — | — |
 | `account-consolidation` | `account-consolidation` | `consolidation_cases.state` | — | — |
 | `lineage-fork-case` | `lineage-fork-case` | `lineage_fork_cases.state` | — | — |
+| `source-certification` | `source-certification` | `source_certifications.state` | — | — |
 
 ### Why each state is internal
 

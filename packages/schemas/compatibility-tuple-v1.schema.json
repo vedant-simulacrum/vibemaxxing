@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/compatibility-tuple-v1.schema.json",
+  "title": "Atomic compatibility tuple v1",
+  "description": "The unit everything in the product means when it says \"exact certified tuple\". docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md is the normative owner and packages/schemas/planning-schema.sql#source_certifications is the persistence owner. The tuple is atomic: change any one dimension and it is a different tuple with its own certification, because a certification of one agent on one operating system through one observation mode says nothing about any other combination. Its digest is SHA-256 over the RFC 8949 core deterministic CBOR encoding of this record with tuple_digest omitted, computed the way D-261 computes every planning policy digest, so two implementations cannot disagree about the identity of a tuple. D-058 makes trust digest-addressed: an artifact is named by its digest and never by a mutable version string alone.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "tuple"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "tuple": { "$ref": "#/$defs/tuple" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "tuple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tuple_digest",
+        "artifact",
+        "source",
+        "observation_mode",
+        "platform_profile_id",
+        "accounting",
+        "privacy_binding"
+      ],
+      "properties": {
+        "tuple_digest": { "$ref": "#/$defs/digest" },
+        "artifact": { "$ref": "#/$defs/artifact" },
+        "source": { "$ref": "#/$defs/source" },
+        "observation_mode": {
+          "description": "Exactly the nine modes packages/schemas/observer-equivalence-v1.json declares, in that spelling, because a second vocabulary for one concept is the duplication SR-009 exists to remove. The mode is part of the tuple because two modes observing one execution have different precedence and different evidence ceilings, which is what D-098 records for adapter one: the metrics channel supersedes the session log and the two are never summed.",
+          "enum": [
+            "native-event",
+            "official-hook",
+            "extension-api",
+            "local-runtime",
+            "acp",
+            "otel",
+            "proxy",
+            "wrapper",
+            "live-log"
+          ]
+        },
+        "platform_profile_id": {
+          "description": "A profile_id in packages/schemas/platform-profile-registry-v1.json. The platform is part of the tuple because the key-protection class, the supervision mechanism and the isolation strength all differ between profiles, and the evidence ceiling depends on them.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "accounting": { "$ref": "#/$defs/accounting" },
+        "privacy_binding": { "$ref": "#/$defs/privacy_binding" },
+        "duplicate_domain": {
+          "description": "The exclusivity unit this tuple observes within, from packages/schemas/observer-equivalence-v1.json. Two tuples sharing a duplicate domain compete for one execution and exactly one counts.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        }
+      }
+    },
+    "artifact": {
+      "description": "The collector or adapter binary that does the observing, named by digest under D-058. A mutable name or version never establishes official identity on its own.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter_id", "artifact_sha256"],
+      "properties": {
+        "adapter_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "artifact_sha256": { "$ref": "#/$defs/digest" },
+        "release_set_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "source": {
+      "description": "The agent product being observed, and the exact version range the certification covers. A range rather than a single version because a patch release usually does not move the observation surface; an open-ended range is refused, because an unbounded upper bound is a certification of software that does not exist yet.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_product_id", "version_min", "version_max_exclusive"],
+      "properties": {
+        "source_product_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "version_min": { "type": "string", "minLength": 1 },
+        "version_max_exclusive": { "type": "string", "minLength": 1 },
+        "schema_url": {
+          "description": "The producer's declared telemetry schema, where it has one. Null is a fact rather than an omission: adapter one's measured producer emits neither a schema URL nor a semantic-conventions version, and D-264 records that.",
+          "type": ["string", "null"]
+        },
+        "semantic_conventions_version": { "type": ["string", "null"] }
+      }
+    },
+    "accounting": {
+      "description": "Which arithmetic turns this source's numbers into Token Burn, bound by identity and digest so a profile edit changes the tuple rather than silently changing what a certified tuple means.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accounting_profile_id",
+        "accounting_profile_sha256",
+        "arithmetic_sha256"
+      ],
+      "properties": {
+        "accounting_profile_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "accounting_profile_sha256": { "$ref": "#/$defs/digest" },
+        "arithmetic_sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "privacy_binding": {
+      "description": "What the tuple is allowed to observe and what it must remove before anything is queued. This is part of the tuple rather than a property of the adapter because a certification is a statement about a privacy boundary as much as about an arithmetic: D-099 makes the adapter-one strip a collector obligation performed at the device boundary, and a tuple whose strip list changed is a different tuple.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attribute_allowlist_sha256", "strip_list_sha256"],
+      "properties": {
+        "attribute_allowlist_sha256": { "$ref": "#/$defs/digest" },
+        "strip_list_sha256": { "$ref": "#/$defs/digest" },
+        "rejects_undecodable_datapoint": {
+          "description": "Whether a datapoint from which a forbidden attribute cannot be removed is rejected whole. False is not certifiable: D-099 admits no partial strip.",
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

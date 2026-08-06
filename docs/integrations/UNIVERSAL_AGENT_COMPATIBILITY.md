@@ -39,6 +39,23 @@ The registry must classify CLI agents, IDE extensions, desktop agents, browser/c
 - conformance suite and fixture versions;
 - maintainer, review status, emergency-disable state, and sunset date.
 
+## The atomic compatibility tuple
+
+The registry fields above describe an adapter. The tuple describes the exact thing a certification is about, and `packages/schemas/compatibility-tuple-v1.schema.json` is its machine-readable form. D-327 records why each dimension is inside it.
+
+| Dimension | Why changing it changes the tuple |
+|---|---|
+| Collector artifact SHA-256 | D-058 makes trust digest-addressed; a rebuilt collector is a different observer |
+| Source product and bounded version range | the observation surface moves between major versions, and an open-ended upper bound would certify software that does not exist yet |
+| Observation mode | the nine values `packages/schemas/observer-equivalence-v1.json` declares, in that spelling. Two modes observing one execution have different precedence and different ceilings |
+| Platform profile | key-protection class, supervision mechanism and isolation strength all differ per profile, and the evidence ceiling depends on them |
+| Accounting profile and arithmetic digests | a profile edit changes what the same numbers mean |
+| Privacy binding digests | a changed attribute allowlist or strip list is a changed boundary, which D-099 makes a collector obligation rather than a setting |
+
+The tuple digest is SHA-256 over the RFC 8949 core deterministic CBOR encoding of the record with the digest field omitted, computed the way D-261 computes every planning policy digest, so two implementations cannot disagree about the identity of a tuple.
+
+A certification of one tuple says nothing about any other. This is what the phrase "exact certified source and accounting tuple" means everywhere it appears in the binding rules, and `source_certifications` is where it lives.
+
 ## Capability ladder
 
 Prefer, in order:

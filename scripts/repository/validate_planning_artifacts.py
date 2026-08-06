@@ -817,6 +817,7 @@ def validate_p1140d_contracts() -> None:
         "identity-investigation",
         "account-consolidation",
         "lineage-fork-case",
+        "source-certification",
     }
     if set(machine_ids) != required_machines:
         raise ValidationFailure(
@@ -1564,6 +1565,145 @@ def validate_identity_lifecycle_contracts() -> None:
     # protects, which is the arrangement D-213 rejects on the server side.
     if re.search(r"(?im)^\s*\w*key_material\b", local_store):
         raise ValidationFailure("local-store-v1.sql declares key material")
+
+
+CERTIFICATION_EXAMPLES: tuple[tuple[str, str, bool], ...] = (
+    ("compatibility-tuple-v1.schema.json", "compatibility-tuple.valid.json", True),
+    (
+        "compatibility-tuple-v1.schema.json",
+        "compatibility-tuple.invalid-open-version-range.json",
+        False,
+    ),
+    ("certification-result-v1.schema.json", "certification-result.valid.json", True),
+    (
+        "certification-result-v1.schema.json",
+        "certification-result.invalid-pass-without-negative-case.json",
+        False,
+    ),
+    ("install-plan-v1.schema.json", "install-plan.valid.json", True),
+    (
+        "install-plan-v1.schema.json",
+        "install-plan.invalid-write-before-verify.json",
+        False,
+    ),
+)
+
+
+def validate_certification_contracts() -> None:
+    """Prove the certification cluster cannot advertise support it has not exercised.
+
+    Four checks. The lifecycle vocabulary equals the registered machine's. Every
+    state other than `active` is pinned to a `private-analytics` ceiling in the
+    schema as well as in the DDL, so a registry cannot imply exercised support for
+    a planned, expired, suspended or superseded tuple. The tuple's platform
+    profile resolves to a registered profile. And a passing result with no
+    negative case is refused, because a suite that has never failed carries no
+    information.
+
+    This proves the records agree with each other. No suite has been run and no
+    tuple is certified: every certification state reachable from this repository
+    today is `candidate`.
+    """
+    registry = load_json(SCHEMAS / "state-machine-registry-v1.json")
+    machines = {item["machine_id"]: item for item in registry["machines"]}
+
+    tuple_schema = validate_schema_file(SCHEMAS / "compatibility-tuple-v1.schema.json")
+    result_schema = validate_schema_file(
+        SCHEMAS / "certification-result-v1.schema.json"
+    )
+    plan_schema = validate_schema_file(SCHEMAS / "install-plan-v1.schema.json")
+    schemas = {
+        "compatibility-tuple-v1.schema.json": tuple_schema,
+        "certification-result-v1.schema.json": result_schema,
+        "install-plan-v1.schema.json": plan_schema,
+    }
+
+    lifecycle = set(
+        result_schema["$defs"]["certification"]["properties"]["state"]["enum"]
+    )
+    expected = set(machines["source-certification"]["states"])
+    if lifecycle != expected:
+        raise ValidationFailure(
+            "certification-result-v1.schema.json state differs from "
+            f"source-certification: only-in-schema={sorted(lifecycle - expected)} "
+            f"only-in-registry={sorted(expected - lifecycle)}"
+        )
+
+    # Every non-active state must be pinned to private-analytics by the schema and
+    # not only by the DDL, so a record that never reaches PostgreSQL is still
+    # refused.
+    pinned: set[str] = set()
+    for clause in result_schema["$defs"]["certification"]["allOf"]:
+        condition = clause.get("if", {}).get("properties", {}).get("state", {})
+        ceiling = (
+            clause.get("then", {})
+            .get("properties", {})
+            .get("effective_ceiling", {})
+            .get("const")
+        )
+        if ceiling == "private-analytics" and "enum" in condition:
+            pinned |= set(condition["enum"])
+    if pinned != expected - {"active"}:
+        raise ValidationFailure(
+            "certification-result-v1.schema.json does not pin every non-active "
+            f"state to private-analytics: missing={sorted(expected - {'active'} - pinned)}"
+        )
+
+    for filename, example, expect_valid in CERTIFICATION_EXAMPLES:
+        instance = load_json(SCHEMAS / "examples" / example)
+        if expect_valid:
+            validate_instance(schemas[filename], instance, example)
+        else:
+            expect_invalid(schemas[filename], instance, example)
+
+    profiles = {
+        profile["profile_id"]
+        for profile in load_json(SCHEMAS / "platform-profile-registry-v1.json")[
+            "profiles"
+        ]
+    }
+    for example, pointer in (
+        ("compatibility-tuple.valid.json", ("tuple", "platform_profile_id")),
+        ("install-plan.valid.json", ("plan", "platform_profile_id")),
+    ):
+        instance = load_json(SCHEMAS / "examples" / example)
+        value = instance[pointer[0]][pointer[1]]
+        if value not in profiles:
+            raise ValidationFailure(
+                f"{example} names an unregistered platform profile: {value}"
+            )
+
+    modes = {
+        item["mode"]
+        for item in load_json(SCHEMAS / "observer-equivalence-v1.json")[
+            "observation_modes"
+        ]
+    }
+    declared = set(
+        tuple_schema["$defs"]["tuple"]["properties"]["observation_mode"]["enum"]
+    )
+    if modes and declared != modes:
+        raise ValidationFailure(
+            "compatibility tuple observation modes differ from the equivalence rule: "
+            f"only-in-tuple={sorted(declared - modes)} only-in-rule={sorted(modes - declared)}"
+        )
+
+    bodies = _planning_table_bodies()
+    for table, constraint in {
+        # Only an active certification may exceed private analytics.
+        "source_certifications": "check (state = 'active' or effective_ceiling = 'private-analytics')",
+        # A pass with no negative case is an untested suite reporting success.
+        "certification_results": "check (outcome <> 'passed' or negative_case_count > 0)",
+        # An operation names its reversal or declares it has none.
+        "platform_install_operations": "check (irreversible = (reversal_operation is null))",
+    }.items():
+        body = bodies.get(table)
+        if body is None:
+            raise ValidationFailure(f"planning DDL lacks the {table} table")
+        if constraint not in " ".join(body.split()):
+            raise ValidationFailure(
+                f"{table} lacks its required invariant: {constraint}"
+            )
 
 
 def validate_erasure_contract() -> None:
@@ -2565,6 +2705,10 @@ def main() -> int:
         (
             "identity lifecycle, presence and viewer authorization contracts",
             validate_identity_lifecycle_contracts,
+        ),
+        (
+            "compatibility tuple, certification and install-plan contracts",
+            validate_certification_contracts,
         ),
         ("decision register table integrity", validate_decision_register),
         ("CDDL grammar parse and required rules", validate_cddl_file),

@@ -823,12 +823,6 @@ create table board_membership_events (
   created_at timestamptz not null
 );
 
-create table certification_results (
-  certification_result_id uuid primary key,
-  subject_id uuid not null,
-  revision integer not null default 1 check (revision > 0),
-  created_at timestamptz not null
-);
 
 -- Erasure by key destruction. D-085 and D-210.
 --
@@ -1503,6 +1497,140 @@ create table identity_events (
   )
 );
 
+
+-- ---------------------------------------------------------------------------
+-- Source certification: the exact tuple, its lifecycle and its signed results.
+-- D-022, D-030, D-058, D-089, D-098, D-100, D-264.
+-- ---------------------------------------------------------------------------
+
+-- One row per exact compatibility tuple that has ever been submitted for
+-- certification. The tuple is the unit the whole product advertises against,
+-- and the reason the binding rules keep saying "exact": a certification of
+-- Claude Code on macOS through OpenTelemetry says nothing about the same
+-- product on Windows through a session log.
+--
+-- `tuple_digest` is SHA-256 over the RFC 8949 core deterministic CBOR encoding
+-- of the tuple record in `packages/schemas/compatibility-tuple-v1.schema.json`,
+-- computed the same way D-261 computes every other planning policy digest. It
+-- is unique, so two rows cannot describe one tuple, and it is what a claim
+-- binds to rather than a mutable product name — D-058 makes trust
+-- digest-addressed precisely because a name and a version alone establish
+-- nothing.
+--
+-- `effective_ceiling` is the honest half. A tuple below `active` cannot exceed
+-- `private-analytics`, whatever its adapter claims, which is the same
+-- constraint `packages/schemas/producer-accounting-binding-v1.schema.json`
+-- already carries at the binding level. The last check makes the pairing
+-- unrepresentable rather than a rule somebody has to apply.
+create table source_certifications (
+  source_certification_id uuid primary key,
+  tuple_digest bytea not null unique check (octet_length(tuple_digest) = 32),
+  state text not null check (state in (
+    'candidate','testing','active','degraded','suspended','expired','superseded','retired')),
+  adapter_id text not null,
+  source_product_id text not null,
+  -- Exactly the nine modes `packages/schemas/observer-equivalence-v1.json`
+  -- declares. A second spelling of one vocabulary is the duplication SR-009
+  -- exists to remove.
+  observation_mode text not null check (observation_mode in (
+    'native-event','official-hook','extension-api','local-runtime','acp','otel','proxy','wrapper','live-log')),
+  platform_profile_id text not null references platform_profiles(platform_profile_id),
+  accounting_profile_id text not null,
+  evidence_profile_id text not null,
+  effective_ceiling text not null check (effective_ceiling in ('hardened','standard','private-analytics')),
+  -- The tuple this one replaced. A superseded tuple keeps its own row, because
+  -- a claim accepted under it stays explainable after the successor lands.
+  superseded_by_source_certification_id uuid references source_certifications(source_certification_id),
+  valid_from timestamptz,
+  valid_until timestamptz,
+  revoked_at timestamptz,
+  revocation_reason_code text,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null,
+  check (valid_until is null or valid_from is not null),
+  check (valid_until is null or valid_until > valid_from),
+  check ((state = 'active') = (valid_from is not null and revoked_at is null and superseded_by_source_certification_id is null)),
+  check ((state = 'superseded') = (superseded_by_source_certification_id is not null)),
+  check ((revoked_at is null) = (revocation_reason_code is null)),
+  check (superseded_by_source_certification_id is null or superseded_by_source_certification_id <> source_certification_id),
+  -- Only an active tuple may exceed private analytics. A registry that
+  -- advertised a planned, expired or suspended certification would be exactly
+  -- the overclaim the binding rules forbid.
+  check (state = 'active' or effective_ceiling = 'private-analytics')
+);
+
+-- At most one active certification per tuple shape. Two would make "the exact
+-- certified tuple" ambiguous at the moment a claim is appraised.
+create unique index source_certifications_active_idx
+  on source_certifications (adapter_id, source_product_id, observation_mode, platform_profile_id)
+  where state = 'active';
+
+-- The signed record of one conformance run against one tuple. It is append-only
+-- and immutable: a later run is a new row, never an edit, because the appraisal
+-- of a claim accepted last month has to stay reproducible.
+--
+-- `suite_manifest_digest` binds the suite that ran, under the D-242 manifest
+-- contract, so a result cannot claim a pass against a suite whose cases changed
+-- afterwards. `negative_case_count` is separate from `case_count` and must be
+-- non-zero for a passing result: a suite with no negative case has not
+-- demonstrated that it can fail.
+create table certification_results (
+  certification_result_id uuid primary key,
+  source_certification_id uuid not null references source_certifications(source_certification_id),
+  suite_id text not null,
+  suite_manifest_digest bytea not null check (octet_length(suite_manifest_digest) = 32),
+  outcome text not null check (outcome in ('passed','failed','inconclusive')),
+  case_count integer not null check (case_count > 0),
+  negative_case_count integer not null check (negative_case_count >= 0),
+  failed_case_count integer not null check (failed_case_count >= 0),
+  result_digest bytea not null unique check (octet_length(result_digest) = 32),
+  cose_sign1 bytea not null,
+  signing_key_id text not null,
+  executed_at timestamptz not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null,
+  check (failed_case_count <= case_count),
+  check (negative_case_count <= case_count),
+  check ((outcome = 'passed') = (failed_case_count = 0)),
+  -- A pass with no negative case is an untested suite reporting success.
+  check (outcome <> 'passed' or negative_case_count > 0)
+);
+
+-- The typed platform operations one release performs on one platform profile.
+-- D-014 and ADR-010 through ADR-013 require exact OS mechanisms rather than a
+-- generic lifecycle verb, so an install plan is a sequence of named operations
+-- and never a script. `sequence` is dense from 1 within a plan, and
+-- `reversal_operation` is what a rollback runs, which is why an operation with
+-- no reversal has to declare itself irreversible rather than leave the column
+-- empty and let a rollback discover it.
+create table platform_install_plans (
+  platform_install_plan_id uuid primary key,
+  platform_profile_id text not null references platform_profiles(platform_profile_id),
+  release_set_id uuid not null references release_sets(release_set_id),
+  requires_privileged_consent boolean not null default false,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null,
+  unique (platform_profile_id, release_set_id)
+);
+
+create table platform_install_operations (
+  platform_install_plan_id uuid not null references platform_install_plans(platform_install_plan_id),
+  sequence integer not null check (sequence >= 1),
+  operation text not null check (operation in (
+    'verify-release-signature','place-binary','register-service','set-autostart',
+    'grant-keystore-access','create-ipc-endpoint','register-privileged-supervisor',
+    'start-service','verify-health','remove-previous-version')),
+  irreversible boolean not null default false,
+  reversal_operation text check (reversal_operation in (
+    'unregister-service','clear-autostart','revoke-keystore-access','remove-ipc-endpoint',
+    'remove-privileged-supervisor','stop-service','restore-previous-version','remove-binary')),
+  primary key (platform_install_plan_id, sequence),
+  -- An operation names the reversal a rollback runs, or declares that it has
+  -- none — because it changes nothing, as a verification does, or because its
+  -- effect cannot be undone. A rollback that discovers the answer at run time
+  -- is D-074's failure mode rather than its contract.
+  check (irreversible = (reversal_operation is null))
+);
 
 -- ---------------------------------------------------------------------------
 -- Presence pulses and lease generations. D-073, D-095.

@@ -4082,6 +4082,175 @@
           "transaction_boundary": "single-aggregate"
         }
       ]
+    },
+    {
+      "machine_id": "source-certification",
+      "semantic_owner": "universal-agent-compatibility",
+      "persistence_owner": [
+        "source-certifications",
+        "certification-results"
+      ],
+      "aggregate_key": "source-certification-id",
+      "initial_state": "candidate",
+      "states": [
+        "candidate",
+        "testing",
+        "active",
+        "degraded",
+        "suspended",
+        "expired",
+        "superseded",
+        "retired"
+      ],
+      "terminal_states": [
+        "retired"
+      ],
+      "privacy_boundary": "release-public",
+      "transitions": [
+        {
+          "transition_id": "certification-begin-suite",
+          "from": [
+            "candidate"
+          ],
+          "action": "run-the-conformance-suite-against-the-exact-tuple",
+          "to": "testing",
+          "actor": "release-authority",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "certification-testing.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "certification-activate",
+          "from": [
+            "testing"
+          ],
+          "action": "activate-on-a-signed-passing-result",
+          "to": "active",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "certification-activated.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "certification-and-result"
+        },
+        {
+          "transition_id": "certification-fail",
+          "from": [
+            "candidate",
+            "testing"
+          ],
+          "action": "retire-a-tuple-that-cannot-be-certified",
+          "to": "retired",
+          "actor": "release-authority",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "certification-retired.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "certification-degrade",
+          "from": [
+            "active"
+          ],
+          "action": "degrade-on-a-changed-source-surface",
+          "to": "degraded",
+          "actor": "server-verifier",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "certification-degraded.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "certification-restore",
+          "from": [
+            "degraded",
+            "suspended"
+          ],
+          "action": "restore-on-a-new-signed-passing-result",
+          "to": "active",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "certification-restored.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "certification-and-result"
+        },
+        {
+          "transition_id": "certification-suspend",
+          "from": [
+            "active",
+            "degraded"
+          ],
+          "action": "suspend-and-drop-the-ceiling-to-private-analytics",
+          "to": "suspended",
+          "actor": "release-authority",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "certification-suspended.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "certification-and-registry"
+        },
+        {
+          "transition_id": "certification-expire",
+          "from": [
+            "active",
+            "degraded",
+            "suspended"
+          ],
+          "action": "expire-at-the-end-of-the-validity-interval",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "certification-expired.audit",
+          "reversal": "none",
+          "transaction_boundary": "certification-and-registry"
+        },
+        {
+          "transition_id": "certification-supersede",
+          "from": [
+            "active",
+            "degraded"
+          ],
+          "action": "supersede-with-a-newer-exact-tuple",
+          "to": "superseded",
+          "actor": "release-authority",
+          "authentication": "threshold-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "certification-superseded.audit",
+          "reversal": "none",
+          "transaction_boundary": "certification-and-registry"
+        },
+        {
+          "transition_id": "certification-retire",
+          "from": [
+            "expired",
+            "superseded",
+            "suspended"
+          ],
+          "action": "retire-and-stop-advertising-the-tuple",
+          "to": "retired",
+          "actor": "release-authority",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "certification-retired.audit",
+          "reversal": "none",
+          "transaction_boundary": "certification-and-registry"
+        }
+      ]
     }
   ]
 }

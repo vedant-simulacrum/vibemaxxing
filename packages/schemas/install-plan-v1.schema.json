@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/install-plan-v1.schema.json",
+  "title": "Verified platform installation plan v1",
+  "description": "The typed sequence of operations one release performs on one platform profile, and what each one reverses to. docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md and ADR-010 through ADR-013 are the normative owners; packages/schemas/planning-schema.sql#platform_install_plans and #platform_install_operations are the persistence owners. Every operation is a named platform mechanism rather than a generic lifecycle verb or a script, because \"install the service\" is what lets three platforms claim one behaviour they do not share, and because a script is not something a validator can check the reversal of. The plan is verified before it runs: the release signature is checked first, always, and the operation that does so is the only one permitted at sequence 1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "plan"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "plan": { "$ref": "#/$defs/plan" }
+  },
+  "$defs": {
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform_install_plan_id",
+        "platform_profile_id",
+        "release_set_id",
+        "requires_privileged_consent",
+        "operations",
+        "revision",
+        "created_at"
+      ],
+      "properties": {
+        "platform_install_plan_id": { "type": "string", "format": "uuid" },
+        "platform_profile_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "release_set_id": { "type": "string", "format": "uuid" },
+        "requires_privileged_consent": {
+          "description": "True only for a plan containing register-privileged-supervisor. D-067 makes machine-wide supervision separately consented and least-privilege, so a plan that quietly needed it would be the consent failure rather than an installation detail.",
+          "type": "boolean"
+        },
+        "operations": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/operation" }
+        },
+        "revision": { "type": "integer", "minimum": 1 },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "operation", "irreversible"],
+      "properties": {
+        "sequence": {
+          "description": "Dense from 1 within a plan. Sequence 1 is verify-release-signature and nothing else, so no plan can place a filesystem write before the check that decides whether the release is genuine.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "operation": {
+          "enum": [
+            "verify-release-signature",
+            "place-binary",
+            "register-service",
+            "set-autostart",
+            "grant-keystore-access",
+            "create-ipc-endpoint",
+            "register-privileged-supervisor",
+            "start-service",
+            "verify-health",
+            "remove-previous-version"
+          ]
+        },
+        "irreversible": {
+          "description": "True when the operation has no reversal — either because it changes nothing, as a verification does, or because its effect cannot be undone. Every other operation names the reversal a rollback runs. A rollback that discovers the answer at run time is D-074's failure mode rather than its contract: automatic binary rollback is permitted only while the previous release stays read/write compatible, and an operation with no reversal is what ends that permission.",
+          "type": "boolean"
+        },
+        "reversal_operation": {
+          "enum": [
+            "unregister-service",
+            "clear-autostart",
+            "revoke-keystore-access",
+            "remove-ipc-endpoint",
+            "remove-privileged-supervisor",
+            "stop-service",
+            "restore-previous-version",
+            "remove-binary"
+          ]
+        },
+        "mechanism": {
+          "description": "The exact operating-system mechanism, named rather than implied: launchd-user, systemd-user, systemd-system, windows-service, windows-scheduled-task. D-013 forbids claiming equal strength across platforms, and a plan that did not name the mechanism would be doing exactly that.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "irreversible": { "const": true } },
+            "required": ["irreversible"]
+          },
+          "then": { "not": { "required": ["reversal_operation"] } },
+          "else": { "required": ["reversal_operation"] }
+        },
+        {
+          "if": {
+            "properties": { "sequence": { "const": 1 } },
+            "required": ["sequence"]
+          },
+          "then": {
+            "properties": {
+              "operation": { "const": "verify-release-signature" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": { "const": "verify-release-signature" }
+            },
+            "required": ["operation"]
+          },
+          "then": { "properties": { "sequence": { "const": 1 } } }
+        }
+      ]
+    }
+  }
+}

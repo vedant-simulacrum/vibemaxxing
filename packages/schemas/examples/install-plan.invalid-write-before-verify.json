@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "plan": {
+    "platform_install_plan_id": "018f2c60-0000-7000-8000-000000000903",
+    "platform_profile_id": "macos-26-arm64-user-launchd",
+    "release_set_id": "018f2c60-0000-7000-8000-000000000902",
+    "requires_privileged_consent": false,
+    "operations": [
+      {
+        "sequence": 1,
+        "operation": "place-binary",
+        "irreversible": false,
+        "reversal_operation": "remove-binary",
+        "mechanism": "signed-pkg"
+      },
+      {
+        "sequence": 2,
+        "operation": "verify-release-signature",
+        "irreversible": true,
+        "mechanism": "tuf-target-verification"
+      }
+    ],
+    "revision": 1,
+    "created_at": "2026-08-06T00:00:00Z"
+  }
+}

@@ -498,6 +498,22 @@
         "transition_id": "fork-quarantine",
         "expected": "reject-without-mutation"
       }
+    },
+    {
+      "machine_id": "source-certification",
+      "positive": {
+        "case_id": "source-certification-valid-transition",
+        "from": "testing",
+        "transition_id": "certification-activate",
+        "expected_to": "active",
+        "expected": "activate-only-on-a-signed-passing-result-with-a-negative-case"
+      },
+      "negative": {
+        "case_id": "source-certification-invalid-transition",
+        "from": "candidate",
+        "transition_id": "certification-activate",
+        "expected": "reject-without-mutation"
+      }
     }
   ]
 }

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "tuple": {
+    "tuple_digest": "1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a",
+    "artifact": {
+      "adapter_id": "claude-code-otel",
+      "artifact_sha256": "aa11bb22cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900",
+      "release_set_version": "0.0.0-planning"
+    },
+    "source": {
+      "source_product_id": "claude-code",
+      "version_min": "1.0.0",
+      "version_max_exclusive": "2.0.0",
+      "schema_url": null,
+      "semantic_conventions_version": null
+    },
+    "observation_mode": "otel",
+    "platform_profile_id": "macos-26-arm64-user-launchd",
+    "accounting": {
+      "accounting_profile_id": "cloud-separate-cache-v1",
+      "accounting_profile_sha256": "bb22cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900aa11",
+      "arithmetic_sha256": "cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900aa11bb22"
+    },
+    "privacy_binding": {
+      "attribute_allowlist_sha256": "dd44ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900aa11bb22cc33",
+      "strip_list_sha256": "ee55ff6677889900aa11bb22cc33dd44ee55ff6677889900aa11bb22cc33dd44",
+      "rejects_undecodable_datapoint": true
+    },
+    "duplicate_domain": "macos-desktop"
+  }
+}

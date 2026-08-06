@@ -73,7 +73,9 @@ create table observations (
   observation_id text primary key,
   source_id text not null references source_consents(source_id),
   adapter_id text not null,
-  observation_mode text not null check (observation_mode in ('direct','proxy','acp','otel','subagent','live-log')),
+  -- Exactly the nine modes `packages/schemas/observer-equivalence-v1.json`
+  -- declares, in that spelling.
+  observation_mode text not null check (observation_mode in ('native-event','official-hook','extension-api','local-runtime','acp','otel','proxy','wrapper','live-log')),
   execution_name text,
   source_cursor text,
   model_alias text,

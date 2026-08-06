@@ -267,11 +267,13 @@ Status: not-started
 - UI exit, pause collection, pause sync, stop daemon, logout, uninstall are distinct.
 
 ### PF-014 — Local persistence and migration contract
-Files: `packages/schemas/local-schema.sql` (new), `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `conformance/privacy/p1140b-boundary-canaries-v1.json`
-Acceptance: `local-schema.sql` parses under `sqlite3 -init` with no errors, declares an encryption key reference per table holding claim material, and the canary fixture proves no log, backup, diagnostic or corruption-report column can hold a forbidden content class.
+Files: `packages/schemas/local-store-v1.sql`, `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `conformance/privacy/p1140b-boundary-canaries-v1.json`
+Acceptance: `packages/schemas/local-store-v1.sql` parses under `sqlite3 -init` with no errors, holds no key material of its own, and the canary fixture proves no log, backup, diagnostic or corruption-report column can hold a forbidden content class.
 Depends: PF-011
 Est: 12-16
-Status: not-started
+Status: in-progress
+
+Two things changed here under D-324 and are recorded rather than applied silently. The file is `local-store-v1.sql` rather than `local-schema.sql`, which is the versioned name every other schema in that directory uses, and the four units that named the old path now name this one. And the acceptance asked for an encryption key reference per table; the file deliberately has none. Encryption is page-level under a key held by the operating-system keystore, because a key column beside the ciphertext it protects gives no confidentiality at all — the same reasoning D-213 applies to the server keyring — so the validator asserts the absence of key material rather than the presence of a reference. The `sqlite3 -init` parse has not been run.
 
 - local DDL ownership, encryption, key references, schema generation, crash consistency, queues, commitments, receipts, migrations and recovery;
 - forbidden-content boundaries for logs, backups, diagnostics and corruption reports.
@@ -281,7 +283,9 @@ Files: `packages/schemas/compatibility-tuple-v1.schema.json` (new), `docs/integr
 Acceptance: the tuple schema requires all nine components and a canonical digest; two independently ordered serialisations of the same tuple produce the same digest in a fixture that records both inputs and the expected digest.
 Depends: PF-004
 Est: 8-12
-Status: not-started
+Status: in-progress
+
+The schema landed under D-327 and requires every component, with the nine observation modes taken from `packages/schemas/observer-equivalence-v1.json` rather than spelled a second time. The digest half has not: no fixture records two orderings of one tuple and the expected digest, so the canonical-digest claim is stated in the description and not yet exercised.
 
 - product/source, exact version/artifact, platform profile, mode, adapter/collector artifacts, protocol/telemetry profile, accounting profile, privacy profile and evidence ceiling;
 - canonical digest construction.
@@ -291,7 +295,9 @@ Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/cert
 Acceptance: the `certification` machine declares all eight states with one vocabulary across registry, SQL and API under `validate_state_vocabularies.py`; the result schema requires suite and case digests, a validity interval and a signer reference, and rejects a bundle missing any of them.
 Depends: PF-015
 Est: 10-14
-Status: not-started
+Status: in-progress
+
+The machine is registered as `source-certification` with all eight states, `source_certifications` is its persistence owner, and `certification_results` holds the signed bundles; `validate_state_vocabularies.py` binds registry and SQL. It is named `source-certification` rather than `certification` because `platform-certification` already exists and certifies an operating-system profile, which is a different thing. The API third of the acceptance is not met: `packages/schemas/openapi-v1.yaml` publishes no certification state at all.
 
 - candidate, testing, active, degraded, suspended, expired, superseded, retired;
 - signed result bundle, suite/case digests, validity interval, signer/verifier policy;
@@ -1320,14 +1326,14 @@ Status: not-started
 ## Epic N — Local runtime
 
 ### N-001 Local database schema and encrypted storage
-Files: `packages/schemas/local-schema.sql` (new), `crates/vibemaxxing-daemon/src/store/mod.rs` (new), `crates/vibemaxxing-daemon/tests/store.rs` (new)
+Files: `packages/schemas/local-store-v1.sql`, `crates/vibemaxxing-daemon/src/store/mod.rs` (new), `crates/vibemaxxing-daemon/tests/store.rs` (new)
 Acceptance: `cargo test -p vibemaxxing-daemon --test store` exits 0; a test reads the raw database file after writing claim material and fails when any canary string from `conformance/privacy/p1140b-boundary-canaries-v1.json` appears in plaintext.
 Depends: F-002, F-005
 Est: 12-16
 Status: not-started
 
 ### N-002 Local migration and snapshot framework
-Files: `crates/vibemaxxing-daemon/src/store/migrate.rs` (new), `packages/schemas/local-schema.sql` (new)
+Files: `crates/vibemaxxing-daemon/src/store/migrate.rs` (new), `packages/schemas/local-store-v1.sql`
 Acceptance: migrating forward from an empty database and from every intermediate version produces byte-identical schema dumps; a snapshot taken before a migration restores to a database that passes the same integrity check, and a missing snapshot fails the test rather than being skipped.
 Depends: N-001
 Est: 10-14
@@ -1369,7 +1375,7 @@ Est: 10-14
 Status: not-started
 
 ### N-008 Commitment, receipt and queue stores
-Files: `crates/vibemaxxing-daemon/src/store/queue.rs` (new), `packages/schemas/local-schema.sql` (new)
+Files: `crates/vibemaxxing-daemon/src/store/queue.rs` (new), `packages/schemas/local-store-v1.sql`
 Acceptance: a commitment write followed by a receipt write survives a `SIGKILL` between the two with no partial row, asserted at every write boundary; the queue drains in order and never re-emits an acknowledged item.
 Depends: P-003, N-001
 Est: 10-14
@@ -1661,6 +1667,8 @@ Depends: S-002
 Est: 10-14
 Status: not-started
 
+The unit also persists `source_certifications`, which is where the exact tuple and its lifecycle live, and `platform_install_plans` with `platform_install_operations`, the typed platform operations one release performs on one profile. A check constraint on `source_certifications` makes any state other than `active` incapable of holding a ceiling above private analytics, which is the four-state assertion the acceptance names, expressed so that it cannot be got wrong by a query.
+
 ### S-015 Crash-before/after-commit PostgreSQL evidence
 Files: `apps/api/internal/db/crash_test.go` (new), `conformance/p1140e/sql-race-plans-v1.json`
 Acceptance: every plan in `conformance/p1140e/sql-race-plans-v1.json` runs against a real PostgreSQL instance and leaves exactly the rows it records; a skipped plan fails the suite, so an absent database cannot be reported as a pass.
@@ -1891,7 +1899,9 @@ Files: `crates/vibeproof-adapters/src/probe.rs` (new), `packages/schemas/compati
 Acceptance: the probe emits a tuple that validates against the schema and whose digest equals the registry row's; a host whose probe result differs from the certified tuple is reported unsupported rather than downgraded, asserted by a deliberately mismatched fixture.
 Depends: V-001, V-002
 Est: 10-14
-Status: not-started
+Status: in-progress
+
+The schema half exists. No probe does, so nothing emits a tuple and the mismatched-host fixture has not been written.
 
 ### V-004 Local adapter implementation
 Files: `crates/vibeproof-adapters/src/local/mod.rs` (new), `conformance/adapters/claude-code-otel/source-observation.valid.json`, `conformance/adapters/claude-code-otel/otlp-attribute-disposition-v1.json`
@@ -1912,7 +1922,9 @@ Files: `scripts/ci/run_certification.py` (new), `packages/schemas/certification-
 Acceptance: the emitted bundle validates against its schema and carries suite and case digests, a validity interval and a signer reference; two runs against the same tuple produce the same case digests, and a changed fixture changes them.
 Depends: V-004, V-005
 Est: 12-16
-Status: not-started
+Status: in-progress
+
+The bundle schema exists and two fixtures exercise it, one of them a pass with no negative case that the schema refuses. No runner emits a bundle, so the reproducibility half of the acceptance is untested.
 
 `certification_results` stores the signed bundle for each certified tuple.
 

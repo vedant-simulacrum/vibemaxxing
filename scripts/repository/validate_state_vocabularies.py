@@ -510,6 +510,25 @@ BINDINGS: tuple[Binding, ...] = (
         "appeal returns the case to it.",
     ),
     Binding(
+        aggregate="source-certification",
+        machine="source-certification",
+        states=(
+            "candidate",
+            "testing",
+            "active",
+            "degraded",
+            "suspended",
+            "expired",
+            "superseded",
+            "retired",
+        ),
+        sql=("source_certifications.state",),
+        note="D-327. Distinct from `platform-certification`, which certifies an "
+        "operating-system profile; this one certifies an exact source, mode, "
+        "platform and accounting tuple. Only `active` may exceed "
+        "private-analytics, which is a check constraint rather than a rule.",
+    ),
+    Binding(
         aggregate="claim-record",
         states=("accepted", "corrected", "retracted", "quarantined"),
         api=("ClaimRecord.state",),

@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/certification-result-v1.schema.json",
+  "title": "Signed certification result bundle and lifecycle record v1",
+  "description": "One signed record of one conformance run against one exact compatibility tuple, plus the lifecycle state that run produced. docs/integrations/ADAPTER_CERTIFICATION_POLICY.md is the normative owner; packages/schemas/planning-schema.sql#certification_results and #source_certifications are the persistence owners; the source-certification machine owns the lifecycle. A result is append-only and immutable: a later run is a new record and never an edit, because the appraisal of a claim accepted under an earlier result has to stay reproducible. A registry may advertise support only for a certification in the active state, so nothing here can imply exercised support for a tuple that is planned, testing, expired, suspended, superseded or retired.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "certification", "result"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "certification": { "$ref": "#/$defs/certification" },
+    "result": { "$ref": "#/$defs/result" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "certification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_certification_id",
+        "tuple_digest",
+        "state",
+        "effective_ceiling",
+        "created_at"
+      ],
+      "properties": {
+        "source_certification_id": { "type": "string", "format": "uuid" },
+        "tuple_digest": {
+          "description": "The digest of the packages/schemas/compatibility-tuple-v1.schema.json record this certification covers. It is the join key between a claim, its appraisal and this record.",
+          "$ref": "#/$defs/digest"
+        },
+        "state": {
+          "enum": [
+            "candidate",
+            "testing",
+            "active",
+            "degraded",
+            "suspended",
+            "expired",
+            "superseded",
+            "retired"
+          ]
+        },
+        "effective_ceiling": {
+          "description": "The strongest evidence class a claim under this tuple may reach. Only an active certification may exceed private-analytics; the DDL carries the pairing as a check constraint, so an expired or suspended tuple cannot sit beside a hardened ceiling even by mistake.",
+          "enum": ["hardened", "standard", "private-analytics"]
+        },
+        "valid_from": { "type": "string", "format": "date-time" },
+        "valid_until": {
+          "description": "A certification expires rather than lasting until somebody notices. An expired tuple drops to private-analytics and stops being advertised, which is the difference between a registry that says what has been exercised and one that says what was exercised once.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "superseded_by_source_certification_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "revoked_at": { "type": "string", "format": "date-time" },
+        "revocation_reason_code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "const": "active" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["valid_from"] }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "candidate",
+                  "testing",
+                  "degraded",
+                  "suspended",
+                  "expired",
+                  "superseded",
+                  "retired"
+                ]
+              }
+            },
+            "required": ["state"]
+          },
+          "then": {
+            "properties": {
+              "effective_ceiling": { "const": "private-analytics" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["revoked_at"] },
+          "then": { "required": ["revocation_reason_code"] }
+        },
+        {
+          "if": {
+            "properties": { "state": { "const": "superseded" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["superseded_by_source_certification_id"] }
+        }
+      ]
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "certification_result_id",
+        "suite_id",
+        "suite_manifest_sha256",
+        "outcome",
+        "case_count",
+        "negative_case_count",
+        "failed_case_count",
+        "result_digest",
+        "cose_sign1_b64",
+        "signing_key_id",
+        "executed_at"
+      ],
+      "properties": {
+        "certification_result_id": { "type": "string", "format": "uuid" },
+        "suite_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "suite_manifest_sha256": {
+          "description": "The D-242 manifest that ran, bound by digest so a result cannot claim a pass against a suite whose cases moved afterwards.",
+          "$ref": "#/$defs/digest"
+        },
+        "outcome": { "enum": ["passed", "failed", "inconclusive"] },
+        "case_count": { "type": "integer", "minimum": 1 },
+        "negative_case_count": {
+          "description": "Counted separately, and required to be non-zero on a pass. A suite with no negative case has not demonstrated that it can fail, so its pass carries no information — which is the same reasoning D-242 applies at the manifest level.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed_case_count": { "type": "integer", "minimum": 0 },
+        "cases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/case_outcome" }
+        },
+        "result_digest": { "$ref": "#/$defs/digest" },
+        "cose_sign1_b64": {
+          "description": "COSE_Sign1 over the result digest, algorithm -19 Ed25519 under D-190, with the deterministic encoding D-191 fixes.",
+          "type": "string",
+          "minLength": 1
+        },
+        "signing_key_id": { "type": "string", "minLength": 1 },
+        "executed_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "outcome": { "const": "passed" } },
+            "required": ["outcome"]
+          },
+          "then": {
+            "properties": {
+              "failed_case_count": { "const": 0 },
+              "negative_case_count": { "minimum": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "case_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "polarity", "outcome"],
+      "properties": {
+        "case_id": {
+          "description": "Permanent and never reused, under D-242.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "polarity": { "enum": ["positive", "negative"] },
+        "outcome": { "enum": ["passed", "failed", "skipped"] },
+        "reason_code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "clause": {
+          "description": "The specific clause the case enforces, as D-242 requires. A case that cannot name one is testing something nobody wrote down.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
