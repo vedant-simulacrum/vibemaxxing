@@ -1,8 +1,9 @@
 # Accounting, Pricing, and Time Contract
 
 Status: normative planning contract
-Version: 2
-Updated: 2026-07-24
+Version: 3
+Updated: 2026-08-06
+Decisions: D-235
 
 ## Token Burn
 
@@ -77,6 +78,33 @@ Local-time views may be offered as private analytics but do not change global co
 - Claims outside the applicable profile bound remain private analytics unless a named checkpoint/continuity policy explicitly admits them.
 - Period results remain provisional through the lateness window, then finalize.
 - Appeals and verified server corrections can modify finalized results through explicit correction records and audit events.
+
+### Clock synchronization and skew bounds
+
+The monotonic clock domain is a first-class claim field, clock rollback is a catalogued attack (AC-A-008), and backdating into a prior period is another (AC-A-007). Until this section existed, no tolerance window, time-source requirement or skew bound was stated anywhere except a single 300-second authentication figure in ADR-015, so the controls those attack entries name had no threshold to enforce.
+
+**The server's clock is the authority.** Canonical event time is server-receipt time plus bounded source metadata, and every bound below is measured against the server's clock rather than negotiated with the client.
+
+| Bound | Value | What it constrains |
+|---|---:|---|
+| Request signing freshness | 300 seconds | ADR-015 already sets it: a native client whose clock is further than this from the server cannot authenticate |
+| Future event tolerance | 300 seconds | a claim whose declared source interval ends more than this far ahead of server receipt time is rejected |
+| Past event tolerance | `standard_claim_lateness_seconds`, currently 86,400 | already owned by the policy registry and by the lateness window above |
+| Declared time uncertainty ceiling | 300 seconds | a claim declaring `time_uncertainty_ms` above this is admitted as private analytics and is not competitively eligible |
+| Server clock offset, review | 250 ms | the server compares its own clock against a second source and reports a `daily-digest` alert beyond this |
+| Server clock offset, refuse | 2,000 ms | beyond this the server stops finalizing claims and stops assigning periods, because a period boundary decided by a wrong clock cannot be corrected without rebuilding |
+
+The three 300-second figures are deliberately the same number. A client that can authenticate can submit, and a client that cannot authenticate cannot submit anything at all; giving event admission a wider window than authentication would create a band in which a claim is admissible from a client that cannot present it. One number also means one thing for a participant to understand: **your machine's clock must be within five minutes of real time.**
+
+Five minutes is chosen against the period model rather than against cryptographic practice. The shortest competitive period boundary that matters is the UTC calendar day, and daily, weekly, monthly and yearly boundaries are all at least a day apart. A five-minute tolerance is 0.35% of a day, so the number of claims a maximally skewed honest clock can land on the wrong side of a boundary is negligible, while a tolerance an order of magnitude wider would start to matter at the minute-aggregate level.
+
+The 2,000-millisecond refusal threshold is set an order of magnitude above the 250-millisecond review threshold, which is roughly what an unsynchronized virtual machine drifts in an hour. Refusing at two seconds means a server whose time source has failed stops making irreversible period assignments within about an hour of the failure rather than continuing indefinitely.
+
+**Time source.** The server's host clock is disciplined by a network time protocol client with at least four independent sources. On managed compute the platform owns that discipline and the provider's published statement of it is a selection input under ADR-017; the service does not assume it. The service independently measures its own offset against a second source and applies the two thresholds above, because a platform assurance that the service cannot verify is a platform assurance the service is not entitled to rely on for an irreversible decision.
+
+**Client clocks are never trusted and never need to be.** A skewed client clock does not corrupt accounting, because the monotonic domain carries duration and the server carries the wall-clock anchor. What a skewed client clock does is fail authentication, which ADR-015 already describes as a visible failure rather than a silent downgrade. Reboot, suspend, restore, rollback or clock-domain reset starts a new monotonic generation, as stated above, and a generation change is the signal that wall-clock continuity was broken — a claim spanning a generation boundary carries the break explicitly rather than averaging across it.
+
+**Leap seconds.** The service makes no assumption about how the platform handles one. All internal arithmetic is on monotonic durations and on integer counts, no interval is computed by subtracting two wall-clock timestamps, and period boundaries are UTC calendar boundaries evaluated from the platform's own calendar rather than from an elapsed-seconds count. A smeared or repeated second therefore changes no accepted total.
 
 ### Ties, ranks, streaks
 

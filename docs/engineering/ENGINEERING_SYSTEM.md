@@ -2,6 +2,8 @@
 
 This document defines the production engineering baseline for VibeMaxxing. It is a system of evidence, not a claim that the current repository is already production-ready.
 
+It names the layers and the gates. Three companions supply the method underneath them: `docs/verification/TEST_STRATEGY.md` owns test shape, frameworks, coverage floors and load scenarios; `docs/engineering/LOCAL_DEVELOPMENT.md` owns bringing the stack up; `docs/verification/CONFORMANCE_HARNESS.md` owns the fixture and runner contract that layer 3 depends on.
+
 ## Required quality layers
 
 1. **Fast PR checks** — formatting, linting, type checking, unit tests, schema validation and repository policy.

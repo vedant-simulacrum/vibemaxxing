@@ -1,5 +1,14 @@
 schema_version: 1
 policy: deny-by-default
+# Scope. This allowlist governs metric attributes, span attributes and structured
+# log fields alike. Application logging was previously ungoverned: nothing named it
+# as in scope, and the binding rule that forbidden content never leaves the device
+# applies to a log line exactly as it applies to a metric.
+# docs/operations/LOGGING_AND_INSTRUMENTATION.md owns the emitted form.
+scope:
+  - metric_attributes
+  - span_attributes
+  - structured_log_fields
 allowed_attributes:
   - route_template
   - status_class
@@ -15,6 +24,23 @@ allowed_attributes:
   - evidence_state
   - build_version
   - platform
+  # Added 2026-08-06 under D-236 and D-237. The first two close a gap between this
+  # registry and docs/operations/OBSERVABILITY_PRIVACY.md, which allowed "service
+  # and version" and "deployment environment" while this file named neither.
+  - service_name
+  - deployment_environment
+  - principal_class
+  - operation_class
+  # Correlation. request_id is server-generated and never accepted from a client.
+  # trace_id and span_id are emitted and logged; no span is exported.
+  - request_id
+  - trace_id
+  - span_id
+  # Pseudonymous principal references: truncated HMAC of the identifier under a
+  # per-environment salt that rotates every log_salt_rotation_days. They do not
+  # join across salt epochs, and no mapping back to the identifier is stored.
+  - account_ref
+  - device_ref
 forbidden_classes:
   - prompt
   - response
@@ -37,6 +63,22 @@ forbidden_classes:
   - summary
   - classification
   - personal_insight
+  # Added 2026-08-06 under D-236. Log-specific shapes rather than telemetry
+  # attribute classes; each is a route by which one of the classes above reaches a
+  # log line without being recognised as itself.
+  - full_url
+  - query_string
+  - request_body
+  - response_body
+  - header_map
+  - idempotency_key_value
+  - environment_variable
+  # Network address is forbidden in the operational stream. The security-audit
+  # stream may carry it on authentication, session, device and administrative
+  # events, and erases the field at operational_telemetry_retention_days while
+  # retaining the event, because docs/privacy/DATA_MAP.md is the Article 30
+  # authority for that retention and it records 30 days.
+  - network_address_operational
 retention_days:
   operational_detail: 30
   operational_aggregate: 395
