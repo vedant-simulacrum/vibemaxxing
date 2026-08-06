@@ -1885,19 +1885,36 @@ DELETION_BANNED_FIELDS: tuple[str, ...] = (
 # are repaired by this change; the six below are the same defect in aggregates
 # this change does not own, and they are enumerated so a new one cannot be added
 # silently.
-ERASURE_FK_EXCEPTIONS: frozenset[tuple[str, str]] = frozenset(
-    {
-        ("appeals", "account_id"),
-        ("ranking_corrections", "correction_id"),
-        ("organizations", "owner_account_id"),
-        ("communities", "owner_account_id"),
-        ("deletion_jobs", "account_id"),
-        ("invite_codes", "issued_by_account_id"),
-    }
-)
+# Empty, and it stays that way or it stops being an exception list.
+#
+# Six entries were recorded here when the rule was written, because a rule with
+# six live violations is a wish. All six are repaired: each column is retained
+# and its reference dropped, which is what `retain-unlinked` means in
+# `packages/schemas/data-disposition-v1.json` and what
+# `docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md` describes as "an identifier
+# whose subject row is gone".
+#
+# An entry added here is a promise to remove it. An exception list that outlives
+# its exceptions is a stale excuse, which is the failure mode this repository
+# has spent a lot of effort removing.
+ERASURE_FK_EXCEPTIONS: frozenset[tuple[str, str]] = frozenset()
 
-_NOT_NULL_FK_RE = re.compile(
-    r"^\s*([a-z_][a-z0-9_]*)\s+uuid\s+not\s+null\s+references\s+([a-z_][a-z0-9_]*)\s*\(",
+# Any reference blocks the delete, not only a NOT NULL one.
+#
+# The first version of this rule matched `not null` and therefore saw six of the
+# nine violations. The other three were nullable references with no ON DELETE
+# action, and PostgreSQL refuses the parent delete for those exactly as hard —
+# nullability decides whether a *row* may omit the reference, not whether the
+# referenced row may be deleted. Three tables sat inside a rule that could not
+# see them, and the gap only surfaced when an erasure was actually executed
+# against a real database rather than reasoned about.
+#
+# ON DELETE CASCADE and ON DELETE SET NULL are excluded: both let the parent
+# delete proceed, which is the property this rule is about.
+_ERASURE_FK_RE = re.compile(
+    r"^\s*([a-z_][a-z0-9_]*)\s+uuid"
+    r"(?:\s+not\s+null)?(?:\s+primary\s+key)?"
+    r"\s+references\s+([a-z_][a-z0-9_]*)\s*\([^)]*\)([^,\n]*)",
     re.MULTILINE,
 )
 
@@ -2071,16 +2088,20 @@ def validate_notification_and_local_deletion_contracts() -> None:
     for table, body in bodies.items():
         if actions.get(table) not in {"retain-unlinked", "retain-pseudonymous"}:
             continue
-        for match in _NOT_NULL_FK_RE.finditer(body):
-            column, target = match.group(1), match.group(2)
+        for match in _ERASURE_FK_RE.finditer(body):
+            column, target, trailing = match.group(1), match.group(2), match.group(3)
             if actions.get(target) != "delete":
+                continue
+            if "on delete" in trailing.lower():
                 continue
             if (table, column) in ERASURE_FK_EXCEPTIONS:
                 continue
             raise ValidationFailure(
-                f"{table}.{column} is a NOT NULL foreign key into {target}, which an "
-                f"erasure deletes, while {table} is classified {actions[table]}: the "
-                "erasure transaction cannot commit and the retained row cannot survive"
+                f"{table}.{column} references {target}, which an erasure deletes, "
+                f"while {table} is classified {actions[table]}. PostgreSQL refuses "
+                "the parent delete, so the erasure transaction cannot commit and the "
+                "retained row cannot survive. Drop the reference and keep the "
+                "identifier, or give it an explicit ON DELETE action"
             )
 
     for filename, example, expect_valid in NOTIFICATION_DELETION_EXAMPLES:

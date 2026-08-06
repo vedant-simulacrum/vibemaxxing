@@ -124,6 +124,66 @@ class DispositionAndErasureTests(unittest.TestCase):
 
     # -- erasure invariants -------------------------------------------------
 
+    def test_a_nullable_reference_into_an_erased_table_fails(self) -> None:
+        """The gap that hid three of nine violations.
+
+        The rule originally matched `not null references`, so a nullable
+        reference with no ON DELETE action passed — even though PostgreSQL
+        refuses the parent delete for those exactly as hard. Nullability
+        decides whether a row may omit the reference, not whether the
+        referenced row may be deleted.
+        """
+        copy = self._schemas_copy()
+        path = copy / "planning-schema.sql"
+        sql = path.read_text(encoding="utf-8")
+        path.write_text(
+            sql.replace(
+                "  -- Deliberately not a foreign key: the case survives erasure "
+                "unlinked; a nullable reference still blocks the delete.\n"
+                "  account_id uuid,",
+                "  account_id uuid references accounts(account_id),",
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaises(self.validator.ValidationFailure) as raised:
+            self._run_with(
+                copy, self.validator.validate_notification_and_local_deletion_contracts
+            )
+        message = str(raised.exception)
+        self.assertIn("moderation_cases.account_id", message)
+        self.assertIn("cannot commit", message)
+
+    def test_an_explicit_on_delete_action_is_accepted(self) -> None:
+        """The rule is about whether the parent delete can proceed, nothing else.
+
+        ON DELETE SET NULL and ON DELETE CASCADE both let it proceed, so a
+        reference carrying one is not a violation and must not be reported as
+        though dropping the reference were the only repair.
+        """
+        copy = self._schemas_copy()
+        path = copy / "planning-schema.sql"
+        sql = path.read_text(encoding="utf-8")
+        path.write_text(
+            sql.replace(
+                "  -- Deliberately not a foreign key: the case survives erasure "
+                "unlinked; a nullable reference still blocks the delete.\n"
+                "  account_id uuid,",
+                "  account_id uuid references accounts(account_id) on delete set null,",
+            ),
+            encoding="utf-8",
+        )
+        self._run_with(
+            copy, self.validator.validate_notification_and_local_deletion_contracts
+        )
+
+    def test_the_exception_set_is_empty(self) -> None:
+        """An exception list that outlives its exceptions is a stale excuse."""
+        self.assertEqual(
+            self.validator.ERASURE_FK_EXCEPTIONS,
+            frozenset(),
+            "every recorded exception has been repaired; a new entry needs a reason",
+        )
+
     def test_a_key_row_that_can_be_destroyed_and_still_hold_material_fails(
         self,
     ) -> None:
