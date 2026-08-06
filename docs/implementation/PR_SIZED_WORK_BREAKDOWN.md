@@ -70,19 +70,19 @@ Units: 258. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 234 |
-| `in-progress` | 4 |
-| `landed` | 14 |
+| `not-started` | 227 |
+| `in-progress` | 6 |
+| `landed` | 19 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 41 assertions across 14 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 54 assertions across 19 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 15.
+Startable now — not done, and every dependency done: 14.
 
-`PF-001`, `PF-004`, `PF-037`, `PF-040`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-050`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-008`.
+`PF-001`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-008`.
 
-Statuses additionally checkable against artifact presence: 202 of 258. The other 56 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 196 of 258. The other 62 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -594,40 +594,45 @@ Evidence: contains 1 packages/schemas/openapi-v1.yaml :: refreshSession
 The defect as found: `AUTHENTICATION_AND_RECOVERY.md:63-66` specified HTTP-only same-site cookies with refresh-token rotation while the OpenAPI document declared a single global opaque `bearerAuth` with no cookie scheme, no OAuth2 flows, no scopes and no refresh endpoint. Those were two different architectures and the first authenticated request could not be implemented until one was chosen. The `web-session-family` machine's `replay-detected` state is persisted by `O-006`, which is where the remaining half of that sentence lives.
 
 ### PF-040 — Specify accounting arithmetic
-Files: `packages/schemas/accounting-profile.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/arithmetic-vectors-v1.json` (new)
+Files: `packages/schemas/accounting-profile.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/arithmetic-vectors-v1.json`
 Acceptance: two independent implementations reproduce every vector in the new fixture byte-for-byte, including the profile digest.
 Depends: PF-038
 Est: 8-12
-Status: not-started
+Status: landed
+Evidence: exists conformance/accounting/arithmetic-vectors-v1.json
+Evidence: exists packages/schemas/accounting-arithmetic-vectors-v1.schema.json
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
 
 `accounting-profile.schema.json` defines no rounding, overflow, precision, or unit-conversion rules, and no canonical digest algorithm — yet `accounting_profile_sha256` is a signed claim field. `retry_policy`, `cancellation_policy`, and `nested_execution_policy` at `:209-228` are enum labels with no defined behavior. Two implementations cannot currently agree on a token total, which makes cross-language parity meaningless.
 
 ### PF-041 — Specify the OpenTelemetry accounting profile
-Files: `packages/schemas/accounting-profile-otel-v1.json` (new), `docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `conformance/accounting/otel-capture-vectors-v1.json` (new)
+Files: `packages/schemas/accounting-profile-otel-v1.json` (new), `docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `conformance/accounting/otel-capture-vectors-v1.json`
 Acceptance: the profile maps a captured OTLP payload to a `NormalizedAccountingEvent` deterministically; fixture includes at least one real capture per supported metric.
 Depends: PF-040
 Est: 8-12
-Status: not-started
+Status: in-progress
 
 Empirically verified capture surface, 2026-08-05: Claude Code emits `claude_code.token.usage` as a counter with attributes `model`, `query_source` (`main`/`subagent`/`auxiliary`), and `type` (`input`/`output`/`cacheRead`/`cacheCreation`). Gemini CLI emits `gemini_cli.token.usage`; Codex emits `codex.turn.token_usage`. Prompt and response content appears only on the logs channel and is redacted unless explicitly enabled, so metrics-only capture keeps the collector out of L0 entirely.
 
 Three hazards this profile must encode: every Claude Code metric carries `organization.id`, `user.account_uuid`, `user.account_id`, `user.email`, and `user.id`, which must be dropped at ingest rather than trusted for identity; Gemini CLI's `logPrompts` defaults to **true**; and Codex's `metrics_exporter` defaults to `statsig`, not `none`.
 
 ### PF-042 — Author the source receipt contract
-Files: `packages/schemas/source-receipt-v1.schema.json` (new), `packages/schemas/source-observation.schema.json`, `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
+Files: `packages/schemas/source-receipt-v1.schema.json`, `packages/schemas/source-observation.schema.json`, `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
 Acceptance: every `NormalizedAccountingEvent` fixture resolves to exactly one source receipt; schema validates the full existing observation corpus.
 Depends: PF-041
 Est: 6-8
-Status: not-started
+Status: landed
+Evidence: exists packages/schemas/source-receipt-v1.schema.json
+Evidence: validator scripts/repository/validate_planning_coverage.py
 
 Inventory line `:35`. Provenance for every claim, and the first of the 33 `planned-missing` contracts that blocks real work. Note the inventory maps this to `PF-021/PF-022`, which are ranking units; the accounting owners are `PF-017`/`PF-018`.
 
 ### PF-043 — Author the appraisal result and policy contracts
-Files: `packages/schemas/appraisal-result-v1.schema.json` (new), `packages/schemas/appraisal-policy-v1.schema.json` (new), `packages/schemas/openapi-v1.yaml`
+Files: `packages/schemas/appraisal-result-v1.schema.json`, `packages/schemas/appraisal-policy-v1.schema.json`, `packages/schemas/openapi-v1.yaml`
 Acceptance: `ClaimRecord.appraisal_id` resolves to a defined schema and a retrievable operation; no dangling reference remains.
 Depends: PF-038
 Est: 8-10
-Status: not-started
+Status: in-progress
 
 Inventory lines `:37-38`. `ClaimRecord.appraisal_id` already references an appraisal today and there is no `/appraisals/{id}` path and no schema behind it.
 
@@ -701,29 +706,37 @@ Status: in-progress
 The defect as found: `planning-schema.sql` stored a nullable `response_digest` with no response-body column; its primary key was `(actor_account_id, idempotency_key)` with no global uniqueness; and the principal was account-only.
 
 ### PF-050 — Populate retention and disposition policy
-Files: `packages/schemas/policy-defaults-v1.json`, `packages/schemas/data-disposition-v1.json` (new), `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
+Files: `packages/schemas/policy-defaults-v1.json`, `packages/schemas/data-disposition-v1.json`, `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
 Acceptance: every one of the 98 tables in `packages/schemas/planning-schema.sql` has a declared retention class, which a script asserts by diffing the table list against the policy file in both directions; no `expires_at` column exists without a named enforcement owner.
 Depends: PF-038
 Est: 6-8
-Status: not-started
+Status: landed
+Evidence: exists packages/schemas/data-disposition-v1.json
+Evidence: exists packages/schemas/data-disposition-v1.schema.json
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
 
 Inventory `:106-107` assigns retention to `policy-defaults-v1.json`, which currently contains 16 knobs and zero retention windows. `expires_at` is stored in several tables and enforced nowhere.
 
 ### PF-051 — Specify multi-observer deduplication
-Files: `packages/schemas/normalized-event.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/dedup-vectors-v1.json` (new)
+Files: `packages/schemas/normalized-event.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/dedup-vectors-v1.json`
 Acceptance: two collectors observing one session produce a single counted event; fixture covers the colliding and non-colliding commitment cases.
 Depends: PF-042
 Est: 6-8
-Status: not-started
+Status: landed
+Evidence: exists conformance/accounting/dedup-vectors-v1.json
+Evidence: exists packages/schemas/dedup-vectors-v1.schema.json
+Evidence: exists conformance/accounting/dedup-vectors-v1.invalid-empty-preimage.json
 
 Inventory `:74`. `TOKEN_ACCOUNTING_SPEC.md:74-76` currently relies on the collector's own `duplicate_domain_commitment`, so two collectors on one real session can choose non-colliding commitments and double-count. Double counting is a scoring defect, not a data-quality defect.
 
 ### PF-052 — Author ranking generation, entry and snapshot contracts
-Files: `packages/schemas/ranking-generation-v1.schema.json` (new), `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`
+Files: `packages/schemas/ranking-generation-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`
 Acceptance: `LeaderboardPage.snapshot_id` and `revision` and `RankEntry.ranking_view_id` all resolve; a generation can be pinned, superseded, and read back.
 Depends: PF-038, PF-048
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: exists packages/schemas/ranking-generation-v1.schema.json
+Evidence: contains 1 packages/schemas/planning-schema.sql :: ranking_entries
 
 Inventory `:88`. Three fields dangle in the API today. This is also where `getLeaderboard` gains a viewer parameter and loses its unauthenticated `security: []` while the `Scope` enum at `:1775` still admits `friends|rivals|board`.
 
@@ -1231,7 +1244,7 @@ Est: 10-14
 Status: not-started
 
 ### A-006 Duplicate-domain engine
-Files: `crates/vibeproof-core/src/accounting/dedup.rs` (new), `conformance/accounting/dedup-vectors-v1.json` (new)
+Files: `crates/vibeproof-core/src/accounting/dedup.rs` (new), `conformance/accounting/dedup-vectors-v1.json`
 Acceptance: two collectors over one session produce one counted event in every vector, including the case where the two choose non-colliding duplicate-domain commitments; each vector is run under both input orderings and must produce the same result.
 Depends: A-002
 Est: 10-14
@@ -1876,7 +1889,7 @@ Est: 8-12
 Status: not-started
 
 ### V-008 Multi-observer duplicate reconciliation
-Files: `crates/vibeproof-adapters/tests/multi_observer.rs` (new), `conformance/accounting/dedup-vectors-v1.json` (new)
+Files: `crates/vibeproof-adapters/tests/multi_observer.rs` (new), `conformance/accounting/dedup-vectors-v1.json`
 Acceptance: the dedup vectors run end to end through both adapters and yield one counted event per real operation; starting the two observers in the opposite order produces the same count.
 Depends: V-004, V-005, A-006
 Est: 10-14
@@ -1911,12 +1924,16 @@ Depends: S-002
 Est: 8-12
 Status: not-started
 
+`seasons` is the multi-period grouping and is registered here alongside `periods`.
+
 ### R-002 Immutable score contributions
 Files: `apps/api/internal/ranking/contributions.go` (new), `migrations/0014_scores.sql` (new), `packages/schemas/planning-schema.sql`
 Acceptance: `minute_scores` and `period_scores` reject `UPDATE` and `DELETE` at the database level; replaying an already-accepted claim leaves the row count unchanged, which is the check that a contribution is written exactly once.
 Depends: S-011, R-001
 Est: 10-14
 Status: not-started
+
+`score_contributions` is the immutable ledger row; `minute_scores` and `period_scores` are projections of it, and a rebuild reads the ledger rather than the projections.
 
 `minute_scores` had no owning unit before this one.
 
@@ -1937,6 +1954,8 @@ Acceptance: every entry key includes its `ranking_projection_generations` genera
 Depends: R-002, R-003
 Est: 12-16
 Status: not-started
+
+`ranking_entries` is the generation-keyed entry table.
 
 `projection_generations` is the generation record the entry keys reference.
 
@@ -1994,6 +2013,8 @@ Acceptance: every movement, overtake and streak event references the generation 
 Depends: R-006, R-010
 Est: 10-14
 Status: not-started
+
+`ranking_movement_events` is the append-only movement, overtake and streak ledger.
 
 `ranking_events` is the append-only movement, overtake, streak and retraction ledger.
 
@@ -2228,6 +2249,8 @@ Depends: M-006, R-010, G-015
 Est: 12-16
 Status: not-started
 
+Crypto-erasure under D-085 is the mechanism: `erasure_domains` declares each erasable domain, `erasure_keys` holds the per-domain key whose destruction renders the domain unreadable, and `erasure_domain_links` binds a row to the domain that governs it. Destroying a key is not the same claim as overwriting a row, and the receipt must not say otherwise.
+
 ### M-008 Per-device local deletion commands and receipts
 Files: `apps/api/internal/deletion/devices.go` (new), `crates/vibemaxxing-daemon/src/deletion.rs` (new), `packages/schemas/planning-schema.sql`
 Acceptance: each `local_deletion_commands` row resolves to a `local_deletion_receipts` row recording `complete`, `pending`, `expired`, `unreachable` or `waived`; `grep -in 'forensic\|unrecoverable' apps/api/internal/deletion` returns no claim the receipt cannot support.
@@ -2241,6 +2264,8 @@ Acceptance: a restore from a backup taken before a deletion reapplies every tomb
 Depends: M-007
 Est: 10-14
 Status: not-started
+
+`erasure_records` is the append-only record of each destruction, and `erasure_restore_receipts` records what a restore reapplied. Without the second one, a restore drill cannot show that a destroyed domain stayed destroyed.
 
 `deletion_tombstones` is what a restore has to reapply before any affected row becomes readable.
 

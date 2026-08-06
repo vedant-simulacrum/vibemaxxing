@@ -108,6 +108,13 @@ EST_RE = re.compile(r"^(\d{1,3})(?:\s*-\s*(\d{1,3}))?$")
 CREATE_TABLE_RE = re.compile(
     r"^\s*create\s+table\s+(?:if\s+not\s+exists\s+)?([a-z_]+)", re.I
 )
+# `create table x partition of y …`. A partition has no lifecycle of its own, so it
+# is owned by whichever unit owns its parent; requiring a separate owner would push
+# the plan to name storage layout rather than aggregates.
+PARTITION_OF_RE = re.compile(
+    r"^\s*create\s+table\s+(?:if\s+not\s+exists\s+)?([a-z_]+)\s+partition\s+of\s+([a-z_]+)",
+    re.I,
+)
 SAFE_ARGUMENT_RE = re.compile(r"^[A-Za-z0-9_./=-]+$")
 
 SINGLE_FIELDS = ("Files", "Acceptance", "Depends", "Est", "Status")
@@ -460,17 +467,34 @@ def check_superseded_edges(units: list[Unit], defects: list[str]) -> None:
 
 def check_table_ownership(units: list[Unit], defects: list[str]) -> int:
     text = read_text(PLANNING_SQL)
-    tables = [
-        match.group(1)
-        for match in (CREATE_TABLE_RE.match(line) for line in text.splitlines())
-        if match
-    ]
+    tables: list[str] = []
+    parent_of: dict[str, str] = {}
+    for line in text.splitlines():
+        partition = PARTITION_OF_RE.match(line)
+        if partition:
+            parent_of[partition.group(1)] = partition.group(2)
+            tables.append(partition.group(1))
+            continue
+        match = CREATE_TABLE_RE.match(line)
+        if match:
+            tables.append(match.group(1))
+
     named: set[str] = set()
     for unit in units:
         for token in INLINE_CODE_RE.findall(unit.body):
             candidate = token.strip()
             if candidate in tables:
                 named.add(candidate)
+
+    # A partition inherits its parent's owner, transitively.
+    for child, parent in parent_of.items():
+        seen = {child}
+        while parent in parent_of and parent not in seen:
+            seen.add(parent)
+            parent = parent_of[parent]
+        if parent in named:
+            named.add(child)
+
     for table in sorted(set(tables) - named):
         defects.append(
             f"`{table}` in packages/schemas/planning-schema.sql is named by no work unit, "
