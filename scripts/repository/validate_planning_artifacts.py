@@ -18,9 +18,14 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import generate_vibeproof_vectors as vibeproof_vectors  # noqa: E402
+
 import psycopg
 import yaml
 from cddlparser import parse as parse_cddl
+
 from jsonschema import Draft202012Validator, FormatChecker
 from openapi_spec_validator import validate as validate_openapi
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -729,6 +734,16 @@ def validate_p1140d_contracts() -> None:
 
 
 def validate_cddl_file() -> None:
+    """Parse the CDDL and assert the rules the contracts depend on are present.
+
+    This proves the grammar parses and that named rules exist. It does **not**
+    validate any CBOR instance against the CDDL: `cddlparser` is a
+    specification-authoring parser whose own documentation disclaims CBOR
+    validation, and it does not implement the RFC 9682 grammar updates. The
+    repository therefore has no instance-level CDDL conformance checking, and
+    this stage is named for what it executes rather than what a reader might
+    assume from the word "CDDL".
+    """
     text = (SCHEMAS / "vibeproof-claim-v1.cddl").read_text(encoding="utf-8")
     parse_cddl(text)
     for required_rule in (
@@ -755,6 +770,23 @@ def validate_cddl_file() -> None:
             )
 
 
+def validate_vector_reproducibility() -> None:
+    """The signed vectors must regenerate byte-identically from the recorded seed.
+
+    Hand-editing fixture hex is how a corpus drifts from the profile it claims
+    to encode. If this fails, the committed vectors contain something the
+    generator would not produce, which means they are no longer evidence of
+    anything the profile says.
+    """
+    if vibeproof_vectors.regenerate() != (
+        CONFORMANCE / "vibeproof" / "v1" / "exact-byte-vectors.json"
+    ).read_text(encoding="utf-8"):
+        raise ValidationFailure(
+            "exact-byte vectors are not reproducible from the recorded seed; "
+            "run scripts/repository/generate_vibeproof_vectors.py"
+        )
+
+
 def validate_vibeproof_vectors() -> None:
     vectors = load_json(CONFORMANCE / "vibeproof" / "v1" / "exact-byte-vectors.json")
     corpus = load_json(
@@ -775,6 +807,13 @@ def validate_vibeproof_vectors() -> None:
             "VibeProof fixed seed does not derive declared public key"
         )
     verifier = Ed25519PublicKey.from_public_bytes(public)
+    external_aad = bytes.fromhex(vectors["external_aad_hex"])
+
+    def headers_of(protected: bytes) -> dict:
+        decoded, consumed = vibeproof_vectors.decode_map_at(protected, 0)
+        if consumed != len(protected):
+            raise ValidationFailure("trailing bytes in protected headers")
+        return decoded
 
     for kind in ("claim", "receipt"):
         vector = vectors[kind]
@@ -788,6 +827,32 @@ def validate_vibeproof_vectors() -> None:
             raise ValidationFailure(f"{kind} COSE digest mismatch")
         if len(cose) != vector["encoded_bytes"]:
             raise ValidationFailure(f"{kind} encoded byte length mismatch")
+
+        # Verifying the signature over `sig_structure_hex` only proves the
+        # fixture is internally consistent. A Sig_structure built wrongly but
+        # signed correctly passes that check, so rebuild it independently from
+        # the protected headers, external AAD and payload and require the exact
+        # bytes. RFC 9052 s4.4: four elements for COSE_Sign1, because the
+        # signer-protected field is omitted rather than carried empty.
+        protected = bytes.fromhex(vector["protected_headers_hex"])
+        expected_structure = vibeproof_vectors.sig_structure(
+            protected, external_aad, payload
+        )
+        if sig_structure != expected_structure:
+            raise ValidationFailure(
+                f"{kind} sig_structure is not the Signature1 construction for its "
+                f"protected headers, external AAD and payload"
+            )
+        if vibeproof_vectors.encode(headers_of(protected))[:] != protected:
+            raise ValidationFailure(
+                f"{kind} protected headers are not core-deterministic CBOR "
+                f"(RFC 8949 s4.2.1, which RFC 9052 s9 binds COSE to)"
+            )
+        if headers_of(protected).get(1) != vibeproof_vectors.ALG_ED25519:
+            raise ValidationFailure(
+                f"{kind} protected alg is not -19 Ed25519; RFC 9864 deprecates "
+                f"the polymorphic EdDSA identifier -8"
+            )
         try:
             verifier.verify(signature, sig_structure)
         except Exception as exc:
@@ -940,8 +1005,9 @@ def main() -> int:
         ("policy and observability artifacts", validate_policy_and_observability),
         ("OpenAPI", validate_openapi_file),
         ("P-1140D state and platform contracts", validate_p1140d_contracts),
-        ("CDDL", validate_cddl_file),
+        ("CDDL grammar parse and required rules", validate_cddl_file),
         ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),
+        ("VibeProof vector reproducibility", validate_vector_reproducibility),
         ("Protobuf", validate_protobuf_files),
     ]
     failures: list[str] = []

@@ -16,7 +16,7 @@ All signed payloads use RFC 8949 deterministic encoding with these stricter rule
 
 - definite lengths only;
 - shortest integer and length encodings;
-- map keys sorted by encoded-key length, then bytewise lexical order;
+- map keys sorted by the bytewise lexicographic order of their encoded form, with no length preference — RFC 8949 §4.2.1 Core Deterministic Encoding, which RFC 9052 §9 binds COSE to. This is **not** the length-first ordering of §4.2.3, retained there for RFC 7049 "Canonical CBOR" compatibility and still the default in several libraries; the two disagree whenever keys differ in encoded length, and a length-first encoder therefore produces a different signature over the same claim;
 - no floats, simple values other than false/true/null, duplicate keys, undefined values, indefinite strings/arrays/maps or unregistered tags;
 - only integer map labels listed in CDDL;
 - UUIDv7 is exactly 16 raw bytes; SHA-256 is exactly 32 bytes; Ed25519 signatures are exactly 64 bytes;
@@ -30,14 +30,28 @@ Limits are checked before allocation: one signed claim 16 KiB; atomic batch 256 
 
 Outer tag 18 is mandatory. The value is exactly `[protected, {}, payload, signature]`; the unprotected map is empty. Protected headers are:
 
-- label 1 = -8 (EdDSA);
+- label 1 = -19 (Ed25519). RFC 9864 deprecates the polymorphic `EdDSA` identifier -8, because it required information beyond the algorithm identifier to determine the operation; a fully-specified identifier is what a cross-language corpus needs;
 - label 3 = exact registered claim or receipt content-type string;
 - label 4 = 16-byte key UUID (`kid`);
 - label 1001 = protocol major 1.
 
-Security-relevant unprotected headers, alternate algorithms, missing/extra protected headers and non-byte `kid` values reject. Ed25519 COSE_Key uses `{1:1, 2:kid, 3:-8, -1:6, -2:x}`, with 32-byte public `x`. Private keys never serialize.
+Security-relevant unprotected headers, alternate algorithms, missing/extra protected headers and non-byte `kid` values reject. Ed25519 COSE_Key uses `{1:1, 2:kid, 3:-19, -1:6, -2:x}`, with 32-byte public `x`. Private keys never serialize.
 
-External AAD is the exact ASCII bytes `VIBEMAXXING/VIBEPROOF/V1`. Sig_structure is deterministic CBOR `["Signature1", protected_bstr, external_aad, payload_bstr]`. Verification uses the received protected and payload bytes after canonical precheck; decoders never reconstruct a different semantic object for signature verification.
+External AAD is the exact ASCII bytes `VIBEMAXXING/VIBEPROOF/V1`. Sig_structure is deterministic CBOR `["Signature1", protected_bstr, external_aad, payload_bstr]` — four elements, because COSE_Sign1 omits the signer-protected field entirely rather than carrying an empty slot for it, and `external_aad` is present even when zero-length. An absent protected bucket is a zero-length `bstr` (`0x40`), never a `bstr` wrapping an empty map (`0x41a0`). Verification uses the received protected and payload bytes after canonical precheck; decoders never reconstruct a different semantic object for signature verification, because re-encoding a decoded header produces different bytes whenever the sender's encoder differs and every such mismatch fails silently.
+
+## Ed25519 verification criteria
+
+Citing RFC 8032 does not pin verification behaviour. §5.1.7 states that checking the cofactored group equation `[8][S]B = [8]R + [8][k]A'` is "sufficient, but not required", permitting the cofactorless `[S]B = R + [k]A'` instead, and §8.8 concedes that implementations then "disagree about the exact set of valid signatures". FIPS 186-5 §7.7 reproduces the same permission verbatim, so citing FIPS resolves nothing either. A cofactored verifier accepts a strictly larger set than a cofactorless one, and the implication runs one way only — so a Rust signer and a Go verifier that both conform to RFC 8032 can disagree, and round-trip tests over well-formed inputs will never reveal it.
+
+VibeProof v1 therefore adopts **ZIP-215** as the normative verification rule, which is fully determined and batch-compatible:
+
+- `A` and `R` MUST be encodings of points on the complete twisted Edwards curve Ed25519; non-canonical `y`-coordinate encodings are **accepted**, and are not a rejection reason;
+- `S` MUST represent an integer strictly less than `ℓ`, which is what makes signatures non-malleable;
+- the **cofactored** group equation `[8][S]B = [8]R + [8][k]A` MUST be satisfied.
+
+Verifiers compare the cofactored equation rather than recomputing `R'` and comparing byte strings, and carry no ad-hoc excluded-point list. Rust satisfies this with `ed25519-dalek`'s ZIP-215 verification mode. **Go's `crypto/ed25519` is cofactorless and does not satisfy it**; the Go verifier must use a ZIP-215-capable implementation, and selecting one is part of the D-012 bakeoff rather than an implementation detail.
+
+Conformance requires divergence-case vectors, not RFC 8032's own test vectors — those pass under every implementation and therefore prove nothing. The required cases are non-canonical `A` and `R` encodings, small-order `A`, and `S ≥ ℓ`. **`conformance/vibeproof/v1/` does not carry them yet**: authoring them requires curve arithmetic and a ZIP-215 reference to confirm each expected verdict against, and asserting verdicts without one would be the same defect as citing RFC 8032 and calling verification pinned. PF-068 owns the corpus and it is a precondition of any cross-language conformance claim.
 
 ## Claim and checkpoint continuity
 
