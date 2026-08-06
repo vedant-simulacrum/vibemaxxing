@@ -2,7 +2,7 @@
 
 ## Visibility
 
-Keep the repository private during planning unless the user explicitly chooses otherwise. Open-source publication is a later release decision and requires a secret, privacy, license, security, and history audit.
+The repository is public and has been since 2026-07-18, so publication is not a later decision and this paragraph's precondition cannot be satisfied in advance. The secret, privacy, license, security and history audit it required is therefore owed retroactively rather than as a gate. D-541 records which limbs have been performed: the secret limb has, across every blob in history, with no credential pattern found. The privacy, license, security and history limbs have not. Treat every commit as published at the moment it is pushed.
 
 ## Default branch
 
