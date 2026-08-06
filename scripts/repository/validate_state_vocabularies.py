@@ -118,6 +118,7 @@ BINDINGS: tuple[Binding, ...] = (
         api=("PublicProfile.ranked_state", "AccountProfile.ranked_state"),
         internal_states=("investigating", "consolidating", "appealed", "reversed"),
         note="No ranked_identities table exists in the planning migration yet.",
+        sql=("ranked_identities.state",),
     ),
     Binding(
         aggregate="idempotency-ledger",
@@ -213,7 +214,7 @@ BINDINGS: tuple[Binding, ...] = (
             "retracted",
             "expired",
         ),
-        sql=("notifications.state",),
+        sql=("notification_events.state", "notifications.state",),
         api=("Notification.state",),
         internal_states=("grouped", "ready"),
     ),
@@ -303,6 +304,7 @@ BINDINGS: tuple[Binding, ...] = (
             "uninstalled",
         ),
         note="Local-only; never persisted server-side and never exposed by the API.",
+        sql=("service_instances.state",),
     ),
     Binding(
         aggregate="privileged-supervisor",
@@ -317,6 +319,7 @@ BINDINGS: tuple[Binding, ...] = (
             "removed",
         ),
         note="Local-only; never persisted server-side and never exposed by the API.",
+        sql=("privileged_supervisor_instances.state",),
     ),
     Binding(
         aggregate="interactive-shell",
@@ -339,6 +342,7 @@ BINDINGS: tuple[Binding, ...] = (
             "crashed",
         ),
         note="Local-only; never persisted server-side and never exposed by the API.",
+        sql=("shell_sessions.state",),
     ),
     Binding(
         aggregate="update-lifecycle",
@@ -357,7 +361,7 @@ BINDINGS: tuple[Binding, ...] = (
             "blocked-version",
             "failed",
         ),
-        sql=("update_installations.state",),
+        sql=("update_policies.state", "update_installations.state",),
     ),
     Binding(
         aggregate="release-trust",
@@ -667,6 +671,56 @@ def validate(report: Report) -> None:
         len(aggregates) == len(set(aggregates)),
         "duplicate aggregate id in the binding table",
     )
+
+    # 0a. Every declared persistence owner must exist.
+    #
+    # AGENTS.md requires every mutable aggregate to have one persistence owner.
+    # A machine naming a table the DDL does not define has none. Nineteen of
+    # twenty-six did. Nothing noticed because the registry stores owners in
+    # kebab-case and the DDL declares them in snake_case, so a naive comparison
+    # finds no overlap at all and a careless one finds no defect.
+    for machine_id, machine in sorted(machines.items()):
+        for owner in machine["persistence_owner"]:
+            report.check(
+                owner.replace("-", "_") in bodies,
+                f"{machine_id} names persistence owner {owner!r}, "
+                f"which planning-schema.sql does not define",
+            )
+
+    # 0b. State-graph integrity, for every machine rather than every bound one.
+    #
+    # A state no transition can reach is dead vocabulary; a non-terminal state
+    # with no outgoing transition is a sink the contract does not admit to; and
+    # a terminal state that still has outgoing transitions is not terminal. All
+    # three were present and none was caught, because a state named only as a
+    # transition *source* still looks used.
+    for machine_id, machine in sorted(machines.items()):
+        reachable = {machine["initial_state"]}
+        frontier = [machine["initial_state"]]
+        while frontier:
+            current = frontier.pop()
+            for transition in machine["transitions"]:
+                if current in transition["from"] and transition["to"] not in reachable:
+                    reachable.add(transition["to"])
+                    frontier.append(transition["to"])
+        for state in sorted(set(machine["states"]) - reachable):
+            report.check(
+                False,
+                f"{machine_id}.{state} is unreachable from {machine['initial_state']!r}",
+            )
+        terminal = set(machine["terminal_states"])
+        for state in machine["states"]:
+            outgoing = any(state in t["from"] for t in machine["transitions"])
+            if state in terminal:
+                report.check(
+                    not outgoing,
+                    f"{machine_id}.{state} is declared terminal but has outgoing transitions",
+                )
+            else:
+                report.check(
+                    outgoing,
+                    f"{machine_id}.{state} is a sink but is not declared terminal",
+                )
 
     # 1. Naming rule.
     for machine_id, machine in machines.items():

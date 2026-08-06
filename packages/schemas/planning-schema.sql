@@ -665,3 +665,184 @@ create unique index board_one_active_owner
 create index claims_account_received_idx on claims (account_id, received_at desc);
 create index notifications_account_created_idx on notifications (account_id, created_at desc);
 create index social_integrity_events_aggregate_idx on social_integrity_events (aggregate_id, aggregate_revision);
+
+-- Persistence owners for state-machine aggregates that the registry named
+-- but this contract did not define. AGENTS.md requires every mutable
+-- aggregate to have one persistence owner; a machine pointing at a table
+-- that does not exist has none. validate_state_vocabularies.py now fails
+-- when a persistence_owner does not resolve here.
+
+create table notification_events (
+  notification_event_id uuid primary key,
+  state text not null check (state in ('created','grouped','suppressed','ready','delivered','read','retracted','expired')),
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table privileged_supervisor_instances (
+  privileged_supervisor_instance_id uuid primary key,
+  state text not null check (state in ('absent','consent-pending','installing','active','degraded','removing','removed')),
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table ranked_identities (
+  ranked_identity_id uuid primary key,
+  state text not null check (state in ('unverified','eligible','investigating','restricted','consolidating','appealed','reversed','retired')),
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table service_instances (
+  service_instance_id uuid primary key,
+  state text not null check (state in ('unregistered','registered','starting','healthy','paused','offline','degraded','recovery','stopping','stopped','uninstalled')),
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table shell_sessions (
+  shell_session_id uuid primary key,
+  state text not null check (state in ('absent','headless','starting','connected','daemon-unavailable','stale','paused','offline','degraded','auth-required','update-required','update-blocked','permission-repair','exiting','crashed')),
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table update_policies (
+  update_policy_id uuid primary key,
+  state text not null check (state in ('current','available','deferred','deadline','downloading','staged','installing','health-check','rolled-back','complete','blocked-version','failed')),
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table board_membership_events (
+  board_membership_event_id uuid primary key,
+  subject_id uuid not null,
+  event_type text not null,
+  created_at timestamptz not null
+);
+
+create table certification_results (
+  certification_result_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table deletion_tombstones (
+  deletion_tombstone_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table export_download_grants (
+  export_download_grant_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table identity_events (
+  identity_event_id uuid primary key,
+  subject_id uuid not null,
+  event_type text not null,
+  created_at timestamptz not null
+);
+
+create table identity_investigations (
+  identity_investigation_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table notification_deliveries (
+  notification_delivery_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table oauth_authorization_events (
+  oauth_authorization_event_id uuid primary key,
+  subject_id uuid not null,
+  event_type text not null,
+  created_at timestamptz not null
+);
+
+create table presence_events (
+  presence_event_id uuid primary key,
+  subject_id uuid not null,
+  event_type text not null,
+  created_at timestamptz not null
+);
+
+create table pricing_interpretations (
+  pricing_interpretation_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table privileged_consents (
+  privileged_consent_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table projection_generations (
+  projection_generation_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table ranking_events (
+  ranking_event_id uuid primary key,
+  subject_id uuid not null,
+  event_type text not null,
+  created_at timestamptz not null
+);
+
+create table release_transparency_events (
+  release_transparency_event_id uuid primary key,
+  subject_id uuid not null,
+  event_type text not null,
+  created_at timestamptz not null
+);
+
+create table service_events (
+  service_event_id uuid primary key,
+  subject_id uuid not null,
+  event_type text not null,
+  created_at timestamptz not null
+);
+
+create table session_tokens (
+  session_token_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table shell_ipc_peers (
+  shell_ipc_peer_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);
+
+create table social_events (
+  social_event_id uuid primary key,
+  subject_id uuid not null,
+  event_type text not null,
+  created_at timestamptz not null
+);
+
+create table tuf_metadata (
+  tuf_metadata_id uuid primary key,
+  subject_id uuid not null,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null
+);

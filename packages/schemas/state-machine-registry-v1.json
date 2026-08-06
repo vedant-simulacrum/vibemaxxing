@@ -717,7 +717,6 @@
         "failed"
       ],
       "terminal_states": [
-        "committed",
         "conflict",
         "expired",
         "failed"
@@ -1635,7 +1634,6 @@
         "closed"
       ],
       "terminal_states": [
-        "reversed",
         "closed"
       ],
       "privacy_boundary": "integrity-private",
@@ -2356,6 +2354,86 @@
           "audit_event": "daemon-uninstall.audit",
           "reversal": "none",
           "transaction_boundary": "uninstall-transaction"
+        },
+        {
+          "transition_id": "daemon-degrade",
+          "from": [
+            "healthy"
+          ],
+          "action": "record-failing-health-probe",
+          "to": "degraded",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-degrade.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "daemon-offline",
+          "from": [
+            "healthy",
+            "degraded"
+          ],
+          "action": "lose-supervisor-contact",
+          "to": "offline",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-offline.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "daemon-resume",
+          "from": [
+            "paused"
+          ],
+          "action": "resume-from-pause",
+          "to": "healthy",
+          "actor": "user",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-resume.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "daemon-stop",
+          "from": [
+            "healthy",
+            "paused",
+            "degraded",
+            "offline",
+            "recovery"
+          ],
+          "action": "request-stop",
+          "to": "stopping",
+          "actor": "user",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-stop.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "daemon-stopped",
+          "from": [
+            "stopping"
+          ],
+          "action": "complete-stop",
+          "to": "stopped",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "daemon-stopped.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
         }
       ]
     },
@@ -2458,6 +2536,21 @@
           "audit_event": "supervisor-removed.audit",
           "reversal": "none",
           "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "supervisor-degrade",
+          "from": [
+            "active"
+          ],
+          "action": "record-partial-supervision-loss",
+          "to": "degraded",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "supervisor-degrade.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
         }
       ]
     },
@@ -2488,8 +2581,7 @@
       "terminal_states": [
         "rolled-back",
         "complete",
-        "blocked-version",
-        "failed"
+        "blocked-version"
       ],
       "privacy_boundary": "release-public",
       "transitions": [
@@ -2689,7 +2781,6 @@
         "expired"
       ],
       "terminal_states": [
-        "superseded",
         "revoked",
         "expired"
       ],
@@ -2817,10 +2908,7 @@
         "exiting",
         "crashed"
       ],
-      "terminal_states": [
-        "absent",
-        "headless"
-      ],
+      "terminal_states": [],
       "privacy_boundary": "local-only",
       "transitions": [
         {
@@ -2922,6 +3010,273 @@
           "audit_event": "shell-crash.audit",
           "reversal": "explicit-transition",
           "transaction_boundary": "shell-session"
+        },
+        {
+          "transition_id": "shell-headless-start",
+          "from": [
+            "absent"
+          ],
+          "action": "start-without-a-terminal",
+          "to": "headless",
+          "actor": "user",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-headless-start.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-stale",
+          "from": [
+            "connected"
+          ],
+          "action": "detect-stale-ipc-generation",
+          "to": "stale",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-stale.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-pause",
+          "from": [
+            "connected"
+          ],
+          "action": "pause-rendering",
+          "to": "paused",
+          "actor": "user",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-pause.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-resume",
+          "from": [
+            "paused"
+          ],
+          "action": "resume-rendering",
+          "to": "connected",
+          "actor": "user",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-resume.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-offline",
+          "from": [
+            "connected"
+          ],
+          "action": "lose-network-reachability",
+          "to": "offline",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-offline.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-degrade",
+          "from": [
+            "connected"
+          ],
+          "action": "record-partial-capability-loss",
+          "to": "degraded",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-degrade.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-auth-required",
+          "from": [
+            "connected"
+          ],
+          "action": "observe-expired-session",
+          "to": "auth-required",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-auth-required.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-reauthenticated",
+          "from": [
+            "auth-required"
+          ],
+          "action": "complete-reauthentication",
+          "to": "connected",
+          "actor": "user",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-reauthenticated.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-update-required",
+          "from": [
+            "connected"
+          ],
+          "action": "observe-mandatory-update",
+          "to": "update-required",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-update-required.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-update-blocked",
+          "from": [
+            "update-required"
+          ],
+          "action": "fail-mandatory-update",
+          "to": "update-blocked",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-update-blocked.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-updated",
+          "from": [
+            "update-required",
+            "update-blocked"
+          ],
+          "action": "complete-mandatory-update",
+          "to": "connected",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-updated.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-permission-repair",
+          "from": [
+            "connected"
+          ],
+          "action": "detect-revoked-os-permission",
+          "to": "permission-repair",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-permission-repair.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-permission-restored",
+          "from": [
+            "permission-repair"
+          ],
+          "action": "restore-os-permission",
+          "to": "connected",
+          "actor": "user",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-permission-restored.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-recover",
+          "from": [
+            "offline",
+            "degraded"
+          ],
+          "action": "restore-full-capability",
+          "to": "connected",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-recover.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-exit-begin",
+          "from": [
+            "connected",
+            "headless",
+            "paused",
+            "offline",
+            "degraded",
+            "stale",
+            "daemon-unavailable",
+            "auth-required",
+            "update-required",
+            "update-blocked",
+            "permission-repair"
+          ],
+          "action": "begin-orderly-shutdown",
+          "to": "exiting",
+          "actor": "user",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-exit-begin.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-exited",
+          "from": [
+            "exiting"
+          ],
+          "action": "complete-shutdown",
+          "to": "absent",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-exited.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "shell-restart-after-crash",
+          "from": [
+            "crashed"
+          ],
+          "action": "clear-crash-state",
+          "to": "absent",
+          "actor": "user",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "shell-restart-after-crash.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
         }
       ]
     },
