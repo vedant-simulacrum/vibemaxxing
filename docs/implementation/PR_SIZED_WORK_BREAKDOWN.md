@@ -88,8 +88,13 @@ Full specifications for these units are in **Current planning program** below, i
 ## Current planning program
 
 ### PF-001 — Quarantine the shadow VibeProof protocol
+Files: `crates/vibeproof-core/README.md`, `crates/vibeproof-core/Cargo.toml`, `apps/api/cmd/api/protocol_fixtures.go`, `conformance/p1140f/artifact-authority-v1.json`, `evals/suites/suites.yaml`
+Acceptance: `grep -rn 'VibeProof v1' crates/vibeproof-core apps/api/cmd/api` returns no line that omits the word `prototype`; `artifact-authority-v1.json` records `authority_class: prototype` for both artifacts; `python3 scripts/repository/validate_p1140f_authority.py` exits 0.
+Depends: none
+Est: 6-8
+Status: not-started
 
-Dependencies: PR #42 consolidation.
+`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
 
 - classify `crates/vibeproof-core` and Go fixture codec as exploratory prototype;
 - remove VibeProof v1 naming from incompatible 11-field fixtures or remove them;
@@ -99,47 +104,67 @@ Dependencies: PR #42 consolidation.
 Exit: one VibeProof v1 wire authority remains.
 
 ### PF-002 — Align normative protocol and conformance ownership
-
-Dependencies: PF-001.
+Files: `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`, `docs/architecture/VIBEPROOF_V1_CANONICAL_PROFILE.md`, `packages/schemas/vibeproof-claim-v1.cddl`, `conformance/vibeproof/v1/exact-byte-vectors.json`, `conformance/vibeproof/v1/malformed-resource-corpus.json`
+Acceptance: `python3 scripts/repository/generate_vibeproof_vectors.py --check` exits 0, and every CDDL rule name in `vibeproof-claim-v1.cddl` appears in exactly one of the two vector files; a second occurrence in a third file fails the check.
+Depends: PF-001
+Est: 8-12
+Status: not-started
 
 - inventory CDDL labels, COSE headers, external AAD, exact vectors, malformed/resource corpus;
 - define generation boundaries for Rust/Go types;
 - define exact independent implementation evidence expected after P-1104.
 
 ### PF-003 — Artifact/evidence maturity registry
-
-Dependencies: PF-001.
+Files: `conformance/p1140f/artifact-authority-v1.json`, `evals/suites/suites.yaml`, `scripts/ci/run_evals.py`, `docs/verification/EVAL_SYSTEM.md`
+Acceptance: `python3 scripts/ci/run_evals.py --validate-registry` exits 0 and fails when a suite declares an `evidence_ceiling` its fixtures cannot support; every suite in `suites.yaml` carries an `authority_class` drawn from the registry vocabulary.
+Depends: PF-001
+Est: 8-10
+Status: not-started
 
 - classify every executable suite and fixture as structural, semantic, prototype, runtime evidence, or certification;
 - rename overclaiming suites;
 - reject empty or mislabeled evidence in planning validators.
 
 ### PF-004 — Mutable aggregate ownership inventory
+Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/planning-schema.sql`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `scripts/repository/validate_state_vocabularies.py`
+Acceptance: `python3 scripts/repository/validate_state_vocabularies.py` exits 0 with every registry machine naming a `persistence_owner` that resolves to a `create table` in `planning-schema.sql`, and fails when one does not.
+Depends: none
+Est: 12-16
+Status: not-started
 
-Dependencies: PR #42 consolidation.
+`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
 
 - enumerate every aggregate named in API, SQL, Protobuf/CDDL, state registry, policy, reasons, and prose;
 - require one persistence owner, lifecycle, revision model, transaction boundary, and event/outbox behavior;
 - record missing and duplicate owners.
 
 ### PF-005 — OAuth provider configuration authority
-
-Dependencies: PF-004.
+Files: `packages/schemas/oauth-provider-registry-v1.json` (new), `packages/schemas/oauth-provider-registry-v1.schema.json` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new), `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+Acceptance: the registry validates against its schema; every provider row carries issuer, authorization and token endpoints, client identifier, exact redirect URI, PKCE method, RFC 9207 `iss` capability, scope set, device-flow capability, revision and expiry; the mix-up fixture contains at least one rejected case per provider.
+Depends: PF-004
+Est: 8-12
+Status: not-started
 
 - issuer, endpoints, client, exact redirect, PKCE, RFC 9207 capability, scopes, device-flow capability, revision and expiry;
 - provider-specific positive and mix-up/redirect-confusion fixtures.
 
 ### PF-006 — Canonical OAuth transaction
-
-Dependencies: PF-005.
+Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+Acceptance: the `oauth_transactions` table and the `oauth-transaction` registry machine share one vocabulary under `validate_state_vocabularies.py`; `grep -n 'authorization_code' packages/schemas/openapi-v1.yaml` returns no operation that mutates identity without a transaction reference.
+Depends: PF-005
+Est: 10-14
+Status: not-started
 
 - bind action, account/session, recent-auth grant, provider revision, redirect, state, PKCE, expiry and result;
 - remove standalone authorization-code identity mutation semantics;
 - define single consumption and ambiguous callback behavior.
 
 ### PF-007 — Linked identity and recovery lifecycle
-
-Dependencies: PF-006.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/openapi-v1.yaml`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+Acceptance: the `linked-identity` machine declares all eight states, every one is reachable and no terminal state has an outgoing transition under `validate_state_vocabularies.py`; `linked_identities` carries a durable provider-subject column with a uniqueness constraint.
+Depends: PF-006
+Est: 10-14
+Status: not-started
 
 - exact linked-identity ID and durable provider subject;
 - candidate, linked, unlink-pending, lost, compromised, recovery-pending, unlinked, superseded;
@@ -147,8 +172,11 @@ Dependencies: PF-006.
 - token/session/device notification and cooling-off effects.
 
 ### PF-008 — Ranked identity and consolidation authority
-
-Dependencies: PF-007; D-070.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`, `packages/schemas/consolidation-plan-v1.schema.json` (new)
+Acceptance: `ranked_identities` is a separate table from `accounts` with a survivor reference; the consolidation-plan schema validates a fixture covering identities, devices, claims, social state, boards, moderation, exports and deletions; no path in the API sums two accounts' scores.
+Depends: PF-007
+Est: 12-16
+Status: not-started
 
 - separate account and ranked identity;
 - canonical survivor, retired duplicates, private investigation evidence, restrictions, appeal and reversal;
@@ -156,16 +184,22 @@ Dependencies: PF-007; D-070.
 - historical score recomputation from valid non-overlapping claim contributions, never aggregate summation.
 
 ### PF-009 — Canonical challenge and lineage continuity
-
-Dependencies: PF-004.
+Files: `packages/schemas/device-lineage.schema.json`, `packages/schemas/vibeproof-claim-v1.cddl`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`
+Acceptance: one identifier spelling for a challenge and one for a lineage resolves across CDDL, OpenAPI and SQL; `python3 scripts/repository/validate_cross_references.py` exits 0 and `claim_challenges`, `device_sequences` and `device_lineages` all key on the lineage rather than the device row.
+Depends: PF-004
+Est: 10-14
+Status: not-started
 
 - one identifier/type model across CDDL, OpenAPI and SQL;
 - expected lineage revision, sequence, commitment head, checkpoint, batch commitment, policy, issue/expiry;
 - lineage-scoped rather than device-row-scoped continuity.
 
 ### PF-010 — Rotation, lost-key recovery, fork and requalification
-
-Dependencies: PF-009; D-072.
+Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/planning-schema.sql`, `conformance/vibeproof/v1/fork-and-rotation-vectors.json` (new), `docs/security/INTEGRITY_MODEL.md`
+Acceptance: the fork fixture contains a lineage that branches, and a decoder run over it quarantines every post-fork branch while accepting every pre-fork claim; `device_key_events` records both authorizations for an ordinary rotation.
+Depends: PF-009
+Est: 12-16
+Status: not-started
 
 - dual authorization for ordinary rotation;
 - lost-key recovery authority;
@@ -175,24 +209,33 @@ Dependencies: PF-009; D-072.
 - appeal, reversal, downgrade and notification.
 
 ### PF-011 — Native process and trust-domain model
-
-Dependencies: PF-004.
+Files: `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md`, `packages/schemas/local-trust-domains-v1.json` (new)
+Acceptance: every one of the eight named roles appears exactly once in the trust-domain file with an executable identity, an OS peer identity, a user/session boundary and an explicit capability and data-class list; a role absent from the file fails `validate_planning_coverage.py`.
+Depends: PF-004
+Est: 10-14
+Status: not-started
 
 - daemon, collector, sync, shell, CLI, dashboard, updater, privileged supervisor;
 - executable identity, OS peer identity, user/session boundary, artifact/release identity;
 - allowed capabilities and data classes per role.
 
 ### PF-012 — Local channel protocol
-
-Dependencies: PF-011.
+Files: `packages/schemas/local-control-v1.proto`, `conformance/sandbox/local-channel-vectors-v1.json` (new), `docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md`
+Acceptance: `local-control-v1.proto` declares one request and one response message per role rather than a universal union; the vector file contains a same-user impersonation case and a stale-process case, each with the expected rejection reason drawn from `packages/schemas/reason-codes-v1.json`.
+Depends: PF-011
+Est: 10-14
+Status: not-started
 
 - handshake, daemon-assigned role, generation, nonce, sequence window, capability grant, deadline, revocation;
 - typed request/response per role rather than one universal message union;
 - same-user impersonation and stale-process fixtures.
 
 ### PF-013 — Shell and subsystem state separation
-
-Dependencies: PF-011.
+Files: `packages/schemas/state-machine-registry-v1.json`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`
+Acceptance: `interactive-shell` declares only process and connection states, and daemon, collection, sync, auth, permission, update and connectivity are separate machines; `validate_state_vocabularies.py` reports every state of all seven reachable.
+Depends: PF-011
+Est: 8-12
+Status: not-started
 
 - shell owns process/connection state only;
 - daemon, collection, sync, auth, permission, update and connectivity are independent projections;
@@ -200,30 +243,42 @@ Dependencies: PF-011.
 - UI exit, pause collection, pause sync, stop daemon, logout, uninstall are distinct.
 
 ### PF-014 — Local persistence and migration contract
-
-Dependencies: PF-011.
+Files: `packages/schemas/local-schema.sql` (new), `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `conformance/privacy/p1140b-boundary-canaries-v1.json`
+Acceptance: `local-schema.sql` parses under `sqlite3 -init` with no errors, declares an encryption key reference per table holding claim material, and the canary fixture proves no log, backup, diagnostic or corruption-report column can hold a forbidden content class.
+Depends: PF-011
+Est: 12-16
+Status: not-started
 
 - local DDL ownership, encryption, key references, schema generation, crash consistency, queues, commitments, receipts, migrations and recovery;
 - forbidden-content boundaries for logs, backups, diagnostics and corruption reports.
 
 ### PF-015 — Atomic compatibility tuple
-
-Dependencies: PF-004.
+Files: `packages/schemas/compatibility-tuple-v1.schema.json` (new), `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`, `conformance/adapters/agent-registry-v1.schema.json`
+Acceptance: the tuple schema requires all nine components and a canonical digest; two independently ordered serialisations of the same tuple produce the same digest in a fixture that records both inputs and the expected digest.
+Depends: PF-004
+Est: 8-12
+Status: not-started
 
 - product/source, exact version/artifact, platform profile, mode, adapter/collector artifacts, protocol/telemetry profile, accounting profile, privacy profile and evidence ceiling;
 - canonical digest construction.
 
 ### PF-016 — Certification lifecycle and revocation
-
-Dependencies: PF-015.
+Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/certification-result-v1.schema.json` (new), `docs/integrations/ADAPTER_CERTIFICATION_POLICY.md`
+Acceptance: the `certification` machine declares all eight states with one vocabulary across registry, SQL and API under `validate_state_vocabularies.py`; the result schema requires suite and case digests, a validity interval and a signer reference, and rejects a bundle missing any of them.
+Depends: PF-015
+Est: 10-14
+Status: not-started
 
 - candidate, testing, active, degraded, suspended, expired, superseded, retired;
 - signed result bundle, suite/case digests, validity interval, signer/verifier policy;
 - narrow per-tuple emergency downgrade and reinstatement.
 
 ### PF-017 — Source observation and operation identity
-
-Dependencies: PF-015.
+Files: `packages/schemas/source-observation.schema.json`, `packages/schemas/normalized-event.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`
+Acceptance: every example under `packages/schemas/examples/` and `conformance/adapters/claude-code-otel/` validates, and a normalized event that names no operation identity, observer identity or cumulative/incremental flag is rejected by the schema.
+Depends: PF-015
+Est: 10-14
+Status: not-started
 
 - authenticated tuple selection before normalization;
 - provider/model/source facts;
@@ -231,8 +286,11 @@ Dependencies: PF-015.
 - direct/proxy/ACP/OTel equivalence.
 
 ### PF-018 — Accounting reconciliation and bounds
-
-Dependencies: PF-017.
+Files: `packages/schemas/accounting-profile.schema.json`, `conformance/accounting/reconciliation-vectors-v1.json` (new), `docs/product/TOKEN_ACCOUNTING_SPEC.md`
+Acceptance: every reconciliation vector produces the same result under two array orderings; a vector with two equal-authority contradicting sources produces the recorded deterministic outcome; an event exceeding the declared period bound is rejected rather than saturating.
+Depends: PF-017
+Est: 12-16
+Status: not-started
 
 - per-operation grouping;
 - source authority, containment, cache/reasoning/modality semantics;
@@ -241,8 +299,11 @@ Dependencies: PF-017.
 - checked arithmetic and practical event/period bounds.
 
 ### PF-019 — Idempotency authority
-
-Dependencies: PF-004.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`
+Acceptance: `idempotency_records` keys on `(principal_type, principal_id, operation_id, idempotency_key)`; the `idempotency-ledger` machine declares `executing`, `committed`, `replayable-failure`, `conflict`, `expired` and `abandoned`, and all six are reachable under `validate_state_vocabularies.py`.
+Depends: PF-004
+Est: 8-12
+Status: not-started
 
 - typed principal, operation/API version, key and request fingerprint;
 - exact stored status, content type, safe headers, bytes and result references;
@@ -250,16 +311,22 @@ Dependencies: PF-004.
 - retention: at least 30 days for high-impact mutations; claim-batch responses until later acknowledged checkpoint supersession.
 
 ### PF-020 — Transaction and ambiguous-commit model
-
-Dependencies: PF-019.
+Files: `conformance/p1140e/sql-race-plans-v1.json`, `packages/schemas/planning-schema.sql`, `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
+Acceptance: `sql-race-plans-v1.json` contains a plan for each of crash-before-commit, crash-after-commit, dropped response, takeover and expiry, each naming the exact rows a correct implementation leaves behind; `python3 scripts/repository/validate_p1140e_contracts.py` exits 0.
+Depends: PF-019
+Est: 10-14
+Status: not-started
 
 - idempotency, business effect, audit, outbox and exact response commit together;
 - crash before commit, crash after commit, dropped response, takeover and expiry cases;
 - expired high-impact keys reject reuse rather than becoming fresh mutations.
 
 ### PF-021 — Ranking definition and audience authorization
-
-Dependencies: PF-004.
+Files: `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
+Acceptance: `ranking-view-v1.schema.json` separates the ranking definition from the audience; only the global scope carries `security: []` in the OpenAPI document and every other scope requires a viewer; `grep -n 'security: \[\]' packages/schemas/openapi-v1.yaml` returns exactly one leaderboard operation.
+Depends: PF-004
+Est: 12-16
+Status: not-started
 
 - stable ranking definition separate from viewer/board audience;
 - metric/version, period, evidence/source/agent/provider/model filters, tie and projection policy;
@@ -267,8 +334,11 @@ Dependencies: PF-004.
 - only global public by default.
 
 ### PF-022 — Ranking generations, entries, snapshots and cursors
-
-Dependencies: PF-021.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
+Acceptance: `ranking_projection_generations` carries exactly one active pointer enforced by a partial unique index; every entry key in `score_snapshots` includes the generation; a cursor fixture records the viewer, the authorization revision and the expiry, and a cursor replayed by another viewer is rejected.
+Depends: PF-021
+Est: 12-16
+Status: not-started
 
 - generation included in entry keys;
 - isolated build/validation/promotion and one active pointer;
@@ -277,8 +347,11 @@ Dependencies: PF-021.
 - score-only `rank()` peer groups and separate deterministic display key.
 
 ### PF-023 — Periods, seasons, contributions and corrections
-
-Dependencies: PF-022; D-070.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
+Acceptance: the `period` machine declares `open`, `frozen`, `closed`, `corrected` and `archived` with all five reachable; `minute_scores` and `period_scores` are append-only by constraint; a rebuild from `ranking_corrections` reproduces the recorded totals in a fixture.
+Depends: PF-022
+Est: 12-16
+Status: not-started
 
 - exact calendar/timezone, open/frozen/closed/corrected/archived states;
 - late-claim and correction windows;
@@ -287,8 +360,11 @@ Dependencies: PF-022; D-070.
 - movement, overtake, streak and season event/retraction references.
 
 ### PF-024 — Social relationship authority
-
-Dependencies: PF-004.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
+Acceptance: `friend_edges` stores one canonical ordered pair with a check constraint, `blocks` is directional with no symmetry constraint, and `rival_edges` references neither; a fixture proves a block does not remove a friendship row and a friendship does not clear a block.
+Depends: PF-004
+Est: 10-14
+Status: not-started
 
 - canonical friendship pair and directional request lifecycle;
 - directional blocks separate from friendship;
@@ -296,8 +372,11 @@ Dependencies: PF-004.
 - decline, cancel, expiry, unblock, generation and current authorization.
 
 ### PF-025 — Board ownership and role authority
-
-Dependencies: PF-024; D-071.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
+Acceptance: `boards` and `board_memberships` are written in one transaction in the recorded SQL plan; a partial unique index enforces exactly one owner per board; `board_invites` cannot grant an admin or owner role, which a rejected fixture case proves.
+Depends: PF-024
+Est: 10-14
+Status: not-started
 
 - atomic board creation plus initial owner;
 - invitations grant only non-privileged membership;
@@ -306,8 +385,11 @@ Dependencies: PF-024; D-071.
 - role/action authorization matrix and recovery.
 
 ### PF-026 — Presence evidence and projection
-
-Dependencies: PF-011, PF-024; D-073.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
+Acceptance: `presence_leases` records a device-bound lease generation; the `presence` machine transitions to `idle` at 90 seconds and `offline` at 300 seconds with those exact numbers in `packages/schemas/policy-defaults-v1.json`; a two-device merge fixture yields the same result under both device orderings.
+Depends: PF-011, PF-024
+Est: 10-14
+Status: not-started
 
 - device-bound qualifying pulse every 30 seconds;
 - active, idle at 90 seconds, offline at 300 seconds;
@@ -316,8 +398,11 @@ Dependencies: PF-011, PF-024; D-073.
 - private/block/relationship/board visibility as separate viewer projection.
 
 ### PF-027 — Notification source, inbox and channel model
-
-Dependencies: PF-024, PF-026.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`
+Acceptance: `notification_events` is append-only and `notifications` carries the recipient projection with an authorization revision; the `notification` machine can express `retracted`; a delivery attempt row records `queued`, `deferred`, `accepted`, `acknowledged`, `failed` or `expired` and never maps `accepted` to a read.
+Depends: PF-024, PF-026
+Est: 12-16
+Status: not-started
 
 - immutable source event and revision;
 - recipient inbox item, grouping, authorization revision, read/dismiss/expiry/retraction;
@@ -326,8 +411,11 @@ Dependencies: PF-024, PF-026.
 - push provider acceptance is not user read or guaranteed delivery.
 
 ### PF-028 — Export authority
-
-Dependencies: PF-004, PF-019.
+Files: `packages/schemas/export-manifest-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`
+Acceptance: the manifest schema requires version, included and excluded domains, per-domain counts, checksums and an encryption reference, and rejects a manifest missing any; `exports` and `export_artifacts` carry a snapshot cutoff and a revocable grant with an expiry.
+Depends: PF-004, PF-019
+Est: 10-14
+Status: not-started
 
 - durable status resource and cancellation/purge;
 - frozen recent-auth grant and coherent snapshot cutoff;
@@ -335,8 +423,11 @@ Dependencies: PF-004, PF-019.
 - rights-of-others filtering and download audit.
 
 ### PF-029 — Deletion plan, per-effect outcomes and tombstones
-
-Dependencies: PF-028, PF-023, PF-024, PF-027.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
+Acceptance: `deletion_jobs`, `deletion_effects`, `local_deletion_commands` and `local_deletion_receipts` cover every domain named in `docs/privacy/DATA_MAP.md`, with a per-device outcome of `complete`, `pending`, `expired`, `unreachable` or `waived`; `grep -in 'forensic' docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md` returns no claim of erasure.
+Depends: PF-023, PF-024, PF-027, PF-028
+Est: 12-16
+Status: not-started
 
 - hosted and local device deletion separated;
 - immutable domain/effect plan;
@@ -347,16 +438,22 @@ Dependencies: PF-028, PF-023, PF-024, PF-027.
 - legal holds, retention and backup tombstone reapplication.
 
 ### PF-030 — Release authorization and component manifest
-
-Dependencies: PF-015.
+Files: `packages/schemas/release-set-v1.schema.json`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
+Acceptance: the release-set schema requires a TUF role reference, a target path, an architecture, a hash, a provenance reference, a native signature reference, a compatibility tuple and an update class per component, and rejects a manifest that is not itself an authenticated target.
+Depends: PF-015
+Est: 8-12
+Status: not-started
 
 - TUF root/delegated roles own authorization;
 - release manifest is an authenticated target;
 - component IDs, target paths, architecture, hashes, provenance, native signing, compatibility and update class.
 
 ### PF-031 — Migration, health and rollback policy
-
-Dependencies: PF-014, PF-030; D-074.
+Files: `packages/schemas/planning-schema.sql`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`
+Acceptance: `update_policies` and `update_installations` express an ordered migration chain and a compatibility window; a fixture records one reversible and one irreversible migration, and the irreversible case has no rollback edge in the `update-lifecycle` machine.
+Depends: PF-014, PF-030
+Est: 10-14
+Status: not-started
 
 - ordered migration chain and compatibility window;
 - pre/post health checks;
@@ -364,8 +461,11 @@ Dependencies: PF-014, PF-030; D-074.
 - irreversible migration recovery by roll-forward or verified pre-migration snapshot.
 
 ### PF-032 — Platform supervision and installer truth table
-
-Dependencies: PF-011, PF-030.
+Files: `packages/schemas/platform-profile-registry-v1.json`, `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `docs/security/PLATFORM_ISOLATION.md`
+Acceptance: `platform-profile-registry-v1.json` validates against its schema with a row for macOS, Windows, Linux, WSL, container and CI, each naming its supervision mechanism, its session and restart limitation, and its competitive eligibility separately from its installability.
+Depends: PF-011, PF-030
+Est: 10-14
+Status: not-started
 
 - exact macOS, Windows, Linux, WSL, container and CI mechanisms;
 - disclose session and restart limitations honestly;
@@ -373,16 +473,24 @@ Dependencies: PF-011, PF-030.
 - install, upgrade, reboot, repair, uninstall and orphan cleanup states.
 
 ### PF-033 — Privacy projection and invalidation matrix
-
-Dependencies: PF-021, PF-024, PF-026, PF-027, PF-028, PF-029.
+Files: `packages/schemas/privacy-projection-v1.json` (new), `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/DATA_MAP.md`
+Acceptance: every viewer-visible field in the OpenAPI document appears exactly once in the projection file with the authorization revision that gates it; a fixture proves a block, a board removal and a deletion each invalidate the cursors, grants and caches the file names.
+Depends: PF-021, PF-024, PF-026, PF-027, PF-028, PF-029
+Est: 12-16
+Status: not-started
 
 - immutable historical facts versus current authorization;
 - block, privacy, board removal, moderation reversal, identity consolidation and deletion invalidation;
 - cursor/grant/cache invalidation and append-only retraction.
 
 ### PF-034 — Schema/interface inventory repair
+Files: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `scripts/repository/validate_planning_coverage.py`
+Acceptance: `python3 scripts/repository/validate_planning_coverage.py` exits 0 with every file under `packages/schemas/` and `conformance/` present in the inventory and every inventory row resolving to a file; `grep -in 'closed-world\|complete' docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md` returns no maturity claim.
+Depends: PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033
+Est: 12-16
+Status: not-started
 
-Dependencies: PF-005 through PF-033.
+The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
 
 - update every interface maturity and owner;
 - remove stale “closed-world/complete” claims;
@@ -390,8 +498,11 @@ Dependencies: PF-005 through PF-033.
 - validate cross-file enum and identifier mappings.
 
 ### PF-035 — P-1140E validator repair
-
-Dependencies: PF-034.
+Files: `scripts/repository/validate_p1140e_contracts.py`, `conformance/p1140e/validation-matrix-v1.json`, `tests/ci/test_p1140e_contracts.py` (new)
+Acceptance: `python3 scripts/repository/validate_p1140e_contracts.py` exits non-zero on each of six injected defects — missing owner, unreachable lifecycle, SQL/state/API vocabulary mismatch, missing generation key, missing authority revision, and a content digest that does not match — and 0 on the clean tree; the summary line names the check as structural.
+Depends: PF-034
+Est: 10-14
+Status: not-started
 
 - verify owner existence and reachable lifecycle;
 - detect SQL/state/API vocabulary mismatch;
@@ -400,8 +511,11 @@ Dependencies: PF-034.
 - remain structural and never claim runtime proof.
 
 ### PF-036 — P-1140F exact-head review
-
-Dependencies: PF-001 through PF-035.
+Files: `conformance/p1140f/review-target-v1.json`, `conformance/p1140f/semantic-findings-v1.json`, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`
+Acceptance: mechanical part: `review-target-v1.json` pins a commit that `git cat-file -e` resolves, every one of SR-005..SR-017 carries a closure verdict, and `python3 scripts/repository/validate_p1140f_authority.py` exits 0 with zero open P0 or P1. The review judgement itself is not mechanizable and must not be presented as though the validator produced it.
+Depends: PF-001, PF-002, PF-003, PF-004, PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033, PF-034, PF-035
+Est: 12-16
+Status: not-started
 
 - pin exact commit;
 - independent manual review of SR-005 through SR-017;
@@ -721,92 +835,243 @@ Promotion of any unit below must resolve the defects that apply to it.
 ## Epic F — Reproducible foundation
 
 ### F-001 Toolchain and lockfile pins
-Dependencies: PF-036, P-1104.
+Files: `rust-toolchain.toml`, `.node-version`, `Cargo.toml`, `apps/api/go.mod`, `apps/web/package.json`, `scripts/ci/check_toolchain_pins.py` (new)
+Acceptance: `python3 scripts/ci/check_toolchain_pins.py` exits 0 on the pinned tree and non-zero when any manifest names a range, a caret or `latest`; the installed `cargo`, `go` and `node` versions equal the pinned strings byte-for-byte.
+Depends: PF-036
+Est: 4-6
+Status: not-started
 
 ### F-002 Workspace initialization and package boundaries
-Dependencies: F-001.
+Files: `Cargo.toml`, `crates/vibeproof-core/Cargo.toml`, `crates/vibeproof-adapters/Cargo.toml` (new), `crates/vibeproof-collector/Cargo.toml` (new), `crates/vibeproof-sync/Cargo.toml` (new), `crates/vibemaxxing-daemon/Cargo.toml` (new), `crates/vibemaxxing-cli/Cargo.toml` (new)
+Acceptance: `cargo metadata --locked --no-deps` lists exactly the workspace members declared in `Cargo.toml`; `cargo tree --invert vibeproof-collector` shows no path from a network-capable crate into the collector, which is the D-006 boundary expressed as a dependency edge.
+Depends: F-001
+Est: 8-12
+Status: not-started
 
 ### F-003 Authoritative generated bindings
-Dependencies: F-001, PF-034.
+Files: `packages/protocol/rust/src/lib.rs` (new), `packages/protocol/go/protocol.go` (new), `packages/protocol/typescript/index.ts` (new), `scripts/ci/generate_bindings.py` (new), `packages/schemas/openapi-v1.yaml`
+Acceptance: `python3 scripts/ci/generate_bindings.py --check` exits 0, and exits non-zero after one byte of any source schema changes without regeneration; `git diff --exit-code packages/protocol` after a fresh regeneration proves no generated file is hand-maintained.
+Depends: F-001
+Est: 12-16
+Status: not-started
 
 ### F-004 Byte-identical regeneration and drift detection
-Dependencies: F-003.
+Files: `scripts/ci/generate_bindings.py` (new), `tests/ci/test_generated_bindings.py` (new), `.github/workflows/ci.yml`
+Acceptance: two consecutive regenerations produce identical bytes under `sha256sum`, and CI fails when a committed generated file differs from a fresh regeneration; `python3 -m unittest tests.ci.test_generated_bindings` exits 0.
+Depends: F-003
+Est: 6-8
+Status: not-started
 
 ### F-005 Checked numeric/time/digest/identifier primitives
-Dependencies: F-002.
+Files: `crates/vibemaxxing-primitives/Cargo.toml` (new), `crates/vibemaxxing-primitives/src/lib.rs` (new), `crates/vibemaxxing-primitives/tests/overflow.rs` (new)
+Acceptance: `cargo test -p vibemaxxing-primitives` exits 0 with one case per operation proving addition, multiplication and unit conversion return an error at the boundary rather than wrapping or saturating; `cargo clippy -p vibemaxxing-primitives -- -D clippy::arithmetic_side_effects` exits 0.
+Depends: F-002
+Est: 8-12
+Status: not-started
 
 ### F-006 Privacy canary library and fixtures
-Dependencies: F-002.
+Files: `crates/vibemaxxing-canary/Cargo.toml` (new), `crates/vibemaxxing-canary/src/lib.rs` (new), `conformance/privacy/p1140b-boundary-canaries-v1.json`, `conformance/telemetry/canaries.json`
+Acceptance: `cargo test -p vibemaxxing-canary` exits 0 and fails when any canary string from either fixture reaches an outbound buffer; the suite covers every forbidden content class named in `docs/privacy/PRIVACY_CONTRACT.md`, and a class present in the contract but absent from the suite fails the test.
+Depends: F-002
+Est: 8-12
+Status: not-started
 
 ### F-007 Feature disable and emergency-revoke framework
-Dependencies: F-002.
+Files: `crates/vibemaxxing-kill-switch/Cargo.toml` (new), `crates/vibemaxxing-kill-switch/src/lib.rs` (new), `apps/api/internal/killswitch/killswitch.go` (new), `packages/schemas/policy-defaults-v1.json`
+Acceptance: `cargo test -p vibemaxxing-kill-switch` and `go test ./internal/killswitch/...` both exit 0, with a case proving a revoked capability is refused within the propagation deadline recorded in `packages/schemas/policy-defaults-v1.json` and that the revocation survives a process restart.
+Depends: F-002
+Est: 8-12
+Status: not-started
 
 ### F-008 Narrow format/lint/unit automation restoration
-Dependencies: F-001 through F-007; separate automation authorization.
+Files: `.github/workflows/ci.yml`, `scripts/ci/verify_repository.py`
+Acceptance: `cargo fmt --check`, `cargo clippy -- -D warnings`, `gofmt -l`, `go vet ./...`, `npm run lint` and `npm test` each run in CI and exit 0; `grep -n 'paths:' .github/workflows/ci.yml` returns no filter exempting `apps/`, `crates/` or `Cargo.toml`.
+Depends: F-001, F-002, F-003, F-004, F-005, F-006, F-007
+Est: 6-8
+Status: not-started
+
+The prose range `F-001 through F-007` is expanded because `Depends:` admits unit IDs only. The prose condition `separate automation authorization` is not a dependency and is recorded here instead: activating these jobs is product automation and is outside the current authorization, per `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`.
+
+This unit was an orphan. `F-010` and `X-011` now depend on it.
+
+### F-009 Local development environment
+Files: `docs/engineering/LOCAL_DEVELOPMENT.md` (new), `scripts/dev/bootstrap.sh` (new), `compose.dev.yaml` (new), `Makefile`
+Acceptance: `make dev-up` brings up PostgreSQL and the API from a clean checkout with no manual step, `make dev-check` exits 0, and `bash scripts/dev/bootstrap.sh --verify` exits non-zero when a toolchain version pinned by `F-001` is missing or wrong.
+Depends: F-001, F-002
+Est: 8-12
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
+
+### F-010 Product CI/CD pipeline
+Files: `scripts/ci/check_required_checks.py` (new), `docs/engineering/CI_AND_DELIVERY.md` (new), `.github/workflows/ci.yml`, `docs/engineering/ENGINEERING_SYSTEM.md`
+Acceptance: `python3 scripts/ci/check_required_checks.py` exits 0 only when every quality layer listed under `## Required quality layers` in `docs/engineering/ENGINEERING_SYSTEM.md` has a matching job in the workflow set and appears in the branch-protection required-checks list, and exits non-zero when a layer has no job.
+Depends: F-008
+Est: 8-12
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
+
+### F-011 Feature-flag mechanics
+Files: `packages/schemas/feature-flag-v1.schema.json` (new), `apps/api/internal/flags/flags.go` (new), `packages/schemas/planning-schema.sql`, `packages/schemas/policy-defaults-v1.json`
+Acceptance: `go test ./internal/flags/...` exits 0 with cases proving evaluation is deterministic for a given `(flag, principal, revision)` triple, that an unknown flag resolves to its recorded default rather than erroring, and that no flag name or evaluation result appears in any egress buffer under the `F-006` canary suite.
+Depends: F-007, S-002
+Est: 8-12
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. `feature_flags` is the persistence owner and had no owning unit before this one.
+
+Distinct from `F-007`: that unit revokes a capability in an emergency and is a safety control; this one is ordinary staged rollout. A flag evaluation is not an analytics event and must never be reported as one.
 
 ## Epic P — Normative VibeProof
 
 ### P-001 Rust canonical normative model
-Dependencies: F-003.
+Files: `crates/vibeproof-core/src/model.rs` (new), `crates/vibeproof-core/tests/model.rs` (new), `packages/schemas/vibeproof-claim-v1.cddl`
+Acceptance: `cargo test -p vibeproof-core --test model` exits 0, and a name cross-check in that test fails when any CDDL rule in `packages/schemas/vibeproof-claim-v1.cddl` has zero or more than one corresponding Rust type.
+Depends: F-003
+Est: 12-16
+Status: not-started
 
 ### P-002 Rust deterministic CBOR encoder/decoder
-Dependencies: P-001.
+Files: `crates/vibeproof-core/src/cbor.rs` (new), `crates/vibeproof-core/tests/canonical_cbor.rs` (new), `conformance/vibeproof/v1/negative-vectors.json` (new)
+Acceptance: `cargo test -p vibeproof-core --test canonical_cbor` exits 0; encoder output matches every vector in `conformance/vibeproof/v1/exact-byte-vectors.json` byte-for-byte; the decoder rejects every negative vector with its recorded reason; a fixture encoded with the RFC 8949 Section 4.2.3 length-first ordering fails, which is what pins D-191.
+Depends: P-001
+Est: 12-16
+Status: not-started
 
 ### P-003 Rust COSE_Sign1 and Ed25519 profile
-Dependencies: P-002.
+Files: `crates/vibeproof-core/src/cose.rs` (new), `crates/vibeproof-core/tests/cose.rs` (new), `conformance/vibeproof/v1/exact-byte-vectors.json`
+Acceptance: `cargo test -p vibeproof-core --test cose` exits 0; the protected header encodes algorithm -19 and not -8, which a byte assertion on the header proves per D-190; every case in the ZIP-215 divergence corpus authored by `PF-068` yields its recorded verdict.
+Depends: P-002, PF-068
+Est: 12-16
+Status: not-started
 
 ### P-004 Independent Go normative model and decoder
-Dependencies: F-003.
+Files: `apps/api/internal/vibeproof/model.go` (new), `apps/api/internal/vibeproof/decode.go` (new), `apps/api/internal/vibeproof/decode_test.go` (new)
+Acceptance: `go test ./internal/vibeproof/...` exits 0 against the same exact-byte and negative corpora as `P-002`; `go list -deps ./internal/vibeproof` names no artifact produced by the Rust crate, so the two implementations share only the CDDL source.
+Depends: F-003
+Est: 12-16
+Status: not-started
 
 ### P-005 Go COSE verification and authorization binding
-Dependencies: P-004.
+Files: `apps/api/internal/vibeproof/cose.go` (new), `apps/api/internal/vibeproof/cose_test.go` (new)
+Acceptance: `go test ./internal/vibeproof/ -run COSE` exits 0 with every ZIP-215 divergence case producing its recorded verdict; substituting the standard-library `crypto/ed25519` makes the suite fail, which is the check that D-192 is actually enforced rather than merely cited.
+Depends: P-004
+Est: 12-16
+Status: not-started
 
 ### P-006 Exact claim/appraisal/receipt/challenge/batch vectors
-Dependencies: P-003, P-005.
+Files: `conformance/vibeproof/v1/exact-byte-vectors.json`, `scripts/repository/generate_vibeproof_vectors.py`
+Acceptance: `python3 scripts/repository/generate_vibeproof_vectors.py --check` exits 0; the file carries at least one vector for each of claim, appraisal, receipt, challenge and batch; both implementations reproduce every byte, and hand-editing any vector makes the check fail, which is what D-194 requires.
+Depends: P-003, P-005
+Est: 8-12
+Status: not-started
 
 ### P-007 Rotation/gap/correction/fork vectors
-Dependencies: P-006.
+Files: `conformance/vibeproof/v1/fork-and-rotation-vectors.json` (new), `scripts/repository/generate_vibeproof_vectors.py`
+Acceptance: the generator's `--check` mode exits 0; the file covers rotation, sequence gap, correction and fork, each carrying an expected accept-or-quarantine verdict; Rust and Go agree on every verdict.
+Depends: P-006
+Est: 8-12
+Status: not-started
 
 ### P-008 Malformed, mutation and resource corpus
-Dependencies: P-003, P-005.
+Files: `conformance/vibeproof/v1/malformed-resource-corpus.json`, `conformance/vibeproof/v1/negative-vectors.json` (new)
+Acceptance: both decoders reject every case with its recorded reason; a bounded-allocator test fails when either exceeds the declared allocation ceiling or nesting depth; a single-bit mutation of any accepted vector is rejected rather than decoded.
+Depends: P-003, P-005
+Est: 10-14
+Status: not-started
 
 ### P-009 Cross-language differential and byte-exact suite
-Dependencies: P-006 through P-008.
+Files: `evals/suites/suites.yaml`, `tests/conformance/test_protocol_differential.py` (new), `scripts/ci/run_evals.py`
+Acceptance: `python3 scripts/ci/run_evals.py --suite protocol-conformance` exits 0 and reports a status that is not `not_applicable`; the suite runs both implementations over every vector and fails on any disagreement, so a suite that skips one implementation cannot report a pass.
+Depends: P-006, P-007, P-008
+Est: 10-14
+Status: not-started
 
 ### P-010 Fuzz/property harness activation
-Dependencies: P-009; separate security/eval workflow authorization.
+Files: `crates/vibeproof-core/fuzz/fuzz_targets/decode.rs` (new), `crates/vibeproof-core/fuzz/Cargo.toml` (new), `.github/workflows/fuzz.yml` (new), `docs/verification/BENCHMARK_AND_EVIDENCE_PROTOCOLS.md`
+Acceptance: `cargo fuzz run decode -- -runs=100000` exits 0 with no crash and no timeout, and a deliberately reintroduced non-minimal-integer acceptance is found inside that budget — a green fuzz run with no capability check is not evidence.
+Depends: P-009
+Est: 10-14
+Status: not-started
+
+The prose condition `separate security/eval workflow authorization` is not a dependency and is recorded here instead: the fuzz workflow named in the file list may not be activated under P-1104.
+
+This unit was an orphan. `X-010` now depends on it.
 
 ## Epic A — Accounting and deterministic integrity
 
 ### A-001 Immutable accounting-profile loader and digest verification
-Dependencies: F-003, F-005.
+Files: `crates/vibeproof-core/src/accounting/profile.rs` (new), `packages/schemas/accounting-profile.schema.json`, `conformance/accounting/accounting-profiles-v1.json`
+Acceptance: `cargo test -p vibeproof-core --test accounting_profile` exits 0; the loader refuses a profile whose recomputed `accounting_profile_sha256` differs by one byte, and the digest it computes equals the value recorded in the fixture.
+Depends: F-003, F-005
+Est: 8-12
+Status: not-started
 
 ### A-002 Operation/observer identity model
-Dependencies: A-001.
+Files: `crates/vibeproof-core/src/accounting/identity.rs` (new), `packages/schemas/normalized-event.schema.json`, `conformance/accounting/accounting-v1-fixtures.json`
+Acceptance: two observations of one operation from different observers resolve to a single operation identity and a retry generation resolves to a distinct one, each asserted by a fixture case; an event with no observer identity is rejected rather than defaulted.
+Depends: A-001
+Est: 8-12
+Status: not-started
 
 ### A-003 Category containment and source authority
-Dependencies: A-002.
+Files: `crates/vibeproof-core/src/accounting/containment.rs` (new), `conformance/accounting/p1140b-accounting-cases-v1.json`
+Acceptance: a case whose cache-read count exceeds its containing input count is rejected rather than clamped; when two sources disagree, the higher-authority source wins by the recorded ordering and the losing value is retained in the result rather than dropped.
+Depends: A-002
+Est: 8-12
+Status: not-started
 
 ### A-004 Cache/reasoning/modality/total reconciliation
-Dependencies: A-003.
+Files: `crates/vibeproof-core/src/accounting/reconcile.rs` (new), `conformance/accounting/reconciliation-vectors-v1.json` (new)
+Acceptance: every vector reconciles to its recorded total; a vector whose parts cannot sum to its stated total yields a contradiction verdict rather than a silent adjustment, and the test fails if any adjustment is applied.
+Depends: A-003
+Est: 10-14
+Status: not-started
 
 ### A-005 Retry/cancellation/nested-agent reconciliation
-Dependencies: A-003.
+Files: `crates/vibeproof-core/src/accounting/lifecycle.rs` (new), `conformance/accounting/reconciliation-vectors-v1.json` (new)
+Acceptance: each value of `retry_policy`, `cancellation_policy` and `nested_execution_policy` is exercised by at least one vector, which a coverage assertion in the test enforces; a cancelled operation contributes exactly the recorded amount and a nested subagent turn is counted exactly once.
+Depends: A-003
+Est: 10-14
+Status: not-started
 
 ### A-006 Duplicate-domain engine
-Dependencies: A-002.
+Files: `crates/vibeproof-core/src/accounting/dedup.rs` (new), `conformance/accounting/dedup-vectors-v1.json` (new)
+Acceptance: two collectors over one session produce one counted event in every vector, including the case where the two choose non-colliding duplicate-domain commitments; each vector is run under both input orderings and must produce the same result.
+Depends: A-002
+Est: 10-14
+Status: not-started
 
 ### A-007 Checked arithmetic and bounds
-Dependencies: F-005.
+Files: `crates/vibeproof-core/src/accounting/bounds.rs` (new), `crates/vibemaxxing-primitives/src/lib.rs` (new)
+Acceptance: `cargo test -p vibeproof-core --test accounting_bounds` exits 0; every arithmetic path returns an error at the boundary rather than wrapping, and an event above the recorded per-period ceiling is rejected with a reason code that resolves in `packages/schemas/reason-codes-v1.json`.
+Depends: F-005
+Est: 6-8
+Status: not-started
 
 ### A-008 Deterministic contradiction/quarantine results
-Dependencies: A-003 through A-007.
+Files: `crates/vibeproof-core/src/accounting/verdict.rs` (new), `packages/schemas/reason-codes-v1.json`
+Acceptance: every contradiction produces exactly one verdict drawn from the reason registry; running the whole fixture corpus twice with shuffled input order produces byte-identical verdict output, which is the order-independence D-018 assumes.
+Depends: A-003, A-004, A-005, A-006, A-007
+Est: 8-12
+Status: not-started
 
 ### A-009 Server pricing interpretation model
-Dependencies: A-001.
+Files: `apps/api/internal/pricing/pricing.go` (new), `packages/schemas/pricing-interpretation.schema.json`, `conformance/pricing/pricing-v1.json`, `conformance/pricing/pricing-v1-manifest.json`
+Acceptance: `go test ./internal/pricing/...` exits 0; an unpriced model yields no cash figure rather than zero; every emitted figure carries the estimated label, which a response-schema assertion enforces so the label cannot be dropped by a caller.
+Depends: A-001
+Est: 8-12
+Status: not-started
+
+Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
 
 ### A-010 Accounting differential and order-invariance evidence
-Dependencies: A-008.
+Files: `evals/suites/suites.yaml`, `evals/fixtures/token-accounting-conformance.json`, `tests/conformance/test_accounting_differential.py` (new)
+Acceptance: `python3 scripts/ci/run_evals.py --suite ranking-accounting` exits 0 with a status that is not `not_applicable`; the Rust and Go implementations produce identical totals for every fixture under both input orderings, and a one-token divergence fails the suite.
+Depends: A-008
+Est: 10-14
+Status: not-started
 
 ## Epic N — Local runtime
 
