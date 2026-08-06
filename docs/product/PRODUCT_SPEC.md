@@ -111,6 +111,18 @@ The daemon owns lifecycle and supervision; collector owns transcript-private obs
 
 The hosted product owns leaderboards, profiles, social graph, boards, organizations, communities, notifications, account settings, moderation, appeals, and server-side lifecycle controls. Country surfaces are post-launch. It never requires access to transcript content.
 
+### Exceptional states
+
+Every surface renders eight states besides the one where everything worked, and `packages/schemas/ui-state-projection-v1.json` says where each comes from. D-394 records the choices.
+
+`loading`, `empty` and `stale` are client-local: derived from a request in flight, a response with no items, or held data older than the freshness budget, and from nothing the server sends. `blocked` and `private` resolve to inputs of the current-viewer-authorization profile. `retracted`, `appeal` and `recovery` resolve to registered state machines and to states those machines declare, which the validator checks — so a surface cannot render a state from a lifecycle that does not exist.
+
+Three of the eight carry a disclosure rule that a screenshot cannot express and a matrix test can:
+
+- `blocked` and `private` are both indistinguishable from a subject that does not exist. Two distinguishable refusals let a viewer work out which one applies, and one of them is a fact about a relationship the other party did not disclose.
+- `empty` is not distinguishable from a page every entry of which the viewer is unauthorized to see, because a count of what was filtered discloses what was filtered.
+- `appeal` shows `submitted` where the case is in `screening`. The automated pre-review pass is not a decision and gives the appellant nothing to act on, which is why the binding table marks it internal.
+
 ## Moderation and appeals
 
 Anti-abuse is progressive, reason-coded, reviewable, and appealable. Define claim exclusion, evidence downgrade, session/account-score quarantine, temporary ranking restriction, device revocation, moderator actions, restoration, insider controls, notifications, retention, and appeal service levels. An SLM cannot permanently ban by itself.

@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/ranked-identity-v1.schema.json",
+  "title": "Ranked identity, investigation and identity event v1",
+  "description": "The competitive subject and the two records that explain how it got its current standing. docs/security/RANKED_IDENTITY_ELIGIBILITY.md is the normative owner; packages/schemas/planning-schema.sql#ranked_identities, #identity_investigations and #identity_events are the persistence owners; the ranked-identity-eligibility and identity-investigation machines own the two lifecycles. D-054 permits one active resolved ranked identity per person and this record does not claim to prove one: the engine enforces one non-retired identity per account, and everything beyond that is an appealable investigation outcome rather than a verified fact about a human. Under D-100 no field here records a provider confirming anything.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "identity"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "identity": { "$ref": "#/$defs/ranked_identity" },
+    "investigations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/investigation" }
+    },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/identity_event" }
+    }
+  },
+  "$defs": {
+    "ranked_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ranked_identity_id",
+        "account_id",
+        "state",
+        "resolution_basis",
+        "revision",
+        "created_at"
+      ],
+      "properties": {
+        "ranked_identity_id": { "type": "string", "format": "uuid" },
+        "account_id": { "type": "string", "format": "uuid" },
+        "erasure_domain_id": {
+          "description": "The pseudonym a sealed ranking entry is keyed on. Absent only before a sealed generation first names the identity. An Article 17 erasure destroys the key binding this pseudonym to the person under D-085 and D-210, which is what lets sealed generations stay immutable while the participant becomes unattributable.",
+          "type": "string",
+          "format": "uuid"
+        },
+        "state": {
+          "enum": [
+            "unverified",
+            "eligible",
+            "investigating",
+            "restricted",
+            "consolidating",
+            "appealed",
+            "reversed",
+            "retired"
+          ]
+        },
+        "resolution_basis": {
+          "description": "self-asserted is the launch default and carries no verification claim at all. The other two record which appealable server process resolved the identity. None of the three is a provider attestation, which does not exist for an individual account under D-100.",
+          "enum": [
+            "self-asserted",
+            "investigation-resolved",
+            "consolidation-survivor"
+          ]
+        },
+        "absorbed_into_ranked_identity_id": {
+          "description": "Set only on a retired identity that an applied consolidation absorbed. A live identity never carries it, which the DDL enforces.",
+          "type": "string",
+          "format": "uuid"
+        },
+        "resolved_at": { "type": "string", "format": "date-time" },
+        "retired_at": { "type": "string", "format": "date-time" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "const": "retired" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["retired_at"] }
+        },
+        {
+          "if": {
+            "required": ["absorbed_into_ranked_identity_id"]
+          },
+          "then": { "required": ["retired_at"] }
+        }
+      ]
+    },
+    "investigation": {
+      "description": "An integrity case about whether a ranked identity is a duplicate, a fork, or otherwise ineligible. Its states are integrity-private: a participant is told the effect on their standing and never that a case is open, because telling them is itself an anti-cheat signal. Concluding a case never reverses anything by itself; a reversal is an appeal outcome that moves the identity, which is why this record has no reversed state.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity_investigation_id",
+        "ranked_identity_id",
+        "state",
+        "trigger",
+        "opened_at",
+        "expires_at",
+        "revision"
+      ],
+      "properties": {
+        "identity_investigation_id": { "type": "string", "format": "uuid" },
+        "ranked_identity_id": { "type": "string", "format": "uuid" },
+        "state": {
+          "enum": [
+            "opened",
+            "gathering",
+            "awaiting-participant",
+            "concluded-no-action",
+            "concluded-restricted",
+            "concluded-consolidation",
+            "withdrawn",
+            "expired"
+          ]
+        },
+        "trigger": {
+          "description": "What opened the case. There is deliberately no statistical trigger: D-053 keeps statistical and small-language-model detection local, advisory and post-launch, so it cannot open a server-side case or alter an outcome.",
+          "enum": [
+            "deterministic-control",
+            "operator-review",
+            "participant-report",
+            "fork-detection"
+          ]
+        },
+        "opened_at": { "type": "string", "format": "date-time" },
+        "response_due_at": { "type": "string", "format": "date-time" },
+        "concluded_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "outcome_reason_code": {
+          "description": "Drawn from packages/schemas/reason-codes-v1.json. It is recorded on the case and delivered to the participant through the private notice path D-084 requires; it never appears on a public surface.",
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "const": "awaiting-participant" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["response_due_at"] }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "concluded-no-action",
+                  "concluded-restricted",
+                  "concluded-consolidation",
+                  "withdrawn"
+                ]
+              }
+            },
+            "required": ["state"]
+          },
+          "then": { "required": ["concluded_at"] }
+        }
+      ]
+    },
+    "identity_event": {
+      "description": "One append-only entry per identity-affecting act, written inside the transaction that performed the act rather than by a follower reading a queue. At most one case reference is present, so an event names one cause and not a correlation.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity_event_id",
+        "ranked_identity_id",
+        "event_type",
+        "occurred_at"
+      ],
+      "properties": {
+        "identity_event_id": { "type": "string", "format": "uuid" },
+        "ranked_identity_id": { "type": "string", "format": "uuid" },
+        "event_type": {
+          "enum": [
+            "identity-created",
+            "identity-resolved",
+            "investigation-opened",
+            "investigation-concluded",
+            "recovery-applied",
+            "consolidation-applied",
+            "consolidation-reversed",
+            "fork-quarantined",
+            "fork-resumed",
+            "restriction-applied",
+            "restriction-reversed",
+            "identity-retired"
+          ]
+        },
+        "identity_investigation_id": { "type": "string", "format": "uuid" },
+        "recovery_case_id": { "type": "string", "format": "uuid" },
+        "consolidation_case_id": { "type": "string", "format": "uuid" },
+        "lineage_fork_case_id": { "type": "string", "format": "uuid" },
+        "reason_code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "occurred_at": { "type": "string", "format": "date-time" }
+      },
+      "oneOf": [
+        {
+          "required": ["identity_investigation_id"],
+          "not": {
+            "anyOf": [
+              { "required": ["recovery_case_id"] },
+              { "required": ["consolidation_case_id"] },
+              { "required": ["lineage_fork_case_id"] }
+            ]
+          }
+        },
+        {
+          "required": ["recovery_case_id"],
+          "not": {
+            "anyOf": [
+              { "required": ["identity_investigation_id"] },
+              { "required": ["consolidation_case_id"] },
+              { "required": ["lineage_fork_case_id"] }
+            ]
+          }
+        },
+        {
+          "required": ["consolidation_case_id"],
+          "not": {
+            "anyOf": [
+              { "required": ["identity_investigation_id"] },
+              { "required": ["recovery_case_id"] },
+              { "required": ["lineage_fork_case_id"] }
+            ]
+          }
+        },
+        {
+          "required": ["lineage_fork_case_id"],
+          "not": {
+            "anyOf": [
+              { "required": ["identity_investigation_id"] },
+              { "required": ["recovery_case_id"] },
+              { "required": ["consolidation_case_id"] }
+            ]
+          }
+        },
+        {
+          "not": {
+            "anyOf": [
+              { "required": ["identity_investigation_id"] },
+              { "required": ["recovery_case_id"] },
+              { "required": ["consolidation_case_id"] },
+              { "required": ["lineage_fork_case_id"] }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

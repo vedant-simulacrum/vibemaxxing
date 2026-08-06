@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "case": {
+    "recovery_case_id": "018f2c60-0000-7000-8000-000000000101",
+    "account_id": "018f2c60-0000-7000-8000-000000000001",
+    "state": "applied",
+    "verified_factor_class": "recovery-code-and-device",
+    "requested_at": "2026-08-01T09:00:00Z",
+    "cooling_off_ends_at": "2026-08-04T09:00:00Z",
+    "applied_at": "2026-08-04T09:05:00Z",
+    "expires_at": "2026-08-15T09:00:00Z",
+    "revision": 4,
+    "effects": {
+      "sessions_revoked": true,
+      "devices_quarantined": true,
+      "notified_session_count": 3,
+      "quarantined_device_count": 2
+    }
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/recovery-case-v1.schema.json",
+  "title": "Account recovery case v1",
+  "description": "The record of one attempt to rebind account access after every linked provider identity has been lost or compromised. docs/security/AUTHENTICATION_AND_RECOVERY.md is the normative owner, packages/schemas/planning-schema.sql#recovery_cases is the persistence owner, and the recovery-case machine in packages/schemas/state-machine-registry-v1.json owns the lifecycle. A case records which locally-held factor the participant presented. Under D-100 no provider offers an individual-account attestation path, so no field here is a provider confirming a person, and no surface may present one as such. Nothing in a recovery reintroduces an identifier a D-085 erasure destroyed: an erasure deletes the account row this case references, so an erased account has no case to recover.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "case": { "$ref": "#/$defs/recovery_case" }
+  },
+  "$defs": {
+    "recovery_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recovery_case_id",
+        "account_id",
+        "state",
+        "verified_factor_class",
+        "requested_at",
+        "expires_at",
+        "revision",
+        "effects"
+      ],
+      "properties": {
+        "recovery_case_id": { "type": "string", "format": "uuid" },
+        "account_id": { "type": "string", "format": "uuid" },
+        "state": {
+          "description": "Exactly the recovery-case vocabulary, kebab-case under D-079. The same five spellings appear in the registry, in the SQL CHECK and here.",
+          "enum": [
+            "requested",
+            "verifying",
+            "cooling-off",
+            "applied",
+            "denied",
+            "cancelled",
+            "expired"
+          ]
+        },
+        "verified_factor_class": {
+          "description": "The strongest locally-held factor the case has verified. Every value names something the participant holds on a device or in a recovery code. None of them names a provider, because under D-100 no provider exposes an individual-account attestation that could be one.",
+          "enum": [
+            "none",
+            "recovery-code",
+            "optional-authenticator",
+            "enrolled-device",
+            "recovery-code-and-device"
+          ]
+        },
+        "requested_at": { "type": "string", "format": "date-time" },
+        "cooling_off_ends_at": {
+          "description": "Set when a factor is accepted, at requested_at plus recovery_cooling_off_hours from packages/schemas/policy-defaults-v1.json. The window is the control that makes a stolen factor survivable: opening a case notifies every existing session and inbox immediately, and a participant who still has access cancels it. Applying before this timestamp is refused by a check constraint rather than by a handler.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "applied_at": { "type": "string", "format": "date-time" },
+        "denied_at": { "type": "string", "format": "date-time" },
+        "cancelled_at": { "type": "string", "format": "date-time" },
+        "expires_at": {
+          "description": "How long an unfinished case may stay open. A case that reaches it moves to expired and the participant starts again; a case is never silently kept alive by a retry.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "revision": {
+          "description": "Monotonic per case and incremented inside the transaction that changes the row. A conditional update that names a stale revision is refused, which is the concurrency control for two operators or two tabs acting on one case.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "effects": { "$ref": "#/$defs/effects" },
+        "reason_code": {
+          "description": "Present on a denied case. Drawn from packages/schemas/reason-codes-v1.json; never free text.",
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "const": "applied" } },
+            "required": ["state"]
+          },
+          "then": {
+            "required": ["applied_at", "cooling_off_ends_at"],
+            "properties": {
+              "verified_factor_class": { "not": { "const": "none" } }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "state": { "const": "denied" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["denied_at", "reason_code"] }
+        },
+        {
+          "if": {
+            "properties": { "state": { "const": "cancelled" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["cancelled_at"] }
+        }
+      ]
+    },
+    "effects": {
+      "description": "What applying the case did. A recovery admits that the previous access path is compromised, so it revokes every session family and quarantines every enrolled device rather than trusting either. Both are recorded, and an applied case that did neither is unrepresentable in the DDL.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sessions_revoked", "devices_quarantined"],
+      "properties": {
+        "sessions_revoked": { "type": "boolean" },
+        "devices_quarantined": { "type": "boolean" },
+        "notified_session_count": {
+          "description": "How many live sessions received the opening notice. It is a count and never a list, because a list of sessions on a case an attacker can read is a map of the victim's devices.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "quarantined_device_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

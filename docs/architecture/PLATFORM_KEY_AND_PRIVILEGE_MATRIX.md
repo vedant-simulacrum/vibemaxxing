@@ -62,6 +62,16 @@ Restored state behind the server checkpoint enters recovery. Concurrent successo
 
 Required fixtures cover full-disk restore, home-directory restore, credential-store migration, VM snapshot rollback, cloned container volumes, concurrent clone submission, keychain unavailable, TPM/Secure Enclave reset, OS reinstall and downgrade to weaker key storage.
 
+## Verified installation plans
+
+An installation is a typed, ordered sequence of named operating-system operations and never a script. `packages/schemas/install-plan-v1.schema.json` is the record, `platform_install_plans` and `platform_install_operations` are the persistence owners, and D-389 records the choices.
+
+Ten operations exist: `verify-release-signature`, `place-binary`, `register-service`, `set-autostart`, `grant-keystore-access`, `create-ipc-endpoint`, `register-privileged-supervisor`, `start-service`, `verify-health` and `remove-previous-version`. Eight reversals exist, and each operation either names the one a rollback runs or declares that it has none — because it changes nothing, as a verification does, or because its effect cannot be undone. A rollback that discovers the answer at run time is D-074's failure mode rather than its contract.
+
+`verify-release-signature` is fixed at sequence 1 by the schema, in both directions: nothing else may occupy sequence 1, and it may occupy no other. No plan can place a filesystem write before the check that decides whether the release is genuine.
+
+Every operation names its exact mechanism — `launchd-user`, `systemd-user`, `systemd-system`, `windows-service`, `windows-scheduled-task`. D-013 forbids claiming equal isolation strength across platforms, and a plan that left the mechanism implicit would be making that claim by omission. A plan containing `register-privileged-supervisor` carries `requires_privileged_consent`, because D-067 makes machine-wide supervision separately consented and least-privilege.
+
 ## IPC and authorization
 
 All IPC uses restrictive ACLs, peer identity, executable/version binding where supported, challenge-response, message limits, rate limits, capability negotiation and replay protection. Sensitive actions require a user-presence or reauthentication policy: enrollment, key rotation, device removal, export, deletion, updater privilege changes and enabling optional elevated observation.

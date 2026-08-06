@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/consolidation-plan-v1.schema.json",
+  "title": "Account consolidation case, plan and result v1",
+  "description": "The D-070 duplicate-account consolidation record: which identity survives, which is absorbed, exactly which claims move, and what the result was. docs/security/RANKED_IDENTITY_ELIGIBILITY.md is the normative owner, packages/schemas/planning-schema.sql#consolidation_cases and #consolidation_contributions are the persistence owners, and the account-consolidation machine owns the lifecycle. The plan is a list of claim-level contributions and never a pair of totals: D-070 forbids adding two stored account totals, so the surviving standing is recomputed from the contributions below rather than incremented by a figure. Imported records stay excluded under D-007 and D-087, and an overlapping duplicate domain counts once under D-269.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case", "contributions"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "case": { "$ref": "#/$defs/consolidation_case" },
+    "contributions": {
+      "description": "The plan. Every claim the case considered appears exactly once, including the ones it excluded, so the case explains what it dropped and why rather than being silent about a difference.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/contribution" }
+    },
+    "result": { "$ref": "#/$defs/result" }
+  },
+  "$defs": {
+    "consolidation_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consolidation_case_id",
+        "surviving_ranked_identity_id",
+        "absorbed_ranked_identity_id",
+        "state",
+        "initiated_by",
+        "requested_at",
+        "expires_at",
+        "revision"
+      ],
+      "properties": {
+        "consolidation_case_id": { "type": "string", "format": "uuid" },
+        "surviving_ranked_identity_id": { "type": "string", "format": "uuid" },
+        "absorbed_ranked_identity_id": { "type": "string", "format": "uuid" },
+        "state": {
+          "description": "applied is not terminal. A successful appeal moves the case to reversed, which appends inverse contributions rather than deleting anything, so an accepted claim stays immutable under D-263.",
+          "enum": [
+            "requested",
+            "planning",
+            "awaiting-confirmation",
+            "applying",
+            "applied",
+            "rejected",
+            "reversed",
+            "expired"
+          ]
+        },
+        "initiated_by": {
+          "description": "A participant-initiated and an investigation-initiated consolidation differ in what the participant is told, never in what the arithmetic does.",
+          "enum": ["participant", "investigation"]
+        },
+        "identity_investigation_id": {
+          "description": "Required exactly when initiated_by is investigation.",
+          "type": "string",
+          "format": "uuid"
+        },
+        "requested_at": { "type": "string", "format": "date-time" },
+        "confirmed_at": { "type": "string", "format": "date-time" },
+        "applied_at": { "type": "string", "format": "date-time" },
+        "reversed_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "revision": { "type": "integer", "minimum": 1 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "initiated_by": { "const": "investigation" } },
+            "required": ["initiated_by"]
+          },
+          "then": { "required": ["identity_investigation_id"] },
+          "else": { "not": { "required": ["identity_investigation_id"] } }
+        },
+        {
+          "if": {
+            "properties": { "state": { "const": "applied" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["applied_at", "confirmed_at"] }
+        },
+        {
+          "if": {
+            "properties": { "state": { "const": "reversed" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["reversed_at", "applied_at"] }
+        }
+      ]
+    },
+    "contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consolidation_contribution_id",
+        "period_id",
+        "duplicate_domain_commitment",
+        "token_burn_total",
+        "disposition",
+        "created_at"
+      ],
+      "properties": {
+        "consolidation_contribution_id": { "type": "string", "format": "uuid" },
+        "claim_id": {
+          "description": "Cleared when an erasure deletes the claim. The arithmetic that produced a standing stays auditable; the link to the claim does not survive.",
+          "type": "string",
+          "format": "uuid"
+        },
+        "period_id": {
+          "description": "The original period the claim was attributed to, not the period the consolidation runs in. D-070 requires original period attribution to be preserved, which means a contribution absorbed today can still land in a period that closed last year, subject to that period's own freeze boundary.",
+          "type": "string",
+          "format": "uuid"
+        },
+        "duplicate_domain_commitment": {
+          "description": "The observer-equivalence key from packages/schemas/observer-equivalence-v1.json, lowercase hex over 32 bytes. Two contributions with one commitment are one execution seen twice, so the second is excluded rather than counted.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "token_burn_total": {
+          "description": "The raw accepted quantity of the originating claim, carried unchanged. A consolidation never renormalises, reweights or rounds a figure; ADR-020 applies the confidence weight at projection.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "disposition": {
+          "enum": [
+            "absorbed",
+            "excluded-duplicate",
+            "excluded-imported",
+            "excluded-quarantined"
+          ]
+        },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "result": {
+      "description": "What the case actually did, recorded as counts rather than as a summed total. There is deliberately no combined_token_burn_total field: a single figure here would be the stored-total summation D-070 forbids, and every consumer that needs a standing recomputes it from score_contributions.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "absorbed_contribution_count",
+        "excluded_contribution_count",
+        "affected_period_count"
+      ],
+      "properties": {
+        "absorbed_contribution_count": { "type": "integer", "minimum": 0 },
+        "excluded_contribution_count": { "type": "integer", "minimum": 0 },
+        "affected_period_count": { "type": "integer", "minimum": 0 },
+        "erasure_domain_link_established": {
+          "description": "True when the case wrote the erasure_domain_links edge. It has to be written, because an erasure walks the closure and destroying only the survivor's key would leave the absorbed history attributable.",
+          "type": "boolean"
+        },
+        "rebuilt_generation_count": {
+          "description": "How many ranking generations were rebuilt as successors. A consolidation never edits a sealed generation; it supersedes it, under D-211 and D-263.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

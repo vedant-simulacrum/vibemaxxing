@@ -813,6 +813,11 @@ def validate_p1140d_contracts() -> None:
         "platform-certification",
         "account-lifecycle",
         "device-enrollment",
+        "recovery-case",
+        "identity-investigation",
+        "account-consolidation",
+        "lineage-fork-case",
+        "source-certification",
     }
     if set(machine_ids) != required_machines:
         raise ValidationFailure(
@@ -1340,6 +1345,615 @@ def validate_data_disposition() -> None:
             f"erasure journal retention is {journal_days} days against a "
             f"{backup_days}-day backup window; it must be exactly one day longer"
         )
+
+
+IDENTITY_LIFECYCLE_SCHEMAS: dict[str, str] = {
+    "recovery-case-v1.schema.json": "recovery-case",
+    "ranked-identity-v1.schema.json": "identity-investigation",
+    "consolidation-plan-v1.schema.json": "account-consolidation",
+    "fork-resolution-v1.schema.json": "lineage-fork-case",
+}
+
+# Where each schema keeps the state vocabulary that must equal its machine's.
+IDENTITY_LIFECYCLE_STATE_POINTERS: dict[str, tuple[str, ...]] = {
+    "recovery-case-v1.schema.json": ("recovery_case",),
+    "ranked-identity-v1.schema.json": ("investigation",),
+    "consolidation-plan-v1.schema.json": ("consolidation_case",),
+    "fork-resolution-v1.schema.json": ("fork_case",),
+}
+
+IDENTITY_LIFECYCLE_EXAMPLES: tuple[tuple[str, str, bool], ...] = (
+    ("recovery-case-v1.schema.json", "recovery-case.valid.json", True),
+    (
+        "recovery-case-v1.schema.json",
+        "recovery-case.invalid-skipped-cooling-off.json",
+        False,
+    ),
+    ("ranked-identity-v1.schema.json", "ranked-identity.valid.json", True),
+    (
+        "ranked-identity-v1.schema.json",
+        "ranked-identity.invalid-two-case-causes.json",
+        False,
+    ),
+    ("consolidation-plan-v1.schema.json", "consolidation-plan.valid.json", True),
+    (
+        "consolidation-plan-v1.schema.json",
+        "consolidation-plan.invalid-summed-total.json",
+        False,
+    ),
+    ("fork-resolution-v1.schema.json", "fork-resolution.valid.json", True),
+    (
+        "fork-resolution-v1.schema.json",
+        "fork-resolution.invalid-resumed-without-generation.json",
+        False,
+    ),
+    ("presence-pulse-v1.schema.json", "presence-pulse.valid.json", True),
+    (
+        "presence-pulse-v1.schema.json",
+        "presence-pulse.invalid-blocked-viewer-sees-online.json",
+        False,
+    ),
+)
+
+# Names no schema in this cluster may carry, each with the rule it would break.
+IDENTITY_LIFECYCLE_BANNED_FIELDS: dict[str, str] = {
+    "combined_token_burn_total": "D-070 forbids adding two stored account totals",
+    "provider_verified": "D-100: no provider attests an individual account",
+    "provider_attestation": "D-100: no provider attests an individual account",
+    "file_path": "the privacy boundary forbids paths crossing it",
+    "project_name": "the privacy boundary forbids project names crossing it",
+    "repository_name": "the privacy boundary forbids repository names crossing it",
+    "content_hash": "the privacy boundary forbids content-derived hashes",
+}
+
+
+def _schema_state_enum(schema: dict[str, Any], definition: str) -> set[str]:
+    node = schema["$defs"][definition]["properties"]["state"]
+    return set(node["enum"])
+
+
+def validate_identity_lifecycle_contracts() -> None:
+    """Prove the identity-lifecycle artifacts agree with the authorities they cite.
+
+    Four things are checked, none of which is behaviour. The state vocabulary in
+    each schema equals the vocabulary its registered machine declares, so D-079's
+    one-spelling rule holds across a fourth surface as well as the three
+    `validate_state_vocabularies.py` already covers. Every persistence owner and
+    revision source named by the current-viewer-authorization profile resolves to
+    a real table and a real column in the planning DDL. The presence thresholds
+    bind policy keys that exist. And no schema in the cluster carries a field name
+    that a binding product rule forbids.
+
+    This proves reference agreement. No recovery, consolidation, investigation,
+    fork resolution or authorization check is implemented, and this validator
+    would pass identically if none ever were.
+    """
+    registry = load_json(SCHEMAS / "state-machine-registry-v1.json")
+    machines = {item["machine_id"]: item for item in registry["machines"]}
+
+    loaded: dict[str, dict[str, Any]] = {}
+    for filename in (
+        *IDENTITY_LIFECYCLE_SCHEMAS,
+        "presence-pulse-v1.schema.json",
+        "projection-authorization-v1.schema.json",
+    ):
+        loaded[filename] = validate_schema_file(SCHEMAS / filename)
+
+    for filename, machine_id in IDENTITY_LIFECYCLE_SCHEMAS.items():
+        if machine_id not in machines:
+            raise ValidationFailure(
+                f"{filename} names an unregistered machine: {machine_id}"
+            )
+        expected = set(machines[machine_id]["states"])
+        for definition in IDENTITY_LIFECYCLE_STATE_POINTERS[filename]:
+            actual = _schema_state_enum(loaded[filename], definition)
+            if actual != expected:
+                raise ValidationFailure(
+                    f"{filename}#{definition}.state differs from {machine_id}: "
+                    f"only-in-schema={sorted(actual - expected)} "
+                    f"only-in-registry={sorted(expected - actual)}"
+                )
+
+    # The ranked identity itself is governed by a machine the binding table
+    # already owns, so it is checked against that one rather than against a new
+    # vocabulary invented here.
+    identity_states = _schema_state_enum(
+        loaded["ranked-identity-v1.schema.json"], "ranked_identity"
+    )
+    if identity_states != set(machines["ranked-identity-eligibility"]["states"]):
+        raise ValidationFailure(
+            "ranked-identity-v1.schema.json ranked_identity.state differs from "
+            "ranked-identity-eligibility"
+        )
+
+    lease_states = _schema_state_enum(loaded["presence-pulse-v1.schema.json"], "lease")
+    if lease_states != set(machines["presence-lease"]["states"]):
+        raise ValidationFailure(
+            "presence-pulse-v1.schema.json lease.state differs from presence-lease"
+        )
+
+    for filename, example, expect_valid in IDENTITY_LIFECYCLE_EXAMPLES:
+        instance = load_json(SCHEMAS / "examples" / example)
+        if expect_valid:
+            validate_instance(loaded[filename], instance, example)
+        else:
+            expect_invalid(loaded[filename], instance, example)
+
+    # The cross-field rule the schema cannot express: a resumed fork continues on
+    # a strictly later generation. Merging two commitment chains is what D-072
+    # forbids, and a resolution that resumed on the generation it forked at would
+    # be that merge under another name.
+    fork = load_json(SCHEMAS / "examples" / "fork-resolution.valid.json")["case"]
+    if fork["resumed_generation"] <= fork["fork_generation"]:
+        raise ValidationFailure(
+            "fork-resolution.valid.json resumes on a generation that is not later "
+            "than the fork generation"
+        )
+
+    profile_schema = loaded["projection-authorization-v1.schema.json"]
+    profile = load_json(SCHEMAS / "projection-authorization-v1.json")
+    validate_instance(profile_schema, profile, "viewer authorization profile")
+
+    bodies = _planning_table_bodies()
+    for entry in profile["inputs"]:
+        table = entry["persistence_owner"]
+        if table not in bodies:
+            raise ValidationFailure(
+                f"viewer authorization input {entry['input_id']} names a table the "
+                f"planning DDL does not define: {table}"
+            )
+        source = entry["revision_source"]
+        if "." not in source:
+            raise ValidationFailure(
+                f"viewer authorization input {entry['input_id']} names a revision "
+                f"source without a table: {source}"
+            )
+        source_table, column = source.split(".", 1)
+        if source_table != table:
+            raise ValidationFailure(
+                f"viewer authorization input {entry['input_id']} reads {source} but "
+                f"declares {table} as its persistence owner"
+            )
+        if not re.search(rf"(?m)^\s*{re.escape(column)}\s", bodies[table]):
+            raise ValidationFailure(
+                f"viewer authorization input {entry['input_id']} names a column "
+                f"{table} does not declare: {column}"
+            )
+
+    policies = load_json(SCHEMAS / "policy-defaults-v1.json")["policies"]
+    thresholds = load_json(SCHEMAS / "examples" / "presence-pulse.valid.json")[
+        "thresholds"
+    ]
+    for field, key in thresholds.items():
+        if key not in policies:
+            raise ValidationFailure(
+                f"presence threshold {field} names an unknown policy key: {key}"
+            )
+    # D-073 fixes the three numbers; the two misnamed keys make it worth checking
+    # the values rather than trusting the names.
+    expected_values = {
+        "pulse_interval_policy_key": 30,
+        "idle_after_policy_key": 90,
+        "offline_after_policy_key": 300,
+    }
+    for field, value in expected_values.items():
+        actual = policies[thresholds[field]]["value"]
+        if actual != value:
+            raise ValidationFailure(
+                f"presence threshold {field} resolves to {actual}, not the D-073 "
+                f"value {value}"
+            )
+
+    for filename, schema in loaded.items():
+        text = json.dumps(schema)
+        for banned, why in IDENTITY_LIFECYCLE_BANNED_FIELDS.items():
+            if f'"{banned}"' in text:
+                raise ValidationFailure(f"{filename} declares {banned}: {why}")
+
+    local_store = (SCHEMAS / "local-store-v1.sql").read_text(encoding="utf-8")
+    for required in (
+        "pragma journal_mode = wal;",
+        "pragma synchronous = full;",
+        "create table outbox_claims (",
+        "create table claim_commitments (",
+        "create table source_receipts (",
+        "create table local_deletion_receipts (",
+    ):
+        if required not in local_store:
+            raise ValidationFailure(f"local-store-v1.sql lacks {required!r}")
+    # A key column in the local store would put the key beside the ciphertext it
+    # protects, which is the arrangement D-213 rejects on the server side.
+    if re.search(r"(?im)^\s*\w*key_material\b", local_store):
+        raise ValidationFailure("local-store-v1.sql declares key material")
+
+
+CERTIFICATION_EXAMPLES: tuple[tuple[str, str, bool], ...] = (
+    ("compatibility-tuple-v1.schema.json", "compatibility-tuple.valid.json", True),
+    (
+        "compatibility-tuple-v1.schema.json",
+        "compatibility-tuple.invalid-open-version-range.json",
+        False,
+    ),
+    ("certification-result-v1.schema.json", "certification-result.valid.json", True),
+    (
+        "certification-result-v1.schema.json",
+        "certification-result.invalid-pass-without-negative-case.json",
+        False,
+    ),
+    ("install-plan-v1.schema.json", "install-plan.valid.json", True),
+    (
+        "install-plan-v1.schema.json",
+        "install-plan.invalid-write-before-verify.json",
+        False,
+    ),
+)
+
+
+def validate_certification_contracts() -> None:
+    """Prove the certification cluster cannot advertise support it has not exercised.
+
+    Four checks. The lifecycle vocabulary equals the registered machine's. Every
+    state other than `active` is pinned to a `private-analytics` ceiling in the
+    schema as well as in the DDL, so a registry cannot imply exercised support for
+    a planned, expired, suspended or superseded tuple. The tuple's platform
+    profile resolves to a registered profile. And a passing result with no
+    negative case is refused, because a suite that has never failed carries no
+    information.
+
+    This proves the records agree with each other. No suite has been run and no
+    tuple is certified: every certification state reachable from this repository
+    today is `candidate`.
+    """
+    registry = load_json(SCHEMAS / "state-machine-registry-v1.json")
+    machines = {item["machine_id"]: item for item in registry["machines"]}
+
+    tuple_schema = validate_schema_file(SCHEMAS / "compatibility-tuple-v1.schema.json")
+    result_schema = validate_schema_file(
+        SCHEMAS / "certification-result-v1.schema.json"
+    )
+    plan_schema = validate_schema_file(SCHEMAS / "install-plan-v1.schema.json")
+    schemas = {
+        "compatibility-tuple-v1.schema.json": tuple_schema,
+        "certification-result-v1.schema.json": result_schema,
+        "install-plan-v1.schema.json": plan_schema,
+    }
+
+    lifecycle = set(
+        result_schema["$defs"]["certification"]["properties"]["state"]["enum"]
+    )
+    expected = set(machines["source-certification"]["states"])
+    if lifecycle != expected:
+        raise ValidationFailure(
+            "certification-result-v1.schema.json state differs from "
+            f"source-certification: only-in-schema={sorted(lifecycle - expected)} "
+            f"only-in-registry={sorted(expected - lifecycle)}"
+        )
+
+    # Every non-active state must be pinned to private-analytics by the schema and
+    # not only by the DDL, so a record that never reaches PostgreSQL is still
+    # refused.
+    pinned: set[str] = set()
+    for clause in result_schema["$defs"]["certification"]["allOf"]:
+        condition = clause.get("if", {}).get("properties", {}).get("state", {})
+        ceiling = (
+            clause.get("then", {})
+            .get("properties", {})
+            .get("effective_ceiling", {})
+            .get("const")
+        )
+        if ceiling == "private-analytics" and "enum" in condition:
+            pinned |= set(condition["enum"])
+    if pinned != expected - {"active"}:
+        raise ValidationFailure(
+            "certification-result-v1.schema.json does not pin every non-active "
+            f"state to private-analytics: missing={sorted(expected - {'active'} - pinned)}"
+        )
+
+    for filename, example, expect_valid in CERTIFICATION_EXAMPLES:
+        instance = load_json(SCHEMAS / "examples" / example)
+        if expect_valid:
+            validate_instance(schemas[filename], instance, example)
+        else:
+            expect_invalid(schemas[filename], instance, example)
+
+    profiles = {
+        profile["profile_id"]
+        for profile in load_json(SCHEMAS / "platform-profile-registry-v1.json")[
+            "profiles"
+        ]
+    }
+    for example, pointer in (
+        ("compatibility-tuple.valid.json", ("tuple", "platform_profile_id")),
+        ("install-plan.valid.json", ("plan", "platform_profile_id")),
+    ):
+        instance = load_json(SCHEMAS / "examples" / example)
+        value = instance[pointer[0]][pointer[1]]
+        if value not in profiles:
+            raise ValidationFailure(
+                f"{example} names an unregistered platform profile: {value}"
+            )
+
+    modes = {
+        item["mode"]
+        for item in load_json(SCHEMAS / "observer-equivalence-v1.json")[
+            "observation_modes"
+        ]
+    }
+    declared = set(
+        tuple_schema["$defs"]["tuple"]["properties"]["observation_mode"]["enum"]
+    )
+    if modes and declared != modes:
+        raise ValidationFailure(
+            "compatibility tuple observation modes differ from the equivalence rule: "
+            f"only-in-tuple={sorted(declared - modes)} only-in-rule={sorted(modes - declared)}"
+        )
+
+    bodies = _planning_table_bodies()
+    for table, constraint in {
+        # Only an active certification may exceed private analytics.
+        "source_certifications": "check (state = 'active' or effective_ceiling = 'private-analytics')",
+        # A pass with no negative case is an untested suite reporting success.
+        "certification_results": "check (outcome <> 'passed' or negative_case_count > 0)",
+        # An operation names its reversal or declares it has none.
+        "platform_install_operations": "check (irreversible = (reversal_operation is null))",
+    }.items():
+        body = bodies.get(table)
+        if body is None:
+            raise ValidationFailure(f"planning DDL lacks the {table} table")
+        if constraint not in " ".join(body.split()):
+            raise ValidationFailure(
+                f"{table} lacks its required invariant: {constraint}"
+            )
+
+
+RELEASE_COMPATIBILITY_EXAMPLES: tuple[tuple[str, str, bool], ...] = (
+    ("tuf-trust-v1.schema.json", "tuf-trust.valid.json", True),
+    ("tuf-trust-v1.schema.json", "tuf-trust.invalid-online-root-key.json", False),
+    ("compatibility-graph-v1.schema.json", "compatibility-graph.valid.json", True),
+    (
+        "compatibility-graph-v1.schema.json",
+        "compatibility-graph.invalid-sunset-without-notice.json",
+        False,
+    ),
+    ("migration-chain-v1.schema.json", "migration-chain.valid.json", True),
+    (
+        "migration-chain-v1.schema.json",
+        "migration-chain.invalid-reversible-with-drop.json",
+        False,
+    ),
+)
+
+# D-239 fixes each TUF role's cadence. The policy registry is where the numbers
+# live and this is the mapping that stops the schema and the registry drifting.
+TUF_EXPIRY_EXPECTATIONS: dict[str, tuple[str, int]] = {
+    "root": ("tuf_root_expiry_days", 365),
+    "timestamp": ("tuf_timestamp_expiry_days", 1),
+    "snapshot": ("tuf_snapshot_expiry_days", 7),
+    "targets": ("tuf_targets_expiry_days", 90),
+}
+
+
+def validate_release_compatibility_contracts() -> None:
+    """Prove the release, compatibility and migration records resolve.
+
+    Four checks. Every TUF role policy names a policy key that exists and
+    resolves to the D-239 cadence. Root and targets keys are offline, which the
+    schema refuses to express otherwise. Every compatibility interface in the
+    graph schema is also a value the DDL admits. And every migration step's
+    rollback class agrees with what it says it did: a binary-reversible step
+    naming an irreversible operation is refused.
+
+    This proves the records agree. No TUF repository exists, no client holds
+    trusted state, and no migration has been applied.
+    """
+    tuf_schema = validate_schema_file(SCHEMAS / "tuf-trust-v1.schema.json")
+    graph_schema = validate_schema_file(SCHEMAS / "compatibility-graph-v1.schema.json")
+    chain_schema = validate_schema_file(SCHEMAS / "migration-chain-v1.schema.json")
+    schemas = {
+        "tuf-trust-v1.schema.json": tuf_schema,
+        "compatibility-graph-v1.schema.json": graph_schema,
+        "migration-chain-v1.schema.json": chain_schema,
+    }
+
+    for filename, example, expect_valid in RELEASE_COMPATIBILITY_EXAMPLES:
+        instance = load_json(SCHEMAS / "examples" / example)
+        if expect_valid:
+            validate_instance(schemas[filename], instance, example)
+        else:
+            expect_invalid(schemas[filename], instance, example)
+
+    policies = load_json(SCHEMAS / "policy-defaults-v1.json")["policies"]
+    roles = load_json(SCHEMAS / "examples" / "tuf-trust.valid.json")["roles"]
+    seen = {role["role"]: role for role in roles}
+    for role, (key, value) in TUF_EXPIRY_EXPECTATIONS.items():
+        if role not in seen:
+            raise ValidationFailure(f"tuf-trust.valid.json declares no {role} role")
+        if seen[role]["expiry_policy_key"] != key:
+            raise ValidationFailure(
+                f"{role} names {seen[role]['expiry_policy_key']}, not {key}"
+            )
+        if key not in policies:
+            raise ValidationFailure(f"{role} names an unknown policy key: {key}")
+        if policies[key]["value"] != value:
+            raise ValidationFailure(
+                f"{key} resolves to {policies[key]['value']}, not the D-239 cadence {value}"
+            )
+
+    bodies = _planning_table_bodies()
+    graph_interfaces = set(
+        graph_schema["$defs"]["edge"]["properties"]["interface"]["enum"]
+    )
+    edge_body = " ".join(bodies["compatibility_edges"].split())
+    for interface in sorted(graph_interfaces):
+        if f"'{interface}'" not in edge_body:
+            raise ValidationFailure(
+                f"compatibility_edges admits no interface {interface!r}"
+            )
+
+    chain_classes = set(
+        chain_schema["$defs"]["step"]["properties"]["rollback_class"]["enum"]
+    )
+    migration_body = " ".join(bodies["storage_migrations"].split())
+    for rollback_class in sorted(chain_classes):
+        if f"'{rollback_class}'" not in migration_body:
+            raise ValidationFailure(
+                f"storage_migrations admits no rollback class {rollback_class!r}"
+            )
+
+    for table, constraint in {
+        # An empty compatibility range is unrepresentable.
+        "compatibility_edges": "check (maximum_exclusive > minimum_supported)",
+        # A snapshot-required migration records the snapshot it required.
+        "storage_migrations": (
+            "check ((rollback_class = 'snapshot-required') = "
+            "(pre_migration_snapshot_digest is not null))"
+        ),
+        # A client never records trusted metadata signed below threshold.
+        "tuf_metadata": "check (signature_count >= threshold)",
+    }.items():
+        body = " ".join(bodies[table].split())
+        if constraint not in body:
+            raise ValidationFailure(
+                f"{table} lacks its required invariant: {constraint}"
+            )
+
+
+AUDIENCE_WIDTH = {"self": 0, "authorized-viewer": 1, "public": 2}
+
+
+def validate_presentation_contracts() -> None:
+    """Prove the disclosure and exceptional-state projections resolve.
+
+    Three checks. Every field the disclosure profile names exists on the OpenAPI
+    schema it names, so the projection cannot drift from the shapes it governs.
+    No field is disclosed more widely than the shape that carries it, and
+    `token_burn_total` and the two ADR-020 weight factors are pinned to `self`,
+    which is D-144 expressed as a check rather than as a convention. And every
+    server-derived exceptional state resolves to a registered machine and to
+    states that machine actually declares, or to an input the viewer
+    authorization profile declares.
+
+    This proves the records resolve against the contracts they cite. No surface
+    renders any of it: `packages/ui` is a fixture-backed prototype and nothing in
+    it reads these files.
+    """
+    profile_schema = validate_schema_file(
+        SCHEMAS / "disclosure-projection-v1.schema.json"
+    )
+    profile = load_json(SCHEMAS / "disclosure-projection-v1.json")
+    validate_instance(profile_schema, profile, "disclosure projection")
+
+    spec = load_yaml(SCHEMAS / "openapi-v1.yaml")
+    api_schemas = spec["components"]["schemas"]
+    for projection in profile["projections"]:
+        name = projection["api_schema"]
+        if name not in api_schemas:
+            raise ValidationFailure(
+                f"disclosure projection names a schema the API does not declare: {name}"
+            )
+        declared = set((api_schemas[name].get("properties") or {}).keys())
+        named = {field["name"] for field in projection["fields"]}
+        missing = sorted(named - declared)
+        if missing:
+            raise ValidationFailure(
+                f"disclosure projection for {name} names fields the API does not "
+                f"declare: {missing}"
+            )
+        uncovered = sorted(declared - named)
+        if uncovered:
+            raise ValidationFailure(
+                f"disclosure projection for {name} does not classify every field: "
+                f"{uncovered}"
+            )
+        # No field may be narrower than the shape that carries it. A narrower
+        # field on a wider shape is a per-response redaction, and a redaction
+        # that fails open publishes the field.
+        shape_width = AUDIENCE_WIDTH[projection["audience"]]
+        for field in projection["fields"]:
+            if AUDIENCE_WIDTH[field["audience"]] < shape_width:
+                raise ValidationFailure(
+                    f"{name}.{field['name']} is narrower than the {name} shape, which "
+                    f"is served to {projection['audience']}; move it to its own shape"
+                )
+
+    # D-144. These four never leave the participant's own surface, because the
+    # raw figure beside the credited one yields the weight by division and the
+    # weight is the sanction D-084 keeps private.
+    self_only = {
+        "token_burn_total",
+        "confidence_weight_hundredths",
+        "evidence_factor_hundredths",
+        "trust_factor_hundredths",
+    }
+    seen_self_only: set[str] = set()
+    for projection in profile["projections"]:
+        for field in projection["fields"]:
+            if field["name"] in self_only:
+                seen_self_only.add(field["name"])
+                if field["audience"] != "self":
+                    raise ValidationFailure(
+                        f"D-144: {projection['api_schema']}.{field['name']} is "
+                        f"disclosed to {field['audience']}"
+                    )
+    if seen_self_only != self_only:
+        raise ValidationFailure(
+            f"disclosure projection does not classify every D-144 field: "
+            f"{sorted(self_only - seen_self_only)}"
+        )
+
+    state_schema = validate_schema_file(SCHEMAS / "ui-state-projection-v1.schema.json")
+    states = load_json(SCHEMAS / "ui-state-projection-v1.json")
+    validate_instance(state_schema, states, "exceptional surface states")
+
+    machines = {
+        item["machine_id"]: item
+        for item in load_json(SCHEMAS / "state-machine-registry-v1.json")["machines"]
+    }
+    authorization_inputs = {
+        item["input_id"]
+        for item in load_json(SCHEMAS / "projection-authorization-v1.json")["inputs"]
+    }
+    required_states = {
+        "loading",
+        "empty",
+        "blocked",
+        "private",
+        "stale",
+        "retracted",
+        "appeal",
+        "recovery",
+    }
+    declared_states = {item["state_id"] for item in states["states"]}
+    if declared_states != required_states:
+        raise ValidationFailure(
+            f"exceptional state set mismatch: missing="
+            f"{sorted(required_states - declared_states)} "
+            f"extra={sorted(declared_states - required_states)}"
+        )
+    for item in states["states"]:
+        if item["origin"] != "server-derived":
+            continue
+        if "authorization_input" in item:
+            if item["authorization_input"] not in authorization_inputs:
+                raise ValidationFailure(
+                    f"exceptional state {item['state_id']} names an unknown "
+                    f"authorization input: {item['authorization_input']}"
+                )
+            continue
+        machine_id = item["machine_id"]
+        if machine_id not in machines:
+            raise ValidationFailure(
+                f"exceptional state {item['state_id']} names an unregistered "
+                f"machine: {machine_id}"
+            )
+        unknown = sorted(
+            set(item["source_states"]) - set(machines[machine_id]["states"])
+        )
+        if unknown:
+            raise ValidationFailure(
+                f"exceptional state {item['state_id']} names states "
+                f"{machine_id} does not declare: {unknown}"
+            )
 
 
 def validate_erasure_contract() -> None:
@@ -2337,6 +2951,22 @@ def main() -> int:
         (
             "source receipt, appraisal policy and appraisal result",
             validate_evidence_chain,
+        ),
+        (
+            "identity lifecycle, presence and viewer authorization contracts",
+            validate_identity_lifecycle_contracts,
+        ),
+        (
+            "compatibility tuple, certification and install-plan contracts",
+            validate_certification_contracts,
+        ),
+        (
+            "TUF trust, compatibility graph and migration chain",
+            validate_release_compatibility_contracts,
+        ),
+        (
+            "disclosure projections and exceptional surface states",
+            validate_presentation_contracts,
         ),
         ("decision register table integrity", validate_decision_register),
         ("CDDL grammar parse and required rules", validate_cddl_file),

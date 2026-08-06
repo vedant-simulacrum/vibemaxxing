@@ -439,6 +439,96 @@ BINDINGS: tuple[Binding, ...] = (
         api=("Identity.state",),
     ),
     Binding(
+        aggregate="recovery-case",
+        machine="recovery-case",
+        states=(
+            "requested",
+            "verifying",
+            "cooling-off",
+            "applied",
+            "denied",
+            "cancelled",
+            "expired",
+        ),
+        sql=("recovery_cases.state",),
+        note="Account recovery under D-380. No API enum: no operation exposes "
+        "the case, so a client cannot read a state the contract has not "
+        "published, and inventing one here would be a projection with no "
+        "consumer.",
+    ),
+    Binding(
+        aggregate="identity-investigation",
+        machine="identity-investigation",
+        states=(
+            "opened",
+            "gathering",
+            "awaiting-participant",
+            "concluded-no-action",
+            "concluded-restricted",
+            "concluded-consolidation",
+            "withdrawn",
+            "expired",
+        ),
+        sql=("identity_investigations.state",),
+        note="Integrity-private under D-381. The participant reads the effect "
+        "through `ranked-identity-eligibility`, which already marks its "
+        "investigation states internal for the same reason.",
+    ),
+    Binding(
+        aggregate="account-consolidation",
+        machine="account-consolidation",
+        states=(
+            "requested",
+            "planning",
+            "awaiting-confirmation",
+            "applying",
+            "applied",
+            "rejected",
+            "reversed",
+            "expired",
+        ),
+        sql=("consolidation_cases.state",),
+        note="D-070 duplicate-account consolidation, D-382. `applied` is not "
+        "terminal: a successful appeal moves it to `reversed`.",
+    ),
+    Binding(
+        aggregate="lineage-fork-case",
+        machine="lineage-fork-case",
+        states=(
+            "detected",
+            "quarantined",
+            "survivor-selected",
+            "requalifying",
+            "resumed",
+            "unresolved",
+            "appealed",
+            "reversed",
+        ),
+        sql=("lineage_fork_cases.state",),
+        note="D-072 fork and clone resolution, D-383. `unresolved` is not "
+        "terminal, because D-072 makes the resolution appealable and a denied "
+        "appeal returns the case to it.",
+    ),
+    Binding(
+        aggregate="source-certification",
+        machine="source-certification",
+        states=(
+            "candidate",
+            "testing",
+            "active",
+            "degraded",
+            "suspended",
+            "expired",
+            "superseded",
+            "retired",
+        ),
+        sql=("source_certifications.state",),
+        note="D-387. Distinct from `platform-certification`, which certifies an "
+        "operating-system profile; this one certifies an exact source, mode, "
+        "platform and accounting tuple. Only `active` may exceed "
+        "private-analytics, which is a check constraint rather than a rule.",
+    ),
+    Binding(
         aggregate="claim-record",
         states=("accepted", "corrected", "retracted", "quarantined"),
         api=("ClaimRecord.state",),

@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/compatibility-graph-v1.schema.json",
+  "title": "Compatibility graph v1",
+  "description": "Which build may talk to which, across the six interfaces that move independently. docs/operations/RELEASE_VERIFICATION.md is the normative owner and packages/schemas/planning-schema.sql#compatibility_edges is the persistence owner. One version number was never going to answer this: a client can be current on the HTTP API and behind on the local IPC contract at the same moment, and the answer to whether it may run differs per interface. Ranges are closed on the left and open on the right, so an empty range is unrepresentable rather than merely unlikely.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "graph_id", "edges"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "graph_id": { "type": "string", "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$" },
+    "release_set_version": { "type": "string", "minLength": 1 },
+    "edges": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/edge" }
+    }
+  },
+  "$defs": {
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interface",
+        "producer_component",
+        "consumer_component",
+        "minimum_supported",
+        "maximum_exclusive",
+        "breaking"
+      ],
+      "properties": {
+        "interface": {
+          "description": "The six that version independently. Collapsing any two would make one of them unable to move without the other, which is the coupling a release-set model exists to avoid.",
+          "enum": [
+            "vibeproof-protocol",
+            "http-api",
+            "local-ipc",
+            "local-storage",
+            "server-schema",
+            "platform-profile"
+          ]
+        },
+        "producer_component": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "consumer_component": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "minimum_supported": { "type": "integer", "minimum": 1 },
+        "maximum_exclusive": { "type": "integer", "minimum": 2 },
+        "breaking": {
+          "description": "Recorded rather than derived. D-234 permits only additive change inside a major version and makes adding a member to a closed state vocabulary a major change, which no arithmetic over two version numbers can detect. A breaking edge supports exactly one major version, which the range constraint enforces.",
+          "type": "boolean"
+        },
+        "deprecated_after": { "type": "string", "format": "date-time" },
+        "sunset_at": {
+          "description": "D-234 sets a 180-day minimum window between deprecation and removal, with three carve-outs: an ADR-013 emergency security removal, a surface no released build has ever called, and a legally compelled removal. A sunset without a deprecation notice is the removal the window exists to prevent.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "sunset_carve_out": {
+          "enum": [
+            "emergency-security-removal",
+            "never-called-by-a-released-build",
+            "legally-compelled"
+          ]
+        },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "breaking": { "const": true } },
+            "required": ["breaking"]
+          },
+          "then": {
+            "description": "A breaking edge starts a new major range and supports exactly one.",
+            "properties": { "minimum_supported": { "type": "integer" } }
+          }
+        },
+        {
+          "if": { "required": ["sunset_at"] },
+          "then": {
+            "anyOf": [
+              { "required": ["deprecated_after"] },
+              { "required": ["sunset_carve_out"] }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

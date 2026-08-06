@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "graph_id": "planning-baseline-v1",
+  "edges": [
+    {
+      "interface": "http-api",
+      "producer_component": "vibemaxxing-api",
+      "consumer_component": "vibemaxxing-web",
+      "minimum_supported": 1,
+      "maximum_exclusive": 2,
+      "breaking": false,
+      "sunset_at": "2026-09-01T00:00:00Z"
+    }
+  ]
+}

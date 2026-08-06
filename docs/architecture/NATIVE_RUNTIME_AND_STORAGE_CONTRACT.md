@@ -136,6 +136,26 @@ Transcript-bearing temporary data uses a separate store unavailable to sync and 
 
 Every migration is transactional, forward-tested from all supported versions, preceded by an encrypted backup and rollback-safe where possible. Failure leaves the prior version operable or enters explicit recovery while update, export and uninstall remain available.
 
+### The executable local schema
+
+The domain list above is a list of names. `packages/schemas/local-store-v1.sql` is the executable form of the ones the evidence chain depends on, and D-384 records the choices. It is a separate file from `packages/schemas/planning-schema.sql` on purpose: one is SQLite on the participant's machine and the other is PostgreSQL on the server, and a single file would invite one to be read as the other.
+
+| Concern | Owner |
+|---|---|
+| Persistence | `packages/schemas/local-store-v1.sql` |
+| Revision model | `local_meta.schema_version`, compared against the binary's declared range at open |
+| Transaction boundary | a commitment and its outbox row are one transaction; an accounting event, its receipt, its considerations and its bundle are one transaction |
+| Crash consistency | write-ahead logging, `synchronous = full`, one writer, and every apply keyed on an identifier the producer computes before the write |
+| Deletion | `local_deletion_receipts`, one row per command, recording residual risk |
+
+There is no key column anywhere in that schema. Page encryption uses a key held by the operating-system keystore, because a key stored beside the ciphertext it protects is not encryption — the same reasoning D-213 applies to the server keyring.
+
+A store from a future schema version is refused rather than opened read-only, because a newer daemon may have written a column this binary would silently drop on the next rewrite.
+
+Recovery reconciles in one direction only. On open the daemon finds the highest commitment sequence and the outbox rows at or below it; a commitment with no outbox row is scheduled, and an outbox row with no commitment cannot exist because the two are written together. Nothing deletes a commitment during recovery, so an ambiguous commit resolves toward retaining the participant's work.
+
+A local deletion receipt records what was cleared and what could not be proved gone — a filesystem snapshot, a backup copy — rather than asserting a forensic erase, which D-076 forbids the product from claiming.
+
 ## Service-state persistence
 
 Persist at minimum:

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/ui-state-projection-v1.schema.json",
+  "title": "Exceptional surface states v1",
+  "description": "The eight states every surface has to render besides the one where everything worked, and what each one is derived from. docs/product/PRODUCT_SPEC.md and the owning state machines are the normative owners. Each exceptional state either names a registered machine and the states of it that produce it, or declares that it is client-local and derived from nothing on the server — and the validator resolves the first kind against packages/schemas/state-machine-registry-v1.json, so a state cannot be rendered from a lifecycle that does not exist. Two rules run through all of them: a surface never invents a policy the server did not send, and an exceptional state never discloses more than the ordinary one it replaced.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "profile_id", "states"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "profile_id": { "const": "exceptional-surface-states-v1" },
+    "states": {
+      "type": "array",
+      "minItems": 8,
+      "items": { "$ref": "#/$defs/state" }
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state_id", "origin", "disclosure", "recovery_action"],
+      "properties": {
+        "state_id": {
+          "enum": [
+            "loading",
+            "empty",
+            "blocked",
+            "private",
+            "stale",
+            "retracted",
+            "appeal",
+            "recovery"
+          ]
+        },
+        "origin": {
+          "description": "client-local states are derived from the client's own situation — a request in flight, a cache older than its freshness budget — and from nothing the server sends. server-derived states name the machine and the states of it that produce them.",
+          "enum": ["client-local", "server-derived"]
+        },
+        "machine_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "source_states": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+          }
+        },
+        "authorization_input": {
+          "description": "An input_id in packages/schemas/projection-authorization-v1.json, for a state produced by an authorization decision rather than by a lifecycle.",
+          "type": "string",
+          "pattern": "^[a-z-]+$"
+        },
+        "disclosure": {
+          "description": "What the state is allowed to tell the person looking at it. indistinguishable-from-absent is the strongest: the surface must not let a viewer tell this state from the subject simply not existing, which is what stops a private profile and a blocked one from being distinguishable.",
+          "enum": [
+            "full-detail-to-subject",
+            "reason-code-only",
+            "generic-unavailable",
+            "indistinguishable-from-absent"
+          ]
+        },
+        "recovery_action": {
+          "description": "What the person can do. none is a real answer and is recorded rather than left as an empty affordance.",
+          "enum": [
+            "none",
+            "wait",
+            "retry",
+            "refresh",
+            "open-appeal",
+            "contact-support",
+            "complete-recovery"
+          ]
+        },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "origin": { "const": "server-derived" } },
+            "required": ["origin"]
+          },
+          "then": {
+            "anyOf": [
+              { "required": ["machine_id", "source_states"] },
+              { "required": ["authorization_input"] }
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                { "required": ["machine_id"] },
+                { "required": ["authorization_input"] }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

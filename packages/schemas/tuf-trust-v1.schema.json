@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/tuf-trust-v1.schema.json",
+  "title": "TUF root and role policy, and trusted client state, v1",
+  "description": "The two halves SR-014 records as missing: the role policy the release authority publishes, and the trusted state a client holds. docs/operations/RELEASE_VERIFICATION.md and ADR-013 are the normative owners; packages/schemas/planning-schema.sql#tuf_roots holds the root and #tuf_metadata holds the client state. TUF's security properties are client-side, so the record that matters is the client's own view: a client refuses metadata that is older than what it trusts, expired, or signed below threshold, and each of those three refusals is a named attack rather than an error condition. D-024 makes hostile-metadata tests a release requirement and nothing here is evidence that any has been run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "roles"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "roles": {
+      "description": "One entry per TUF role. Thresholds and expiry windows differ per role because the roles defend different attacks: a short timestamp window is the freeze-attack control and a high root threshold is the key-compromise control, and giving them one number would make each wrong.",
+      "type": "array",
+      "minItems": 4,
+      "items": { "$ref": "#/$defs/role_policy" }
+    },
+    "trusted_state": { "$ref": "#/$defs/trusted_state" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "role_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "threshold",
+        "key_count",
+        "expiry_policy_key",
+        "online_key"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "root",
+            "timestamp",
+            "snapshot",
+            "targets",
+            "delegated-targets"
+          ]
+        },
+        "threshold": {
+          "description": "The minimum number of distinct signatures. D-091 records that the project has one maintainer, so a root threshold above one is unsatisfiable today and the operations contract records that as a weakness rather than describing the checklist substitute as equivalent.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "key_count": { "type": "integer", "minimum": 1 },
+        "expiry_policy_key": {
+          "description": "A key in packages/schemas/policy-defaults-v1.json. D-239 fixes the cadences: timestamp 1 day, snapshot 7 days, targets 90 days, root 365 days re-signed at 270.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "online_key": {
+          "description": "True for a key the signing service holds, which is timestamp and snapshot. Root and targets keys are offline; an online root key removes the property the role exists to provide.",
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "role": { "enum": ["root", "targets"] } },
+            "required": ["role"]
+          },
+          "then": { "properties": { "online_key": { "const": false } } }
+        }
+      ]
+    },
+    "trusted_state": {
+      "description": "What one client trusts for one role right now. It is per device rather than per account because the trust decision belongs to the installation that will run the binary.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_id",
+        "role",
+        "version",
+        "metadata_digest",
+        "signature_count",
+        "threshold",
+        "root_version",
+        "expires_at",
+        "verified_at"
+      ],
+      "properties": {
+        "device_id": { "type": "string", "format": "uuid" },
+        "role": {
+          "enum": [
+            "root",
+            "timestamp",
+            "snapshot",
+            "targets",
+            "delegated-targets"
+          ]
+        },
+        "version": {
+          "description": "Monotonic. Metadata at or below this version is refused, which is the rollback-attack control. The previous version and digest are retained so the refusal is recordable rather than merely correct.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "metadata_digest": { "$ref": "#/$defs/digest" },
+        "previous_version": { "type": "integer", "minimum": 1 },
+        "previous_metadata_digest": { "$ref": "#/$defs/digest" },
+        "signature_count": { "type": "integer", "minimum": 0 },
+        "threshold": { "type": "integer", "minimum": 1 },
+        "root_version": { "type": "integer", "minimum": 1 },
+        "expires_at": {
+          "description": "Past this, the client stops trusting the repository rather than continuing on stale metadata. That is the freeze-attack control, and it is why an offline client eventually refuses to update rather than quietly staying where it is.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "verified_at": { "type": "string", "format": "date-time" },
+        "last_refusal_reason_code": {
+          "description": "The refusal is recorded rather than discarded, because a rollback or freeze attempt is a security event and a client that only refuses it leaves no evidence that it happened. The field is unpopulated today and that is stated rather than hidden: packages/schemas/reason-codes-v1.json has three transports — problem, claim-rejection and appraisal — and a local client-side refusal reaches none of them, so no code for one is registered and registering one under a transport it does not use would be worse than leaving it absent.",
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "last_refused_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["previous_version"] },
+          "then": { "required": ["previous_metadata_digest"] }
+        },
+        {
+          "if": { "required": ["last_refusal_reason_code"] },
+          "then": { "required": ["last_refused_at"] }
+        }
+      ]
+    }
+  }
+}

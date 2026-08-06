@@ -748,6 +748,7 @@
     "updateMe"
   ],
   "state_machines": [
+    "account-consolidation",
     "account-lifecycle",
     "appeal",
     "board-invitation",
@@ -757,8 +758,10 @@
     "export-job",
     "friendship",
     "idempotency-ledger",
+    "identity-investigation",
     "interactive-shell",
     "invite-code",
+    "lineage-fork-case",
     "local-deletion-command",
     "model-alias-resolution",
     "moderation-case",
@@ -770,9 +773,11 @@
     "privileged-supervisor",
     "ranked-identity-eligibility",
     "ranking-projection",
+    "recovery-case",
     "release-trust",
     "rivalry",
     "server-deletion",
+    "source-certification",
     "update-lifecycle",
     "web-session-family"
   ],

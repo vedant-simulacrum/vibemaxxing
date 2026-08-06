@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "certification": {
+    "source_certification_id": "018f2c60-0000-7000-8000-000000000803",
+    "tuple_digest": "1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a",
+    "state": "active",
+    "effective_ceiling": "standard",
+    "valid_from": "2026-08-01T00:00:00Z",
+    "created_at": "2026-08-01T00:00:00Z"
+  },
+  "result": {
+    "certification_result_id": "018f2c60-0000-7000-8000-000000000804",
+    "suite_id": "claude-code-otel",
+    "suite_manifest_sha256": "ff6677889900aa11bb22cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55",
+    "outcome": "passed",
+    "case_count": 8,
+    "negative_case_count": 0,
+    "failed_case_count": 0,
+    "result_digest": "0011223344556677889900aabbccddeeff0011223344556677889900aabbccdd",
+    "cose_sign1_b64": "0oRDoQEnoFgkcGxhbm5pbmctcGxhY2Vob2xkZXItbm90LWEtcmVhbC1zaWduYXR1cmVAWEA",
+    "signing_key_id": "planning-certification-key-v1",
+    "executed_at": "2026-08-01T00:00:00Z"
+  }
+}

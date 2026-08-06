@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "case": {
+    "consolidation_case_id": "018f2c60-0000-7000-8000-000000000301",
+    "surviving_ranked_identity_id": "018f2c60-0000-7000-8000-000000000201",
+    "absorbed_ranked_identity_id": "018f2c60-0000-7000-8000-000000000210",
+    "state": "applied",
+    "initiated_by": "participant",
+    "requested_at": "2026-07-01T09:00:00Z",
+    "confirmed_at": "2026-07-02T09:00:00Z",
+    "applied_at": "2026-07-02T09:01:00Z",
+    "expires_at": "2026-07-15T09:00:00Z",
+    "revision": 6
+  },
+  "contributions": [
+    {
+      "consolidation_contribution_id": "018f2c60-0000-7000-8000-000000000302",
+      "claim_id": "018f2c60-0000-7000-8000-000000000401",
+      "period_id": "018f2c60-0000-7000-8000-000000000501",
+      "duplicate_domain_commitment": "3a1f0c9d8b7e6a5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c",
+      "token_burn_total": 128000,
+      "disposition": "absorbed",
+      "created_at": "2026-07-02T09:01:00Z"
+    },
+    {
+      "consolidation_contribution_id": "018f2c60-0000-7000-8000-000000000303",
+      "claim_id": "018f2c60-0000-7000-8000-000000000402",
+      "period_id": "018f2c60-0000-7000-8000-000000000501",
+      "duplicate_domain_commitment": "9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d",
+      "token_burn_total": 64000,
+      "disposition": "excluded-imported",
+      "created_at": "2026-07-02T09:01:00Z"
+    }
+  ],
+  "result": {
+    "absorbed_contribution_count": 1,
+    "excluded_contribution_count": 1,
+    "affected_period_count": 1,
+    "erasure_domain_link_established": true,
+    "rebuilt_generation_count": 1
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "roles": [
+    {
+      "role": "root",
+      "threshold": 1,
+      "key_count": 1,
+      "expiry_policy_key": "tuf_root_expiry_days",
+      "online_key": true
+    },
+    {
+      "role": "timestamp",
+      "threshold": 1,
+      "key_count": 1,
+      "expiry_policy_key": "tuf_timestamp_expiry_days",
+      "online_key": true
+    },
+    {
+      "role": "snapshot",
+      "threshold": 1,
+      "key_count": 1,
+      "expiry_policy_key": "tuf_snapshot_expiry_days",
+      "online_key": true
+    },
+    {
+      "role": "targets",
+      "threshold": 1,
+      "key_count": 1,
+      "expiry_policy_key": "tuf_targets_expiry_days",
+      "online_key": false
+    }
+  ]
+}

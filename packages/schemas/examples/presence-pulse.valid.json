@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "thresholds": {
+    "pulse_interval_policy_key": "presence_heartbeat_seconds",
+    "idle_after_policy_key": "presence_lease_expiry_seconds",
+    "offline_after_policy_key": "presence_idle_after_seconds"
+  },
+  "pulse": {
+    "account_id": "018f2c60-0000-7000-8000-000000000001",
+    "device_id": "018f2c60-0000-7000-8000-000000000701",
+    "lease_generation": 12,
+    "qualifying": true,
+    "source": "native-collector",
+    "occurred_at": "2026-08-06T10:00:00Z"
+  },
+  "lease": {
+    "account_id": "018f2c60-0000-7000-8000-000000000001",
+    "device_id": "018f2c60-0000-7000-8000-000000000701",
+    "state": "active",
+    "lease_generation": 12,
+    "visibility": "authorized-viewers",
+    "last_qualifying_pulse_at": "2026-08-06T10:00:00Z",
+    "expires_at": "2026-08-06T10:01:30Z"
+  },
+  "audience_projection": {
+    "viewer_relationship": "friend",
+    "availability": "online"
+  }
+}
