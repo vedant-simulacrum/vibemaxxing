@@ -32,9 +32,9 @@
         "mobile": "product-storyboards/renders/public-profile-mobile.png"
       },
       "approvedCaptureSha256": {
-        "desktop": "50340a9b69d7aa4d46fa7cce45595bfda91b7893736eea92b5a30cf5fd4ce3a4",
-        "tablet": "7af7c87c957ee134442940c32400ec76e95196f8dfafdab517bfc4642c0c22b7",
-        "mobile": "c7b59613593fb4167a0ddb77d766854bbc224750c989dee39e3e3dbaccac0b9f"
+        "desktop": "23d3e8275379467d891d47ab65efb47a4ce44771bf0dcf55b27ac52a61c4b4de",
+        "tablet": "32a60ba95cd93bfbe1cfcd722eab3e0b2791c194ff44c64c9ccc5529011bcb61",
+        "mobile": "793fea81643edee07a1f2277bf3f90877bae833877c4e707f6b098e4ad75cf42"
       },
       "status": "review-baseline"
     },
@@ -80,9 +80,9 @@
         "mobile": "product-storyboards/renders/activity-and-notifications-mobile.png"
       },
       "approvedCaptureSha256": {
-        "desktop": "8b50f75f5f33aa5c2b0f1298fdf88c9aec0a422612de827a879c9ef94b619061",
-        "tablet": "229fa935341279c49a593d26fb41fe93a11c81738f1895ecc0855479f7e820b9",
-        "mobile": "5e1747a747c11ea2adfe07d6fcc372a387d2b3d74842af4624c70384ed295f20"
+        "desktop": "c9c32861c092bfd292acaad3a0584bcd40da439c6cdec2997c72cf68647faad4",
+        "tablet": "41f69d92765d25658a7585d1f8b84f1b45af68d7377e0fe5d19140b697ce143d",
+        "mobile": "5afae636b37f38d14ad7b13c9aa8153b68dfe516376a248928df1b8cd0182fbf"
       },
       "status": "review-baseline"
     },
@@ -96,9 +96,9 @@
         "mobile": "product-storyboards/renders/board-standings-mobile.png"
       },
       "approvedCaptureSha256": {
-        "desktop": "0ec77b6303e172e7069dfe0beec837ef88ebf6dbcef87b659f05928ad23a39f5",
-        "tablet": "c739d20b9301403a85ce25fc04a0b8d3bd1b139a67ec07a78a87c5daedfde8ed",
-        "mobile": "bd8a6669a4bc52bd919cc07f57cfe5f9ae5c0cf11d7faaea99493f104e2886fc"
+        "desktop": "f86ea7f19d87da313e355584a688113e2380b5bb496ceb8b95d1137ca299773b",
+        "tablet": "a99f9208e7419ef4fee0013480e32923163be200b2541fbd3b9a6f580557783d",
+        "mobile": "d3499fc583d8fd57f0e28ba664fcdb507cd5b922e2b31fc4fbd7d6bf52644649"
       },
       "status": "review-baseline"
     }

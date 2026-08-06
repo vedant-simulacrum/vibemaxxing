@@ -45,10 +45,16 @@ REQUIRED_TABLES = {
 FORBIDDEN_LAUNCH_PATHS = {"/countries"}
 FORBIDDEN_LAUNCH_TABLES = {"country_assertions"}
 
+# Mutating operations that carry no `Idempotency-Key`, because the credential the request
+# already presents is itself single-use and a durable request hash would be a second,
+# weaker replay control layered over a stronger one. `/auth/session/refresh` joins the set
+# under D-221: ADR-015 makes every refresh handle one-time-use with no grace window, so a
+# repeated refresh is a replay incident rather than a retry.
 IDEMPOTENCY_EXCEPTIONS = {
     ("/auth/github/start", "post"), ("/auth/x/start", "post"),
     ("/auth/device/start", "post"), ("/auth/device/poll", "post"),
-    ("/auth/device/exchange", "post"), ("/claim-challenges", "post"),
+    ("/auth/device/exchange", "post"), ("/auth/session/refresh", "post"),
+    ("/claim-challenges", "post"),
 }
 
 REPAIR_TARGETS = {

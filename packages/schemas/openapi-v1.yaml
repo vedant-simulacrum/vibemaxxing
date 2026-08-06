@@ -3,6 +3,13 @@
 # This document is YAML. It was JSON under a `.yaml` name until D-140; the contents
 # were converted rather than the path renamed, because `conformance/p1140f/` pins this
 # path and is owned elsewhere. Readers parse it with a YAML parser.
+#
+# Session authentication follows `docs/decisions/ADR-015-SESSION_AUTHENTICATION.md`.
+# Ranking figures follow `docs/decisions/ADR-020-CONFIDENCE_WEIGHTED_RANKING.md`.
+#
+# The operation-to-status-to-reason-code matrix is not written here.
+# `packages/schemas/reason-codes-v1.json` holds it, and
+# `scripts/repository/validate_planning_artifacts.py` fails when the two disagree.
 openapi: 3.1.0
 info:
   title: VibeMaxxing Public API
@@ -10,8 +17,29 @@ info:
   description: P-1140D planning contract. Implementation remains unauthorized.
 servers:
   - url: https://api.vibemaxxing.dev/v1
-security:
-  - bearerAuth: []
+x-idempotency-contract:
+  ledger: packages/schemas/state-machine-registry-v1.json#idempotency-ledger
+  key_scope:
+    - principal_id
+    - operation_id
+    - idempotency_key
+  principal: The account the session resolves to and, for a native session, the device enrollment bound to that session. Two principals presenting the same key against the same operation hold two independent ledger rows.
+  request_digest: 'SHA-256 over the canonical request: the uppercase method, the path with its query in the order the server sorts it, the exact request body bytes, and the principal. The digest decides replay against conflict and is recorded on reservation.'
+  response_record: The committed response is recorded in full — status, the ordered response header set this contract publishes, and the exact body bytes — so a replay returns it byte-identically rather than recomputing it. The record is not nullable on a committed row.
+  replay_header: Idempotency-Replayed
+  reserved_recovery: A second request arriving while the row is reserved and carrying the same digest waits for the in-flight transaction and then returns the recorded response. A reserved row whose transaction did not commit moves to failed on lease expiry and the key becomes usable again.
+  conflict:
+    ledger_state: conflict
+    status: 409
+    reason_code: IDEMPOTENCY_KEY_CONFLICT
+    condition: The key exists for this principal and operation with a different request digest. The stored response is not returned and the new request is not executed.
+  expiry:
+    ledger_state: expired
+    status: 410
+    reason_code: IDEMPOTENCY_RECORD_EXPIRED
+    retention_hours: 168
+    condition: The key was committed and its record aged past the retention window, so the response bytes no longer exist to replay. The request is not re-executed under the same key.
+  open_finding: SR-012 stays open. This block is the API half. The persistence half — the nullable response_digest, the missing response-body column and the account-only primary key in packages/schemas/planning-schema.sql — is not repaired here and no closure evidence is recorded.
 paths:
   /auth/github/start:
     post:
@@ -19,6 +47,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '202':
           description: OAuthStart
@@ -26,11 +55,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OAuthStart'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       requestBody:
         required: true
         content:
@@ -43,6 +77,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '200':
           description: OAuthCompletion
@@ -50,11 +85,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OAuthCompletion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       parameters:
         - $ref: '#/components/parameters/OAuthCode'
         - $ref: '#/components/parameters/OAuthState'
@@ -65,6 +105,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '202':
           description: OAuthStart
@@ -72,11 +113,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OAuthStart'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       requestBody:
         required: true
         content:
@@ -89,6 +135,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '200':
           description: OAuthCompletion
@@ -96,11 +143,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OAuthCompletion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       parameters:
         - $ref: '#/components/parameters/OAuthCode'
         - $ref: '#/components/parameters/OAuthState'
@@ -110,6 +162,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '202':
           description: DeviceAuthorization
@@ -117,11 +170,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeviceAuthorization'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       requestBody:
         required: true
         content:
@@ -134,6 +192,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '200':
           description: DeviceAuthorizationStatus
@@ -141,11 +200,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeviceAuthorizationStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       requestBody:
         required: true
         content:
@@ -158,6 +222,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '200':
           description: NativeSession
@@ -165,23 +230,74 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NativeSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/DeviceAuthExchangeRequest'
+  /auth/session/refresh:
+    post:
+      operationId: refreshSession
+      x-authorization: authenticated-account
+      x-recent-auth: not-required
+      x-idempotency: single-use-refresh-handle
+      description: 'Rotate a session family. Refresh is one-time-use: presenting a handle moves the family to rotating, atomically consumes the presented handle and issues a new access and refresh pair in the same transaction with the family generation incremented. A browser presents __Host-vm_refresh and receives replacement cookies; a native client presents the handle in the body together with a device proof from the bound key and receives the replacement access handle in the response. Presenting a handle that was already consumed is a replay: the family moves to replay-detected, every handle in every generation is revoked and the account owner receives a server-inbox security notice. There is no grace window, so a client that loses this response reauthenticates.'
+      security:
+        - refreshCookie: []
+          csrfToken: []
+        - deviceProof: []
+      responses:
+        '200':
+          description: RefreshedSession
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshedSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionRefreshRequest'
   /sessions:
     get:
       operationId: listSessions
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: SessionPage
@@ -189,16 +305,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SessionPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
   /sessions/{id}/revoke:
     post:
       operationId: revokeSession
       x-authorization: authenticated-account
       x-recent-auth: required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: TransitionReceipt
@@ -206,6 +336,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -213,29 +361,18 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/IdempotencyKey'
-  /identities:
-    get:
-      operationId: listIdentities
-      x-authorization: authenticated-account
-      x-recent-auth: not-required
-      x-idempotency: not-applicable
-      responses:
-        '200':
-          description: IdentityPage
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IdentityPage'
-        '429':
-          $ref: '#/components/responses/RateLimited'
-        default:
-          $ref: '#/components/responses/Problem'
-  /identities/link:
+  /sessions/revoke-all:
     post:
-      operationId: linkIdentity
+      operationId: revokeAllSessions
       x-authorization: authenticated-account
       x-recent-auth: required
       x-idempotency: required-durable-request-hash
+      description: 'Revoke every session family on the account, including the calling session. Revocation is immediate: handles are lookups rather than assertions, so the next request on any revoked handle fails.'
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: TransitionReceipt
@@ -243,6 +380,96 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+  /identities:
+    get:
+      operationId: listIdentities
+      x-authorization: authenticated-account
+      x-recent-auth: not-required
+      x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: IdentityPage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+  /identities/link:
+    post:
+      operationId: linkIdentity
+      x-authorization: authenticated-account
+      x-recent-auth: required
+      x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '202':
+          description: TransitionReceipt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -261,6 +488,11 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: TransitionReceipt
@@ -268,6 +500,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -286,6 +538,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: DevicePage
@@ -293,16 +549,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DevicePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
   /devices/enroll:
     post:
       operationId: enrollDevice
       x-authorization: authenticated-account
       x-recent-auth: required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '201':
           description: Device
@@ -310,6 +580,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Device'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -328,6 +618,11 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: TransitionReceipt
@@ -335,6 +630,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -354,6 +671,11 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: TransitionReceipt
@@ -361,6 +683,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -374,6 +714,9 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: server-challenge-uniqueness
+      security:
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '201':
           description: ClaimChallenge
@@ -381,6 +724,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClaimChallenge'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -397,6 +752,9 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
+      security:
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: ClaimBatchResult
@@ -404,6 +762,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClaimBatchResult'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -424,6 +802,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: ClaimRecord
@@ -431,6 +813,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClaimRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -443,6 +833,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '200':
           description: LeaderboardPage
@@ -450,11 +841,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LeaderboardPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       parameters:
         - $ref: '#/components/parameters/Scope'
         - $ref: '#/components/parameters/Period'
@@ -467,13 +863,23 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
-          description: RankEntry
+          description: SelfRankEntry
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RankEntry'
+                $ref: '#/components/schemas/SelfRankEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -484,6 +890,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '200':
           description: PublicProfile
@@ -491,11 +898,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PublicProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       parameters:
         - $ref: '#/components/parameters/Handle'
   /me:
@@ -504,6 +916,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: AccountProfile
@@ -511,6 +927,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -520,6 +942,11 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: AccountProfile
@@ -527,6 +954,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountProfile'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -545,6 +992,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: RelationshipPage
@@ -552,16 +1003,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RelationshipPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
   /friend-requests:
     get:
       operationId: listFriendRequests
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: RelationshipPage
@@ -569,15 +1033,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RelationshipPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
     post:
       operationId: createFriendRequest
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: TransitionReceipt
@@ -585,6 +1063,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -603,6 +1101,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: RelationshipPage
@@ -610,15 +1112,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RelationshipPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
     post:
       operationId: createBlock
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: TransitionReceipt
@@ -626,6 +1142,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -644,6 +1180,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: RelationshipPage
@@ -651,15 +1191,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RelationshipPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
     post:
       operationId: createRival
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: TransitionReceipt
@@ -667,6 +1221,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -685,6 +1259,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: BoardPage
@@ -692,15 +1270,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BoardPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
     post:
       operationId: createBoard
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '201':
           description: Board
@@ -708,6 +1300,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Board'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -726,6 +1338,11 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: TransitionReceipt
@@ -733,6 +1350,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -752,6 +1391,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: OrganizationPage
@@ -759,15 +1402,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrganizationPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
     post:
       operationId: createOrganization
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '201':
           description: Organization
@@ -775,6 +1432,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organization'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -793,6 +1470,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: CommunityPage
@@ -800,15 +1481,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommunityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
     post:
       operationId: createCommunity
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '201':
           description: Community
@@ -816,6 +1511,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Community'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -834,6 +1549,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: PresencePage
@@ -841,15 +1560,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PresencePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
     put:
       operationId: renewPresence
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: PresenceLease
@@ -857,6 +1590,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PresenceLease'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -875,6 +1628,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: NotificationPage
@@ -882,6 +1639,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -895,6 +1658,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: ModerationCasePage
@@ -902,15 +1669,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModerationCasePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
     post:
       operationId: createModerationCase
       x-authorization: authenticated-account
       x-recent-auth: required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '201':
           description: ModerationCase
@@ -918,6 +1699,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModerationCase'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -936,6 +1737,10 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: AppealPage
@@ -943,15 +1748,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AppealPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
     post:
       operationId: createAppeal
       x-authorization: authenticated-account
       x-recent-auth: required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '201':
           description: Appeal
@@ -959,6 +1778,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Appeal'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -977,6 +1816,11 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: ExportJob
@@ -984,6 +1828,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExportJob'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -1002,6 +1866,11 @@ paths:
       x-authorization: authenticated-account
       x-recent-auth: required
       x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '202':
           description: DeletionJob
@@ -1009,6 +1878,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeletionJob'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -1027,6 +1916,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '200':
           description: PricingDatasetPage
@@ -1034,11 +1924,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PricingDatasetPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -1048,6 +1939,7 @@ paths:
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
+      security: []
       responses:
         '200':
           description: CompatibilityPage
@@ -1055,11 +1947,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CompatibilityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
           $ref: '#/components/responses/Problem'
-      security: []
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -1069,6 +1962,27 @@ components:
       type: http
       scheme: bearer
       bearerFormat: opaque
+      description: 'Native access handle under ADR-015: 256 bits from a cryptographically secure random source, base64url without padding, carrying no encoded claims and stored server-side as a SHA-256 digest. It is a lookup key into a session record, never a self-contained assertion, because per-session revocation takes effect on the next request. It never satisfies an operation on its own; deviceProof accompanies it.'
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-vm_session
+      description: Browser access handle. Secure, HttpOnly, SameSite=Lax, Path=/, __Host- prefixed, valid 15 minutes from issue. SameSite=Lax rather than Strict because the OAuth redirect returns by top-level navigation.
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-vm_refresh
+      description: Browser refresh handle, valid 30 days from issue with the family capped at 90 days absolute from first authentication. It authenticates refreshSession and no other operation.
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-VibeMaxxing-CSRF
+      description: Double-submitted token bound to the session record. Every state-changing cookie-authenticated request carries it, because the SameSite attribute is not treated as the whole cross-site defence.
+    deviceProof:
+      type: apiKey
+      in: header
+      name: VibeProof-Device-Proof
+      description: COSE_Sign1 detached signature from the enrolled Ed25519 device key over the HTTP method, the request path with query, the SHA-256 digest of the body, the session handle digest, a millisecond timestamp and a 128-bit nonce. The server rejects a proof outside a 300-second window, a nonce already seen inside that window, or a signing key that is not the key bound to the session record.
   parameters:
     Id:
       name: id
@@ -1115,6 +2029,7 @@ components:
       schema:
         type: string
         format: uuid
+      description: Client-generated idempotency key. It is unique per (principal, operationId) rather than per account, so the same key presented against a different operation is a different ledger row. See the x-idempotency-contract block at the document root.
     Scope:
       name: scope
       in: path
@@ -1144,6 +2059,7 @@ components:
       schema:
         type: string
         maxLength: 2048
+      description: Opaque forward cursor returned as the cursor field of the previous page. A client never constructs one and never parses one; the server rejects a cursor it did not issue, a cursor issued against a different snapshot_id, and a cursor issued to a different principal.
     Limit:
       name: limit
       in: query
@@ -1153,6 +2069,7 @@ components:
         minimum: 1
         maximum: 200
         default: 50
+      description: Page size. The default is 50 and the maximum is 200, which is the same bound the items array of every page schema carries.
     RankingView:
       name: ranking_view_id
       in: query
@@ -1175,6 +2092,60 @@ components:
           schema:
             type: integer
             minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    BadRequest:
+      description: The request could not be parsed or a parameter failed its declared shape
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthenticated:
+      description: No usable session credential was presented, or the one presented is expired, revoked, replayed, or unaccompanied by a valid device proof
+      headers:
+        WWW-Authenticate:
+          required: true
+          schema:
+            type: string
+            maxLength: 512
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: The principal is authenticated and is not permitted to perform this operation on this resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: No resource is addressed by this path for this principal
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: The request contradicts the current state of the addressed aggregate or of its idempotency ledger row
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Gone:
+      description: The idempotency record for this key aged past its retention window and its recorded response no longer exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnsupportedMediaType:
+      description: The request body media type is not one this operation accepts
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableContent:
+      description: The request parsed and was rejected on its meaning rather than its shape
       content:
         application/json:
           schema:
@@ -1419,6 +2390,8 @@ components:
         - created_at
         - expires_at
         - current
+        - family_generation
+        - family_reason_code
       properties:
         session_id:
           type: string
@@ -1441,6 +2414,16 @@ components:
           format: date-time
         current:
           type: boolean
+        family_reason_code:
+          type:
+            - string
+            - 'null'
+          pattern: ^[A-Z][A-Z0-9_]{2,63}$
+          description: The reason code from packages/schemas/reason-codes-v1.json that ended this session family, or null while the family is live. WEB_SESSION_REPLAY_DETECTED, NATIVE_SESSION_REPLAY_DETECTED and NATIVE_SESSION_DEVICE_REVOKED carry the family outcomes that the member-level state enum does not name.
+        family_generation:
+          type: integer
+          minimum: 1
+          description: Generation counter of the session family, incremented by every rotation.
     SessionPage:
       type: object
       additionalProperties: false
@@ -1733,6 +2716,7 @@ components:
         - payload_digest
         - appraisal_id
         - accepted_at
+        - evidence_class
       properties:
         claim_id:
           type: string
@@ -1758,14 +2742,27 @@ components:
         accepted_at:
           type: string
           format: date-time
+        evidence_class:
+          enum:
+            - hardened
+            - standard
+            - imported
+          description: The awarded public evidence state from packages/schemas/evidence-profile-policy-v1.json. The server verifier assigns it; a client field requesting one is ignored under the policy's client-requested-public-state rule. Under ADR-020 the class is a weight on Credited Token Burn rather than a badge, and under D-100 no provider offers an individual-account attestation path, so the class assesses the quality of a self-report and is not a confirmation from any provider.
     RankEntry:
       type: object
       additionalProperties: false
+      description: 'One standing on a leaderboard page. The field named score was removed under D-144: ADR-020 bans it as a name because it is the word that lets the claimed and credited figures merge.'
       required:
         - account_id
         - handle
-        - score
+        - display_name
+        - avatar_id
+        - evidence_class
+        - credited_token_burn
         - position
+        - previous_position
+        - rank_movement
+        - availability
         - ranking_view_id
         - snapshot_id
         - revision
@@ -1777,12 +2774,54 @@ components:
           type: string
           minLength: 3
           maxLength: 30
-        score:
+        display_name:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 60
+          description: Participant-chosen display name, distinct from the immutable handle. Null when the participant set none, in which case a client renders the handle.
+        avatar_id:
           type: integer
           minimum: 0
+          maximum: 8
+          description: Index into the repository-owned avatar library in assets/ui/fixtures. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
+        evidence_class:
+          enum:
+            - hardened
+            - standard
+            - imported
+          description: The awarded public evidence state from packages/schemas/evidence-profile-policy-v1.json. The server verifier assigns it; a client field requesting one is ignored under the policy's client-requested-public-state rule. Under ADR-020 the class is a weight on Credited Token Burn rather than a badge, and under D-100 no provider offers an individual-account attestation path, so the class assesses the quality of a self-report and is not a confirmation from any provider.
+        credited_token_burn:
+          type: integer
+          minimum: 0
+          description: 'Credited Token Burn: Token Burn multiplied by the server-assigned confidence weight, floored, integer throughout. This is the quantity rank() orders. Token Burn itself is absent from every public surface under D-144, because publishing both quantities lets any observer recover the weight by division and, since the evidence class is already public, recover the trust factor and therefore a sanction D-084 keeps private.'
         position:
           type: integer
           minimum: 1
+        previous_position:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          description: Position in the superseded generation of this ranking view, or null when this entry is new to the board.
+        rank_movement:
+          type: integer
+          minimum: -1000000
+          maximum: 1000000
+          description: Positions gained since the previous generation of this ranking view. Negative is a fall, zero is unchanged.
+        availability:
+          enum:
+            - online
+            - idle
+            - offline
+          description: Server-derived from qualifying device activity. A participant whose presence visibility excludes this viewer reads offline, which is the same value an inactive participant reads.
+        top_model_alias:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 64
         ranking_view_id:
           type: string
           pattern: ^[0-9a-f]{64}$
@@ -1820,10 +2859,16 @@ components:
     PublicProfile:
       type: object
       additionalProperties: false
+      description: What a viewer authorized to read this profile receives. Every quantity on it is credited rather than raw, and no field on it identifies a provider account.
       required:
         - account_id
         - handle
+        - display_name
+        - avatar_id
         - ranked_state
+        - evidence_class
+        - credited_token_burn
+        - availability
         - created_at
       properties:
         account_id:
@@ -1833,12 +2878,55 @@ components:
           type: string
           minLength: 3
           maxLength: 30
+        display_name:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 60
+          description: Participant-chosen display name, distinct from the immutable handle. Null when the participant set none, in which case a client renders the handle.
+        avatar_id:
+          type: integer
+          minimum: 0
+          maximum: 8
+          description: Index into the repository-owned avatar library in assets/ui/fixtures. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
         ranked_state:
           enum:
             - unverified
             - eligible
             - restricted
             - retired
+        evidence_class:
+          enum:
+            - hardened
+            - standard
+            - imported
+          description: The awarded public evidence state from packages/schemas/evidence-profile-policy-v1.json. The server verifier assigns it; a client field requesting one is ignored under the policy's client-requested-public-state rule. Under ADR-020 the class is a weight on Credited Token Burn rather than a badge, and under D-100 no provider offers an individual-account attestation path, so the class assesses the quality of a self-report and is not a confirmation from any provider.
+        credited_token_burn:
+          type: integer
+          minimum: 0
+          description: 'Credited Token Burn: Token Burn multiplied by the server-assigned confidence weight, floored, integer throughout. This is the quantity rank() orders. Token Burn itself is absent from every public surface under D-144, because publishing both quantities lets any observer recover the weight by division and, since the evidence class is already public, recover the trust factor and therefore a sanction D-084 keeps private.'
+        availability:
+          enum:
+            - online
+            - idle
+            - offline
+          description: Server-derived from qualifying device activity. A participant whose presence visibility excludes this viewer reads offline, which is the same value an inactive participant reads.
+        friend_count:
+          type: integer
+          minimum: 0
+          maximum: 100000
+        board_count:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        top_model_alias:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 64
+          description: Resolved model alias carrying the largest share of this participant's credited burn in the current period, or null when no period has qualifying activity. It is an accounting dimension, never a prompt, a response or anything derived from content.
         created_at:
           type: string
           format: date-time
@@ -1848,7 +2936,11 @@ components:
       required:
         - account_id
         - handle
+        - display_name
+        - avatar_id
         - ranked_state
+        - evidence_class
+        - visibility
         - revision
       properties:
         account_id:
@@ -1858,12 +2950,36 @@ components:
           type: string
           minLength: 3
           maxLength: 30
+        display_name:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 60
+          description: Participant-chosen display name, distinct from the immutable handle. Null when the participant set none, in which case a client renders the handle.
+        avatar_id:
+          type: integer
+          minimum: 0
+          maximum: 8
+          description: Index into the repository-owned avatar library in assets/ui/fixtures. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
         ranked_state:
           enum:
             - unverified
             - eligible
             - restricted
             - retired
+        evidence_class:
+          enum:
+            - hardened
+            - standard
+            - imported
+          description: The awarded public evidence state from packages/schemas/evidence-profile-policy-v1.json. The server verifier assigns it; a client field requesting one is ignored under the policy's client-requested-public-state rule. Under ADR-020 the class is a weight on Credited Token Burn rather than a badge, and under D-100 no provider offers an individual-account attestation path, so the class assesses the quality of a self-report and is not a confirmation from any provider.
+        visibility:
+          enum:
+            - public
+            - friends
+            - private
+          description: Who may read this profile. It is a visibility policy and not an integrity signal.
         revision:
           type: integer
           minimum: 0
@@ -1877,6 +2993,23 @@ components:
           type: string
           minLength: 3
           maxLength: 30
+        display_name:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 60
+          description: Participant-chosen display name, distinct from the immutable handle. Null when the participant set none, in which case a client renders the handle.
+        avatar_id:
+          type: integer
+          minimum: 0
+          maximum: 8
+          description: Index into the repository-owned avatar library in assets/ui/fixtures. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
+        visibility:
+          enum:
+            - public
+            - friends
+            - private
     Relationship:
       type: object
       additionalProperties: false
@@ -2615,3 +3748,106 @@ components:
         revision:
           type: integer
           minimum: 0
+    SelfRankEntry:
+      type: object
+      additionalProperties: false
+      description: The participant's own standing. ADR-020 makes this surface, and only this surface, show Token Burn, the composite weight and both factors, because a participant who is discounted and cannot see that they are discounted has no appeal right in practice. Every field here is recomputable from the entry's own recorded inputs.
+      required:
+        - entry
+        - token_burn_total
+        - confidence_weight_hundredths
+        - evidence_factor_hundredths
+        - trust_factor_hundredths
+        - trust_notice_id
+        - recent_credited_token_burn
+      properties:
+        entry:
+          $ref: '#/components/schemas/RankEntry'
+        token_burn_total:
+          type: integer
+          minimum: 0
+          description: The accepted, immutable, unnormalized accounting quantity. It appears on no other response in this document.
+        confidence_weight_hundredths:
+          type: integer
+          minimum: 25
+          maximum: 100
+          description: max(25, floor(evidence factor x trust factor / 100)). The floor is 25 rather than 0 because a weight of zero removes a participant from the standings without saying so, which destroys the appeal right D-084 depends on.
+        evidence_factor_hundredths:
+          type: integer
+          minimum: 25
+          maximum: 100
+          description: The factor keyed by the awarded evidence profile.
+        trust_factor_hundredths:
+          type: integer
+          minimum: 25
+          maximum: 100
+          description: The factor keyed by the ranked-identity eligibility of this participant.
+        trust_notice_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: The server-inbox notification that explains why the trust factor is below 100, or null when it is 100. This is the reference ADR-020 requires so that an appeal is about a number rather than about a feeling.
+        recent_credited_token_burn:
+          type: array
+          maxItems: 30
+          description: Credited Token Burn per completed period, oldest first, over the trailing window this ranking view publishes.
+          items:
+            type: integer
+            minimum: 0
+    SessionRefreshRequest:
+      type: object
+      additionalProperties: false
+      description: Native refresh. A browser omits the body and presents __Host-vm_refresh instead.
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          minLength: 32
+          maxLength: 4096
+    RefreshedSession:
+      type: object
+      additionalProperties: false
+      description: The rotated credential pair. A browser receives replacement __Host-vm_session and __Host-vm_refresh cookies and reads access_token as null; a native client reads the replacement access handle here.
+      required:
+        - session_id
+        - kind
+        - family_generation
+        - access_token
+        - expires_at
+        - refresh_expires_at
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        kind:
+          enum:
+            - web
+            - native
+        family_generation:
+          type: integer
+          minimum: 1
+        access_token:
+          type:
+            - string
+            - 'null'
+          minLength: 32
+          maxLength: 4096
+        expires_at:
+          type: string
+          format: date-time
+        refresh_expires_at:
+          type: string
+          format: date-time
+        family_expires_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Absolute end of the family, 90 days from first authentication for a web family and null for a native family, whose refresh window slides without an absolute cap.
+        device_key_thumbprint:
+          type:
+            - string
+            - 'null'
+          pattern: ^[0-9a-f]{64}$
