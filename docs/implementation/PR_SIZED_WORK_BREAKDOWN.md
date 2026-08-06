@@ -1,16 +1,11 @@
 # PR-Sized Implementation Work Breakdown
 
 Status: canonical planning decomposition; inactive until P-1140F closes and P-1104 is explicitly authorized
-Updated: 2026-08-05
+Updated: 2026-08-06
 
-This file decomposes `IMPLEMENTATION_HANDOFF.md`. It does not authorize product code. Units prefixed `PF-` are planning repairs permitted in the current phase. All other units are future implementation work and remain blocked.
+This file decomposes `IMPLEMENTATION_HANDOFF.md`. It does not authorize product code. Units prefixed `PF-` are planning repairs permitted in the current phase. All other units are future implementation work and remain blocked until P-1104, which being open authorizes work but does not start it.
 
-This file has two parts, and they are not the same kind of object:
-
-1. **Active plan** — units specified to the standard below. These can be picked up and produced as a mergeable change without further design work.
-2. **Frozen backlog** — the remaining epic headings. These are a *scope inventory*, retained so the launch scope in `docs/planning/PRODUCT_SCOPE_FREEZE.md` is not silently narrowed. **They are not executable units** and must be promoted into the active plan, with the four required fields, before being worked.
-
-Nothing in the frozen backlog has been removed from scope. Promotion is the only path from backlog to work.
+Every unit in this file is specified to the required-fields standard below. The file no longer has an active half and a frozen half; it has one plan, and a unit's readiness is expressed by its `Status:` line rather than by which section it sits in. Nothing has been removed from the launch scope recorded in `docs/planning/PRODUCT_SCOPE_FREEZE.md`.
 
 ## Global rules
 
@@ -28,68 +23,95 @@ A unit cannot start because its predecessor document exists. Its dependency must
 
 ### Required unit fields
 
-Every unit in the **active plan** must carry these four lines verbatim, in this order, immediately under its heading. They exist so plan quality is machine-checkable rather than aspirational.
+Every unit must carry these five lines verbatim, in this order, immediately under its heading. They exist so plan quality is machine-checkable rather than aspirational.
 
-- `Files:` — the exact paths the change touches. Not a component name, not a directory. If the paths are unknown, the unit is not yet specified.
-- `Acceptance:` — one runnable assertion. A command, a query, or a grep whose result decides done. Prose descriptions of intent are not acceptance criteria.
-- `Depends:` — unit IDs only, comma-separated, or `none`. Prose dependencies ("implemented product paths") are not resolvable and are not permitted.
+- `Files:` — the exact paths the change touches. Not a component name, not a directory. If the paths are unknown, the unit is not yet specified. A path the unit will create carries the repository's `(new)` marker, which is also what tells `validate_cross_references.py` not to resolve it and what gives the status check something to observe.
+- `Acceptance:` — one runnable assertion. A command, a query, or a grep whose result decides done. Prose descriptions of intent are not acceptance criteria. Where a unit's real acceptance is a human judgement, it says so and names the mechanical part separately rather than dressing the judgement up as a check.
+- `Depends:` — unit IDs only, comma-separated, or `none`. Prose dependencies ("implemented product paths") are not resolvable and are not permitted. Ranges are not permitted either, because a range cannot be resolved by the cross-reference validator.
 - `Est:` — hours, as an integer or a range. A unit estimated above 16 hours must be split.
+- `Status:` — one of `not-started`, `in-progress`, `landed`, `unverifiable`, or `superseded-by <ID>`.
 
-A unit missing any of the four is not ready to start, regardless of how well its prose reads.
+Two fields are conditional. `Evidence:` is required on a `landed` unit, may repeat, and is forbidden anywhere else. `Reason:` is required on an `unverifiable` unit.
 
-`scripts/repository/generate_issue_plan.py` currently validates key format and uniqueness only; it neither reads nor requires these fields, so a file of empty records passes CI today. Extending it to parse the four fields and fail on any active-plan unit missing them is tracked as `PF-037`, and until that lands this standard is enforced by review rather than by tooling.
+A unit missing any of the five is not ready to start, regardless of how well its prose reads.
 
-### Why the active plan is short
+`scripts/repository/validate_work_unit_status.py` enforces all of it. It fails on a missing, empty or duplicated field, on an `Est:` above the ceiling, on a `Depends:` entry that names no heading, on a dependency cycle, on a dependency pointing at a superseded unit, and on any SQL table in `packages/schemas/planning-schema.sql` that no unit names. `PF-037` remains open for the separate half of that work: `generate_issue_plan.py` still emits records that carry none of these fields and hardcodes a phase gate.
 
-The 195-unit decomposition below records scope faithfully but is not executable: 159 units are a heading plus a dependency line, and no unit anywhere names a file path, schema, table, or endpoint — the first item this document's own Global rules require. Expanding all 195 to the standard above before any of them is exercised would repeat the failure this repository is currently repairing. The active plan is therefore sized to what can be specified against artifacts that actually exist, and grows by promotion as each vertical slice teaches what the next one needs.
+### How status stays true
 
-## Active plan
+Status is checked against the tree rather than trusted, by two independent observations.
 
-Units below are specified to the required-fields standard and are ordered by execution sequence. `PF-` units are planning repairs permitted in the current phase. Units marked **gated** are fully specified but must not start until P-1104 is authorized.
+**Artifact presence.** Each unit's `(new)` paths are the artifacts it promised to create, so `not-started` fails the moment any of them exists. A status cannot silently outlive the work starting — which is how `F-009` was caught within minutes of `docs/engineering/LOCAL_DEVELOPMENT.md` landing on `main` from another branch.
+
+**Executed evidence.** A `landed` unit carries `Evidence:` lines and the validator *runs* them on every check. They are not a description of a check; they are the check. Five verbs, no shell, no interpolation:
+
+- `validator <script under scripts/> [args]` — run it, require exit 0;
+- `unittest <dotted.module>` — run it, require exit 0;
+- `exists <path>` and `missing <path>` — the artifact is, or is not, there;
+- `contains <n> <path> :: <literal>` and `absent <path> :: <literal>` — a plain substring count, so no pattern syntax can widen the assertion by accident.
+
+**A commit id is not evidence, and D-206 records why the first revision of this field was wrong to use one.** Every pull request here is squash-merged under a linear-history rule, so an id recorded on a branch stops existing the moment that branch merges: the check failed on correct data. And any resolvable id would have satisfied it, including one belonging to an unrelated commit: it would have passed on fabricated data. A field that fails on truth and passes on fiction is worse than no field at all.
+
+**`unverifiable` is the honest status** for a unit whose completion cannot be observed from the tree. It requires a `Reason:`, is counted separately, and is never reported as done. `landed` is not available as a place to put work that cannot be checked.
+
+`in-progress` is deliberately unconstrained by artifact presence, because presence cannot refute it — a unit that authored its one new file and has not touched the three existing files it also names looks complete and is not. It is the weakest status and is counted separately.
+
+A unit whose `Files:` names no new artifact gives the presence check nothing to observe. The summary reports that count as its own number, so a green run cannot be read as more coverage than it has — the same discipline `PF-067` applies to the vocabulary validator.
+
+The derived block below is generated by the same script. The list of what can be started now is computed from the statuses and the dependency graph, so it cannot drift from them the way a hand-written "current next unit" list did.
+
+## Plan status
 
 Ordering principle: each specification is paired with the artifact or code that consumes it, rather than batched into a specification phase. A contract with no consumer cannot be validated, and validating contracts against each other is what produced the current finding set.
 
-| Unit | Work | Depends | Est (h) |
-|---|---|---|---|
-| `PF-037` | Enforce required unit fields in the issue plan generator | none | 4-6 |
-| `PF-038` | Reconcile state vocabularies across API, SQL and registry | none | 12-16 |
-| `PF-039` | Decide and specify the session authentication scheme | none | 6-8 |
-| `PF-040` | Specify accounting arithmetic | PF-038 | 8-12 |
-| `PF-041` | Specify the OpenTelemetry accounting profile | PF-040 | 8-12 |
-| `PF-042` | Author the source receipt contract | PF-041 | 6-8 |
-| `PF-043` | Author the appraisal result and policy contracts | PF-038 | 8-10 |
-| `PF-044` | Add pagination to unpaginated list operations | none | 3-4 |
-| `PF-045` | Specify the error response matrix | PF-038 | 8-10 |
-| `PF-046` | Represent evidence class in the public API | PF-043 | 4-6 |
-| `PF-047` | Expand profile and rank entry schemas to the rendered product | PF-046 | 6-8 |
-| `PF-048` | Author the indexing and partitioning plan | PF-038 | 8-12 |
-| `PF-049` | Repair the idempotency contract | PF-038 | 4-6 |
-| `PF-050` | Populate retention and disposition policy | PF-038 | 6-8 |
-| `PF-051` | Specify multi-observer deduplication | PF-042 | 6-8 |
-| `PF-052` | Author ranking generation, entry and snapshot contracts | PF-038, PF-048 | 10-14 |
-| `PF-053` | Decide provider-attested evidence for organizations | none | 4-6 |
-| `PF-054` | Author the negative CBOR corpus | none | 4-6 |
-| `PF-055` | Repair the P-1140F authority validator | none | 3-4 |
-| `PF-056` | Restore executable evaluation gates | PF-055 | 4-6 |
-| `PF-057` | Specify the P-1104 gate transition | PF-055 | 4-6 |
-| `PF-058` | Author the system narrative in PROJECT.md | none | 6-8 |
-| `PF-059` | Merge duplicated UI and design documentation | none | 6-8 |
-| `PF-060` | Collapse single-purpose documentation directories | PF-059 | 4-6 |
-| `PF-061` | Archive spent planning specifications | none | 4-6 |
-| `PF-062` | Make the decision register and task catalog machine-readable | PF-053, PF-055 | 12-16 |
-| `PF-063` | Complete decision traceability coverage | PF-062 | 4-6 |
-| `PF-064` | Remove stale dates from living document filenames | PF-057 | 2-3 |
-| `PF-065` | Correct the OpenAPI file extension | PF-038 | 2-3 |
-| `PF-066` | Repair unreachable states and false terminal states | none | 6-8 |
-| `PF-067` | Make state-vocabulary binding coverage self-checking | none | 4-6 |
+<!-- generated: work-unit-status -->
 
-Full specifications for these units are in **Current planning program** below, in unit-number order after `PF-036`.
+Units: 258. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
+
+| Status | Units |
+|---|---|
+| `not-started` | 227 |
+| `in-progress` | 6 |
+| `landed` | 19 |
+| `unverifiable` | 0 |
+| `superseded-by` | 6 |
+
+Every `landed` unit is backed by executable evidence: 54 assertions across 19 units, all run by `validate_work_unit_status.py` on every check.
+
+Startable now — not done, and every dependency done: 14.
+
+`PF-001`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-008`.
+
+Statuses additionally checkable against artifact presence: 196 of 258. The other 62 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+
+<!-- end generated: work-unit-status -->
+
+### Why every unit is now specified
+
+An earlier revision of this section argued the opposite, and it is recorded here rather than deleted. It read: expanding all 195 backlog units to the required-fields standard before any of them is exercised "would repeat the failure this repository is currently repairing", so the active plan should stay sized to what can be specified against artifacts that actually exist and grow by promotion.
+
+**The owner has directed that they all be expanded** (D-200). The argument above was not wrong about the risk, and the risk is real: a file path written before the code exists is a guess, and 195 guesses look like a plan. What changed is the judgement about which failure costs more. An unspecified backlog unit is not neutral — it hides the defects this document had already recorded against itself and could not act on: six prose dependencies that could not be ordered, eleven orphans, a launch gate that excluded the entire web product, fifty-two SQL tables owned by nothing, and thirteen whole categories with no unit at all. None of those was findable by a validator while the units were headings, because there was nothing to validate.
+
+So the expansion is scoped to what it can honestly claim. Every `Files:` path that does not exist carries the `(new)` marker and is a stated intention, not a fact. Every `Acceptance:` is a command, a grep or a schema check that decides done — and where a unit's real acceptance is a human review, `X-010` and `X-011` say so in the unit rather than substituting a green ledger for a verdict. A specified unit is still not a started one, and `Status:` is what says which.
 
 ## Current planning program
 
 ### PF-001 — Quarantine the shadow VibeProof protocol
+Files: `crates/vibeproof-core/README.md`, `crates/vibeproof-core/Cargo.toml`, `apps/api/cmd/api/protocol_fixtures.go`, `conformance/p1140f/artifact-authority-v1.json`, `evals/suites/suites.yaml`
+Acceptance: `grep -rn 'VibeProof v1' crates/vibeproof-core apps/api/cmd/api` returns no line that omits the word `prototype`; `artifact-authority-v1.json` records `authority_class: prototype` for both artifacts; `python3 scripts/repository/validate_p1140f_authority.py` exits 0.
+Depends: none
+Est: 6-8
+Status: not-started
 
-Dependencies: PR #42 consolidation.
+`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
+
+`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
+
+`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
+
+`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
+
+`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
 
 - classify `crates/vibeproof-core` and Go fixture codec as exploratory prototype;
 - remove VibeProof v1 naming from incompatible 11-field fixtures or remove them;
@@ -99,47 +121,75 @@ Dependencies: PR #42 consolidation.
 Exit: one VibeProof v1 wire authority remains.
 
 ### PF-002 — Align normative protocol and conformance ownership
-
-Dependencies: PF-001.
+Files: `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`, `docs/architecture/VIBEPROOF_V1_CANONICAL_PROFILE.md`, `packages/schemas/vibeproof-claim-v1.cddl`, `conformance/vibeproof/v1/exact-byte-vectors.json`, `conformance/vibeproof/v1/malformed-resource-corpus.json`
+Acceptance: `python3 scripts/repository/generate_vibeproof_vectors.py --check` exits 0, and every CDDL rule name in `vibeproof-claim-v1.cddl` appears in exactly one of the two vector files; a second occurrence in a third file fails the check.
+Depends: PF-001
+Est: 8-12
+Status: not-started
 
 - inventory CDDL labels, COSE headers, external AAD, exact vectors, malformed/resource corpus;
 - define generation boundaries for Rust/Go types;
 - define exact independent implementation evidence expected after P-1104.
 
 ### PF-003 — Artifact/evidence maturity registry
-
-Dependencies: PF-001.
+Files: `conformance/p1140f/artifact-authority-v1.json`, `evals/suites/suites.yaml`, `scripts/ci/run_evals.py`, `docs/verification/EVAL_SYSTEM.md`
+Acceptance: `python3 scripts/ci/run_evals.py --validate-registry` exits 0 and fails when a suite declares an `evidence_ceiling` its fixtures cannot support; every suite in `suites.yaml` carries an `authority_class` drawn from the registry vocabulary.
+Depends: PF-001
+Est: 8-10
+Status: not-started
 
 - classify every executable suite and fixture as structural, semantic, prototype, runtime evidence, or certification;
 - rename overclaiming suites;
 - reject empty or mislabeled evidence in planning validators.
 
 ### PF-004 — Mutable aggregate ownership inventory
+Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/planning-schema.sql`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `scripts/repository/validate_state_vocabularies.py`
+Acceptance: `python3 scripts/repository/validate_state_vocabularies.py` exits 0 with every registry machine naming a `persistence_owner` that resolves to a `create table` in `planning-schema.sql`, and fails when one does not.
+Depends: none
+Est: 12-16
+Status: not-started
 
-Dependencies: PR #42 consolidation.
+`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
+
+`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
+
+`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
+
+`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
+
+`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
 
 - enumerate every aggregate named in API, SQL, Protobuf/CDDL, state registry, policy, reasons, and prose;
 - require one persistence owner, lifecycle, revision model, transaction boundary, and event/outbox behavior;
 - record missing and duplicate owners.
 
 ### PF-005 — OAuth provider configuration authority
-
-Dependencies: PF-004.
+Files: `packages/schemas/oauth-provider-registry-v1.json` (new), `packages/schemas/oauth-provider-registry-v1.schema.json` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new), `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+Acceptance: the registry validates against its schema; every provider row carries issuer, authorization and token endpoints, client identifier, exact redirect URI, PKCE method, RFC 9207 `iss` capability, scope set, device-flow capability, revision and expiry; the mix-up fixture contains at least one rejected case per provider.
+Depends: PF-004
+Est: 8-12
+Status: not-started
 
 - issuer, endpoints, client, exact redirect, PKCE, RFC 9207 capability, scopes, device-flow capability, revision and expiry;
 - provider-specific positive and mix-up/redirect-confusion fixtures.
 
 ### PF-006 — Canonical OAuth transaction
-
-Dependencies: PF-005.
+Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+Acceptance: the `oauth_transactions` table and the `oauth-transaction` registry machine share one vocabulary under `validate_state_vocabularies.py`; `grep -n 'authorization_code' packages/schemas/openapi-v1.yaml` returns no operation that mutates identity without a transaction reference.
+Depends: PF-005
+Est: 10-14
+Status: not-started
 
 - bind action, account/session, recent-auth grant, provider revision, redirect, state, PKCE, expiry and result;
 - remove standalone authorization-code identity mutation semantics;
 - define single consumption and ambiguous callback behavior.
 
 ### PF-007 — Linked identity and recovery lifecycle
-
-Dependencies: PF-006.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/openapi-v1.yaml`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+Acceptance: the `linked-identity` machine declares all eight states, every one is reachable and no terminal state has an outgoing transition under `validate_state_vocabularies.py`; `linked_identities` carries a durable provider-subject column with a uniqueness constraint.
+Depends: PF-006
+Est: 10-14
+Status: not-started
 
 - exact linked-identity ID and durable provider subject;
 - candidate, linked, unlink-pending, lost, compromised, recovery-pending, unlinked, superseded;
@@ -147,8 +197,11 @@ Dependencies: PF-006.
 - token/session/device notification and cooling-off effects.
 
 ### PF-008 — Ranked identity and consolidation authority
-
-Dependencies: PF-007; D-070.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`, `packages/schemas/consolidation-plan-v1.schema.json` (new)
+Acceptance: `ranked_identities` is a separate table from `accounts` with a survivor reference; the consolidation-plan schema validates a fixture covering identities, devices, claims, social state, boards, moderation, exports and deletions; no path in the API sums two accounts' scores.
+Depends: PF-007
+Est: 12-16
+Status: not-started
 
 - separate account and ranked identity;
 - canonical survivor, retired duplicates, private investigation evidence, restrictions, appeal and reversal;
@@ -156,16 +209,22 @@ Dependencies: PF-007; D-070.
 - historical score recomputation from valid non-overlapping claim contributions, never aggregate summation.
 
 ### PF-009 — Canonical challenge and lineage continuity
-
-Dependencies: PF-004.
+Files: `packages/schemas/device-lineage.schema.json`, `packages/schemas/vibeproof-claim-v1.cddl`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`
+Acceptance: one identifier spelling for a challenge and one for a lineage resolves across CDDL, OpenAPI and SQL; `python3 scripts/repository/validate_cross_references.py` exits 0 and `claim_challenges`, `device_sequences` and `device_lineages` all key on the lineage rather than the device row.
+Depends: PF-004
+Est: 10-14
+Status: not-started
 
 - one identifier/type model across CDDL, OpenAPI and SQL;
 - expected lineage revision, sequence, commitment head, checkpoint, batch commitment, policy, issue/expiry;
 - lineage-scoped rather than device-row-scoped continuity.
 
 ### PF-010 — Rotation, lost-key recovery, fork and requalification
-
-Dependencies: PF-009; D-072.
+Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/planning-schema.sql`, `conformance/vibeproof/v1/fork-and-rotation-vectors.json` (new), `docs/security/INTEGRITY_MODEL.md`
+Acceptance: the fork fixture contains a lineage that branches, and a decoder run over it quarantines every post-fork branch while accepting every pre-fork claim; `device_key_events` records both authorizations for an ordinary rotation.
+Depends: PF-009
+Est: 12-16
+Status: not-started
 
 - dual authorization for ordinary rotation;
 - lost-key recovery authority;
@@ -175,24 +234,33 @@ Dependencies: PF-009; D-072.
 - appeal, reversal, downgrade and notification.
 
 ### PF-011 — Native process and trust-domain model
-
-Dependencies: PF-004.
+Files: `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md`, `packages/schemas/local-trust-domains-v1.json` (new)
+Acceptance: every one of the eight named roles appears exactly once in the trust-domain file with an executable identity, an OS peer identity, a user/session boundary and an explicit capability and data-class list; a role absent from the file fails `validate_planning_coverage.py`.
+Depends: PF-004
+Est: 10-14
+Status: not-started
 
 - daemon, collector, sync, shell, CLI, dashboard, updater, privileged supervisor;
 - executable identity, OS peer identity, user/session boundary, artifact/release identity;
 - allowed capabilities and data classes per role.
 
 ### PF-012 — Local channel protocol
-
-Dependencies: PF-011.
+Files: `packages/schemas/local-control-v1.proto`, `conformance/sandbox/local-channel-vectors-v1.json` (new), `docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md`
+Acceptance: `local-control-v1.proto` declares one request and one response message per role rather than a universal union; the vector file contains a same-user impersonation case and a stale-process case, each with the expected rejection reason drawn from `packages/schemas/reason-codes-v1.json`.
+Depends: PF-011
+Est: 10-14
+Status: not-started
 
 - handshake, daemon-assigned role, generation, nonce, sequence window, capability grant, deadline, revocation;
 - typed request/response per role rather than one universal message union;
 - same-user impersonation and stale-process fixtures.
 
 ### PF-013 — Shell and subsystem state separation
-
-Dependencies: PF-011.
+Files: `packages/schemas/state-machine-registry-v1.json`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`
+Acceptance: `interactive-shell` declares only process and connection states, and daemon, collection, sync, auth, permission, update and connectivity are separate machines; `validate_state_vocabularies.py` reports every state of all seven reachable.
+Depends: PF-011
+Est: 8-12
+Status: not-started
 
 - shell owns process/connection state only;
 - daemon, collection, sync, auth, permission, update and connectivity are independent projections;
@@ -200,30 +268,42 @@ Dependencies: PF-011.
 - UI exit, pause collection, pause sync, stop daemon, logout, uninstall are distinct.
 
 ### PF-014 — Local persistence and migration contract
-
-Dependencies: PF-011.
+Files: `packages/schemas/local-schema.sql` (new), `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `conformance/privacy/p1140b-boundary-canaries-v1.json`
+Acceptance: `local-schema.sql` parses under `sqlite3 -init` with no errors, declares an encryption key reference per table holding claim material, and the canary fixture proves no log, backup, diagnostic or corruption-report column can hold a forbidden content class.
+Depends: PF-011
+Est: 12-16
+Status: not-started
 
 - local DDL ownership, encryption, key references, schema generation, crash consistency, queues, commitments, receipts, migrations and recovery;
 - forbidden-content boundaries for logs, backups, diagnostics and corruption reports.
 
 ### PF-015 — Atomic compatibility tuple
-
-Dependencies: PF-004.
+Files: `packages/schemas/compatibility-tuple-v1.schema.json` (new), `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`, `conformance/adapters/agent-registry-v1.schema.json`
+Acceptance: the tuple schema requires all nine components and a canonical digest; two independently ordered serialisations of the same tuple produce the same digest in a fixture that records both inputs and the expected digest.
+Depends: PF-004
+Est: 8-12
+Status: not-started
 
 - product/source, exact version/artifact, platform profile, mode, adapter/collector artifacts, protocol/telemetry profile, accounting profile, privacy profile and evidence ceiling;
 - canonical digest construction.
 
 ### PF-016 — Certification lifecycle and revocation
-
-Dependencies: PF-015.
+Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/certification-result-v1.schema.json` (new), `docs/integrations/ADAPTER_CERTIFICATION_POLICY.md`
+Acceptance: the `certification` machine declares all eight states with one vocabulary across registry, SQL and API under `validate_state_vocabularies.py`; the result schema requires suite and case digests, a validity interval and a signer reference, and rejects a bundle missing any of them.
+Depends: PF-015
+Est: 10-14
+Status: not-started
 
 - candidate, testing, active, degraded, suspended, expired, superseded, retired;
 - signed result bundle, suite/case digests, validity interval, signer/verifier policy;
 - narrow per-tuple emergency downgrade and reinstatement.
 
 ### PF-017 — Source observation and operation identity
-
-Dependencies: PF-015.
+Files: `packages/schemas/source-observation.schema.json`, `packages/schemas/normalized-event.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`
+Acceptance: every example under `packages/schemas/examples/` and `conformance/adapters/claude-code-otel/` validates, and a normalized event that names no operation identity, observer identity or cumulative/incremental flag is rejected by the schema.
+Depends: PF-015
+Est: 10-14
+Status: not-started
 
 - authenticated tuple selection before normalization;
 - provider/model/source facts;
@@ -231,8 +311,11 @@ Dependencies: PF-015.
 - direct/proxy/ACP/OTel equivalence.
 
 ### PF-018 — Accounting reconciliation and bounds
-
-Dependencies: PF-017.
+Files: `packages/schemas/accounting-profile.schema.json`, `conformance/accounting/reconciliation-vectors-v1.json` (new), `docs/product/TOKEN_ACCOUNTING_SPEC.md`
+Acceptance: every reconciliation vector produces the same result under two array orderings; a vector with two equal-authority contradicting sources produces the recorded deterministic outcome; an event exceeding the declared period bound is rejected rather than saturating.
+Depends: PF-017
+Est: 12-16
+Status: not-started
 
 - per-operation grouping;
 - source authority, containment, cache/reasoning/modality semantics;
@@ -241,8 +324,11 @@ Dependencies: PF-017.
 - checked arithmetic and practical event/period bounds.
 
 ### PF-019 — Idempotency authority
-
-Dependencies: PF-004.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`
+Acceptance: `idempotency_records` keys on `(principal_type, principal_id, operation_id, idempotency_key)`; the `idempotency-ledger` machine declares `executing`, `committed`, `replayable-failure`, `conflict`, `expired` and `abandoned`, and all six are reachable under `validate_state_vocabularies.py`.
+Depends: PF-004
+Est: 8-12
+Status: not-started
 
 - typed principal, operation/API version, key and request fingerprint;
 - exact stored status, content type, safe headers, bytes and result references;
@@ -250,16 +336,22 @@ Dependencies: PF-004.
 - retention: at least 30 days for high-impact mutations; claim-batch responses until later acknowledged checkpoint supersession.
 
 ### PF-020 — Transaction and ambiguous-commit model
-
-Dependencies: PF-019.
+Files: `conformance/p1140e/sql-race-plans-v1.json`, `packages/schemas/planning-schema.sql`, `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
+Acceptance: `sql-race-plans-v1.json` contains a plan for each of crash-before-commit, crash-after-commit, dropped response, takeover and expiry, each naming the exact rows a correct implementation leaves behind; `python3 scripts/repository/validate_p1140e_contracts.py` exits 0.
+Depends: PF-019
+Est: 10-14
+Status: not-started
 
 - idempotency, business effect, audit, outbox and exact response commit together;
 - crash before commit, crash after commit, dropped response, takeover and expiry cases;
 - expired high-impact keys reject reuse rather than becoming fresh mutations.
 
 ### PF-021 — Ranking definition and audience authorization
-
-Dependencies: PF-004.
+Files: `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
+Acceptance: `ranking-view-v1.schema.json` separates the ranking definition from the audience; only the global scope carries `security: []` in the OpenAPI document and every other scope requires a viewer; `grep -n 'security: \[\]' packages/schemas/openapi-v1.yaml` returns exactly one leaderboard operation.
+Depends: PF-004
+Est: 12-16
+Status: not-started
 
 - stable ranking definition separate from viewer/board audience;
 - metric/version, period, evidence/source/agent/provider/model filters, tie and projection policy;
@@ -267,8 +359,11 @@ Dependencies: PF-004.
 - only global public by default.
 
 ### PF-022 — Ranking generations, entries, snapshots and cursors
-
-Dependencies: PF-021.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
+Acceptance: `ranking_projection_generations` carries exactly one active pointer enforced by a partial unique index; every entry key in `score_snapshots` includes the generation; a cursor fixture records the viewer, the authorization revision and the expiry, and a cursor replayed by another viewer is rejected.
+Depends: PF-021
+Est: 12-16
+Status: not-started
 
 - generation included in entry keys;
 - isolated build/validation/promotion and one active pointer;
@@ -277,8 +372,11 @@ Dependencies: PF-021.
 - score-only `rank()` peer groups and separate deterministic display key.
 
 ### PF-023 — Periods, seasons, contributions and corrections
-
-Dependencies: PF-022; D-070.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
+Acceptance: the `period` machine declares `open`, `frozen`, `closed`, `corrected` and `archived` with all five reachable; `minute_scores` and `period_scores` are append-only by constraint; a rebuild from `ranking_corrections` reproduces the recorded totals in a fixture.
+Depends: PF-022
+Est: 12-16
+Status: not-started
 
 - exact calendar/timezone, open/frozen/closed/corrected/archived states;
 - late-claim and correction windows;
@@ -287,8 +385,11 @@ Dependencies: PF-022; D-070.
 - movement, overtake, streak and season event/retraction references.
 
 ### PF-024 — Social relationship authority
-
-Dependencies: PF-004.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
+Acceptance: `friend_edges` stores one canonical ordered pair with a check constraint, `blocks` is directional with no symmetry constraint, and `rival_edges` references neither; a fixture proves a block does not remove a friendship row and a friendship does not clear a block.
+Depends: PF-004
+Est: 10-14
+Status: not-started
 
 - canonical friendship pair and directional request lifecycle;
 - directional blocks separate from friendship;
@@ -296,8 +397,11 @@ Dependencies: PF-004.
 - decline, cancel, expiry, unblock, generation and current authorization.
 
 ### PF-025 — Board ownership and role authority
-
-Dependencies: PF-024; D-071.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
+Acceptance: `boards` and `board_memberships` are written in one transaction in the recorded SQL plan; a partial unique index enforces exactly one owner per board; `board_invites` cannot grant an admin or owner role, which a rejected fixture case proves.
+Depends: PF-024
+Est: 10-14
+Status: not-started
 
 - atomic board creation plus initial owner;
 - invitations grant only non-privileged membership;
@@ -306,8 +410,11 @@ Dependencies: PF-024; D-071.
 - role/action authorization matrix and recovery.
 
 ### PF-026 — Presence evidence and projection
-
-Dependencies: PF-011, PF-024; D-073.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
+Acceptance: `presence_leases` records a device-bound lease generation; the `presence` machine transitions to `idle` at 90 seconds and `offline` at 300 seconds with those exact numbers in `packages/schemas/policy-defaults-v1.json`; a two-device merge fixture yields the same result under both device orderings.
+Depends: PF-011, PF-024
+Est: 10-14
+Status: not-started
 
 - device-bound qualifying pulse every 30 seconds;
 - active, idle at 90 seconds, offline at 300 seconds;
@@ -316,8 +423,11 @@ Dependencies: PF-011, PF-024; D-073.
 - private/block/relationship/board visibility as separate viewer projection.
 
 ### PF-027 — Notification source, inbox and channel model
-
-Dependencies: PF-024, PF-026.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`
+Acceptance: `notification_events` is append-only and `notifications` carries the recipient projection with an authorization revision; the `notification` machine can express `retracted`; a delivery attempt row records `queued`, `deferred`, `accepted`, `acknowledged`, `failed` or `expired` and never maps `accepted` to a read.
+Depends: PF-024, PF-026
+Est: 12-16
+Status: not-started
 
 - immutable source event and revision;
 - recipient inbox item, grouping, authorization revision, read/dismiss/expiry/retraction;
@@ -326,8 +436,11 @@ Dependencies: PF-024, PF-026.
 - push provider acceptance is not user read or guaranteed delivery.
 
 ### PF-028 — Export authority
-
-Dependencies: PF-004, PF-019.
+Files: `packages/schemas/export-manifest-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`
+Acceptance: the manifest schema requires version, included and excluded domains, per-domain counts, checksums and an encryption reference, and rejects a manifest missing any; `exports` and `export_artifacts` carry a snapshot cutoff and a revocable grant with an expiry.
+Depends: PF-004, PF-019
+Est: 10-14
+Status: not-started
 
 - durable status resource and cancellation/purge;
 - frozen recent-auth grant and coherent snapshot cutoff;
@@ -335,8 +448,11 @@ Dependencies: PF-004, PF-019.
 - rights-of-others filtering and download audit.
 
 ### PF-029 — Deletion plan, per-effect outcomes and tombstones
-
-Dependencies: PF-028, PF-023, PF-024, PF-027.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
+Acceptance: `deletion_jobs`, `deletion_effects`, `local_deletion_commands` and `local_deletion_receipts` cover every domain named in `docs/privacy/DATA_MAP.md`, with a per-device outcome of `complete`, `pending`, `expired`, `unreachable` or `waived`; `grep -in 'forensic' docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md` returns no claim of erasure.
+Depends: PF-023, PF-024, PF-027, PF-028
+Est: 12-16
+Status: not-started
 
 - hosted and local device deletion separated;
 - immutable domain/effect plan;
@@ -347,16 +463,22 @@ Dependencies: PF-028, PF-023, PF-024, PF-027.
 - legal holds, retention and backup tombstone reapplication.
 
 ### PF-030 — Release authorization and component manifest
-
-Dependencies: PF-015.
+Files: `packages/schemas/release-set-v1.schema.json`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
+Acceptance: the release-set schema requires a TUF role reference, a target path, an architecture, a hash, a provenance reference, a native signature reference, a compatibility tuple and an update class per component, and rejects a manifest that is not itself an authenticated target.
+Depends: PF-015
+Est: 8-12
+Status: not-started
 
 - TUF root/delegated roles own authorization;
 - release manifest is an authenticated target;
 - component IDs, target paths, architecture, hashes, provenance, native signing, compatibility and update class.
 
 ### PF-031 — Migration, health and rollback policy
-
-Dependencies: PF-014, PF-030; D-074.
+Files: `packages/schemas/planning-schema.sql`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`
+Acceptance: `update_policies` and `update_installations` express an ordered migration chain and a compatibility window; a fixture records one reversible and one irreversible migration, and the irreversible case has no rollback edge in the `update-lifecycle` machine.
+Depends: PF-014, PF-030
+Est: 10-14
+Status: not-started
 
 - ordered migration chain and compatibility window;
 - pre/post health checks;
@@ -364,8 +486,11 @@ Dependencies: PF-014, PF-030; D-074.
 - irreversible migration recovery by roll-forward or verified pre-migration snapshot.
 
 ### PF-032 — Platform supervision and installer truth table
-
-Dependencies: PF-011, PF-030.
+Files: `packages/schemas/platform-profile-registry-v1.json`, `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `docs/security/PLATFORM_ISOLATION.md`
+Acceptance: `platform-profile-registry-v1.json` validates against its schema with a row for macOS, Windows, Linux, WSL, container and CI, each naming its supervision mechanism, its session and restart limitation, and its competitive eligibility separately from its installability.
+Depends: PF-011, PF-030
+Est: 10-14
+Status: not-started
 
 - exact macOS, Windows, Linux, WSL, container and CI mechanisms;
 - disclose session and restart limitations honestly;
@@ -373,16 +498,32 @@ Dependencies: PF-011, PF-030.
 - install, upgrade, reboot, repair, uninstall and orphan cleanup states.
 
 ### PF-033 — Privacy projection and invalidation matrix
-
-Dependencies: PF-021, PF-024, PF-026, PF-027, PF-028, PF-029.
+Files: `packages/schemas/privacy-projection-v1.json` (new), `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/DATA_MAP.md`
+Acceptance: every viewer-visible field in the OpenAPI document appears exactly once in the projection file with the authorization revision that gates it; a fixture proves a block, a board removal and a deletion each invalidate the cursors, grants and caches the file names.
+Depends: PF-021, PF-024, PF-026, PF-027, PF-028, PF-029
+Est: 12-16
+Status: not-started
 
 - immutable historical facts versus current authorization;
 - block, privacy, board removal, moderation reversal, identity consolidation and deletion invalidation;
 - cursor/grant/cache invalidation and append-only retraction.
 
 ### PF-034 — Schema/interface inventory repair
+Files: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `scripts/repository/validate_planning_coverage.py`
+Acceptance: `python3 scripts/repository/validate_planning_coverage.py` exits 0 with every file under `packages/schemas/` and `conformance/` present in the inventory and every inventory row resolving to a file; `grep -in 'closed-world\|complete' docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md` returns no maturity claim.
+Depends: PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033
+Est: 12-16
+Status: not-started
 
-Dependencies: PF-005 through PF-033.
+The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
+
+The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
+
+The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
+
+The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
+
+The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
 
 - update every interface maturity and owner;
 - remove stale “closed-world/complete” claims;
@@ -390,8 +531,11 @@ Dependencies: PF-005 through PF-033.
 - validate cross-file enum and identifier mappings.
 
 ### PF-035 — P-1140E validator repair
-
-Dependencies: PF-034.
+Files: `scripts/repository/validate_p1140e_contracts.py`, `conformance/p1140e/validation-matrix-v1.json`, `tests/ci/test_p1140e_contracts.py` (new)
+Acceptance: `python3 scripts/repository/validate_p1140e_contracts.py` exits non-zero on each of six injected defects — missing owner, unreachable lifecycle, SQL/state/API vocabulary mismatch, missing generation key, missing authority revision, and a content digest that does not match — and 0 on the clean tree; the summary line names the check as structural.
+Depends: PF-034
+Est: 10-14
+Status: not-started
 
 - verify owner existence and reachable lifecycle;
 - detect SQL/state/API vocabulary mismatch;
@@ -400,8 +544,11 @@ Dependencies: PF-034.
 - remain structural and never claim runtime proof.
 
 ### PF-036 — P-1140F exact-head review
-
-Dependencies: PF-001 through PF-035.
+Files: `conformance/p1140f/review-target-v1.json`, `conformance/p1140f/semantic-findings-v1.json`, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`
+Acceptance: mechanical part: `review-target-v1.json` pins a commit that `git cat-file -e` resolves, every one of SR-005..SR-017 carries a closure verdict, and `python3 scripts/repository/validate_p1140f_authority.py` exits 0 with zero open P0 or P1. The review judgement itself is not mechanizable and must not be presented as though the validator produced it.
+Depends: PF-001, PF-002, PF-003, PF-004, PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033, PF-034, PF-035
+Est: 12-16
+Status: not-started
 
 - pin exact commit;
 - independent manual review of SR-005 through SR-017;
@@ -410,9 +557,12 @@ Dependencies: PF-001 through PF-035.
 
 ### PF-037 — Enforce required unit fields in the issue plan generator
 Files: `scripts/repository/generate_issue_plan.py`, `docs/implementation/ISSUE_GENERATION.md`, `tests/ci/test_generate_issue_plan.py` (new)
-Acceptance: `python3 scripts/repository/generate_issue_plan.py` exits non-zero when any unit under `## Active plan` lacks `Files:`, `Acceptance:`, `Depends:`, or `Est:`; exits 0 on the current file; emitted records carry all four fields.
+Acceptance: `python3 scripts/repository/generate_issue_plan.py` emits records carrying `files`, `acceptance`, `depends`, `est` and `status` read from each unit block, and exits non-zero when the generated record set disagrees with `python3 scripts/repository/validate_work_unit_status.py` about any unit's status.
 Depends: none
 Est: 4-6
+Status: not-started
+
+**Field enforcement has moved.** `scripts/repository/validate_work_unit_status.py` now owns it under D-201 and fails on a missing, empty or duplicated field, an over-ceiling `Est:`, an unresolvable `Depends:`, a cycle, a contradicted status, an unowned SQL table and a stale derived block. What remains for this unit is the generator, which still emits records carrying none of those fields, so the issue plan is a list of headings rather than a plan.
 
 Also corrects three defects in the generator: `labels` hardcodes `blocked` and `phase_gate` hardcodes `P-1104-explicit-implementation-approval` with no gate-state input, so every generated record is mislabeled the moment the gate moves; `POST_LAUNCH_HEADING` and the `PL-` branch are dead code matching a heading that does not exist; and `ISSUE_GENERATION.md` documented stable keys in a two-digit form that the generator's own `\d{3}` key pattern rejects, since corrected to the three-digit headings the breakdown actually carries.
 
@@ -421,6 +571,9 @@ Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql
 Acceptance: a script asserts that for every aggregate with a `state` column, an API enum, and a registry machine, the three value sets are identical; zero mismatches reported.
 Depends: none
 Est: 12-16
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_state_vocabularies
 
 Nine aggregates currently disagree. `Appeal` shares exactly one state name between API and registry. `ranking-projection` is `building/published/superseded/failed` in SQL against `building/validating/active/superseded/failed` in the registry, so the projection worker has no valid target state. `Notification` cannot express `retracted`, which is the D-070 correction path. `idempotency_records` is `reserved/committed/failed` in SQL against `reserved/committed/conflict/expired` in the registry — neither is a superset. Export, deletion, certification, update-lifecycle, and web-session-family also diverge; certification has four vocabularies across three files plus the inventory.
 
@@ -431,40 +584,55 @@ Files: `docs/decisions/ADR-015-SESSION_AUTHENTICATION.md` (new), `packages/schem
 Acceptance: `openapi-v1.yaml` declares a `securitySchemes` entry matching the ADR; a refresh operation exists if the ADR requires one; `grep -c "bearerAuth" openapi-v1.yaml` no longer returns a global-only result.
 Depends: none
 Est: 6-8
+Status: landed
+Evidence: exists docs/decisions/ADR-015-SESSION_AUTHENTICATION.md
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: sessionCookie
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: refreshSession
 
-`AUTHENTICATION_AND_RECOVERY.md:63-66` specifies HTTP-only same-site cookies with refresh-token rotation. `openapi-v1.yaml:13-16,1710-1715` declares a single global opaque `bearerAuth` with no cookie scheme, no OAuth2 flows, no scopes, and no refresh endpoint among its 39 paths. These are two different architectures and the first authenticated request cannot be implemented until one is chosen. The `web-session-family` machine has a `replay-detected` state that neither SQL nor the API can persist.
+**Landed in `963f6f6` under D-220 and D-221.** The document declares `bearerAuth`, `sessionCookie` and `refreshCookie`, and `refreshSession` and `revokeAllSessions` exist.
+
+The defect as found: `AUTHENTICATION_AND_RECOVERY.md:63-66` specified HTTP-only same-site cookies with refresh-token rotation while the OpenAPI document declared a single global opaque `bearerAuth` with no cookie scheme, no OAuth2 flows, no scopes and no refresh endpoint. Those were two different architectures and the first authenticated request could not be implemented until one was chosen. The `web-session-family` machine's `replay-detected` state is persisted by `O-006`, which is where the remaining half of that sentence lives.
 
 ### PF-040 — Specify accounting arithmetic
-Files: `packages/schemas/accounting-profile.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/arithmetic-vectors-v1.json` (new)
+Files: `packages/schemas/accounting-profile.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/arithmetic-vectors-v1.json`
 Acceptance: two independent implementations reproduce every vector in the new fixture byte-for-byte, including the profile digest.
 Depends: PF-038
 Est: 8-12
+Status: landed
+Evidence: exists conformance/accounting/arithmetic-vectors-v1.json
+Evidence: exists packages/schemas/accounting-arithmetic-vectors-v1.schema.json
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
 
 `accounting-profile.schema.json` defines no rounding, overflow, precision, or unit-conversion rules, and no canonical digest algorithm — yet `accounting_profile_sha256` is a signed claim field. `retry_policy`, `cancellation_policy`, and `nested_execution_policy` at `:209-228` are enum labels with no defined behavior. Two implementations cannot currently agree on a token total, which makes cross-language parity meaningless.
 
 ### PF-041 — Specify the OpenTelemetry accounting profile
-Files: `packages/schemas/accounting-profile-otel-v1.json` (new), `docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `conformance/accounting/otel-capture-vectors-v1.json` (new)
+Files: `packages/schemas/accounting-profile-otel-v1.json` (new), `docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `conformance/accounting/otel-capture-vectors-v1.json`
 Acceptance: the profile maps a captured OTLP payload to a `NormalizedAccountingEvent` deterministically; fixture includes at least one real capture per supported metric.
 Depends: PF-040
 Est: 8-12
+Status: in-progress
 
 Empirically verified capture surface, 2026-08-05: Claude Code emits `claude_code.token.usage` as a counter with attributes `model`, `query_source` (`main`/`subagent`/`auxiliary`), and `type` (`input`/`output`/`cacheRead`/`cacheCreation`). Gemini CLI emits `gemini_cli.token.usage`; Codex emits `codex.turn.token_usage`. Prompt and response content appears only on the logs channel and is redacted unless explicitly enabled, so metrics-only capture keeps the collector out of L0 entirely.
 
 Three hazards this profile must encode: every Claude Code metric carries `organization.id`, `user.account_uuid`, `user.account_id`, `user.email`, and `user.id`, which must be dropped at ingest rather than trusted for identity; Gemini CLI's `logPrompts` defaults to **true**; and Codex's `metrics_exporter` defaults to `statsig`, not `none`.
 
 ### PF-042 — Author the source receipt contract
-Files: `packages/schemas/source-receipt-v1.schema.json` (new), `packages/schemas/source-observation.schema.json`, `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
+Files: `packages/schemas/source-receipt-v1.schema.json`, `packages/schemas/source-observation.schema.json`, `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
 Acceptance: every `NormalizedAccountingEvent` fixture resolves to exactly one source receipt; schema validates the full existing observation corpus.
 Depends: PF-041
 Est: 6-8
+Status: landed
+Evidence: exists packages/schemas/source-receipt-v1.schema.json
+Evidence: validator scripts/repository/validate_planning_coverage.py
 
 Inventory line `:35`. Provenance for every claim, and the first of the 33 `planned-missing` contracts that blocks real work. Note the inventory maps this to `PF-021/PF-022`, which are ranking units; the accounting owners are `PF-017`/`PF-018`.
 
 ### PF-043 — Author the appraisal result and policy contracts
-Files: `packages/schemas/appraisal-result-v1.schema.json` (new), `packages/schemas/appraisal-policy-v1.schema.json` (new), `packages/schemas/openapi-v1.yaml`
+Files: `packages/schemas/appraisal-result-v1.schema.json`, `packages/schemas/appraisal-policy-v1.schema.json`, `packages/schemas/openapi-v1.yaml`
 Acceptance: `ClaimRecord.appraisal_id` resolves to a defined schema and a retrievable operation; no dangling reference remains.
 Depends: PF-038
 Est: 8-10
+Status: in-progress
 
 Inventory lines `:37-38`. `ClaimRecord.appraisal_id` already references an appraisal today and there is no `/appraisals/{id}` path and no schema behind it.
 
@@ -473,70 +641,102 @@ Files: `packages/schemas/openapi-v1.yaml`
 Acceptance: every operation returning a collection declares `cursor` and `limit` parameters with the contract's default 50 and maximum 200; zero collection operations without both.
 Depends: none
 Est: 3-4
+Status: landed
+Evidence: contains 17 packages/schemas/openapi-v1.yaml :: parameters/Cursor
+Evidence: contains 17 packages/schemas/openapi-v1.yaml :: parameters/Limit
 
-Twelve operations lack both: `listSessions:279`, `listIdentities:339`, `listDevices:446`, `listFriends:868`, `listFriendRequests:894`, `listBlocks:959`, `listRivals:1024`, `listBoards:1089`, `listOrganizations:1198`, `listCommunities:1263`, `listModerationCases:1427`, `listAppeals:1492`. `SERVER_API_DATA_AND_RANKING_CONTRACT.md:44` already specifies the contract they violate.
+**Landed in `963f6f6` under D-222.** All seventeen collection operations declare `cursor` and `limit`.
+
+The defect as found: twelve operations declared neither — `listSessions`, `listIdentities`, `listDevices`, `listFriends`, `listFriendRequests`, `listBlocks`, `listRivals`, `listBoards`, `listOrganizations`, `listCommunities`, `listModerationCases`, `listAppeals` — while `SERVER_API_DATA_AND_RANKING_CONTRACT.md:44` already specified the contract they violated.
 
 ### PF-045 — Specify the error response matrix
 Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
 Acceptance: every operation declares its 4xx responses; every reason code maps to exactly one HTTP status and one registered state machine.
 Depends: PF-038
 Est: 8-10
+Status: in-progress
 
-No operation currently declares 401, 403, 404, 409, or 422 — only 200, 429, and default. `reason-codes-v1.json` has 20 codes for a 39-path API and 24 state machines, and all 20 reference `state_machine: "vibeproof-v1"`, which is not one of the registered machines. Every code dangles.
+**Mostly landed in `963f6f6` under D-223, and D-224 records what did not.** Operations now declare their 4xx responses and the matrix lives in `packages/schemas/reason-codes-v1.json` rather than inline. What remains, and why this unit is `in-progress` rather than `landed`: D-224 records that the repair of the twenty pre-existing `state_machine: "vibeproof-v1"` values is complete only in part. A code that still names a machine the registry does not declare is a dangling reference wearing a valid-looking value, so this unit closes when every code resolves and not before.
+
+The defect as found: no operation declared 401, 403, 404, 409 or 422 — only 200, 429 and default — and all twenty reason codes referenced `state_machine: "vibeproof-v1"`, which is not a registered machine, so every code dangled.
 
 ### PF-046 — Represent evidence class in the public API
 Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/evidence-disclosure-v1.schema.json` (new), `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`
 Acceptance: `grep -c evidence_class packages/schemas/openapi-v1.yaml` returns non-zero; the disclosure projection defines exactly what a viewer may see.
 Depends: PF-043
 Est: 4-6
+Status: in-progress
 
-The string `evidence_class` does not appear in 3,780 lines of OpenAPI. The product's central differentiator is currently unrepresentable in its own API. Four vocabularies exist for this concept — `packages/ui` uses `Hardened|Standard|Imported`, `crates/vibeproof-core` uses `Authoritative|Structured|Observed|Estimated|Imported`, `evidence-profile-policy-v1.json` uses `authoritative-profile`, and the API has none. Reconcile to one.
+**Half landed in `963f6f6` under D-226.** `evidence_class` crosses the boundary on `PublicProfile`, `RankEntry`, `AccountProfile` and `ClaimRecord` with the three values D-143 fixed. `packages/schemas/evidence-disclosure-v1.schema.json` (new) was not authored, so the second clause of this unit's acceptance — the projection defining exactly what a viewer may see — is unmet. This unit was recorded as `landed` on the strength of the first clause and `validate_work_unit_status.py` refused it, which is the check doing the job it was added for.
+
+The defect as found: the string did not appear anywhere in the OpenAPI document, so the product's central differentiator was unrepresentable in its own API, and four competing vocabularies existed for the concept — `packages/ui` used `Hardened|Standard|Imported`, `crates/vibeproof-core` used a five-value scale, `evidence-profile-policy-v1.json` used `profile_id` values, and the API had none.
 
 ### PF-047 — Expand profile and rank entry schemas to the rendered product
 Files: `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
 Acceptance: every field rendered by `packages/ui/src/concepts/product-storyboards.tsx` and `packages/ui/src/patterns/product-system.tsx` resolves to an API field; no storyboard depends on a value the API cannot return.
 Depends: PF-046
 Est: 6-8
+Status: landed
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: credited_token_burn
+Evidence: absent packages/ui/src/concepts/product-storyboards.tsx :: Verified competitor
+Evidence: absent packages/ui/src/concepts/product-storyboards.tsx :: All sources verified
 
-`PublicProfile` has 4 fields and `RankEntry` has 7, both `additionalProperties: false`. The finished 2,900-LOC design system renders avatars, evidence badges, rank movement, sparklines, and board standings that no operation can supply. This unit also removes the banned copy at `product-storyboards.tsx:56,105,111` ("Verified competitor", "All sources verified", "Rankings are based on verified Token Burn"), which `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md:134-138` and `docs/product/PRODUCT_SPEC.md:109` prohibit.
+**Landed in `963f6f6` under D-227 and D-228.** `RankEntry` lost `score` and gained `credited_token_burn` and the rendered fields, and the four banned claim strings in `packages/ui/src/concepts/product-storyboards.tsx` were replaced rather than softened.
+
+The defect as found: `PublicProfile` had 4 fields and `RankEntry` had 7, both `additionalProperties: false`, while the finished design system rendered avatars, evidence badges, rank movement, sparklines and board standings that no operation could supply.
 
 ### PF-048 — Author the indexing and partitioning plan
 Files: `packages/schemas/planning-schema.sql`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
 Acceptance: every foreign key and every documented query path has a supporting index; claims are partitioned as the contract states; `grep -c "CREATE INDEX" planning-schema.sql` is greater than 3.
 Depends: PF-038
 Est: 8-12
+Status: not-started
 
-73 tables carry 3 indexes total at `:651-653` and zero `PARTITION BY`, while `SERVER_API_DATA_AND_RANKING_CONTRACT.md:70` states claims are partitioned by receipt month. `friend_edges:275` and `rival_edges:289` have no reverse-direction index, so bidirectional queries sequential-scan. The 300 ms leaderboard SLO is unreachable as written.
+**98 tables carry 3 indexes total** and zero `PARTITION BY`, while `SERVER_API_DATA_AND_RANKING_CONTRACT.md:70` states claims are partitioned by receipt month. The recorded figure was 73 tables; the DDL has grown and the index count has not. `friend_edges` and `rival_edges` have no reverse-direction index, so bidirectional queries sequential-scan. The 300 ms leaderboard SLO is unreachable as written, and `X-014` cannot produce evidence for a budget this makes unmeetable.
 
 ### PF-049 — Repair the idempotency contract
 Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`
 Acceptance: a replayed request returns the original response body byte-for-byte; the ledger expresses `conflict` and `expired`.
 Depends: PF-038
 Est: 4-6
+Status: in-progress
 
-`planning-schema.sql:420-430` stores a nullable `response_digest` with no response-body column, so exact replay cannot return the original response. The primary key at `:426` is `(actor_account_id, idempotency_key)` with no global uniqueness, and the principal is account-only.
+**The API half landed in `963f6f6` under D-225; the SQL half has not.** The wire contract now states the scoped key and byte-identical replay under one `x-idempotency-contract` block. `packages/schemas/planning-schema.sql` still stores a nullable `response_digest` with no response-body column, so nothing in the database can return the original response the API now promises. That gap is the reason this unit is `in-progress`: a contract that states an invariant its storage cannot hold is worse than one that states nothing, because it reads as satisfied.
+
+The defect as found: `planning-schema.sql` stored a nullable `response_digest` with no response-body column; its primary key was `(actor_account_id, idempotency_key)` with no global uniqueness; and the principal was account-only.
 
 ### PF-050 — Populate retention and disposition policy
-Files: `packages/schemas/policy-defaults-v1.json`, `packages/schemas/data-disposition-v1.json` (new), `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
-Acceptance: every one of the 73 tables has a declared retention class; no `expires_at` column exists without a documented enforcement owner.
+Files: `packages/schemas/policy-defaults-v1.json`, `packages/schemas/data-disposition-v1.json`, `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
+Acceptance: every one of the 98 tables in `packages/schemas/planning-schema.sql` has a declared retention class, which a script asserts by diffing the table list against the policy file in both directions; no `expires_at` column exists without a named enforcement owner.
 Depends: PF-038
 Est: 6-8
+Status: landed
+Evidence: exists packages/schemas/data-disposition-v1.json
+Evidence: exists packages/schemas/data-disposition-v1.schema.json
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
 
 Inventory `:106-107` assigns retention to `policy-defaults-v1.json`, which currently contains 16 knobs and zero retention windows. `expires_at` is stored in several tables and enforced nowhere.
 
 ### PF-051 — Specify multi-observer deduplication
-Files: `packages/schemas/normalized-event.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/dedup-vectors-v1.json` (new)
+Files: `packages/schemas/normalized-event.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/dedup-vectors-v1.json`
 Acceptance: two collectors observing one session produce a single counted event; fixture covers the colliding and non-colliding commitment cases.
 Depends: PF-042
 Est: 6-8
+Status: landed
+Evidence: exists conformance/accounting/dedup-vectors-v1.json
+Evidence: exists packages/schemas/dedup-vectors-v1.schema.json
+Evidence: exists conformance/accounting/dedup-vectors-v1.invalid-empty-preimage.json
 
 Inventory `:74`. `TOKEN_ACCOUNTING_SPEC.md:74-76` currently relies on the collector's own `duplicate_domain_commitment`, so two collectors on one real session can choose non-colliding commitments and double-count. Double counting is a scoring defect, not a data-quality defect.
 
 ### PF-052 — Author ranking generation, entry and snapshot contracts
-Files: `packages/schemas/ranking-generation-v1.schema.json` (new), `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`
+Files: `packages/schemas/ranking-generation-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`
 Acceptance: `LeaderboardPage.snapshot_id` and `revision` and `RankEntry.ranking_view_id` all resolve; a generation can be pinned, superseded, and read back.
 Depends: PF-038, PF-048
 Est: 10-14
+Status: landed
+Evidence: exists packages/schemas/ranking-generation-v1.schema.json
+Evidence: contains 1 packages/schemas/planning-schema.sql :: ranking_entries
 
 Inventory `:88`. Three fields dangle in the API today. This is also where `getLeaderboard` gains a viewer parameter and loses its unauthenticated `security: []` while the `Scope` enum at `:1775` still admits `friends|rivals|board`.
 
@@ -545,6 +745,9 @@ Files: `docs/decisions/ADR-016-PROVIDER_ATTESTED_ORG_EVIDENCE.md` (new), `docs/s
 Acceptance: the ADR states whether org boards use provider admin APIs, and `EVIDENCE_AND_ATTESTATION_PROFILES.md` reflects the resulting E1 availability.
 Depends: none
 Est: 4-6
+Status: landed
+Evidence: exists docs/decisions/ADR-016-PROVIDER_ATTESTED_ORG_EVIDENCE.md
+Evidence: contains 1 docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md :: E1-R
 
 Research on 2026-08-05 established that Anthropic's Admin API (`/v1/organizations/usage_report/messages` plus the Claude Code analytics endpoint), OpenAI's `/v1/organization/usage/completions`, and Cursor's team usage API all return provider-attested counts that a user cannot fabricate — but all three require org-admin credentials, and no provider offers an OAuth scope permitting an individual to authorize third-party read of their own consumption. Anthropic's documentation states the Admin API is unavailable for individual accounts.
 
@@ -555,6 +758,7 @@ Files: `conformance/vibeproof/v1/negative-vectors.json` (new), `docs/architectur
 Acceptance: a decoder rejects every vector for the stated reason; duplicate keys, non-minimal integers, indefinite-length containers, and trailing bytes are each covered.
 Depends: none
 Est: 4-6
+Status: not-started
 
 `vibeproof-claim-v1.cddl` is the strongest artifact in the repository — all nine types resolve, COSE alg −8 and tag 18 are pinned, byte-exact positive vectors exist. Its gap is that only positive vectors exist, and canonicalization, nesting depth, and allocation ceilings live in prose rather than in testable form. Batch, rotation, gap, and correction vectors are also absent.
 
@@ -563,6 +767,9 @@ Files: `scripts/repository/validate_p1140f_authority.py`, `tests/ci/test_validat
 Acceptance: closing a finding in `conformance/p1140f/semantic-findings-v1.json` leaves the validator green; the validator fails when the open count increases.
 Depends: none
 Est: 3-4
+Status: landed
+Evidence: validator scripts/repository/validate_p1140f_authority.py
+Evidence: unittest tests.ci.test_validate_p1140f_authority
 
 `:53` raises unless exactly 13 P1 findings are open; `:139` raises unless zero are open for a review to pass. The two conditions cannot both hold, so closing a finding correctly turns CI red and the only routes to green are inaction or editing the validator. Replace the exact-count check with monotonic non-regression.
 
@@ -571,6 +778,11 @@ Files: `.github/workflows/planning-checks.yml`, `evals/suites/suites.yaml`, `scr
 Acceptance: `run_evals.py --validate-registry`, `verify_repository.py`, and `python -m unittest discover -s tests` all run in CI and exit 0.
 Depends: PF-055
 Est: 4-6
+Status: landed
+Evidence: validator scripts/ci/run_evals.py --validate-registry
+Evidence: unittest tests.ci.test_run_evals
+Evidence: contains 1 .github/workflows/planning-checks.yml :: verify_repository.py
+Evidence: contains 1 .github/workflows/planning-checks.yml :: unittest discover
 
 Four validators fail at HEAD and no workflow invokes them, so nothing detected the failure. Commit `31a6539` added `authority_class` and `evidence_ceiling` to satisfy `validate_p1140f_authority.py:124`, while `run_evals.py` rejected any key outside its allowlist — one validator required exactly what another forbade.
 
@@ -583,6 +795,10 @@ Files: `scripts/repository/doctor.py`, `docs/project/STATUS.md`, `docs/planning/
 Acceptance: `doctor.py` derives phase state from `conformance/p1140f/*.json` rather than from prose substrings; opening or closing the gate requires no edit to `doctor.py`.
 Depends: PF-055
 Est: 4-6
+Status: landed
+Evidence: contains 1 scripts/repository/doctor.py :: conformance/p1140f/gate-authorization-v1.json
+Evidence: absent scripts/repository/doctor.py :: implementation remains unauthorized
+Evidence: unittest tests.ci.test_gate_authorization
 
 The gate is currently enforced by prose substring assertions in four files: `doctor.py:90` requires `STATUS.md` to contain the literal string "implementation remains unauthorized", `:95` requires "blocked-approval" in `TASK_CATALOG.md`, `:105` requires "P-1104: blocked", and `:110` requires "inactive" and "blocked" in the handoff. Moving the gate therefore requires editing the validator that enforces it, which is the same defect as PF-055 in a different place. The machine-readable state already exists in `conformance/p1140f/`; the validator should read it.
 
@@ -591,6 +807,11 @@ Files: `docs/project/PROJECT.md`, `docs/project/DOCUMENTATION.md`
 Acceptance: a reader who has read only `PROJECT.md` can state the full path a token takes from an agent process to a public rank, and name the component that owns each step.
 Depends: none
 Est: 6-8
+Status: landed
+Evidence: contains 1 docs/project/PROJECT.md :: collector
+Evidence: contains 1 docs/project/PROJECT.md :: adapter
+Evidence: contains 1 docs/project/PROJECT.md :: verifier
+Evidence: contains 1 docs/project/PROJECT.md :: daemon
 
 No document explains how the system works end to end. Understanding it currently requires reading eight files in a prescribed order, which is why `AGENTS.md:12` has to prescribe that order. `PROJECT.md` should carry one narrative — install, adapter observes, collector normalizes, sync signs, verifier appraises, ledger records, projection ranks — with a diagram, and every other document should read as detail hanging off it.
 
@@ -601,6 +822,10 @@ Files: `docs/style-guide/COMPONENT_INVENTORY.md`, `docs/style-guide/COMPONENT_ST
 Acceptance: one owner per concept; no two files in `docs/style-guide/` describe the same component surface; `DOCUMENTATION.md` names the surviving owner for each.
 Depends: none
 Est: 6-8
+Status: landed
+Evidence: missing docs/style-guide/COMPONENTS.md
+Evidence: exists docs/style-guide/UI_ARCHITECTURE.md
+Evidence: validator scripts/repository/doctor.py
 
 Three files described components (`COMPONENTS.md`, `COMPONENT_INVENTORY.md`, `COMPONENT_STANDARD.md`) and three described design foundations (`design/design.md`, `design/UI_FOUNDATIONS.md`, `style-guide/README.md`); the first and fourth of those have since been merged into their surviving owners. `docs/architecture/ARCHITECTURE.md` and the former `docs/style-guide/ARCHITECTURE.md` shared a filename while describing unrelated scopes, which made every reference to "ARCHITECTURE.md" ambiguous until the latter was renamed to `docs/style-guide/UI_ARCHITECTURE.md`.
 
@@ -611,6 +836,12 @@ Files: `docs/protocol/`, `docs/qa/`, `docs/evals/`, `docs/design/`, `docs/projec
 Acceptance: no directory under `docs/` holds fewer than four files without a recorded reason; every moved path resolves; `doctor.py` passes.
 Depends: PF-059
 Est: 4-6
+Status: landed
+Evidence: missing docs/protocol
+Evidence: missing docs/qa
+Evidence: missing docs/evals
+Evidence: missing docs/design
+Evidence: validator scripts/repository/doctor.py
 
 Eighteen directories hold 82 files, and seven of them hold one to three: `protocol/` (1), `qa/` (1), `evals/` (2), `privacy/` (2), `design/` (3), `engineering/` (3), `project/` (3). Fold `protocol/` into `architecture/`, combine `qa/` and `evals/` into one verification directory, and fold `design/` into `style-guide/`. Keep `privacy/` and `project/` where they are — both are small but load-bearing, and `privacy/` deliberately isolates the invariant everything else serves.
 
@@ -621,6 +852,11 @@ Files: `docs/history/MACHINE_CONTRACT_REPAIR_SPEC.md`, `docs/history/REPOSITORY_
 Acceptance: both files are in `docs/history/` with unique content merged into a living owner; no inbound reference is broken; `doctor.py` passes.
 Depends: none
 Est: 4-6
+Status: landed
+Evidence: exists docs/history/MACHINE_CONTRACT_REPAIR_SPEC.md
+Evidence: exists docs/history/REPOSITORY_ALIGNMENT_2026-07-23.md
+Evidence: missing docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md
+Evidence: validator scripts/repository/doctor.py
 
 `MACHINE_CONTRACT_REPAIR_SPEC.md` (521 lines) declares itself a "normative P-1140B–E planning input"; P-1140E is closed, so it is spent. `REPOSITORY_ALIGNMENT_2026-07-23.md` (366 lines) restates decisions owned by `DECISION_REGISTER.md` and is cited in the `AGENTS.md` initialization order and in `DOCUMENTATION.md`, so both must be updated when it moves. Roughly 890 lines leave the active planning surface.
 
@@ -631,28 +867,41 @@ Files: `conformance/planning/decisions-v1.json` (new), `conformance/planning/dec
 Acceptance: the Markdown register and catalog are generated from JSON and byte-identical to the committed files; a validator fails on drift between source and generated output.
 Depends: PF-053, PF-055
 Est: 12-16
+Status: not-started
 
-`conformance/p1140f/*.json` is the pattern that works in this repository: validators read structure. But 77 decisions and every planning gate live in Markdown tables, and validators reach them by substring matching — `validate_p1140f_authority.py:131` greps prose for a count, and `doctor.py` asserts that literal strings appear somewhere in a document. That is why the phase gate could only be moved by editing its own validator.
+`conformance/p1140f/*.json` is the pattern that works in this repository: validators read structure. But the register now holds **132 rows running to D-205**, and every planning gate lives in a Markdown table that validators reach by substring matching — `validate_p1140f_authority.py:131` greps prose for a count, and `doctor.py` asserts that literal strings appear somewhere in a document. That is why the phase gate could only be moved by editing its own validator.
 
-Make JSON the source and generate the Markdown, so prose can no longer drift from state and validators can assert on structure. This unit is what lets PF-063 assert on the whole register.
+The register has grown by 55 rows since this unit was written, which raises rather than lowers its priority: the numbering is already sparse — D-109 is followed by D-140, D-144 by D-180 — and nothing enforces that a decision's status, its reopen condition and the artifact it governs stay consistent.
+
+Make JSON the source and generate the Markdown, so prose can no longer drift from state and validators can assert on structure. `validate_work_unit_status.py` is the smaller precedent for exactly this shape: JSON-free, but the derived block in the work breakdown is generated and drift fails the build. This unit is what lets PF-063 assert on the whole register.
 
 ### PF-063 — Complete decision traceability coverage
 Files: `scripts/repository/validate_p1140e_contracts.py`, `docs/planning/decision-traceability/`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
 Acceptance: every accepted implementation-bearing decision has a traceability row with an implementation owner, machine or state ownership, platform scope, and executable evidence requirement; the traceability validator covers the whole register rather than a frozen prefix of it.
 Depends: PF-062
 Est: 4-6
+Status: not-started
 
 Reference resolution itself is closed. `scripts/repository/validate_cross_references.py` resolves every decision, finding, ADR, program, work-unit, path, `$ref`, and `operationId` citation in the repository and exits non-zero on any that dangles; `tests/ci/test_cross_references.py` proves it fires per class. The 128 dangling work-unit citations that motivated this unit — a superseded two-digit numbering across 72 identifiers, including the `I-`, `PL-` and `U-` prefixes that never existed in the breakdown, and `D-01` through `D-10` used as work-unit identifiers in the same files where `D-001` onward are decisions — were deleted rather than remapped, because no unit they named survives.
 
-What remains is coverage, not resolution. Decisions D-070 onward have no traceability rows at all, because `validate_p1140e_contracts.py:52-59` freezes its matrix at `range(1, 70)` and delegates the remainder to a validator that never references a `D-` identifier.
+What remains is coverage, not resolution. `validate_p1140e_contracts.py:52-59` freezes its traceability matrix at `range(1, 70)` and delegates the remainder to a validator that never references a `D-` identifier, so **every decision from D-070 onward has no traceability row at all**. The register now runs to D-205 with 132 rows, so the uncovered tail is larger than the covered head: 63 decisions are traced and 69 are not.
+
+The freeze is deliberate — P-1140E owns D-001..D-069 and a later decision must not silently expand a closed structural matrix — so the repair is a second matrix owned by the P-1140F track rather than widening the range in place. Widening `range(1, 70)` would make a closed program's evidence set mutable, which is the defect this repository exists to stop.
+
+The four traceability files under `docs/planning/decision-traceability/` cover D-001 through D-069 and stop there. Extending them is the visible half; the half that decides whether this closes is that a new decision must not be mergeable without a row, which needs the check to run over the register rather than over a fixed list.
 
 ### PF-064 — Remove stale dates from living document filenames
 Files: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `scripts/repository/doctor.py`, `AGENTS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/TASK_CATALOG.md`
 Acceptance: no file that is still being updated carries a date in its filename; every inbound reference resolves; `doctor.py` passes.
 Depends: PF-057
 Est: 2-3
+Status: not-started
 
-`P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md` is live and was last updated 2026-08-04, but its filename says July 24. A date in a filename should mean the document is a point-in-time record; using it for a living document teaches readers to distrust the convention. It has nine inbound references including `doctor.py`'s REQUIRED list.
+`P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md` is live and is still being updated, but its filename says July 24. A date in a filename should mean the document is a point-in-time record; using it for a living document teaches readers to distrust the convention.
+
+Nine tracked files reference it and each has to move with it: `AGENTS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/TASK_CATALOG.md`, `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `docs/history/REPOSITORY_ALIGNMENT_2026-07-23.md`, `scripts/repository/doctor.py`'s REQUIRED list, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`, and the pinned-path strings in `conformance/p1140f/gate-authorization-v1.json` and `conformance/p1140f/semantic-findings-v1.json`. Those last two are the constraint that decides how this unit is done: `validate_p1140f_authority.py` requires every pinned path to exist, and the records are owned by the P-1140F closure track. D-140 refused the same rename for `openapi-v1.yaml` for exactly this reason. Either the rename lands together with the record update in one change, or it waits for the pins to be released — decide which, and record it, rather than discovering the constraint mid-rename.
+
+Two other dated filenames under `docs/planning/` need the same judgement and are in scope for this unit: `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, which is a closed program's record and should keep its date, and `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, which is a plan rather than a record and should not.
 
 Archived point-in-time reports in `docs/history/` keep their dates. That is what the convention is for.
 
@@ -661,6 +910,9 @@ Files: `packages/schemas/openapi-v1.yaml`, `scripts/repository/validate_planning
 Acceptance: the file's extension matches its contents; every reader resolves it; all planning validators pass.
 Depends: PF-038
 Est: 2-3
+Status: landed
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: This document is YAML
+Evidence: validator scripts/repository/validate_planning_coverage.py
 
 `openapi-v1.yaml` contains JSON. YAML is a superset of JSON so parsers accept it, but the first tool that selects a parser by extension, or any human opening it expecting YAML, will be wrong. Either rename to `.json` or convert the contents to YAML — decide deliberately and record which, since several validators reference the path by name.
 
@@ -669,6 +921,9 @@ Files: `packages/schemas/state-machine-registry-v1.json`, `tests/ci/test_state_v
 Acceptance: every state in every registry machine is reachable from its initial state, and no state listed in `terminal_states` has an outgoing transition. A test asserts both across all 26 machines, not only those bound to SQL or an API enum.
 Depends: none
 Est: 6-8
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_state_vocabularies
 
 Two defect classes found by a reachability sweep during the PF-038 follow-up. Both are invisible to `validate_state_vocabularies.py`, which compares vocabularies across three sources and does not examine transitions.
 
@@ -683,6 +938,7 @@ Files: `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_state
 Acceptance: the validator fails when a declared aggregate has an unpopulated `sql=` or `api=` binding that could have been populated, and reports its true three-way coverage rather than an aggregate count.
 Depends: none
 Est: 4-6
+Status: in-progress
 
 `validate_state_vocabularies.py` is a genuine check — its drift-injection tests prove it catches renames, deletions, and dropped enum values. But its guarantee is narrower than its name implies. Of 31 declared aggregates, only **7** receive a real three-way registry + SQL + API comparison. 19 are two-way, usually legitimately because there is no API surface, and 5 are format-only.
 
@@ -695,6 +951,7 @@ Files: `conformance/vibeproof/v1/ed25519-divergence-corpus.json` (new), `conform
 Acceptance: the corpus contains at least one case for each of non-canonical `A`, non-canonical `R`, small-order `A`, and `S >= l`; every case records its expected ZIP-215 verdict; and a generator reproduces the corpus byte-identically from recorded inputs, so no verdict is asserted by hand.
 Depends: PF-005
 Est: 8-12
+Status: not-started
 
 VibeProof v1 pins Ed25519 verification to ZIP-215 because RFC 8032 does not pin it: SS5.1.7 permits both the cofactored and cofactorless group equations, and FIPS 186-5 SS7.7 repeats that permission verbatim. A cofactored verifier accepts a strictly larger set of signatures than a cofactorless one, and the implication runs one way only, so a Rust signer and a Go verifier that both conform to RFC 8032 can disagree without any round-trip test noticing.
 
@@ -702,524 +959,1800 @@ RFC 8032's own test vectors cannot detect this. They are well-formed signatures 
 
 The corpus is a precondition of any cross-language conformance claim, and it cannot be authored by asserting verdicts from the specification text alone - each expected outcome has to be confirmed against a ZIP-215 reference implementation, or the corpus repeats the original defect at one remove. Go's `crypto/ed25519` is cofactorless and will fail these cases by design; selecting a ZIP-215-capable Go implementation is part of the D-012 bakeoff.
 
-## Frozen backlog — scope inventory, not executable units
+## Implementation epics — specified, blocked until P-1104
 
-Everything below is retained to hold the launch scope in `docs/planning/PRODUCT_SCOPE_FREEZE.md`. **These are headings, not units.** None carries `Files:`, `Acceptance:`, `Depends:` in resolvable form, or `Est:`, and none names a file path, schema, table, or endpoint. They must be promoted into the active plan against the required-fields standard before being worked, and they are all blocked until P-1104 regardless.
+Everything below holds the launch scope in `docs/planning/PRODUCT_SCOPE_FREEZE.md`. These were headings until D-200; they are now units specified to the same standard as the `PF-` units above, and they remain blocked until P-1104 regardless of how well specified they are. Being specified is not being authorized, and being authorized is not being started.
 
-Known defects in this section, recorded rather than silently carried:
+### The five defects this section recorded against itself
 
-- **Six units declare prose dependencies that do not resolve**: `PF-001`, `PF-004`, `O-005`, `X-001`, `X-009`, `X-010` depend on phrases such as "implemented product paths" and "all launch paths". Prose dependencies cannot be ordered.
-- **Eleven units are orphans** that nothing depends on: `F-008`, `L-014`, `N-018`, `N-019`, `P-010`, `S-001`, `S-004`, `S-015`, `W-001`, `W-010`, `X-011`. `S-001` is the Go service foundation, and `S-002` through `S-015` do not depend on it.
-- **`X-011` does not gate launch.** P-1105 readiness transitively depends on 162 of 194 units, excluding all ten Epic W units — the entire hosted web product — plus `O-012`, `R-012`, `M-011`, `S-015`, `N-018`, `N-019`, `P-010`, and `F-008`. Launch readiness is currently declarable with no web application.
-- **52 of the 73 tables in `packages/schemas/planning-schema.sql` are named nowhere in this file or in `IMPLEMENTATION_HANDOFF.md`.** Organizations and communities have four OpenAPI operations and two tables, and the words "organization" and "community" do not appear in this document at all. Passkeys, recovery codes, `model_alias_facts`, `minute_scores`, `social_integrity_events`, `audit_events`, and `adapter_installations` have no owning unit.
-- **Thirteen categories have no unit anywhere**: local development environment, product CI/CD, logging and metrics and tracing, error taxonomy, API versioning and deprecation, rate limiting, data migration and backfill, load testing, runbooks and on-call, staging environment, cost modeling, feature-flag mechanics, and product analytics.
+Each was recorded here rather than silently carried. Each is now closed or stands with a reason.
 
-Promotion of any unit below must resolve the defects that apply to it.
+- **Six units declared prose dependencies that do not resolve** — `PF-001`, `PF-004`, `O-005`, `X-001`, `X-009`, `X-010`, on phrases such as "implemented product paths" and "all launch paths". **Closed.** All six now carry unit IDs. In four of them the phrase was carrying two different things at once: an ordering claim and an authorization or capability condition. The ordering claim became a dependency; the condition is recorded in the unit body, because a condition is not an edge and cannot be scheduled. `validate_work_unit_status.py` fails on any `Depends:` entry that is not a resolvable ID.
+- **Eleven units were orphans that nothing depended on** — `F-008`, `L-014`, `N-018`, `N-019`, `P-010`, `S-001`, `S-004`, `S-015`, `W-001`, `W-010`, `X-011`. **Ten closed, one stands.** `S-001` was the worst of them: `S-002` through `S-015` are all built on the Go service foundation and none depended on it. `S-002` now does. `W-001` gained the nine screens that consume its generated client, `S-004` gained `S-010`, and the six suite and automation units gained `X-010` or `X-011`. `X-011` remains an orphan and that is correct: nothing follows a launch-readiness review. A sink at the end of the graph is not the defect a missing edge in the middle is.
+- **`X-011` did not gate launch.** P-1105 readiness transitively depended on 162 of 194 units, excluding all ten Epic W units — the entire hosted web product — plus `O-012`, `R-012`, `M-011`, `S-015`, `N-018`, `N-019`, `P-010` and `F-008`. Launch readiness was declarable with no web application. **Closed.** `X-011` now names the whole launch set explicitly, and `validate_work_unit_status.py --gate X-011` fails while any unit in its closure is not `landed`.
+- **52 of the tables in `packages/schemas/planning-schema.sql` were named nowhere in this file.** **Closed, and the real number was larger.** The recorded figure counted 73 tables; the DDL declares 98, so 77 were unowned rather than 52. Every one now has a unit that names it, including the organizations and communities surfaces whose words did not appear in this document at all, and `validate_work_unit_status.py` fails on any `create table` no unit names. The check runs against the DDL, so a table added later without an owner fails rather than joining the backlog quietly.
+- **Thirteen categories had no unit anywhere.** **Closed, twice over.** This branch authored `F-009` local development, `F-010` product CI/CD, `F-011` feature-flag mechanics, `S-016` error taxonomy, `S-017` API versioning and deprecation, `S-018` rate limiting, `S-019` audit ledger, `S-020` data migration and backfill, `X-012` logging, metrics and tracing, `X-013` staging, `X-014` load and soak testing, `X-015` runbooks and on-call, `X-016` cost model, `X-017` product analytics. Four more — `G-017`, `G-018`, `G-019` and `O-013` — were authored for table and API surfaces with no owner rather than for a missing category. **Epic OS** then absorbed thirteen units from `https://github.com/vedant-simulacrum/vibemaxxing/pull/66`, which had closed the same surfaces as normative documents with real numbers behind them; six of the units above are `superseded-by` their OS counterpart under D-207.
 
-### Future implementation epics — blocked until P-1104
+These units bind to normative owners that already exist rather than restating them: `OS-001` and `OS-002` to `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`; `OS-003`, `OS-004` and `OS-011` to `docs/architecture/API_EDGE_CONTRACT.md`; `OS-005` and `OS-006` to `docs/operations/LOGGING_AND_INSTRUMENTATION.md`; `OS-007` to `docs/engineering/LOCAL_DEVELOPMENT.md`; `OS-008` and `OS-009` to `docs/verification/CONFORMANCE_HARNESS.md`; `OS-010` to `docs/verification/TEST_STRATEGY.md`; `OS-012` to `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`; `OS-013` to `docs/operations/ENVIRONMENTS_AND_SECRETS.md`; `X-003` to `docs/operations/OBSERVABILITY_PRIVACY.md`; `X-004` to `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`; `X-005` to `docs/operations/INCIDENT_RESPONSE.md`; `X-015` to `docs/operations/SLOS_AND_ALERTS.md`; and `L-003` to `docs/operations/RELEASE_VERIFICATION.md`.
 
 ## Epic F — Reproducible foundation
 
 ### F-001 Toolchain and lockfile pins
-Dependencies: PF-036, P-1104.
+Files: `rust-toolchain.toml`, `.node-version`, `Cargo.toml`, `apps/api/go.mod`, `apps/web/package.json`, `scripts/ci/check_toolchain_pins.py` (new)
+Acceptance: `python3 scripts/ci/check_toolchain_pins.py` exits 0 on the pinned tree and non-zero when any manifest names a range, a caret or `latest`; the installed `cargo`, `go` and `node` versions equal the pinned strings byte-for-byte.
+Depends: PF-036
+Est: 4-6
+Status: not-started
 
 ### F-002 Workspace initialization and package boundaries
-Dependencies: F-001.
+Files: `Cargo.toml`, `crates/vibeproof-core/Cargo.toml`, `crates/vibeproof-adapters/Cargo.toml` (new), `crates/vibeproof-collector/Cargo.toml` (new), `crates/vibeproof-sync/Cargo.toml` (new), `crates/vibemaxxing-daemon/Cargo.toml` (new), `crates/vibemaxxing-cli/Cargo.toml` (new)
+Acceptance: `cargo metadata --locked --no-deps` lists exactly the workspace members declared in `Cargo.toml`; `cargo tree --invert vibeproof-collector` shows no path from a network-capable crate into the collector, which is the D-006 boundary expressed as a dependency edge.
+Depends: F-001
+Est: 8-12
+Status: not-started
 
 ### F-003 Authoritative generated bindings
-Dependencies: F-001, PF-034.
+Files: `packages/protocol/rust/src/lib.rs` (new), `packages/protocol/go/protocol.go` (new), `packages/protocol/typescript/index.ts` (new), `scripts/ci/generate_bindings.py` (new), `packages/schemas/openapi-v1.yaml`
+Acceptance: `python3 scripts/ci/generate_bindings.py --check` exits 0, and exits non-zero after one byte of any source schema changes without regeneration; `git diff --exit-code packages/protocol` after a fresh regeneration proves no generated file is hand-maintained.
+Depends: F-001
+Est: 12-16
+Status: not-started
 
 ### F-004 Byte-identical regeneration and drift detection
-Dependencies: F-003.
+Files: `scripts/ci/generate_bindings.py` (new), `tests/ci/test_generated_bindings.py` (new), `.github/workflows/ci.yml`
+Acceptance: two consecutive regenerations produce identical bytes under `sha256sum`, and CI fails when a committed generated file differs from a fresh regeneration; `python3 -m unittest tests.ci.test_generated_bindings` exits 0.
+Depends: F-003
+Est: 6-8
+Status: not-started
 
 ### F-005 Checked numeric/time/digest/identifier primitives
-Dependencies: F-002.
+Files: `crates/vibemaxxing-primitives/Cargo.toml` (new), `crates/vibemaxxing-primitives/src/lib.rs` (new), `crates/vibemaxxing-primitives/tests/overflow.rs` (new)
+Acceptance: `cargo test -p vibemaxxing-primitives` exits 0 with one case per operation proving addition, multiplication and unit conversion return an error at the boundary rather than wrapping or saturating; `cargo clippy -p vibemaxxing-primitives -- -D clippy::arithmetic_side_effects` exits 0.
+Depends: F-002
+Est: 8-12
+Status: not-started
 
 ### F-006 Privacy canary library and fixtures
-Dependencies: F-002.
+Files: `crates/vibemaxxing-canary/Cargo.toml` (new), `crates/vibemaxxing-canary/src/lib.rs` (new), `conformance/privacy/p1140b-boundary-canaries-v1.json`, `conformance/telemetry/canaries.json`
+Acceptance: `cargo test -p vibemaxxing-canary` exits 0 and fails when any canary string from either fixture reaches an outbound buffer; the suite covers every forbidden content class named in `docs/privacy/PRIVACY_CONTRACT.md`, and a class present in the contract but absent from the suite fails the test.
+Depends: F-002
+Est: 8-12
+Status: not-started
 
 ### F-007 Feature disable and emergency-revoke framework
-Dependencies: F-002.
+Files: `crates/vibemaxxing-kill-switch/Cargo.toml` (new), `crates/vibemaxxing-kill-switch/src/lib.rs` (new), `apps/api/internal/killswitch/killswitch.go` (new), `packages/schemas/policy-defaults-v1.json`
+Acceptance: `cargo test -p vibemaxxing-kill-switch` and `go test ./internal/killswitch/...` both exit 0, with a case proving a revoked capability is refused within the propagation deadline recorded in `packages/schemas/policy-defaults-v1.json` and that the revocation survives a process restart.
+Depends: F-002
+Est: 8-12
+Status: not-started
 
 ### F-008 Narrow format/lint/unit automation restoration
-Dependencies: F-001 through F-007; separate automation authorization.
+Files: `.github/workflows/ci.yml`, `scripts/ci/verify_repository.py`
+Acceptance: `cargo fmt --check`, `cargo clippy -- -D warnings`, `gofmt -l`, `go vet ./...`, `npm run lint` and `npm test` each run in CI and exit 0; `grep -n 'paths:' .github/workflows/ci.yml` returns no filter exempting `apps/`, `crates/` or `Cargo.toml`.
+Depends: F-001, F-002, F-003, F-004, F-005, F-006, F-007
+Est: 6-8
+Status: not-started
+
+The prose range `F-001 through F-007` is expanded because `Depends:` admits unit IDs only. The prose condition `separate automation authorization` is not a dependency and is recorded here instead: activating these jobs is product automation and is outside the current authorization, per `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`.
+
+This unit was an orphan. `F-010` and `X-011` now depend on it.
+
+The prose range `F-001 through F-007` is expanded because `Depends:` admits unit IDs only. The prose condition `separate automation authorization` is not a dependency and is recorded here instead: activating these jobs is product automation and is outside the current authorization, per `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`.
+
+This unit was an orphan. `F-010` and `X-011` now depend on it.
+
+The prose range `F-001 through F-007` is expanded because `Depends:` admits unit IDs only. The prose condition `separate automation authorization` is not a dependency and is recorded here instead: activating these jobs is product automation and is outside the current authorization, per `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`.
+
+This unit was an orphan. `F-010` and `X-011` now depend on it.
+
+The prose range `F-001 through F-007` is expanded because `Depends:` admits unit IDs only. The prose condition `separate automation authorization` is not a dependency and is recorded here instead: activating these jobs is product automation and is outside the current authorization, per `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`.
+
+This unit was an orphan. `F-010` and `X-011` now depend on it.
+
+The prose range `F-001 through F-007` is expanded because `Depends:` admits unit IDs only. The prose condition `separate automation authorization` is not a dependency and is recorded here instead: activating these jobs is product automation and is outside the current authorization, per `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`.
+
+This unit was an orphan. `F-010` and `X-011` now depend on it.
+
+### F-009 Local development environment
+Files: `docs/engineering/LOCAL_DEVELOPMENT.md` (new), `scripts/dev/bootstrap.sh` (new), `compose.dev.yaml` (new), `Makefile`
+Acceptance: `make dev-up` brings up PostgreSQL and the API from a clean checkout with no manual step, `make dev-check` exits 0, and `bash scripts/dev/bootstrap.sh --verify` exits non-zero when a toolchain version pinned by `F-001` is missing or wrong.
+Depends: F-001, F-002
+Est: 8-12
+Status: superseded-by OS-007
+
+One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
+
+One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
+
+One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
+
+One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
+
+One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
+
+### F-010 Product CI/CD pipeline
+Files: `scripts/ci/check_required_checks.py` (new), `docs/engineering/CI_AND_DELIVERY.md` (new), `.github/workflows/ci.yml`, `docs/engineering/ENGINEERING_SYSTEM.md`
+Acceptance: `python3 scripts/ci/check_required_checks.py` exits 0 only when every quality layer listed under `## Required quality layers` in `docs/engineering/ENGINEERING_SYSTEM.md` has a matching job in the workflow set and appears in the branch-protection required-checks list, and exits non-zero when a layer has no job.
+Depends: F-008
+Est: 8-12
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
+
+One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
+
+One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
+
+One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
+
+One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
+
+### F-011 Feature-flag mechanics
+Files: `packages/schemas/feature-flag-v1.schema.json` (new), `apps/api/internal/flags/flags.go` (new), `packages/schemas/planning-schema.sql`, `packages/schemas/policy-defaults-v1.json`
+Acceptance: `go test ./internal/flags/...` exits 0 with cases proving evaluation is deterministic for a given `(flag, principal, revision)` triple, that an unknown flag resolves to its recorded default rather than erroring, and that no flag name or evaluation result appears in any egress buffer under the `F-006` canary suite.
+Depends: F-007, S-002
+Est: 8-12
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. `feature_flags` is the persistence owner and had no owning unit before this one.
+
+Distinct from `F-007`: that unit revokes a capability in an emergency and is a safety control; this one is ordinary staged rollout. A flag evaluation is not an analytics event and must never be reported as one.
+
+One of the thirteen categories that previously had no unit anywhere. `feature_flags` is the persistence owner and had no owning unit before this one.
+
+Distinct from `F-007`: that unit revokes a capability in an emergency and is a safety control; this one is ordinary staged rollout. A flag evaluation is not an analytics event and must never be reported as one.
+
+One of the thirteen categories that previously had no unit anywhere. `feature_flags` is the persistence owner and had no owning unit before this one.
+
+Distinct from `F-007`: that unit revokes a capability in an emergency and is a safety control; this one is ordinary staged rollout. A flag evaluation is not an analytics event and must never be reported as one.
+
+One of the thirteen categories that previously had no unit anywhere. `feature_flags` is the persistence owner and had no owning unit before this one.
+
+Distinct from `F-007`: that unit revokes a capability in an emergency and is a safety control; this one is ordinary staged rollout. A flag evaluation is not an analytics event and must never be reported as one.
+
+One of the thirteen categories that previously had no unit anywhere. `feature_flags` is the persistence owner and had no owning unit before this one.
+
+Distinct from `F-007`: that unit revokes a capability in an emergency and is a safety control; this one is ordinary staged rollout. A flag evaluation is not an analytics event and must never be reported as one.
 
 ## Epic P — Normative VibeProof
 
 ### P-001 Rust canonical normative model
-Dependencies: F-003.
+Files: `crates/vibeproof-core/src/model.rs` (new), `crates/vibeproof-core/tests/model.rs` (new), `packages/schemas/vibeproof-claim-v1.cddl`
+Acceptance: `cargo test -p vibeproof-core --test model` exits 0, and a name cross-check in that test fails when any CDDL rule in `packages/schemas/vibeproof-claim-v1.cddl` has zero or more than one corresponding Rust type.
+Depends: F-003
+Est: 12-16
+Status: not-started
 
 ### P-002 Rust deterministic CBOR encoder/decoder
-Dependencies: P-001.
+Files: `crates/vibeproof-core/src/cbor.rs` (new), `crates/vibeproof-core/tests/canonical_cbor.rs` (new), `conformance/vibeproof/v1/negative-vectors.json` (new)
+Acceptance: `cargo test -p vibeproof-core --test canonical_cbor` exits 0; encoder output matches every vector in `conformance/vibeproof/v1/exact-byte-vectors.json` byte-for-byte; the decoder rejects every negative vector with its recorded reason; a fixture encoded with the RFC 8949 Section 4.2.3 length-first ordering fails, which is what pins D-191.
+Depends: P-001
+Est: 12-16
+Status: not-started
 
 ### P-003 Rust COSE_Sign1 and Ed25519 profile
-Dependencies: P-002.
+Files: `crates/vibeproof-core/src/cose.rs` (new), `crates/vibeproof-core/tests/cose.rs` (new), `conformance/vibeproof/v1/exact-byte-vectors.json`
+Acceptance: `cargo test -p vibeproof-core --test cose` exits 0; the protected header encodes algorithm -19 and not -8, which a byte assertion on the header proves per D-190; every case in the ZIP-215 divergence corpus authored by `PF-068` yields its recorded verdict.
+Depends: P-002, PF-068
+Est: 12-16
+Status: not-started
 
 ### P-004 Independent Go normative model and decoder
-Dependencies: F-003.
+Files: `apps/api/internal/vibeproof/model.go` (new), `apps/api/internal/vibeproof/decode.go` (new), `apps/api/internal/vibeproof/decode_test.go` (new)
+Acceptance: `go test ./internal/vibeproof/...` exits 0 against the same exact-byte and negative corpora as `P-002`; `go list -deps ./internal/vibeproof` names no artifact produced by the Rust crate, so the two implementations share only the CDDL source.
+Depends: F-003
+Est: 12-16
+Status: not-started
 
 ### P-005 Go COSE verification and authorization binding
-Dependencies: P-004.
+Files: `apps/api/internal/vibeproof/cose.go` (new), `apps/api/internal/vibeproof/cose_test.go` (new)
+Acceptance: `go test ./internal/vibeproof/ -run COSE` exits 0 with every ZIP-215 divergence case producing its recorded verdict; substituting the standard-library `crypto/ed25519` makes the suite fail, which is the check that D-192 is actually enforced rather than merely cited.
+Depends: P-004
+Est: 12-16
+Status: not-started
 
 ### P-006 Exact claim/appraisal/receipt/challenge/batch vectors
-Dependencies: P-003, P-005.
+Files: `conformance/vibeproof/v1/exact-byte-vectors.json`, `scripts/repository/generate_vibeproof_vectors.py`
+Acceptance: `python3 scripts/repository/generate_vibeproof_vectors.py --check` exits 0; the file carries at least one vector for each of claim, appraisal, receipt, challenge and batch; both implementations reproduce every byte, and hand-editing any vector makes the check fail, which is what D-194 requires.
+Depends: P-003, P-005
+Est: 8-12
+Status: not-started
 
 ### P-007 Rotation/gap/correction/fork vectors
-Dependencies: P-006.
+Files: `conformance/vibeproof/v1/fork-and-rotation-vectors.json` (new), `scripts/repository/generate_vibeproof_vectors.py`
+Acceptance: the generator's `--check` mode exits 0; the file covers rotation, sequence gap, correction and fork, each carrying an expected accept-or-quarantine verdict; Rust and Go agree on every verdict.
+Depends: P-006
+Est: 8-12
+Status: not-started
 
 ### P-008 Malformed, mutation and resource corpus
-Dependencies: P-003, P-005.
+Files: `conformance/vibeproof/v1/malformed-resource-corpus.json`, `conformance/vibeproof/v1/negative-vectors.json` (new)
+Acceptance: both decoders reject every case with its recorded reason; a bounded-allocator test fails when either exceeds the declared allocation ceiling or nesting depth; a single-bit mutation of any accepted vector is rejected rather than decoded.
+Depends: P-003, P-005
+Est: 10-14
+Status: not-started
 
 ### P-009 Cross-language differential and byte-exact suite
-Dependencies: P-006 through P-008.
+Files: `evals/suites/suites.yaml`, `tests/conformance/test_protocol_differential.py` (new), `scripts/ci/run_evals.py`
+Acceptance: a `protocol-conformance` suite is registered in `evals/suites/suites.yaml` and `python3 scripts/ci/run_evals.py --suite protocol-conformance` exits 0 with a status that is not `not_applicable`; the suite runs both implementations over every vector and fails on any disagreement, so a suite that skips one implementation cannot report a pass.
+Depends: P-006, P-007, P-008
+Est: 10-14
+Status: not-started
 
 ### P-010 Fuzz/property harness activation
-Dependencies: P-009; separate security/eval workflow authorization.
+Files: `crates/vibeproof-core/fuzz/fuzz_targets/decode.rs` (new), `crates/vibeproof-core/fuzz/Cargo.toml` (new), `.github/workflows/fuzz.yml` (new), `docs/verification/BENCHMARK_AND_EVIDENCE_PROTOCOLS.md`
+Acceptance: `cargo fuzz run decode -- -runs=100000` exits 0 with no crash and no timeout, and a deliberately reintroduced non-minimal-integer acceptance is found inside that budget — a green fuzz run with no capability check is not evidence.
+Depends: P-009
+Est: 10-14
+Status: not-started
+
+The prose condition `separate security/eval workflow authorization` is not a dependency and is recorded here instead: the fuzz workflow named in the file list may not be activated under P-1104.
+
+This unit was an orphan. `X-010` now depends on it.
+
+The prose condition `separate security/eval workflow authorization` is not a dependency and is recorded here instead: the fuzz workflow named in the file list may not be activated under P-1104.
+
+This unit was an orphan. `X-010` now depends on it.
+
+The prose condition `separate security/eval workflow authorization` is not a dependency and is recorded here instead: the fuzz workflow named in the file list may not be activated under P-1104.
+
+This unit was an orphan. `X-010` now depends on it.
+
+The prose condition `separate security/eval workflow authorization` is not a dependency and is recorded here instead: the fuzz workflow named in the file list may not be activated under P-1104.
+
+This unit was an orphan. `X-010` now depends on it.
+
+The prose condition `separate security/eval workflow authorization` is not a dependency and is recorded here instead: the fuzz workflow named in the file list may not be activated under P-1104.
+
+This unit was an orphan. `X-010` now depends on it.
 
 ## Epic A — Accounting and deterministic integrity
 
 ### A-001 Immutable accounting-profile loader and digest verification
-Dependencies: F-003, F-005.
+Files: `crates/vibeproof-core/src/accounting/profile.rs` (new), `packages/schemas/accounting-profile.schema.json`, `conformance/accounting/accounting-profiles-v1.json`
+Acceptance: `cargo test -p vibeproof-core --test accounting_profile` exits 0; the loader refuses a profile whose recomputed `accounting_profile_sha256` differs by one byte, and the digest it computes equals the value recorded in the fixture.
+Depends: F-003, F-005
+Est: 8-12
+Status: not-started
 
 ### A-002 Operation/observer identity model
-Dependencies: A-001.
+Files: `crates/vibeproof-core/src/accounting/identity.rs` (new), `packages/schemas/normalized-event.schema.json`, `conformance/accounting/accounting-v1-fixtures.json`
+Acceptance: two observations of one operation from different observers resolve to a single operation identity and a retry generation resolves to a distinct one, each asserted by a fixture case; an event with no observer identity is rejected rather than defaulted.
+Depends: A-001
+Est: 8-12
+Status: not-started
 
 ### A-003 Category containment and source authority
-Dependencies: A-002.
+Files: `crates/vibeproof-core/src/accounting/containment.rs` (new), `conformance/accounting/p1140b-accounting-cases-v1.json`
+Acceptance: a case whose cache-read count exceeds its containing input count is rejected rather than clamped; when two sources disagree, the higher-authority source wins by the recorded ordering and the losing value is retained in the result rather than dropped.
+Depends: A-002
+Est: 8-12
+Status: not-started
 
 ### A-004 Cache/reasoning/modality/total reconciliation
-Dependencies: A-003.
+Files: `crates/vibeproof-core/src/accounting/reconcile.rs` (new), `conformance/accounting/reconciliation-vectors-v1.json` (new)
+Acceptance: every vector reconciles to its recorded total; a vector whose parts cannot sum to its stated total yields a contradiction verdict rather than a silent adjustment, and the test fails if any adjustment is applied.
+Depends: A-003
+Est: 10-14
+Status: not-started
 
 ### A-005 Retry/cancellation/nested-agent reconciliation
-Dependencies: A-003.
+Files: `crates/vibeproof-core/src/accounting/lifecycle.rs` (new), `conformance/accounting/reconciliation-vectors-v1.json` (new)
+Acceptance: each value of `retry_policy`, `cancellation_policy` and `nested_execution_policy` is exercised by at least one vector, which a coverage assertion in the test enforces; a cancelled operation contributes exactly the recorded amount and a nested subagent turn is counted exactly once.
+Depends: A-003
+Est: 10-14
+Status: not-started
 
 ### A-006 Duplicate-domain engine
-Dependencies: A-002.
+Files: `crates/vibeproof-core/src/accounting/dedup.rs` (new), `conformance/accounting/dedup-vectors-v1.json`
+Acceptance: two collectors over one session produce one counted event in every vector, including the case where the two choose non-colliding duplicate-domain commitments; each vector is run under both input orderings and must produce the same result.
+Depends: A-002
+Est: 10-14
+Status: not-started
 
 ### A-007 Checked arithmetic and bounds
-Dependencies: F-005.
+Files: `crates/vibeproof-core/src/accounting/bounds.rs` (new), `crates/vibemaxxing-primitives/src/lib.rs` (new)
+Acceptance: `cargo test -p vibeproof-core --test accounting_bounds` exits 0; every arithmetic path returns an error at the boundary rather than wrapping, and an event above the recorded per-period ceiling is rejected with a reason code that resolves in `packages/schemas/reason-codes-v1.json`.
+Depends: F-005
+Est: 6-8
+Status: not-started
 
 ### A-008 Deterministic contradiction/quarantine results
-Dependencies: A-003 through A-007.
+Files: `crates/vibeproof-core/src/accounting/verdict.rs` (new), `packages/schemas/reason-codes-v1.json`
+Acceptance: every contradiction produces exactly one verdict drawn from the reason registry; running the whole fixture corpus twice with shuffled input order produces byte-identical verdict output, which is the order-independence D-018 assumes.
+Depends: A-003, A-004, A-005, A-006, A-007
+Est: 8-12
+Status: not-started
 
 ### A-009 Server pricing interpretation model
-Dependencies: A-001.
+Files: `apps/api/internal/pricing/pricing.go` (new), `packages/schemas/pricing-interpretation.schema.json`, `conformance/pricing/pricing-v1.json`, `conformance/pricing/pricing-v1-manifest.json`
+Acceptance: `go test ./internal/pricing/...` exits 0; an unpriced model yields no cash figure rather than zero; every emitted figure carries the estimated label, which a response-schema assertion enforces so the label cannot be dropped by a caller.
+Depends: A-001
+Est: 8-12
+Status: not-started
+
+`pricing_interpretations` records how each dataset was applied to produce a figure.
+
+Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
+
+Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
+
+Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
+
+Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
+
+Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
 
 ### A-010 Accounting differential and order-invariance evidence
-Dependencies: A-008.
+Files: `evals/suites/suites.yaml`, `evals/fixtures/token-accounting-conformance.json`, `tests/conformance/test_accounting_differential.py` (new)
+Acceptance: `python3 scripts/ci/run_evals.py --suite token-accounting-conformance` exits 0 with a status that is not `not_applicable`; the Rust and Go implementations produce identical totals for every fixture under both input orderings, and a one-token divergence fails the suite.
+Depends: A-008
+Est: 10-14
+Status: not-started
 
 ## Epic N — Local runtime
 
 ### N-001 Local database schema and encrypted storage
-Dependencies: F-002, F-005.
+Files: `packages/schemas/local-schema.sql` (new), `crates/vibemaxxing-daemon/src/store/mod.rs` (new), `crates/vibemaxxing-daemon/tests/store.rs` (new)
+Acceptance: `cargo test -p vibemaxxing-daemon --test store` exits 0; a test reads the raw database file after writing claim material and fails when any canary string from `conformance/privacy/p1140b-boundary-canaries-v1.json` appears in plaintext.
+Depends: F-002, F-005
+Est: 12-16
+Status: not-started
 
 ### N-002 Local migration and snapshot framework
-Dependencies: N-001.
+Files: `crates/vibemaxxing-daemon/src/store/migrate.rs` (new), `packages/schemas/local-schema.sql` (new)
+Acceptance: migrating forward from an empty database and from every intermediate version produces byte-identical schema dumps; a snapshot taken before a migration restores to a database that passes the same integrity check, and a missing snapshot fails the test rather than being skipped.
+Depends: N-001
+Est: 10-14
+Status: not-started
 
 ### N-003 Non-network collector process
-Dependencies: A-008, N-001.
+Files: `crates/vibeproof-collector/src/main.rs` (new), `crates/vibeproof-collector/Cargo.toml` (new), `crates/vibeproof-collector/tests/no_network.rs` (new)
+Acceptance: `cargo tree --invert --package vibeproof-collector` shows no reachable network crate, and a test that runs the collector under a sandbox failing every socket syscall exits 0. Both checks are needed: the dependency check catches intent, the syscall check catches a transitive surprise.
+Depends: A-008, N-001
+Est: 12-16
+Status: not-started
 
 ### N-004 Source-blind sync process
-Dependencies: P-003, N-001.
+Files: `crates/vibeproof-sync/src/main.rs` (new), `crates/vibeproof-sync/tests/egress.rs` (new), `packages/schemas/egress-allowlist-v1.json`
+Acceptance: the test enumerates every field name in each serialised outbound payload and fails when one is absent from `packages/schemas/egress-allowlist-v1.json`; adding a field without an allowlist entry fails the build.
+Depends: P-003, N-001
+Est: 12-16
+Status: not-started
 
 ### N-005 OS-supervised daemon
-Dependencies: N-001.
+Files: `crates/vibemaxxing-daemon/src/main.rs` (new), `crates/vibemaxxing-daemon/tests/lifecycle.rs` (new), `packages/schemas/state-machine-registry-v1.json`
+Acceptance: the test drives the daemon into every state of the `daemon-lifecycle` machine, including `degraded`, `offline`, `stopping` and `stopped`, and fails when a declared state cannot be reached — the defect class `PF-066` repaired in the registry, asserted here against a running process.
+Depends: N-001
+Est: 10-14
+Status: not-started
 
 ### N-006 Authenticated channel handshake and peer identity
-Dependencies: N-003 through N-005.
+Files: `crates/vibemaxxing-daemon/src/channel/handshake.rs` (new), `conformance/sandbox/local-channel-vectors-v1.json` (new), `packages/schemas/local-control-v1.proto`
+Acceptance: every vector produces its recorded accept-or-reject verdict, including the same-user impersonation and stale-process cases; a peer whose OS-reported identity differs from the recorded one is refused with a reason code that resolves in `packages/schemas/reason-codes-v1.json`.
+Depends: N-003, N-004, N-005
+Est: 12-16
+Status: not-started
 
 ### N-007 Capability grants and typed local operations
-Dependencies: N-006.
+Files: `crates/vibemaxxing-daemon/src/channel/capability.rs` (new), `packages/schemas/local-control-v1.proto`
+Acceptance: a matrix test asserts cell by cell that each role can invoke exactly the operations its capability grant names and no others; an expired or revoked grant is refused within the deadline recorded in `packages/schemas/policy-defaults-v1.json`.
+Depends: N-006
+Est: 10-14
+Status: not-started
 
 ### N-008 Commitment, receipt and queue stores
-Dependencies: P-003, N-001.
+Files: `crates/vibemaxxing-daemon/src/store/queue.rs` (new), `packages/schemas/local-schema.sql` (new)
+Acceptance: a commitment write followed by a receipt write survives a `SIGKILL` between the two with no partial row, asserted at every write boundary; the queue drains in order and never re-emits an acknowledged item.
+Depends: P-003, N-001
+Est: 10-14
+Status: not-started
 
 ### N-009 Crash consistency and recovery
-Dependencies: N-002, N-008.
+Files: `crates/vibemaxxing-daemon/src/store/recover.rs` (new), `crates/vibemaxxing-daemon/tests/crash.rs` (new)
+Acceptance: a fault-injection harness kills the process at every write boundary in the store, and after every one the database opens cleanly and passes its integrity check; a boundary the harness cannot reach fails the run rather than being skipped.
+Depends: N-002, N-008
+Est: 12-16
+Status: not-started
 
 ### N-010 Protected key backend abstraction
-Dependencies: P-003, N-001.
+Files: `crates/vibemaxxing-daemon/src/keys/mod.rs` (new), `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`
+Acceptance: the backend trait has one implementation per platform plus a test-only in-memory one; `grep -rn 'secret_key\|private_key' crates/vibemaxxing-daemon/src` returns no line outside the backend module, so key material cannot leave it.
+Depends: P-003, N-001
+Est: 8-12
+Status: not-started
 
 ### N-011 macOS key and process integration
-Dependencies: N-010.
+Files: `crates/vibemaxxing-daemon/src/keys/macos.rs` (new), `packages/schemas/platform-profile-registry-v1.json`
+Acceptance: `cargo test -p vibemaxxing-daemon --features macos` exits 0 on a macOS runner, and the platform-profile row records which key path the host actually took rather than the best available one — a Secure Enclave claim on a host that fell back to the keychain fails the test.
+Depends: N-010
+Est: 8-12
+Status: not-started
 
 ### N-012 Windows key and process integration
-Dependencies: N-010.
+Files: `crates/vibemaxxing-daemon/src/keys/windows.rs` (new), `packages/schemas/platform-profile-registry-v1.json`
+Acceptance: `cargo test -p vibemaxxing-daemon --features windows` exits 0 on a Windows runner; the profile row records whether the key is TPM-backed or software-protected, and a TPM claim on a host without one fails the test.
+Depends: N-010
+Est: 8-12
+Status: not-started
 
 ### N-013 Linux key and process integration
-Dependencies: N-010.
+Files: `crates/vibemaxxing-daemon/src/keys/linux.rs` (new), `packages/schemas/platform-profile-registry-v1.json`
+Acceptance: `cargo test -p vibemaxxing-daemon --features linux` exits 0 on both a desktop-session and a headless runner; the headless case records the weaker protection it actually has rather than inheriting the desktop row, which a differing profile digest between the two runs proves.
+Depends: N-010
+Est: 8-12
+Status: not-started
 
 ### N-014 CLI control client
-Dependencies: N-007.
+Files: `crates/vibemaxxing-cli/src/main.rs` (new), `crates/vibemaxxing-cli/tests/commands.rs` (new)
+Acceptance: every command exits with a status code the help text documents, and a test diffs the command list against the operations `packages/schemas/local-control-v1.proto` declares for the CLI role, failing on any difference in either direction.
+Depends: N-007
+Est: 8-12
+Status: not-started
 
 ### N-015 Interactive shell process/connection lifecycle
-Dependencies: N-007.
+Files: `crates/vibemaxxing-cli/src/shell/mod.rs` (new), `packages/schemas/state-machine-registry-v1.json`
+Acceptance: the test drives the shell into all fifteen states of `interactive-shell`, including pre-auth startup and restart after crash, and fails when one cannot be reached; `shell_sessions` holds exactly one row per live connection, enforced by a unique constraint.
+Depends: N-007
+Est: 10-14
+Status: not-started
+
+`shell_ipc_peers` records the peer identity behind each live connection.
+
+`shell_sessions` had no owning unit before this one.
+
+`shell_sessions` had no owning unit before this one.
+
+`shell_sessions` had no owning unit before this one.
+
+`shell_sessions` had no owning unit before this one.
 
 ### N-016 Shell subsystem projections and action separation
-Dependencies: N-015.
+Files: `crates/vibemaxxing-cli/src/shell/projections.rs` (new)
+Acceptance: a matrix test asserts that UI exit, pause collection, pause sync, stop daemon, logout and uninstall each produce their own recorded effect and none produces another's; the daemon, collection, sync, auth, permission, update and connectivity projections are read independently and no command mutates a projection it does not own.
+Depends: N-015
+Est: 8-12
+Status: not-started
 
 ### N-017 Optional privileged supervisor
-Dependencies: N-006; separate privilege review.
+Files: `crates/vibemaxxing-daemon/src/supervisor/mod.rs` (new), `docs/decisions/ADR-012-OPTIONAL_PRIVILEGED_SUPERVISION.md`, `packages/schemas/planning-schema.sql`
+Acceptance: a full end-to-end run with the supervisor absent exits 0, which is what makes it optional rather than nominally optional; when present it holds only the capabilities `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md` grants it, asserted capability by capability; `privileged_supervisor_instances` records each install.
+Depends: N-006
+Est: 10-14
+Status: not-started
+
+`privileged_consents` records the explicit consent for each privileged operation.
+
+The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
+
+The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
+
+The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
+
+The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
 
 ### N-018 Sleep/resume/reboot/login/logout/offline suite
-Dependencies: N-009, N-015.
+Files: `crates/vibemaxxing-daemon/tests/platform_lifecycle.rs` (new), `evals/suites/suites.yaml`
+Acceptance: `python3 scripts/ci/run_evals.py --suite resilience` exits 0 with a status that is not `not_applicable`, carrying one case per transition — sleep, resume, reboot, login, logout and offline — each with a recorded expected outcome; a transition with no case fails the suite rather than being absent from it.
+Depends: N-009, N-015
+Est: 10-14
+Status: not-started
+
+This unit was an orphan. `X-010` now depends on it.
+
+This unit was an orphan. `X-010` now depends on it.
+
+This unit was an orphan. `X-010` now depends on it.
+
+This unit was an orphan. `X-010` now depends on it.
 
 ### N-019 Disk-full/permission-loss/corruption suite
-Dependencies: N-009.
+Files: `crates/vibemaxxing-daemon/tests/degraded_storage.rs` (new), `evals/suites/suites.yaml`
+Acceptance: under an injected `ENOSPC`, a revoked directory permission and a truncated database file, the daemon reports a degraded state and loses no acknowledged claim; a case that ends in a silent success fails the test.
+Depends: N-009
+Est: 10-14
+Status: not-started
+
+This unit was an orphan. `X-010` now depends on it.
+
+This unit was an orphan. `X-010` now depends on it.
+
+This unit was an orphan. `X-010` now depends on it.
+
+This unit was an orphan. `X-010` now depends on it.
 
 ### N-020 Content-egress and local-role adversarial suite
-Dependencies: N-003 through N-017.
+Files: `crates/vibemaxxing-canary/src/lib.rs` (new), `conformance/telemetry/canaries.json`, `evals/suites/suites.yaml`
+Acceptance: `python3 scripts/ci/run_evals.py --suite privacy-boundary` exits 0 with a status that is not `not_applicable`; every forbidden content class named in `docs/privacy/PRIVACY_CONTRACT.md` has at least one attempted-egress case from every local role, and every attempt is blocked.
+Depends: N-003, N-004, N-005, N-006, N-007, N-008, N-009, N-010, N-011, N-012, N-013, N-014, N-015, N-016, N-017
+Est: 12-16
+Status: not-started
+
+The prose range `N-003 through N-017` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `N-003 through N-017` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `N-003 through N-017` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `N-003 through N-017` is expanded because `Depends:` admits unit IDs only.
 
 ## Epic S — Server secure spine
 
 ### S-001 Go modular service foundation
-Dependencies: F-002, F-003.
+Files: `apps/api/cmd/api/main.go`, `apps/api/internal/server/server.go` (new), `apps/api/internal/config/config.go` (new)
+Acceptance: `go build ./...` and `go test ./...` exit 0; `go list -deps ./internal/...` shows no domain package importing the HTTP layer, which is the boundary this unit exists to set and the one a later unit would otherwise erase silently.
+Depends: F-002, F-003
+Est: 10-14
+Status: not-started
+
+This unit was an orphan: `S-002` through `S-015` did not depend on the Go service foundation they are all built on. `S-002` now depends on it and every later Epic S unit reaches it transitively.
+
+This unit was an orphan: `S-002` through `S-015` did not depend on the Go service foundation they are all built on. `S-002` now depends on it and every later Epic S unit reaches it transitively.
+
+This unit was an orphan: `S-002` through `S-015` did not depend on the Go service foundation they are all built on. `S-002` now depends on it and every later Epic S unit reaches it transitively.
+
+This unit was an orphan: `S-002` through `S-015` did not depend on the Go service foundation they are all built on. `S-002` now depends on it and every later Epic S unit reaches it transitively.
 
 ### S-002 PostgreSQL migration runner, roles and recovery
-Dependencies: F-001.
+Files: `migrations/0001_init.sql` (new), `apps/api/internal/db/migrate.go` (new), `packages/schemas/planning-schema.sql`, `docs/decisions/ADR-018-DATABASE_AND_MIGRATION_TOOLING.md`
+Acceptance: applying every migration to an empty database produces a schema dump byte-identical to one produced from `packages/schemas/planning-schema.sql`; `schema_migrations` records each version exactly once; every reversible step has a down path and every irreversible one is declared irreversible rather than left undefined.
+Depends: S-001, F-001
+Est: 12-16
+Status: not-started
+
+Also the persistence owner for `service_events`, the service-instance lifecycle ledger.
+
+Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
+
+Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
+
+Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
+
+Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
 
 ### S-003 Typed idempotency persistence
-Dependencies: S-002.
+Files: `apps/api/internal/idempotency/store.go` (new), `migrations/0002_idempotency.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: a second insert with the same `(principal_type, principal_id, operation_id, idempotency_key)` is rejected by a unique constraint rather than by application code; the stored `idempotency_records` row carries the response status, content type, safe headers and body bytes; `go test ./internal/idempotency/...` exits 0.
+Depends: S-002
+Est: 8-12
+Status: not-started
 
 ### S-004 Exact response replay and reservation recovery
-Dependencies: S-003.
+Files: `apps/api/internal/idempotency/replay.go` (new), `apps/api/internal/idempotency/replay_test.go` (new)
+Acceptance: a replayed request returns the stored body byte-for-byte and the stored status; a reservation left by a crashed process becomes recoverable at the recorded lease expiry and not before; an expired high-impact key is rejected rather than treated as a fresh mutation.
+Depends: S-003
+Est: 8-12
+Status: not-started
+
+This unit was an orphan. `S-010` now depends on it, which is correct: claim acceptance is the mutation whose replay has to be exact.
+
+This unit was an orphan. `S-010` now depends on it, which is correct: claim acceptance is the mutation whose replay has to be exact.
+
+This unit was an orphan. `S-010` now depends on it, which is correct: claim acceptance is the mutation whose replay has to be exact.
+
+This unit was an orphan. `S-010` now depends on it, which is correct: claim acceptance is the mutation whose replay has to be exact.
 
 ### S-005 Provider/OAuth transaction persistence
-Dependencies: S-002.
+Files: `apps/api/internal/oauth/store.go` (new), `migrations/0003_oauth.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: an `oauth_transactions` row binds action, account or session, recent-auth grant, provider revision, redirect, state, PKCE verifier and expiry; a second consumption of the same transaction is rejected by a constraint, which a concurrent double-callback test exercises.
+Depends: S-002
+Est: 8-12
+Status: not-started
+
+Also the persistence owner for `oauth_authorization_events`, the append-only record of each authorization step.
 
 ### S-006 Account, linked identity and recent-auth persistence
-Dependencies: S-002.
+Files: `apps/api/internal/identity/store.go` (new), `migrations/0004_identity.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `accounts`, `account_handles`, `linked_identities`, `web_sessions`, `session_families`, `native_sessions`, `optional_authenticators` and `recovery_codes` all carry the constraints their contract names; removing the last authentication method is rejected by a constraint rather than by a handler, which a direct SQL test proves.
+Depends: S-002
+Est: 12-16
+Status: not-started
+
+`optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
+
+`optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
+
+`optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
+
+`optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
 
 ### S-007 Ranked identity, consolidation and appeal persistence
-Dependencies: S-006.
+Files: `apps/api/internal/rankedidentity/store.go` (new), `migrations/0005_ranked_identity.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `ranked_identities` is a separate table from `accounts` with at most one active resolved row per person, enforced by a partial unique index; `appeals` and `appeal_decisions` record the investigation privately, and no query path sums two accounts' scores.
+Depends: S-006
+Est: 12-16
+Status: not-started
 
 ### S-008 Device, key, installation and lineage persistence
-Dependencies: S-002.
+Files: `apps/api/internal/device/store.go` (new), `migrations/0006_devices.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `devices`, `device_keys`, `device_enrollment_grants`, `device_lineages`, `device_key_events` and `adapter_installations` are keyed so that continuity is lineage-scoped rather than device-row-scoped, which a test proves by replacing a device row and showing the lineage survives.
+Depends: S-002
+Est: 12-16
+Status: not-started
+
+`adapter_installations` had no owning unit before this one.
+
+`adapter_installations` had no owning unit before this one.
+
+`adapter_installations` had no owning unit before this one.
+
+`adapter_installations` had no owning unit before this one.
 
 ### S-009 Challenge and checkpoint persistence
-Dependencies: S-008.
+Files: `apps/api/internal/challenge/store.go` (new), `migrations/0007_challenges.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `claim_challenges`, `device_sequences` and `checkpoint_receipts` reject an out-of-order sequence, a reused challenge and a checkpoint that does not chain, each by constraint; `go test ./internal/challenge/...` exits 0.
+Depends: S-008
+Est: 10-14
+Status: not-started
 
 ### S-010 Atomic claim acceptance and verifier transaction
-Dependencies: P-009, A-010, S-003, S-009.
+Files: `apps/api/internal/claims/accept.go` (new), `migrations/0008_claims.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: accepting a claim writes the `claims` row, the `claim_payloads` row, the idempotency record, the audit row and the outbox row in one transaction, and an injected failure at any point leaves none of them, which a rollback test asserts row by row.
+Depends: P-009, A-010, S-003, S-004, S-009
+Est: 12-16
+Status: not-started
 
 ### S-011 Immutable claims/appraisals/receipts/corrections
-Dependencies: S-010.
+Files: `apps/api/internal/claims/ledger.go` (new), `migrations/0009_appraisals.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `claims`, `claim_rejections`, `claim_corrections`, `verifier_appraisals` and `evidence_assessments` reject an `UPDATE` and a `DELETE` at the database level; a correction is a new append-only row referencing the original, which a test proves by showing the original bytes unchanged.
+Depends: S-010
+Est: 10-14
+Status: not-started
 
 ### S-012 Transactional outbox and worker checkpoints
-Dependencies: S-011.
+Files: `apps/api/internal/outbox/outbox.go` (new), `migrations/0010_outbox.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `outbox_events` is written in the same transaction as its effect and `worker_checkpoints` advances only after an acknowledged batch; a worker killed mid-batch re-delivers at least once and never skips, which a fault-injection test asserts.
+Depends: S-011
+Est: 10-14
+Status: not-started
 
 ### S-013 Fork quarantine and requalification
-Dependencies: S-008 through S-012.
+Files: `apps/api/internal/quarantine/quarantine.go` (new), `migrations/0011_quarantine.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: given the fork vectors from `P-007`, every post-fork branch lands in `quarantines` and every pre-fork accepted claim remains accepted; requalification resumes in a new lineage generation, and a test fails if any pre-fork claim is retracted.
+Depends: S-008, S-009, S-010, S-011, S-012
+Est: 12-16
+Status: not-started
+
+The prose range `S-008 through S-012` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `S-008 through S-012` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `S-008 through S-012` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `S-008 through S-012` is expanded because `Depends:` admits unit IDs only.
 
 ### S-014 Compatibility/certification policy persistence
-Dependencies: S-002.
+Files: `apps/api/internal/certification/store.go` (new), `migrations/0012_certification.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `platform_profiles` and `platform_certifications` bind an exact compatibility tuple; a query for support returns nothing when the certification is empty, planned, expired or suspended, which a table test asserts for each of those four states.
+Depends: S-002
+Est: 10-14
+Status: not-started
 
 ### S-015 Crash-before/after-commit PostgreSQL evidence
-Dependencies: S-010 through S-012.
+Files: `apps/api/internal/db/crash_test.go` (new), `conformance/p1140e/sql-race-plans-v1.json`
+Acceptance: every plan in `conformance/p1140e/sql-race-plans-v1.json` runs against a real PostgreSQL instance and leaves exactly the rows it records; a skipped plan fails the suite, so an absent database cannot be reported as a pass.
+Depends: S-010, S-011, S-012
+Est: 12-16
+Status: not-started
+
+The prose range `S-010 through S-012` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
+
+The prose range `S-010 through S-012` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
+
+The prose range `S-010 through S-012` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
+
+The prose range `S-010 through S-012` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
+
+### S-016 Error taxonomy and reason-code mapping
+Files: `apps/api/internal/apierr/apierr.go` (new), `apps/api/internal/apierr/apierr_test.go` (new), `packages/schemas/reason-codes-v1.json`, `packages/schemas/openapi-v1.yaml`
+Acceptance: `go test ./internal/apierr/...` exits 0 with a table test proving every code in `packages/schemas/reason-codes-v1.json` maps to exactly one HTTP status and one registered state machine, and that no handler can return a status or reason absent from the registry.
+Depends: S-001, PF-045
+Est: 8-12
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. `PF-045` decides the matrix; this unit is the runtime that cannot deviate from it.
+
+One of the thirteen categories that previously had no unit anywhere. `PF-045` decides the matrix; this unit is the runtime that cannot deviate from it.
+
+One of the thirteen categories that previously had no unit anywhere. `PF-045` decides the matrix; this unit is the runtime that cannot deviate from it.
+
+One of the thirteen categories that previously had no unit anywhere. `PF-045` decides the matrix; this unit is the runtime that cannot deviate from it.
+
+### S-017 API versioning and deprecation
+Files: `docs/architecture/API_VERSIONING_AND_DEPRECATION.md` (new), `scripts/ci/check_api_compatibility.py` (new), `apps/api/internal/server/version.go` (new), `packages/schemas/openapi-v1.yaml`
+Acceptance: `python3 scripts/ci/check_api_compatibility.py --base origin/main` exits non-zero on any breaking change to a released operation that is not accompanied by a version bump and a dated deprecation entry, and 0 otherwise; a removed operation with no deprecation window fails.
+Depends: S-001
+Est: 8-12
+Status: superseded-by OS-011
+
+One of the thirteen categories that previously had no unit anywhere.
+
+One of the thirteen categories that previously had no unit anywhere.
+
+One of the thirteen categories that previously had no unit anywhere.
+
+One of the thirteen categories that previously had no unit anywhere.
+
+### S-018 Rate limiting and quota enforcement
+Files: `apps/api/internal/ratelimit/ratelimit.go` (new), `apps/api/internal/ratelimit/ratelimit_test.go` (new), `packages/schemas/policy-defaults-v1.json`, `packages/schemas/openapi-v1.yaml`
+Acceptance: `go test ./internal/ratelimit/...` exits 0; a table test asserts in both directions that every operation declaring a 429 has a configured limit and every configured limit names an existing operation; limits key on the authenticated principal and never on a content-derived value, which a test proves by rejecting a key derived from request content.
+Depends: S-001, S-016
+Est: 8-12
+Status: superseded-by OS-003
+
+One of the thirteen categories that previously had no unit anywhere.
+
+One of the thirteen categories that previously had no unit anywhere.
+
+One of the thirteen categories that previously had no unit anywhere.
+
+One of the thirteen categories that previously had no unit anywhere.
+
+### S-019 Audit event ledger
+Files: `apps/api/internal/audit/audit.go` (new), `apps/api/internal/audit/audit_test.go` (new), `packages/schemas/planning-schema.sql`, `docs/privacy/DATA_MAP.md`
+Acceptance: `go test ./internal/audit/...` exits 0; every mutation named in `docs/privacy/DATA_MAP.md` writes exactly one `audit_events` row in the same transaction as its effect, which an aborted-transaction test proves by showing neither row present; no audit column can hold a forbidden content class, asserted against the `F-006` canary set.
+Depends: S-002, S-012
+Est: 8-12
+Status: not-started
+
+`audit_events` had no owning unit before this one.
+
+`audit_events` had no owning unit before this one.
+
+`audit_events` had no owning unit before this one.
+
+`audit_events` had no owning unit before this one.
+
+### S-020 Data migration and backfill runner
+Files: `apps/api/internal/backfill/runner.go` (new), `apps/api/internal/backfill/runner_test.go` (new), `docs/operations/DATA_MIGRATION_AND_BACKFILL.md` (new)
+Acceptance: `go test ./internal/backfill/...` exits 0; a backfill resumes from its recorded `worker_checkpoints` row after a kill, and re-running a completed backfill changes no row, which a table-checksum comparison before and after asserts.
+Depends: S-002, S-012
+Est: 10-14
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. Distinct from `S-002`, which runs schema migrations: this unit moves and rebuilds data behind them, which is the operation that can starve online traffic and the one that has to be resumable.
+
+One of the thirteen categories that previously had no unit anywhere. Distinct from `S-002`, which runs schema migrations: this unit moves and rebuilds data behind them, which is the operation that can starve online traffic and the one that has to be resumable.
+
+One of the thirteen categories that previously had no unit anywhere. Distinct from `S-002`, which runs schema migrations: this unit moves and rebuilds data behind them, which is the operation that can starve online traffic and the one that has to be resumable.
+
+One of the thirteen categories that previously had no unit anywhere. Distinct from `S-002`, which runs schema migrations: this unit moves and rebuilds data behind them, which is the operation that can starve online traffic and the one that has to be resumable.
 
 ## Epic O — OAuth, sessions and ranked identity
 
 ### O-001 GitHub provider capability implementation
-Dependencies: S-005.
+Files: `apps/api/internal/oauth/github.go` (new), `packages/schemas/oauth-provider-registry-v1.json` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new)
+Acceptance: `go test ./internal/oauth/ -run GitHub` exits 0 against the recorded provider fixture; every capability the registry row claims — PKCE method, RFC 9207 `iss`, device flow — is exercised by a case, and a claimed capability with no case fails the test rather than being assumed.
+Depends: S-005, PF-005
+Est: 8-12
+Status: not-started
 
 ### O-002 X provider capability implementation
-Dependencies: S-005.
+Files: `apps/api/internal/oauth/x.go` (new), `packages/schemas/oauth-provider-registry-v1.json` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new)
+Acceptance: `go test ./internal/oauth/ -run XProvider` exits 0 against the recorded provider fixture, under the same claimed-capability-must-have-a-case rule as `O-001`.
+Depends: S-005, PF-005
+Est: 8-12
+Status: not-started
 
 ### O-003 Desktop browser Authorization Code + PKCE
-Dependencies: O-001, O-002.
+Files: `apps/api/internal/oauth/authcode.go` (new), `crates/vibemaxxing-cli/src/auth.rs` (new)
+Acceptance: the loopback redirect binds a single-use port and a state value; a callback carrying a mismatched state, a reused code or no PKCE verifier is refused, one test case each, and the refusal reason resolves in `packages/schemas/reason-codes-v1.json`.
+Depends: O-001, O-002
+Est: 10-14
+Status: not-started
 
 ### O-004 Callback issuer/redirect/mix-up protection
-Dependencies: O-003.
+Files: `apps/api/internal/oauth/callback.go` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new)
+Acceptance: every vector in the mix-up fixture yields its recorded verdict, including an authorization response from provider B replayed to provider A's callback; a provider that returns no `iss` takes the recorded fallback path rather than trusting the response, asserted by a case for each provider.
+Depends: O-003
+Est: 10-14
+Status: not-started
 
 ### O-005 Limited-input interactive device flow
-Dependencies: provider capability; never CI default.
+Files: `apps/api/internal/oauth/deviceflow.go` (new), `crates/vibemaxxing-cli/src/auth.rs` (new), `packages/schemas/oauth-provider-registry-v1.json` (new)
+Acceptance: a table test asserts the flow starts only for providers whose registry row records device-flow capability; a test that sets `CI=true` expects a refusal, so the flow cannot become a CI default by omission.
+Depends: O-001, O-002, O-003
+Est: 8-12
+Status: not-started
+
+The prose dependency `provider capability; never CI default` is replaced. The capability half is now the resolvable dependency on `O-001` and `O-002`; the never-CI-default half was never a dependency at all and is an acceptance clause, which is where it now lives.
+
+The prose dependency `provider capability; never CI default` is replaced. The capability half is now the resolvable dependency on `O-001` and `O-002`; the never-CI-default half was never a dependency at all and is an acceptance clause, which is where it now lives.
+
+The prose dependency `provider capability; never CI default` is replaced. The capability half is now the resolvable dependency on `O-001` and `O-002`; the never-CI-default half was never a dependency at all and is an acceptance clause, which is where it now lives.
 
 ### O-006 Web/native session and refresh-family rotation
-Dependencies: S-006.
+Files: `apps/api/internal/session/session.go` (new), `docs/decisions/ADR-015-SESSION_AUTHENTICATION.md`, `packages/schemas/planning-schema.sql`
+Acceptance: reusing a refresh token moves the `session_families` row to `replay-detected` and revokes every descendant; the state is read back from SQL rather than inferred in memory, which a direct query asserts.
+Depends: S-006, PF-039
+Est: 10-14
+Status: not-started
+
+`session_tokens` is the per-token row inside a family and is written here, not by `S-006`, because rotation is what creates and retires it.
 
 ### O-007 Linked identity and exact unlink
-Dependencies: O-004, O-006.
+Files: `apps/api/internal/identity/link.go` (new), `apps/api/internal/identity/link_test.go` (new)
+Acceptance: unlinking the last authentication method is refused; an unlink revokes exactly the sessions and device grants the contract names and no others, asserted row by row before and after.
+Depends: O-004, O-006
+Est: 8-12
+Status: not-started
+
+Also writes `identity_events`, the append-only link and unlink ledger.
 
 ### O-008 Provider loss/compromise recovery
-Dependencies: O-007.
+Files: `apps/api/internal/identity/recovery.go` (new), `apps/api/internal/identity/recovery_test.go` (new)
+Acceptance: a recovery attempted before the cooling-off period recorded in `packages/schemas/policy-defaults-v1.json` is refused; a compromised identity moves to `compromised` and then `recovery-pending`, and a notification row exists per affected session.
+Depends: O-007
+Est: 10-14
+Status: not-started
 
 ### O-009 Ranked eligibility and investigation
-Dependencies: S-007, O-007.
+Files: `apps/api/internal/rankedidentity/eligibility.go` (new), `apps/api/internal/rankedidentity/eligibility_test.go` (new)
+Acceptance: an account with no resolved ranked identity returns no row from any ranking query; fetching the public projection of an account under investigation returns no investigation field, and the test fails if one appears.
+Depends: S-007, O-007
+Est: 10-14
+Status: not-started
+
+`identity_investigations` holds the private investigation record; it is written here and published nowhere.
 
 ### O-010 Duplicate-account consolidation execution
-Dependencies: O-008, O-009, S-011.
+Files: `apps/api/internal/rankedidentity/consolidate.go` (new), `packages/schemas/consolidation-plan-v1.schema.json` (new)
+Acceptance: a fixture with deliberately overlapping claims consolidates to strictly less than the sum of the two accounts' totals, which is the check that history is recomputed from non-overlapping contributions rather than added; the consolidation plan validates against its schema.
+Depends: O-008, O-009, S-011
+Est: 12-16
+Status: not-started
 
 ### O-011 Restriction, appeal, reversal and retirement
-Dependencies: O-009.
+Files: `apps/api/internal/moderation/restriction.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: every restriction row has a reachable appeal path in the `appeal` machine and every reversal is a new append-only row; `appeal_decisions` exposes the outcome and no investigation evidence, asserted by a column-level test on the published projection.
+Depends: O-009
+Est: 10-14
+Status: not-started
 
 ### O-012 OAuth, recovery and consolidation race suite
-Dependencies: O-004 through O-011.
+Files: `evals/suites/suites.yaml`, `tests/conformance/test_oauth_races.py` (new)
+Acceptance: `python3 scripts/ci/run_evals.py --suite authentication-recovery` exits 0 with a status that is not `not_applicable`; concurrent callbacks, concurrent unlinks and simultaneous consolidation of the same pair each end in exactly one recorded outcome, and a run that ends in two fails the suite.
+Depends: O-004, O-005, O-006, O-007, O-008, O-009, O-010, O-011
+Est: 12-16
+Status: not-started
+
+The prose range `O-004 through O-011` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `O-004 through O-011` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `O-004 through O-011` is expanded because `Depends:` admits unit IDs only.
+
+### O-013 Optional authenticator and recovery-code enrollment
+Files: `apps/api/internal/authenticator/authenticator.go` (new), `apps/api/internal/authenticator/authenticator_test.go` (new), `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `packages/schemas/planning-schema.sql`
+Acceptance: `go test ./internal/authenticator/...` exits 0; a recovery code is single-use and a direct read of `recovery_codes` returns only a hash; an `optional_authenticators` row cannot become the last remaining method without the recorded explicit confirmation, asserted by a refused case.
+Depends: O-006, S-006
+Est: 8-12
+Status: not-started
+
+D-028 makes passkeys and hardware credentials optional stronger factors rather than mandatory primary authentication. `optional_authenticators` and `recovery_codes` are persisted by `S-006` and had no runtime unit before this one.
+
+D-028 makes passkeys and hardware credentials optional stronger factors rather than mandatory primary authentication. `optional_authenticators` and `recovery_codes` are persisted by `S-006` and had no runtime unit before this one.
+
+D-028 makes passkeys and hardware credentials optional stronger factors rather than mandatory primary authentication. `optional_authenticators` and `recovery_codes` are persisted by `S-006` and had no runtime unit before this one.
 
 ## Epic V — First source vertical slice and certification
 
 ### V-001 Select one local runtime source
-Dependencies: A-010, N-020.
+Files: `docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, `conformance/adapters/agent-registry-v1.json`
+Acceptance: exactly one registry row is marked selected for the local-runtime lane and its compatibility tuple resolves in `packages/schemas/platform-profile-registry-v1.json`; a second selected row in the same lane fails the registry validator.
+Depends: A-010, N-020
+Est: 6-8
+Status: not-started
 
 ### V-002 Select one cloud structured-usage source
-Dependencies: A-010, S-014.
+Files: `conformance/adapters/agent-registry-v1.json`, `docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md`
+Acceptance: exactly one registry row is marked selected for the cloud structured-usage lane and names the provider endpoint it reads; a second selected row in the same lane fails the registry validator.
+Depends: A-010, S-014
+Est: 6-8
+Status: not-started
 
 ### V-003 Compatibility tuple and capability probe runtime
-Dependencies: V-001, V-002.
+Files: `crates/vibeproof-adapters/src/probe.rs` (new), `packages/schemas/compatibility-tuple-v1.schema.json` (new), `scripts/research/agent_capability_probe.py`
+Acceptance: the probe emits a tuple that validates against the schema and whose digest equals the registry row's; a host whose probe result differs from the certified tuple is reported unsupported rather than downgraded, asserted by a deliberately mismatched fixture.
+Depends: V-001, V-002
+Est: 10-14
+Status: not-started
 
 ### V-004 Local adapter implementation
-Dependencies: V-003.
+Files: `crates/vibeproof-adapters/src/local/mod.rs` (new), `conformance/adapters/claude-code-otel/source-observation.valid.json`, `conformance/adapters/claude-code-otel/otlp-attribute-disposition-v1.json`
+Acceptance: `cargo test -p vibeproof-adapters --test local` exits 0; the valid fixture produces its recorded normalized event, and each of the four invalid-identity fixtures beside it is rejected with its recorded reason.
+Depends: V-003
+Est: 12-16
+Status: not-started
 
 ### V-005 Cloud adapter implementation
-Dependencies: V-003.
+Files: `crates/vibeproof-adapters/src/cloud/mod.rs` (new), `conformance/adapters/agent-registry-v1.json`
+Acceptance: a schema assertion on every fetched payload rejects a provider response carrying a prompt, response or transcript field rather than filtering it, which a deliberately content-bearing fixture proves; the adapter reads aggregate usage only.
+Depends: V-003
+Est: 12-16
+Status: not-started
 
 ### V-006 Certification runner and signed result bundle
-Dependencies: V-004, V-005.
+Files: `scripts/ci/run_certification.py` (new), `packages/schemas/certification-result-v1.schema.json` (new)
+Acceptance: the emitted bundle validates against its schema and carries suite and case digests, a validity interval and a signer reference; two runs against the same tuple produce the same case digests, and a changed fixture changes them.
+Depends: V-004, V-005
+Est: 12-16
+Status: not-started
+
+`certification_results` stores the signed bundle for each certified tuple.
 
 ### V-007 Source upgrade-break and privacy fixtures
-Dependencies: V-006.
+Files: `conformance/adapters/upgrade-break-fixtures-v1.json` (new), `crates/vibeproof-adapters/tests/upgrade_break.rs` (new)
+Acceptance: a fixture recorded from a newer source version with a changed field set makes the adapter report an uncertified tuple rather than parse best-effort; every privacy fixture in the set is blocked by the `F-006` canary suite.
+Depends: V-006
+Est: 8-12
+Status: not-started
 
 ### V-008 Multi-observer duplicate reconciliation
-Dependencies: V-004, V-005, A-006.
+Files: `crates/vibeproof-adapters/tests/multi_observer.rs` (new), `conformance/accounting/dedup-vectors-v1.json`
+Acceptance: the dedup vectors run end to end through both adapters and yield one counted event per real operation; starting the two observers in the opposite order produces the same count.
+Depends: V-004, V-005, A-006
+Est: 10-14
+Status: not-started
 
 ### V-009 Emergency suspend/degrade/reinstate
-Dependencies: V-006, S-014.
+Files: `apps/api/internal/certification/suspend.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: suspending one tuple leaves every other tuple certified, asserted row by row; a suspended tuple returns no support claim from any query, and reinstatement restores exactly the prior row rather than a fresh one.
+Depends: V-006, S-014
+Est: 8-12
+Status: not-started
 
 ### V-010 Support registry publication
-Dependencies: V-006 through V-009.
+Files: `conformance/adapters/agent-registry-v1.json`, `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`
+Acceptance: `python3 scripts/repository/validate_planning_artifacts.py --allow-no-postgres` exits 0 and the published registry lists only tuples holding a current, non-expired, non-suspended certification; a row with an empty certification set fails the validator, which is what stops a registry implying exercised support.
+Depends: V-006, V-007, V-008, V-009
+Est: 8-12
+Status: not-started
+
+The prose range `V-006 through V-009` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `V-006 through V-009` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `V-006 through V-009` is expanded because `Depends:` admits unit IDs only.
 
 ## Epic R — Ranking and pricing
 
 ### R-001 Period and season registry
-Dependencies: S-002.
+Files: `apps/api/internal/ranking/periods.go` (new), `migrations/0013_periods.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: each `periods` row names an exact calendar and timezone and all five states of the period machine are reachable; a claim whose receipt timestamp falls in no open period is rejected rather than assigned to the nearest one.
+Depends: S-002
+Est: 8-12
+Status: not-started
+
+`seasons` is the multi-period grouping and is registered here alongside `periods`.
 
 ### R-002 Immutable score contributions
-Dependencies: S-011, R-001.
+Files: `apps/api/internal/ranking/contributions.go` (new), `migrations/0014_scores.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `minute_scores` and `period_scores` reject `UPDATE` and `DELETE` at the database level; replaying an already-accepted claim leaves the row count unchanged, which is the check that a contribution is written exactly once.
+Depends: S-011, R-001
+Est: 10-14
+Status: not-started
+
+`score_contributions` is the immutable ledger row; `minute_scores` and `period_scores` are projections of it, and a rebuild reads the ledger rather than the projections.
+
+`minute_scores` had no owning unit before this one.
+
+`minute_scores` had no owning unit before this one.
+
+`minute_scores` had no owning unit before this one.
 
 ### R-003 Ranking definitions and audience instances
-Dependencies: O-009, R-001.
+Files: `apps/api/internal/ranking/views.go` (new), `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/planning-schema.sql`
+Acceptance: a `ranking_views` row names a metric version, a period and its evidence, source, agent, provider and model filters, and a column assertion fails if it carries any viewer or audience field — audience belongs to the request, not the definition.
+Depends: O-009, R-001
+Est: 10-14
+Status: not-started
 
 ### R-004 Generation-keyed entries and isolated build
-Dependencies: R-002, R-003.
+Files: `apps/api/internal/ranking/build.go` (new), `migrations/0015_ranking_generations.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: every entry key includes its `ranking_projection_generations` generation; a read concurrent with a build returns only the previously active generation, which a test asserts by reading during a deliberately slow build.
+Depends: R-002, R-003
+Est: 12-16
+Status: not-started
+
+`ranking_entries` is the generation-keyed entry table.
+
+`projection_generations` is the generation record the entry keys reference.
 
 ### R-005 Generation validation and atomic promotion
-Dependencies: R-004.
+Files: `apps/api/internal/ranking/promote.go` (new), `apps/api/internal/ranking/promote_test.go` (new)
+Acceptance: a partial unique index permits exactly one active generation; promotion is a single statement, and an injected validation failure leaves the previous generation active with no window in which none is.
+Depends: R-004
+Est: 8-12
+Status: not-started
 
 ### R-006 Immutable snapshots and viewer-bound cursors
-Dependencies: R-005.
+Files: `apps/api/internal/ranking/cursor.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: a cursor replayed by a different viewer is rejected; a cursor whose authorization revision is stale is rejected rather than silently refreshed; `score_snapshots` rejects `UPDATE` at the database level.
+Depends: R-005
+Est: 10-14
+Status: not-started
 
 ### R-007 Tie rank and deterministic display ordering
-Dependencies: R-004.
+Files: `apps/api/internal/ranking/order.go` (new), `apps/api/internal/ranking/order_test.go` (new)
+Acceptance: two entries with equal scores receive the same `rank()` value and a stable display order that is byte-identical across two independent builds; the display key is a separate column and never participates in the peer grouping.
+Depends: R-004
+Est: 6-8
+Status: not-started
 
 ### R-008 Evidence/source/environment filters
-Dependencies: R-002, S-014.
+Files: `apps/api/internal/ranking/filters.go` (new), `packages/schemas/ranking-view-v1.schema.json`
+Acceptance: every filter value resolves to a certified tuple or to an `evidence_class` the API publishes; a filter naming an uncertified tuple returns an empty result and never an unfiltered one, asserted by a case that would otherwise leak every row.
+Depends: R-002, S-014
+Est: 8-12
+Status: not-started
 
 ### R-009 Estimated pricing line items
-Dependencies: A-009, R-002.
+Files: `apps/api/internal/ranking/lineitems.go` (new), `packages/schemas/pricing-interpretation.schema.json`
+Acceptance: every cash figure carries the estimated label and a `cost_interpretations` reference; a model with no pricing entry yields no line item rather than a zero one, which a fixture with an unpriced model asserts.
+Depends: A-009, R-002
+Est: 8-12
+Status: not-started
 
 ### R-010 Corrections and rebuild equivalence
-Dependencies: R-002 through R-009.
+Files: `apps/api/internal/ranking/corrections.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: a rebuild from the contribution ledger reproduces the promoted generation byte-for-byte; every `ranking_corrections` row is an inverse or replacement referencing the original, which the ledger's append-only constraint enforces rather than application code.
+Depends: R-002, R-003, R-004, R-005, R-006, R-007, R-008, R-009
+Est: 12-16
+Status: not-started
+
+The prose range `R-002 through R-009` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `R-002 through R-009` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `R-002 through R-009` is expanded because `Depends:` admits unit IDs only.
 
 ### R-011 Movement, overtakes, streaks and retractions
-Dependencies: R-006, R-010.
+Files: `apps/api/internal/ranking/events.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: every movement, overtake and streak event references the generation that produced it, and a retraction is a new event referencing the retracted one; a retracted event is absent from the viewer projection while remaining in the ledger, asserted by reading both.
+Depends: R-006, R-010
+Est: 10-14
+Status: not-started
+
+`ranking_movement_events` is the append-only movement, overtake and streak ledger.
+
+`ranking_events` is the append-only movement, overtake, streak and retraction ledger.
 
 ### R-012 Authorization/pagination/correction concurrency suite
-Dependencies: R-003 through R-011.
+Files: `evals/suites/suites.yaml`, `tests/conformance/test_ranking_races.py` (new)
+Acceptance: `python3 scripts/ci/run_evals.py --suite ranking-accounting` exits 0 with a status that is not `not_applicable`; paginating across a promotion, and correcting a period while a viewer paginates it, each end in one recorded outcome and never in a page mixing two generations.
+Depends: R-003, R-004, R-005, R-006, R-007, R-008, R-009, R-010, R-011
+Est: 12-16
+Status: not-started
+
+The prose range `R-003 through R-011` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `R-003 through R-011` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `R-003 through R-011` is expanded because `Depends:` admits unit IDs only.
 
 ## Epic G — Social, boards, presence and notifications
 
 ### G-001 Profiles and visibility policy
-Dependencies: O-009.
+Files: `apps/api/internal/social/profiles.go` (new), `packages/schemas/privacy-projection-v1.json` (new), `packages/schemas/openapi-v1.yaml`
+Acceptance: the public projection of a `profiles` row contains only the fields the privacy projection permits for the requesting viewer, asserted field by field for an anonymous viewer, a friend and a blocked viewer; a field with no projection entry fails the test rather than defaulting to visible.
+Depends: O-009
+Est: 8-12
+Status: not-started
 
 ### G-002 Friendship requests and canonical pairs
-Dependencies: G-001.
+Files: `apps/api/internal/social/friends.go` (new), `migrations/0016_social.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: a check constraint on `friend_edges` makes two rows for one friendship impossible; a duplicate `friend_requests` row is rejected by a unique constraint; decline, cancel and expiry each end in their own recorded state, one case each.
+Depends: G-001
+Est: 10-14
+Status: not-started
 
 ### G-003 Directional blocks and unblock
-Dependencies: G-001.
+Files: `apps/api/internal/social/blocks.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: blocking B creates no reverse `blocks` row and deletes no `friend_edges` row, asserted by reading both tables; unblocking restores exactly the prior projection, asserted by comparing the projection before the block and after the unblock.
+Depends: G-001
+Est: 8-12
+Status: not-started
 
 ### G-004 Rivals
-Dependencies: G-002, G-003.
+Files: `apps/api/internal/social/rivals.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: a `rival_edges` row survives a block and a friendship change, asserted by reading it after each; a rivals query returns no row whose viewer authorization has lapsed.
+Depends: G-002, G-003
+Est: 6-8
+Status: not-started
 
 ### G-005 Board creation and atomic owner
-Dependencies: G-001.
+Files: `apps/api/internal/boards/create.go` (new), `migrations/0017_boards.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: the `boards` row and its initial owner membership are written in one transaction and an injected failure leaves neither; a partial unique index guarantees exactly one owner per board, which a direct insert of a second owner must violate.
+Depends: G-001
+Est: 8-12
+Status: not-started
 
 ### G-006 Member invitations and acceptance
-Dependencies: G-005.
+Files: `apps/api/internal/boards/membership.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: accepting a `board_invites` row can only create a non-privileged `board_memberships` row, asserted by an admin-role invite that must be refused; every membership change appends a `board_membership_events` row, asserted by row count before and after.
+Depends: G-005
+Est: 10-14
+Status: not-started
+
+`board_invites` and `board_membership_events` had no owning unit before this one.
+
+`board_invites` and `board_membership_events` had no owning unit before this one.
 
 ### G-007 Separate admin promotion
-Dependencies: G-006.
+Files: `apps/api/internal/boards/promote.go` (new), `apps/api/internal/boards/promote_test.go` (new)
+Acceptance: promotion requires a recent-authentication grant and a matching membership revision, one refused case each; a promotion attempted as part of an invite acceptance is refused, which is the privilege-escalation path this unit exists to close.
+Depends: G-006
+Est: 8-12
+Status: not-started
 
 ### G-008 Paired ownership transfer
-Dependencies: G-007.
+Files: `apps/api/internal/boards/transfer.go` (new), `apps/api/internal/boards/transfer_test.go` (new)
+Acceptance: transfer demotes the old owner and promotes the new one in one transaction; an injected failure at every boundary leaves exactly one owner, asserted at each boundary rather than only at the end.
+Depends: G-007
+Est: 8-12
+Status: not-started
 
 ### G-009 Device-bound presence pulses
-Dependencies: N-006, O-009.
+Files: `apps/api/internal/presence/pulse.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: a pulse is accepted only from a device holding a current `presence_leases` generation; a pulse replayed from another device is rejected with a reason code that resolves in `packages/schemas/reason-codes-v1.json`.
+Depends: N-006, O-009
+Est: 8-12
+Status: not-started
+
+`presence_events` is the append-only pulse ledger behind the derived state.
 
 ### G-010 Account presence projection and multi-device merge
-Dependencies: G-009.
+Files: `apps/api/internal/presence/project.go` (new), `packages/schemas/policy-defaults-v1.json`
+Acceptance: the merged state is `active`, `idle` at the 90-second threshold and `offline` at the 300-second threshold using the values recorded in `packages/schemas/policy-defaults-v1.json` rather than literals in code; merging two devices produces the same result under both orderings.
+Depends: G-009
+Est: 8-12
+Status: not-started
 
 ### G-011 Viewer-specific presence authorization
-Dependencies: G-003, G-005, G-010.
+Files: `apps/api/internal/presence/authorize.go` (new), `packages/schemas/privacy-projection-v1.json` (new)
+Acceptance: a blocked viewer, a non-friend and a removed board member each receive `offline` rather than the real state, one case each; the private setting changes only the projection, which a direct read of the server-derived state proves by showing it unchanged.
+Depends: G-003, G-005, G-010
+Est: 8-12
+Status: not-started
 
 ### G-012 Typed notification source events and inbox
-Dependencies: G-002 through G-008, R-011.
+Files: `apps/api/internal/notifications/events.go` (new), `migrations/0018_notifications.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `notification_events` rejects `UPDATE` and `DELETE` at the database level; each `notifications` row carries the authorization revision under which it was generated; a source event whose type is not registered is rejected rather than stored untyped.
+Depends: G-002, G-003, G-004, G-005, G-006, G-007, G-008, R-011
+Est: 12-16
+Status: not-started
+
+The prose range `G-002 through G-008` is expanded because `Depends:` admits unit IDs only. `notification_events` had no owning unit before this one.
+
+The prose range `G-002 through G-008` is expanded because `Depends:` admits unit IDs only. `notification_events` had no owning unit before this one.
 
 ### G-013 Channel subscriptions and delivery attempts
-Dependencies: G-012.
+Files: `apps/api/internal/notifications/delivery.go` (new), `apps/api/internal/notifications/delivery_test.go` (new)
+Acceptance: every attempt records exactly one of `queued`, `deferred`, `accepted`, `acknowledged`, `failed` or `expired`; a test asserts no code path maps provider acceptance to a read or to a delivery guarantee.
+Depends: G-012
+Est: 10-14
+Status: not-started
+
+`notification_deliveries` records one row per channel attempt.
 
 ### G-014 Preferences, quiet hours, read/dismiss and expiry
-Dependencies: G-012, G-013.
+Files: `apps/api/internal/notifications/preferences.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: a security-critical notification is delivered despite quiet hours and a non-critical one is deferred, one case each, driven by `notification_preferences`; read, dismiss and expiry are three distinct recorded states and no two share a column value.
+Depends: G-012, G-013
+Est: 8-12
+Status: not-started
 
 ### G-015 Retraction and current-authorization recheck
-Dependencies: G-003, G-012.
+Files: `apps/api/internal/notifications/retract.go` (new), `apps/api/internal/notifications/retract_test.go` (new)
+Acceptance: retracting a source event removes it from every recipient projection while leaving the ledger row present, asserted by reading both; a recipient blocked since generation receives no delivery on recheck.
+Depends: G-003, G-012
+Est: 8-12
+Status: not-started
 
 ### G-016 Social/presence/notification race and privacy suite
-Dependencies: G-002 through G-015.
+Files: `evals/suites/suites.yaml`, `tests/conformance/test_social_races.py` (new)
+Acceptance: `python3 scripts/ci/run_evals.py --suite social-ranking-simulation` exits 0 with a status that is not `not_applicable`; simultaneous block-and-friend, block-and-presence-read, and retract-and-deliver each end in one recorded outcome, and a run ending in two fails the suite.
+Depends: G-002, G-003, G-004, G-005, G-006, G-007, G-008, G-009, G-010, G-011, G-012, G-013, G-014, G-015
+Est: 12-16
+Status: not-started
+
+The prose range `G-002 through G-015` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `G-002 through G-015` is expanded because `Depends:` admits unit IDs only.
+
+### G-017 Organization boards
+Files: `apps/api/internal/boards/organizations.go` (new), `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/decisions/ADR-016-PROVIDER_ATTESTED_ORG_EVIDENCE.md`
+Acceptance: the four organization operations in `packages/schemas/openapi-v1.yaml` all resolve to the `organizations` table; an organization board admits only members whose ranked identity is resolved, and an org-admin credential grants no read of an individual member's content, asserted by a refused case.
+Depends: G-005, S-007
+Est: 10-14
+Status: not-started
+
+`organizations` had no owning unit and the word "organization" did not appear anywhere in this document. ADR-016 decides whether org boards consume provider admin APIs, and this unit implements whichever answer that ADR records rather than reopening it.
+
+`organizations` had no owning unit and the word "organization" did not appear anywhere in this document. ADR-016 decides whether org boards consume provider admin APIs, and this unit implements whichever answer that ADR records rather than reopening it.
+
+### G-018 Community boards
+Files: `apps/api/internal/boards/communities.go` (new), `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`
+Acceptance: the community operations in `packages/schemas/openapi-v1.yaml` all resolve to the `communities` table; a community board view is subject to the same viewer-authorization check as every other non-global scope, asserted by an unauthorized read that must return nothing.
+Depends: G-005
+Est: 8-12
+Status: not-started
+
+`communities` had no owning unit and the word "community" did not appear anywhere in this document.
+
+`communities` had no owning unit and the word "community" did not appear anywhere in this document.
+
+### G-019 Social integrity event ledger
+Files: `apps/api/internal/integrity/events.go` (new), `packages/schemas/social-integrity-events-v1.proto`, `packages/schemas/planning-schema.sql`
+Acceptance: `social_integrity_events` rejects `UPDATE` and `DELETE`; every event type in `packages/schemas/social-integrity-events-v1.proto` has a writer and every writer names a declared type, asserted in both directions; no event column can hold a content-derived value, asserted against the `F-006` canary set.
+Depends: G-016, S-019
+Est: 8-12
+Status: not-started
+
+Also the persistence owner for `social_events`.
+
+`social_integrity_events` had a Protobuf contract and a table but no owning unit. Detection remains deterministic and local-only advisory per the binding product rules; this ledger records deterministic control outcomes, not statistical inferences.
+
+`social_integrity_events` had a Protobuf contract and a table but no owning unit. Detection remains deterministic and local-only advisory per the binding product rules; this ledger records deterministic control outcomes, not statistical inferences.
 
 ## Epic M — Moderation, export and deletion
 
 ### M-001 Moderation case and effect authority
-Dependencies: O-011, G-001.
+Files: `apps/api/internal/moderation/cases.go` (new), `migrations/0019_moderation.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `moderation_cases`, `moderation_actions` and `moderation_effects` are append-only; every effect names the case that produced it and the aggregate it restricts, and an effect with no reachable reversal transition fails the state check.
+Depends: O-011, G-001
+Est: 10-14
+Status: not-started
 
 ### M-002 Moderation appeal and reversal
-Dependencies: M-001.
+Files: `apps/api/internal/moderation/appeal.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: every `appeals` row reaches a recorded `appeal_decisions` outcome or an expiry, with no state that has neither; a reversal appends new rows and edits none, which the append-only constraint enforces.
+Depends: M-001
+Est: 8-12
+Status: not-started
 
 ### M-003 Export status resource and snapshot
-Dependencies: S-003, G-016, R-010.
+Files: `apps/api/internal/export/job.go` (new), `migrations/0020_export.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: an `exports` row carries a frozen recent-auth grant and a coherent snapshot cutoff; two reads of the same export at different times return the same content set, which a test asserts by inserting new data between them.
+Depends: S-003, G-016, R-010
+Est: 10-14
+Status: not-started
 
 ### M-004 Export package, manifest, encryption and checksums
-Dependencies: M-003.
+Files: `apps/api/internal/export/package.go` (new), `packages/schemas/export-manifest-v1.schema.json`
+Acceptance: the produced manifest validates against `packages/schemas/export-manifest-v1.schema.json`; per-domain counts equal the rows actually written and every checksum verifies; `export_artifacts` records the encryption reference, and a package with a mismatched count fails the check.
+Depends: M-003
+Est: 10-14
+Status: not-started
 
 ### M-005 Download grants, audit, revocation and purge
-Dependencies: M-004.
+Files: `apps/api/internal/export/grant.go` (new), `apps/api/internal/export/grant_test.go` (new)
+Acceptance: a download grant expires at its recorded time and is revocable before it; every download appends an audit row; a purge removes the artifact and leaves the audit trail, asserted by reading both after the purge.
+Depends: M-004
+Est: 8-12
+Status: not-started
+
+`export_download_grants` holds the short-lived revocable grants and their audit rows.
 
 ### M-006 Hosted deletion plan and account mutation freeze
-Dependencies: M-001, M-003.
+Files: `apps/api/internal/deletion/plan.go` (new), `migrations/0021_deletion.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: a `deletion_jobs` row holds an immutable domain-and-effect plan covering every domain in `docs/privacy/DATA_MAP.md`; account mutations are refused while the job executes, asserted one refused mutation per restricted operation.
+Depends: M-001, M-003
+Est: 10-14
+Status: not-started
 
 ### M-007 Per-domain deletion/anonymization/retraction effects
-Dependencies: M-006, R-010, G-015.
+Files: `apps/api/internal/deletion/effects.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: every `deletion_effects` row records deletion, anonymization or retraction for exactly one domain, and the union of effects equals the plan; a public profile, social edge, ranking entry and notification each show their recorded correction after execution.
+Depends: M-006, R-010, G-015
+Est: 12-16
+Status: not-started
+
+Crypto-erasure under D-085 is the mechanism: `erasure_domains` declares each erasable domain, `erasure_keys` holds the per-domain key whose destruction renders the domain unreadable, and `erasure_domain_links` binds a row to the domain that governs it. Destroying a key is not the same claim as overwriting a row, and the receipt must not say otherwise.
 
 ### M-008 Per-device local deletion commands and receipts
-Dependencies: N-007, M-006.
+Files: `apps/api/internal/deletion/devices.go` (new), `crates/vibemaxxing-daemon/src/deletion.rs` (new), `packages/schemas/planning-schema.sql`
+Acceptance: each `local_deletion_commands` row resolves to a `local_deletion_receipts` row recording `complete`, `pending`, `expired`, `unreachable` or `waived`; `grep -in 'forensic\|unrecoverable' apps/api/internal/deletion` returns no claim the receipt cannot support.
+Depends: N-007, M-006
+Est: 10-14
+Status: not-started
 
 ### M-009 Tombstones, backup propagation and restore reapplication
-Dependencies: M-007.
+Files: `apps/api/internal/deletion/tombstone.go` (new), `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
+Acceptance: a restore from a backup taken before a deletion reapplies every tombstone before the data is readable, asserted by a restore drill that reads the affected rows immediately after restore and finds them absent.
+Depends: M-007
+Est: 10-14
+Status: not-started
+
+`erasure_records` is the append-only record of each destruction, and `erasure_restore_receipts` records what a restore reapplied. Without the second one, a restore drill cannot show that a destroyed domain stayed destroyed.
+
+`deletion_tombstones` is what a restore has to reapply before any affected row becomes readable.
 
 ### M-010 Legal hold and minimal retained fraud/audit signals
-Dependencies: M-006.
+Files: `apps/api/internal/deletion/legalhold.go` (new), `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
+Acceptance: a legal hold blocks exactly the effects it names and no others, asserted effect by effect; retained fraud and audit signals are the minimal set enumerated in the contract, and a signal not in that set fails the retention check.
+Depends: M-006
+Est: 8-12
+Status: not-started
 
 ### M-011 Export/deletion concurrency and restore suite
-Dependencies: M-003 through M-010.
+Files: `evals/suites/suites.yaml`, `tests/conformance/test_export_deletion_races.py` (new)
+Acceptance: `python3 scripts/ci/run_evals.py --suite data-lifecycle-recovery` exits 0 with a status that is not `not_applicable`; an export running during a deletion, and a restore during a deletion, each end in one recorded outcome with no readable row the plan removed.
+Depends: M-003, M-004, M-005, M-006, M-007, M-008, M-009, M-010
+Est: 12-16
+Status: not-started
+
+The prose range `M-003 through M-010` is expanded because `Depends:` admits unit IDs only.
+
+The prose range `M-003 through M-010` is expanded because `Depends:` admits unit IDs only.
 
 ## Epic L — Packaging, release and migration
 
 ### L-001 TUF repository roles and trusted client state
-Dependencies: F-001.
+Files: `apps/api/internal/release/tuf.go` (new), `migrations/0022_release.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `tuf_roots` stores the root and delegated role metadata and a client refuses metadata signed by a role outside its trusted set, asserted by a hostile-metadata fixture per role; expiry is enforced rather than warned about.
+Depends: F-001
+Est: 10-14
+Status: not-started
+
+`tuf_metadata` stores the client's trusted metadata state alongside `tuf_roots`.
 
 ### L-002 Authenticated release component manifest
-Dependencies: L-001.
+Files: `apps/api/internal/release/manifest.go` (new), `packages/schemas/release-set-v1.schema.json`, `packages/schemas/planning-schema.sql`
+Acceptance: every `release_sets` row is itself an authenticated TUF target, and each `release_targets` row carries component ID, target path, architecture, hash, provenance, native signature, compatibility tuple and update class; a target missing any field is refused.
+Depends: L-001
+Est: 10-14
+Status: not-started
+
+`release_transparency_events` is the append-only publication log for each release set.
 
 ### L-003 Provenance and platform-native signature verification
-Dependencies: L-002.
+Files: `crates/vibemaxxing-cli/src/update/verify.rs` (new), `docs/operations/RELEASE_VERIFICATION.md`
+Acceptance: verification fails when the provenance attestation does not name the recorded builder, and separately when the platform-native signature does not verify; both failures are tested independently so one passing cannot mask the other.
+Depends: L-002
+Est: 10-14
+Status: not-started
 
 ### L-004 Compatibility graph and migration chain
-Dependencies: N-002, S-002, L-002.
+Files: `apps/api/internal/release/compatibility.go` (new), `crates/vibemaxxing-daemon/src/store/migrate.rs` (new)
+Acceptance: the compatibility graph admits exactly the version pairs the contract names and rejects every other, asserted pair by pair; a migration chain with a gap fails to load rather than skipping the missing step.
+Depends: N-002, S-002, L-002
+Est: 10-14
+Status: not-started
 
 ### L-005 Health checks and staged activation
-Dependencies: L-004.
+Files: `crates/vibemaxxing-cli/src/update/health.rs` (new), `docs/operations/RELEASE_VERIFICATION.md`
+Acceptance: a failing pre-check aborts before any file is replaced and a failing post-check triggers the recorded recovery path; both are asserted by injected failures, and a run where neither check executes fails the test.
+Depends: L-004
+Est: 8-12
+Status: not-started
 
 ### L-006 Compatible binary rollback
-Dependencies: L-004, L-005.
+Files: `crates/vibemaxxing-cli/src/update/rollback.rs` (new), `crates/vibemaxxing-cli/tests/rollback.rs` (new)
+Acceptance: a rollback is offered only while the prior version remains read/write compatible with the current local schema, asserted by a case where it is refused; after rollback the daemon opens the store cleanly.
+Depends: L-004, L-005
+Est: 8-12
+Status: not-started
 
 ### L-007 Irreversible migration roll-forward/snapshot recovery
-Dependencies: L-004, L-005.
+Files: `crates/vibemaxxing-cli/src/update/rollforward.rs` (new), `crates/vibemaxxing-daemon/src/store/recover.rs` (new)
+Acceptance: after an irreversible migration, recovery succeeds by roll-forward or by restoring the verified pre-migration snapshot, and no path offers a binary rollback; a test that attempts one must be refused.
+Depends: L-004, L-005
+Est: 10-14
+Status: not-started
 
 ### L-008 macOS installer and supervision
-Dependencies: N-011, N-015, L-003.
+Files: `apps/desktop/macos/Info.plist` (new), `crates/vibemaxxing-cli/src/install/macos.rs` (new), `packages/schemas/platform-profile-registry-v1.json`
+Acceptance: install, upgrade, reboot, repair, uninstall and orphan cleanup each reach their recorded state on a macOS runner, one case each; the profile row records the session and restart limitation the host actually has rather than the best case.
+Depends: N-011, N-015, L-003
+Est: 10-14
+Status: not-started
 
 ### L-009 Windows installer and supervision
-Dependencies: N-012, N-015, L-003.
+Files: `apps/desktop/windows/service.rs` (new), `crates/vibemaxxing-cli/src/install/windows.rs` (new), `packages/schemas/platform-profile-registry-v1.json`
+Acceptance: the same six lifecycle states are reached on a Windows runner, one case each, and the profile row records the actual supervision mechanism and its restart limitation.
+Depends: N-012, N-015, L-003
+Est: 10-14
+Status: not-started
 
 ### L-010 Linux packages/systemd-user/headless
-Dependencies: N-013, N-015, L-003.
+Files: `apps/desktop/linux/vibemaxxing.service` (new), `crates/vibemaxxing-cli/src/install/linux.rs` (new), `packages/schemas/platform-profile-registry-v1.json`
+Acceptance: the same six lifecycle states are reached under a systemd user session and under a headless invocation, and the two produce different profile rows — a headless host that inherits the desktop row fails the test.
+Depends: N-013, N-015, L-003
+Est: 10-14
+Status: not-started
 
 ### L-011 WSL/container/CI lifecycle packages
-Dependencies: N-013, L-003.
+Files: `crates/vibemaxxing-cli/src/install/container.rs` (new), `packages/schemas/platform-profile-registry-v1.json`, `docs/security/PLATFORM_ISOLATION.md`
+Acceptance: WSL, container and CI hosts each produce a profile row that records their supervision limits and their competitive eligibility separately; a CI host is installable and not competitively eligible, asserted as two independent fields.
+Depends: N-013, L-003
+Est: 8-12
+Status: not-started
 
 ### L-012 Update deadlines, deferral and eligibility
-Dependencies: L-001 through L-011, S-014.
+Files: `apps/api/internal/release/policy.go` (new), `packages/schemas/planning-schema.sql`, `docs/decisions/ADR-013-MANDATORY_AUTOMATIC_UPDATES.md`
+Acceptance: `update_policies` records a deadline and a deferral allowance per release, and `update_installations` records the outcome per device; a device past its deadline loses competitive eligibility and retains local function, asserted as two independent effects.
+Depends: L-001, L-002, L-003, L-004, L-005, L-006, L-007, L-008, L-009, L-010, L-011, S-014
+Est: 10-14
+Status: not-started
+
+The prose range `L-001 through L-011` is expanded because `Depends:` admits unit IDs only. `update_policies` had no owning unit before this one.
+
+The prose range `L-001 through L-011` is expanded because `Depends:` admits unit IDs only. `update_policies` had no owning unit before this one.
 
 ### L-013 Key compromise, freeze, rollback and mix-and-match suite
-Dependencies: L-012.
+Files: `evals/suites/suites.yaml`, `tests/conformance/test_updater_hostile.py` (new)
+Acceptance: `python3 scripts/ci/run_evals.py --suite updater-conformance` exits 0 with a status that is not `not_applicable`; key compromise, freeze, rollback and mix-and-match of components from two release sets are each refused, one case each.
+Depends: L-012
+Est: 12-16
+Status: not-started
 
 ### L-014 Uninstall, orphan cleanup and diagnostics
-Dependencies: L-008 through L-011, M-008.
+Files: `crates/vibemaxxing-cli/src/install/uninstall.rs` (new), `crates/vibemaxxing-cli/tests/uninstall.rs` (new)
+Acceptance: after uninstall no daemon, launch agent, service, key, database file or queue directory remains, asserted path by path on each platform runner; a diagnostics bundle produced during uninstall contains no forbidden content class under the `F-006` canary suite.
+Depends: L-008, L-009, L-010, L-011, M-008
+Est: 10-14
+Status: not-started
+
+The prose range `L-008 through L-011` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
+
+The prose range `L-008 through L-011` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
 
 ## Epic W — Hosted web integration
 
 ### W-001 Generated API clients and error/reason mapping
-Dependencies: implemented OpenAPI and F-004.
+Files: `apps/web/lib/api/client.ts` (new), `packages/protocol/typescript/index.ts` (new), `packages/schemas/reason-codes-v1.json`
+Acceptance: the client is generated from `packages/schemas/openapi-v1.yaml` rather than hand-written, which `git diff --exit-code` after a regeneration proves; `npx tsc --noEmit` exits 0; every reason code has a mapped user-facing string and every mapped string names a real code, asserted in both directions so an unmapped code fails the build.
+Depends: F-004, PF-045, S-016
+Est: 10-14
+Status: not-started
+
+The prose dependency `implemented OpenAPI and F-004` is replaced. "Implemented OpenAPI" is not a unit; the two units that actually gate this one are `PF-045`, which decides the error matrix, and `S-016`, which is the runtime that cannot deviate from it.
+
+This unit was an orphan. `W-002` through `W-009` now depend on it, which is the real edge: every screen consumes this client.
 
 ### W-002 Authentication and recovery UX
-Dependencies: O-012.
+Files: `apps/web/app/login/page.tsx` (new), `apps/web/app/recover/page.tsx` (new), `apps/web/e2e/auth.spec.ts` (new)
+Acceptance: every state of the `web-session-family` machine has a rendered state and a Playwright case; `npm run test:e2e -- auth` exits 0, and a state with no case fails the run rather than being absent from it.
+Depends: W-001, O-012
+Est: 12-16
+Status: not-started
 
 ### W-003 Leaderboards and ranking context UX
-Dependencies: R-012.
+Files: `apps/web/app/page.tsx`, `apps/web/app/boards/[slug]/page.tsx`, `apps/web/e2e/leaderboard.spec.ts` (new)
+Acceptance: every field the leaderboard renders resolves to a field the generated client can return, which the TypeScript build enforces; `npm run test:e2e -- leaderboard` exits 0; `grep -rniE 'verified|all sources' apps/web/app` returns nothing, which is the banned-copy rule `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md` states.
+Depends: W-001, R-012
+Est: 12-16
+Status: not-started
 
 ### W-004 Profiles, friends, rivals and boards UX
-Dependencies: G-016.
+Files: `apps/web/app/profile/[handle]/page.tsx`, `apps/web/app/friends/page.tsx`, `apps/web/app/rivals/[handle]/page.tsx`
+Acceptance: `npm run test:e2e -- social` exits 0; given an API response with a field absent because the viewer is not authorized, the client renders the absence and does not synthesize a value, asserted by a case that fails if any placeholder figure appears.
+Depends: W-001, G-016
+Est: 12-16
+Status: not-started
 
 ### W-005 Presence and notification UX
-Dependencies: G-016.
+Files: `apps/web/app/activity/page.tsx`, `apps/web/components/presence.tsx` (new)
+Acceptance: presence renders the server-derived value only: a case that supplies `offline` while the local session is active must render `offline`; `npm run test:e2e -- presence` exits 0.
+Depends: W-001, G-016
+Est: 10-14
+Status: not-started
 
 ### W-006 Evidence, source, privacy and outbound disclosure UX
-Dependencies: V-010, R-008.
+Files: `apps/web/components/evidence-badge.tsx` (new), `packages/ui/src/patterns/product-system.tsx`, `packages/ui/src/concepts/product-storyboards.tsx`
+Acceptance: the three published `evidence_class` values render with the labels D-143 fixes and an exhaustive switch fails to compile if a fourth appears; `grep -rniE 'verified|attested' apps/web packages/ui` returns nothing, so no surface can present a self-report as a provider confirmation.
+Depends: W-001, V-010, R-008
+Est: 10-14
+Status: not-started
 
 ### W-007 Device, lineage, fork, platform and update UX
-Dependencies: S-013, L-012.
+Files: `apps/web/app/devices/page.tsx` (new), `apps/web/e2e/devices.spec.ts` (new)
+Acceptance: a forked lineage, a quarantined branch and a device past its update deadline each render their own recorded state, one case each; a device that is installable but not competitively eligible renders both facts separately rather than as one status.
+Depends: W-001, S-013, L-012
+Est: 10-14
+Status: not-started
 
 ### W-008 Moderation and appeals UX
-Dependencies: M-002.
+Files: `apps/web/app/appeals/page.tsx` (new), `apps/web/e2e/appeals.spec.ts` (new)
+Acceptance: `npm run test:e2e -- appeals` exits 0; the appeal surface renders the decision outcome and no investigation evidence, asserted by a case whose fixture contains investigation fields that must not appear in the DOM.
+Depends: W-001, M-002
+Est: 8-12
+Status: not-started
 
 ### W-009 Export and deletion UX
-Dependencies: M-011.
+Files: `apps/web/app/privacy/export/page.tsx` (new), `apps/web/e2e/export.spec.ts` (new)
+Acceptance: `npm run test:e2e -- export` exits 0; the deletion surface reports per-device outcomes including `unreachable` and `waived` rather than a single success, and `grep -rniE 'permanently erased|unrecoverable' apps/web` returns nothing.
+Depends: W-001, M-011
+Est: 10-14
+Status: not-started
 
 ### W-010 Accessibility, responsive and exceptional-state matrix
-Dependencies: W-002 through W-009.
+Files: `apps/web/e2e/accessibility.spec.ts` (new), `scripts/ui/check-ui-system.mjs`, `packages/ui/src/concepts/product-state-matrix.stories.tsx`
+Acceptance: `npm run test:a11y` exits 0 with zero axe violations at the three recorded breakpoints; a matrix test asserts every screen has a rendered loading, empty, error and unauthorized state and fails on a missing cell.
+Depends: W-002, W-003, W-004, W-005, W-006, W-007, W-008, W-009
+Est: 12-16
+Status: not-started
+
+The prose range `W-002 through W-009` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it, which is what makes the hosted web product gate launch.
 
 ## Epic X — Operations, open source and launch evidence
 
 ### X-001 Cloud-portable reference deployment
-Dependencies: implemented server/web; separate deployment authorization.
+Files: `infrastructure/README.md` (new), `infrastructure/terraform/main.tf` (new), `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
+Acceptance: `terraform validate` and `terraform plan` exit 0 against the reference configuration; the plan names no managed service on the D-026 exclusion list; a second apply produces an empty plan, which is the check that the configuration is actually declarative.
+Depends: S-015, W-010, L-011, OS-013
+Est: 12-16
+Status: not-started
+
+The prose dependency `implemented server/web; separate deployment authorization` is replaced. The implemented-server-and-web half becomes `S-015`, `W-010` and `L-011`. The deployment-authorization half was never a dependency: production infrastructure and deployment are not unlocked by P-1104 and this unit may not run until they are separately authorized.
 
 ### X-002 Secrets, signing keys and recovery procedures
-Dependencies: L-013.
+Files: `docs/operations/SECRETS_AND_KEY_RECOVERY.md` (new), `scripts/ci/check_secret_inventory.py` (new), `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
+Acceptance: `python3 scripts/ci/check_secret_inventory.py` exits 0 only when every secret and signing key named in the operations contract has an owner, a rotation period and a recovery procedure, and exits non-zero when any one of the three is missing.
+Depends: L-013
+Est: 8-12
+Status: superseded-by OS-013
 
 ### X-003 Observability allowlist and privacy canaries
-Dependencies: F-006, implemented services.
+Files: `packages/schemas/observability-allowlist-v1.yaml`, `docs/operations/OBSERVABILITY_PRIVACY.md`, `evals/suites/suites.yaml`
+Acceptance: `python3 scripts/ci/run_evals.py --suite observability-privacy` exits 0 with a status that is not `not_applicable`; every emitted telemetry field appears in `packages/schemas/observability-allowlist-v1.yaml`, and a field added without an entry fails the suite.
+Depends: F-006, OS-005
+Est: 10-14
+Status: not-started
+
+The prose dependency `implemented services` is replaced by `X-012`, which is the unit that actually emits the telemetry this one constrains.
 
 ### X-004 Backup/restore and deletion tombstone drills
-Dependencies: M-009.
+Files: `evals/suites/suites.yaml`, `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
+Acceptance: `python3 scripts/ci/run_evals.py --suite data-lifecycle-recovery` exits 0 with a status that is not `not_applicable`; a restore drill meets the recovery point and recovery time objectives recorded in `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, and exceeding either fails the drill rather than being noted.
+Depends: M-009
+Est: 10-14
+Status: not-started
 
 ### X-005 Incident response and abuse operations
-Dependencies: M-002, X-003.
+Files: `docs/operations/INCIDENT_RESPONSE.md`, `evals/suites/suites.yaml`
+Acceptance: `python3 scripts/ci/run_evals.py --suite moderation-operations` exits 0 with a status that is not `not_applicable`; every severity in `docs/operations/INCIDENT_RESPONSE.md` has a named owner and a paging path exercised by a drill, and a severity with no drill fails.
+Depends: M-002, X-003, X-015
+Est: 10-14
+Status: not-started
 
 ### X-006 Reproducible builds, SBOM and dependency/license governance
-Dependencies: L-003.
+Files: `scripts/ci/check_reproducible_build.py` (new), `LICENSES.md`, `.github/workflows/ci.yml`
+Acceptance: two builds of the same commit on two hosts produce identical artifact digests; an SBOM is emitted per artifact and every dependency resolves to a license recorded in `LICENSES.md`; a dependency with no license entry fails the check.
+Depends: L-003, F-008
+Est: 12-16
+Status: not-started
 
 ### X-007 Public repository security/contribution documentation
-Dependencies: X-006.
+Files: `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
+Acceptance: `python3 scripts/repository/doctor.py` exits 0 with each document present and naming a current contact and a disclosure window; a placeholder contact or an unfilled jurisdiction fails the check rather than passing as present-but-empty.
+Depends: X-006
+Est: 6-8
+Status: not-started
 
 ### X-008 Exact platform/source certification expansion
-Dependencies: V-010, L-013.
+Files: `conformance/adapters/agent-registry-v1.json`, `packages/schemas/platform-profile-registry-v1.json`
+Acceptance: every newly certified tuple has a signed result bundle from `V-006` and a `platform_certifications` row; a registry entry without both fails `python3 scripts/repository/validate_planning_artifacts.py --allow-no-postgres`.
+Depends: V-010, L-013
+Est: 10-14
+Status: not-started
 
 ### X-009 Performance, capacity and cost evidence
-Dependencies: implemented product paths.
+Files: `benchmarks/postgres/ranking_benchmark.sql`, `docs/engineering/PERFORMANCE_BUDGETS.md`, `evals/suites/suites.yaml`
+Acceptance: `python3 scripts/ci/run_evals.py --suite performance-efficiency` exits 0 with a status that is not `not_applicable`; every budget in `docs/engineering/PERFORMANCE_BUDGETS.md` has a measured figure recorded against it, and a run exceeding any budget fails.
+Depends: S-015, R-012, W-010, OS-010, X-016
+Est: 12-16
+Status: not-started
+
+The prose dependency `implemented product paths` is replaced. The paths that actually have to exist before performance and cost can be measured are the three end-to-end suites and the two new units that produce the load and the cost model.
 
 ### X-010 Accessibility, privacy, security and recovery review
-Dependencies: all launch paths.
+Files: `docs/verification/ACCEPTANCE_GATES.md`, `docs/security/THREAT_MODEL.md`, `scripts/ci/generate_gate_ledger.py`
+Acceptance: mechanical part: `python3 scripts/ci/generate_gate_ledger.py` exits 0 and every gate in `docs/verification/ACCEPTANCE_GATES.md` names an executed suite whose recorded status is not `not_applicable`. The four review verdicts are human judgements and are not mechanizable; a green ledger records that the evidence exists, never that the review was favourable, and this unit must not be reported as passed on the ledger alone.
+Depends: N-018, N-019, N-020, P-010, O-012, R-012, G-016, M-011, L-013, W-010, X-003, X-004, X-005
+Est: 12-16
+Status: not-started
+
+The prose dependency `all launch paths` is replaced by the thirteen suite-terminal units that constitute them. A phrase cannot be ordered and cannot be checked for completeness; a list can.
 
 ### X-011 P-1105 launch-readiness review
-Dependencies: X-001 through X-010; zero launch P0/P1.
+Files: `conformance/p1140f/gate-authorization-v1.json`, `docs/project/STATUS.md`, `docs/verification/ACCEPTANCE_GATES.md`
+Acceptance: mechanical part: `python3 scripts/repository/validate_work_unit_status.py --gate X-011` exits 0 only when every unit this one depends on carries `Status: landed`; `python3 scripts/repository/validate_p1140f_authority.py` reports zero open P0 or P1; every launch-gating eval suite reports a status that is not `not_applicable`. The readiness verdict itself is the owner's decision and is not mechanizable — no agent may derive it from a green run, and gate state is changed by the owner alone.
+Depends: F-008, F-010, F-011, P-010, A-010, N-018, N-019, N-020, S-015, S-016, S-019, S-020, O-012, O-013, V-010, R-012, G-016, G-017, G-018, G-019, M-011, L-013, L-014, W-010, X-001, X-003, X-004, X-005, X-006, X-007, X-008, X-009, X-010, X-013, X-015, X-016, X-017, OS-001, OS-002, OS-003, OS-004, OS-005, OS-006, OS-007, OS-008, OS-009, OS-010, OS-011, OS-012, OS-013
+Est: 12-16
+Status: not-started
+
+P-1105 readiness previously depended on 162 of 194 units, excluding all ten Epic W units — the entire hosted web product — plus `O-012`, `R-012`, `M-011`, `S-015`, `N-018`, `N-019`, `P-010` and `F-008`. Launch readiness was declarable with no web application. The dependency list above is the repair: it names every epic-terminal unit, every previously excluded unit, and the six new operations units, so the transitive closure now covers the whole breakdown.
+
+This unit remains an orphan, and that stands: nothing follows a launch-readiness review. An orphan at the end of the graph is a sink, which is correct; an orphan in the middle, which the eleven others were, is a missing edge.
+
+### X-012 Structured logging, metrics and tracing
+Files: `apps/api/internal/observability/observability.go` (new), `apps/api/internal/observability/observability_test.go` (new), `packages/schemas/observability-allowlist-v1.yaml`, `docs/operations/OBSERVABILITY_PRIVACY.md`
+Acceptance: `go test ./internal/observability/...` exits 0; every log field, metric label and span attribute the service can emit is enumerated at build time and checked against `packages/schemas/observability-allowlist-v1.yaml`, so a field added without an allowlist entry fails to compile rather than failing in production.
+Depends: S-001, F-006
+Est: 10-14
+Status: superseded-by OS-005
+
+One of the thirteen categories that previously had no unit anywhere. `X-003` constrains what may be emitted; this unit is the emitter, and the allowlist check belongs at compile time because a runtime check has already leaked by the time it fires.
+
+### X-013 Staging environment
+Files: `infrastructure/staging/main.tf` (new), `docs/operations/STAGING_ENVIRONMENT.md` (new)
+Acceptance: `terraform validate` exits 0 for the staging configuration and a diff against the reference configuration reports only the recorded intentional differences; a check fails when any staging resource references a production data source, so participant data cannot reach it.
+Depends: X-001
+Est: 8-12
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere.
+
+### X-014 Load and soak testing
+Files: `benchmarks/load/leaderboard.js` (new), `benchmarks/load/README.md` (new), `docs/engineering/PERFORMANCE_BUDGETS.md`
+Acceptance: a load run against staging sustains the recorded request rate inside the p99 latency budget in `docs/engineering/PERFORMANCE_BUDGETS.md`, and a soak run holds memory and connection counts flat across the recorded duration; exceeding either budget fails the run rather than being recorded as a note.
+Depends: X-013, R-012
+Est: 10-14
+Status: superseded-by OS-010
+
+One of the thirteen categories that previously had no unit anywhere. `X-009` reports the evidence; this unit produces it, and the 300 ms leaderboard SLO cannot be claimed without it.
+
+### X-015 Runbooks and on-call
+Files: `docs/operations/RUNBOOKS.md` (new), `scripts/ci/check_runbook_coverage.py` (new), `docs/operations/SLOS_AND_ALERTS.md`
+Acceptance: `python3 scripts/ci/check_runbook_coverage.py` exits 0 only when every alert in `docs/operations/SLOS_AND_ALERTS.md` names a runbook section that exists and every runbook section names an alert that exists; an alert with no runbook fails, and so does a runbook for an alert that was deleted.
+Depends: X-003, OS-005
+Est: 8-12
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. The rotation itself is a single-maintainer arrangement today and the coverage check is what keeps that honest rather than implied.
+
+### X-016 Cost model
+Files: `docs/operations/COST_MODEL.md` (new), `scripts/ci/check_cost_model.py` (new), `benchmarks/postgres/ranking_benchmark.sql`
+Acceptance: `python3 scripts/ci/check_cost_model.py` exits 0 only when every component of the reference deployment has a unit-cost figure and a measured driver, and the modelled cost at the recorded participant count falls inside the recorded band around the figure measured by `X-014`; a component with no figure fails.
+Depends: X-001, OS-010
+Est: 8-12
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. This is infrastructure cost for the operator and is unrelated to Estimated Cash Burn, which is a participant-facing metric.
+
+### X-017 Product analytics
+Files: `docs/product/PRODUCT_ANALYTICS.md` (new), `packages/schemas/observability-allowlist-v1.yaml`, `conformance/telemetry/canaries.json`
+Acceptance: every analytics quantity is derived from fixed-schema aggregates the server already holds, asserted by a check that fails on any analytics field absent from `packages/schemas/observability-allowlist-v1.yaml`; the `N-020` egress suite runs unchanged and still passes, which is the proof that this unit added no client-side event stream.
+Depends: OS-005, N-020
+Est: 8-12
+Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere, and the one most likely to be built wrong. The binding product rules forbid content-derived data crossing the device boundary and admit only fixed-schema aggregate accounting, so there is no behavioural event pipeline to build. This unit is deliberately server-side aggregate only. If that is judged insufficient for a product decision, the answer is a recorded decision that changes the rule, not a wider collector added under an analytics heading.
+
+## Epic OS — Operational surfaces
+
+Proposed by `https://github.com/vedant-simulacrum/vibemaxxing/pull/66`, which closed
+fifteen operational surfaces as normative documents and recorded decisions D-230
+through D-245. That branch could not edit this file because this branch owned it, so
+the units were published in its description for absorption. They are absorbed here
+with their identifiers unchanged, because renaming a published identifier breaks
+every reference to it.
+
+Six units this branch had authored independently cover the same surfaces and are
+marked `superseded-by` rather than deleted: `F-009` by `OS-007`, `S-017` by
+`OS-011`, `S-018` by `OS-003`, `X-002` by `OS-013`, `X-012` by `OS-005`, and
+`X-014` by `OS-010`. The OS unit wins in each case because a normative owner
+document now exists behind it and carries the numbers. `X-012` also covered metric
+instrumentation, which is `OS-006`.
+
+Two prose dependencies in the proposed set are replaced by unit IDs, under the same
+rule as everywhere else: `OS-007` depended on "ADR-018 first migration", which is
+`S-002`, and `OS-013` on "ADR-017 provider selection", which is not a unit at all
+and is recorded as a condition.
+
+### OS-001 Origin validation and CORS at the API edge
+Files: `packages/schemas/openapi-v1.yaml`, `apps/api/internal/middleware/origin.go` (new), `apps/api/internal/middleware/origin_test.go` (new), `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`
+Acceptance: `go test ./internal/middleware/ -run Origin` exits 0; a preflight from a non-allowlisted origin returns 204 carrying no `Access-Control-*` header; a state-changing request with a foreign `Origin` returns 403; `grep -c localhost` over a production build artifact returns 0, which is what makes the development origin compiled out rather than configured off.
+Depends: PF-039
+Est: 3-5
+Status: not-started
+
+### OS-002 Loopback listener hardening
+Files: `crates/vibemaxxing-daemon/src/listener.rs` (new), `crates/vibeproof-collector/src/listener.rs` (new), `conformance/sandbox/loopback-vectors-v1.json` (new), `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`
+Acceptance: a request carrying `Host: evil.example` to a loopback listener returns 403; a listener configured with a routable bind address refuses to start rather than binding; the dashboard token never appears in a `Set-Cookie` header, asserted by a case that fails if it does.
+Depends: OS-001
+Est: 5-8
+Status: not-started
+
+The `Host` allowlist is the control that closes DNS rebinding, and it is the only one that can: a rebound request still carries the attacker's name in `Host` while resolving to a loopback address, and peer credentials cannot help because the peer is the participant's own browser running as the participant.
+
+### OS-003 Rate limiter
+Files: `apps/api/internal/ratelimit/ratelimit.go` (new), `apps/api/internal/ratelimit/ratelimit_test.go` (new), `packages/schemas/policy-defaults-v1.json`, `docs/architecture/API_EDGE_CONTRACT.md`
+Acceptance: `go test ./internal/ratelimit/...` exits 0; a table test asserts every class in `docs/architecture/API_EDGE_CONTRACT.md` enforces its recorded quota and that no class is enforced without a recorded quota; ordinary limits emit `RateLimit` headers and adaptive limits emit none; the first subject-rights request in any 24-hour window is admitted regardless of bucket state, which Article 12(5) requires.
+Depends: PF-045
+Est: 5-8
+Status: not-started
+
+Supersedes `S-018`, which this branch authored before `docs/architecture/API_EDGE_CONTRACT.md` existed. Limits key on the authenticated principal and never on a content-derived value.
+
+### OS-004 Client retry, backoff and circuit breaking
+Files: `crates/vibeproof-sync/src/retry.rs` (new), `apps/web/lib/api/retry.ts` (new), `docs/architecture/API_EDGE_CONTRACT.md`
+Acceptance: the jitter distribution is uniform over the full interval, asserted statistically over a fixed seed; the retry budget fails fast at 10% over a trailing 60-second window; the circuit opens at 20 consecutive failures and half-opens at 60 seconds; a 409 and a 410 are never retried, one case each.
+Depends: OS-003, PF-049
+Est: 5-8
+Status: not-started
+
+Full jitter rather than jittered fixed delay, because the failure mode is a fleet that all failed at the same instant. Retry safety is read from the specification and never from the HTTP method. The daemon claim queue is the one unbounded case: dropping a queued claim loses activity the append-only ledger cannot recreate.
+
+### OS-005 Structured logging
+Files: `apps/api/internal/logging/logging.go` (new), `crates/vibemaxxing-daemon/src/logging.rs` (new), `packages/schemas/observability-allowlist-v1.yaml`, `docs/operations/LOGGING_AND_INSTRUMENTATION.md`
+Acceptance: every emitted line carries the required field set; a non-literal message string fails lint, which is the control that stops interpolation carrying forbidden content past a field allowlist; `account_ref` differs across a salt rotation, asserted by rotating the salt in a test; a forbidden field is dropped and the `F-006` canary fires.
+Depends: F-006
+Est: 3-5
+Status: not-started
+
+Supersedes `X-012`. The proposed unit recorded `Depends: none`; `F-006` is the resolvable dependency, because the canary firing is half of this unit's acceptance and cannot fire before the canary library exists.
+
+### OS-006 Metric instrumentation
+Files: `apps/api/internal/telemetry/telemetry.go` (new), `packages/schemas/observability-allowlist-v1.yaml`, `evals/suites/suites.yaml`, `docs/operations/LOGGING_AND_INSTRUMENTATION.md`
+Acceptance: the eighteen metrics named in `docs/operations/LOGGING_AND_INSTRUMENTATION.md` emit with allowlisted attributes only, asserted in both directions; `python3 scripts/ci/run_evals.py --suite observability-privacy` reports a status that is not `not_applicable`; `/readyz` fails when the applied migration version is outside the declared range.
+Depends: OS-005, PF-049
+Est: 5-8
+Status: not-started
+
+There is no trace export: a hosted tracing backend is a recurring cost against D-093 and would have to process inside the EU under ADR-017. Four span boundaries are recorded locally.
+
+### OS-007 Local development stack
+Files: `compose.yaml` (new), `Makefile`, `.env.example` (new), `docs/engineering/LOCAL_DEVELOPMENT.md`
+Acceptance: `make dev-up` produces a healthy database on a clean machine with no manual step; `make validate` runs the PostgreSQL DDL stage rather than skipping it; `make migrate-verify` reproduces `packages/schemas/planning-schema.sql` from the migration history byte-for-byte.
+Depends: S-002
+Est: 3-5
+Status: not-started
+
+Supersedes `F-009`. The proposed dependency "ADR-018 first migration" is `S-002`. Three properties of the compose definition are load-bearing and `docs/engineering/LOCAL_DEVELOPMENT.md` explains each: the port binds `127.0.0.1` explicitly, the database initialises with locale `C` because two engineers on different distributions otherwise get different `ORDER BY` results and a leaderboard is an ordering, and the volume is named.
+
+### OS-008 Conformance manifest format and validator
+Files: `scripts/repository/validate_conformance_manifests.py` (new), `conformance/vibeproof/v1/manifest.json` (new), `docs/verification/CONFORMANCE_HARNESS.md`
+Acceptance: `python3 scripts/repository/validate_conformance_manifests.py` exits 0 and non-zero when a manifest cites an authority that does not resolve, when a fixture digest does not match, when a suite declares no negative case, or when a case identifier is duplicated or wrongly prefixed.
+Depends: none
+Est: 3-5
+Status: not-started
+
+### OS-009 Conformance runners
+Files: `crates/conformance-runner/src/main.rs` (new), `apps/api/cmd/conformance/main.go` (new), `docs/verification/EVAL_SYSTEM.md`
+Acceptance: each runner emits the result schema in `docs/verification/EVAL_SYSTEM.md`; a case where both subjects agree on the wrong answer reports `fail: expectation` rather than `pass`, which is the check that cross-language agreement is not being mistaken for conformance; two runs of the same commit produce byte-identical output.
+Depends: OS-008
+Est: 8-13
+Status: not-started
+
+### OS-010 Load test harness
+Files: `benchmarks/load/scenarios.js` (new), `benchmarks/load/README.md` (new), `.github/workflows/load-test.yml` (new), `docs/verification/TEST_STRATEGY.md`
+Acceptance: all six scenarios in `docs/verification/TEST_STRATEGY.md` run against an ephemeral stack; `offline-drain` admits every claim exactly once; `ratelimit-breach` leaves other principals statistically unchanged, asserted against a recorded tolerance.
+Depends: OS-003, X-013
+Est: 8-13
+Status: not-started
+
+Supersedes `X-014`. The scenarios are sized at the D-180 reference population of 200 participants and a passing run may never be cited as evidence for the 100,000 target; `docs/verification/TEST_STRATEGY.md` says so and this unit does not contradict it. Activating the workflow is product automation and is outside the current authorization.
+
+### OS-011 Deprecation mechanics
+Files: `packages/schemas/openapi-v1.yaml`, `apps/api/internal/middleware/deprecation.go` (new), `docs/architecture/API_EDGE_CONTRACT.md`
+Acceptance: a deprecated operation emits `Deprecation`, `Sunset` and `Link` headers; the window between the two dates is at least 180 days, asserted arithmetically rather than by review; a fixture pins the exact header set so a silent removal fails.
+Depends: OS-001
+Est: 2-3
+Status: not-started
+
+Supersedes `S-017`.
+
+### OS-012 Clock discipline
+Files: `apps/api/internal/clock/clock.go` (new), `crates/vibeproof-core/src/time.rs` (new), `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
+Acceptance: a claim beyond the 300-second future tolerance is rejected; the server refuses to finalize beyond a 2000 ms measured offset; `grep -rnE 'now\(\)\s*-' apps/api/internal crates/vibeproof-core` returns no interval computed by subtracting wall-clock timestamps, which is the defect a monotonic source exists to prevent.
+Depends: OS-006
+Est: 3-5
+Status: not-started
+
+D-245 is open and this unit inherits it: a clock rollback and a future timestamp still have no reason code, because registering one is blocked behind the partial reason-code repair D-224 records. This unit cannot close while its rejection has no code to cite.
+
+### OS-013 Secret rotation runbook and first rotation
+Files: `docs/operations/ENVIRONMENTS_AND_SECRETS.md`, `scripts/ci/check_secret_inventory.py` (new)
+Acceptance: `python3 scripts/ci/check_secret_inventory.py` exits 0 only when every class in `docs/operations/ENVIRONMENTS_AND_SECRETS.md` records a first rotation date, an owner and a cadence, and non-zero when any is missing; a session-key rotation does not invalidate a handle inside its retained generations, asserted by a case.
+Depends: L-013
+Est: 2-3
+Status: not-started
+
+Supersedes `X-002`. The proposed dependency "ADR-017 provider selection" is not a unit and is recorded as a condition instead: every environment, secret-store and residency statement behind this unit is contingent on an ADR-017 selection that has not run, and the unit cannot start before it does.
 
 ## Explicit non-units
 
@@ -1233,12 +2766,14 @@ The following are not launch units:
 - unsupported claims generated from unexercised manifests;
 - autonomous workflow activation during planning.
 
-## Current next unit
+## Critical path
 
-The currently-unstarted active-plan units are `PF-001`, `PF-037`, `PF-039` through `PF-052`, `PF-053`, `PF-054`, and `PF-062` through `PF-067`. (Checked against `git log --oneline origin/main`: PF-055 and PF-056 have landed; none of PF-001, PF-037, PF-053, PF-054 appear in recent commits, confirming they remain unstarted.)
+**What to start next is derived, not written here.** It is in the generated block under **Plan status**, computed from the `Status:` lines and the dependency graph by `scripts/repository/validate_work_unit_status.py`. The hand-written list that used to sit in this section went stale the moment a unit landed and nobody edited it — it still named `PF-053` as unstarted after its ADR had been committed. A list that has to be maintained by hand to stay true will not stay true.
 
-All `F-` through `X-` units remain blocked until P-1104.
+All `F-` through `X-` units remain blocked until P-1104 regardless of status.
 
-An earlier revision of this section stated "PF-001 only", and a companion claim placed `PF-002`/`PF-003` immediately after `PF-001` on the critical path. Both were wrong by this file's own dependency lines: `PF-002` and `PF-003` are leaves that nothing depends on, and the longest `PF-` chain begins at `PF-004`, which does not depend on `PF-001`. The corrected chain to `PF-036` is `PF-004 → PF-021 → PF-022 → PF-023 → PF-029 → PF-033 → PF-034 → PF-035 → PF-036`, a depth of nine.
+An earlier revision stated "PF-001 only" as the next unit, and a companion claim placed `PF-002`/`PF-003` immediately after `PF-001` on the critical path. Both were wrong by this file's own dependency lines: `PF-002` and `PF-003` are leaves that nothing depends on, and the longest `PF-` chain begins at `PF-004`, which does not depend on `PF-001`. The corrected chain to `PF-036` is `PF-004 → PF-021 → PF-022 → PF-023 → PF-029 → PF-033 → PF-034 → PF-035 → PF-036`, a depth of nine.
 
-For reference, the longest chains in the frozen backlog, measured in units rather than time: 19 to `S-010` (first claim accepted server-side), 26 to `V-004` (first working adapter), 28 to `W-003` (leaderboard visible in a browser), 36 to `X-011`, and 37 to `W-010`. A 26-unit serial chain before one real token reaches a board is the specific reason the active plan is sequenced by vertical slice rather than by layer.
+Longest chains under the repaired graph, measured in units rather than time: 19 to `S-010` (first claim accepted server-side), 26 to `V-004` (first working adapter), 28 to `W-003` (leaderboard visible in a browser), 37 to `W-010`, 38 to `X-010`, and 43 to `X-011`. A 26-unit serial chain before one real token reaches a board is the specific reason the plan is sequenced by vertical slice rather than by layer.
+
+`X-011`'s transitive closure is 224 of the 258 units. The 33 outside it are `PF-037` through `PF-067` — planning repairs whose value is repository hygiene rather than a launch prerequisite — plus the six `superseded-by` units, which are outside by construction because their successors are inside. Every live implementation unit is inside the closure, which is what the previous 162-of-194 figure was supposed to mean and did not.

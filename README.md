@@ -66,7 +66,7 @@ docs/
   decisions/      accepted ADRs
   integrations/   agent compatibility, adapter certification
   operations/     launch, SLOs, incident response, release verification
-  implementation/ active plan and frozen backlog
+  implementation/ the work breakdown — every unit specified, status checked
   engineering/    engineering system, performance and power budgets
   verification/   acceptance gates, evaluation and benchmark protocol
   style-guide/    brand, UI foundations, component registry and rules

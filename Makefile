@@ -29,6 +29,7 @@ validate: $(VENV_PY) ## Run the planning validator suite
 	$(VENV_PY) scripts/repository/validate_p1140e_contracts.py
 	$(VENV_PY) scripts/repository/validate_planning_coverage.py
 	$(VENV_PY) scripts/repository/validate_state_vocabularies.py
+	$(VENV_PY) scripts/repository/validate_work_unit_status.py
 	$(VENV_PY) scripts/repository/validate_planning_artifacts.py --allow-no-postgres
 	$(VENV_PY) scripts/ci/run_evals.py --validate-registry
 	@echo ""
