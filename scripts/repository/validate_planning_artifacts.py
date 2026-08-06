@@ -1818,6 +1818,144 @@ def validate_release_compatibility_contracts() -> None:
             )
 
 
+AUDIENCE_WIDTH = {"self": 0, "authorized-viewer": 1, "public": 2}
+
+
+def validate_presentation_contracts() -> None:
+    """Prove the disclosure and exceptional-state projections resolve.
+
+    Three checks. Every field the disclosure profile names exists on the OpenAPI
+    schema it names, so the projection cannot drift from the shapes it governs.
+    No field is disclosed more widely than the shape that carries it, and
+    `token_burn_total` and the two ADR-020 weight factors are pinned to `self`,
+    which is D-144 expressed as a check rather than as a convention. And every
+    server-derived exceptional state resolves to a registered machine and to
+    states that machine actually declares, or to an input the viewer
+    authorization profile declares.
+
+    This proves the records resolve against the contracts they cite. No surface
+    renders any of it: `packages/ui` is a fixture-backed prototype and nothing in
+    it reads these files.
+    """
+    profile_schema = validate_schema_file(
+        SCHEMAS / "disclosure-projection-v1.schema.json"
+    )
+    profile = load_json(SCHEMAS / "disclosure-projection-v1.json")
+    validate_instance(profile_schema, profile, "disclosure projection")
+
+    spec = load_yaml(SCHEMAS / "openapi-v1.yaml")
+    api_schemas = spec["components"]["schemas"]
+    for projection in profile["projections"]:
+        name = projection["api_schema"]
+        if name not in api_schemas:
+            raise ValidationFailure(
+                f"disclosure projection names a schema the API does not declare: {name}"
+            )
+        declared = set((api_schemas[name].get("properties") or {}).keys())
+        named = {field["name"] for field in projection["fields"]}
+        missing = sorted(named - declared)
+        if missing:
+            raise ValidationFailure(
+                f"disclosure projection for {name} names fields the API does not "
+                f"declare: {missing}"
+            )
+        uncovered = sorted(declared - named)
+        if uncovered:
+            raise ValidationFailure(
+                f"disclosure projection for {name} does not classify every field: "
+                f"{uncovered}"
+            )
+        # No field may be narrower than the shape that carries it. A narrower
+        # field on a wider shape is a per-response redaction, and a redaction
+        # that fails open publishes the field.
+        shape_width = AUDIENCE_WIDTH[projection["audience"]]
+        for field in projection["fields"]:
+            if AUDIENCE_WIDTH[field["audience"]] < shape_width:
+                raise ValidationFailure(
+                    f"{name}.{field['name']} is narrower than the {name} shape, which "
+                    f"is served to {projection['audience']}; move it to its own shape"
+                )
+
+    # D-144. These four never leave the participant's own surface, because the
+    # raw figure beside the credited one yields the weight by division and the
+    # weight is the sanction D-084 keeps private.
+    self_only = {
+        "token_burn_total",
+        "confidence_weight_hundredths",
+        "evidence_factor_hundredths",
+        "trust_factor_hundredths",
+    }
+    seen_self_only: set[str] = set()
+    for projection in profile["projections"]:
+        for field in projection["fields"]:
+            if field["name"] in self_only:
+                seen_self_only.add(field["name"])
+                if field["audience"] != "self":
+                    raise ValidationFailure(
+                        f"D-144: {projection['api_schema']}.{field['name']} is "
+                        f"disclosed to {field['audience']}"
+                    )
+    if seen_self_only != self_only:
+        raise ValidationFailure(
+            f"disclosure projection does not classify every D-144 field: "
+            f"{sorted(self_only - seen_self_only)}"
+        )
+
+    state_schema = validate_schema_file(SCHEMAS / "ui-state-projection-v1.schema.json")
+    states = load_json(SCHEMAS / "ui-state-projection-v1.json")
+    validate_instance(state_schema, states, "exceptional surface states")
+
+    machines = {
+        item["machine_id"]: item
+        for item in load_json(SCHEMAS / "state-machine-registry-v1.json")["machines"]
+    }
+    authorization_inputs = {
+        item["input_id"]
+        for item in load_json(SCHEMAS / "projection-authorization-v1.json")["inputs"]
+    }
+    required_states = {
+        "loading",
+        "empty",
+        "blocked",
+        "private",
+        "stale",
+        "retracted",
+        "appeal",
+        "recovery",
+    }
+    declared_states = {item["state_id"] for item in states["states"]}
+    if declared_states != required_states:
+        raise ValidationFailure(
+            f"exceptional state set mismatch: missing="
+            f"{sorted(required_states - declared_states)} "
+            f"extra={sorted(declared_states - required_states)}"
+        )
+    for item in states["states"]:
+        if item["origin"] != "server-derived":
+            continue
+        if "authorization_input" in item:
+            if item["authorization_input"] not in authorization_inputs:
+                raise ValidationFailure(
+                    f"exceptional state {item['state_id']} names an unknown "
+                    f"authorization input: {item['authorization_input']}"
+                )
+            continue
+        machine_id = item["machine_id"]
+        if machine_id not in machines:
+            raise ValidationFailure(
+                f"exceptional state {item['state_id']} names an unregistered "
+                f"machine: {machine_id}"
+            )
+        unknown = sorted(
+            set(item["source_states"]) - set(machines[machine_id]["states"])
+        )
+        if unknown:
+            raise ValidationFailure(
+                f"exceptional state {item['state_id']} names states "
+                f"{machine_id} does not declare: {unknown}"
+            )
+
+
 def validate_erasure_contract() -> None:
     """Prove the erasure invariants that a check constraint can carry are carried.
 
@@ -2825,6 +2963,10 @@ def main() -> int:
         (
             "TUF trust, compatibility graph and migration chain",
             validate_release_compatibility_contracts,
+        ),
+        (
+            "disclosure projections and exceptional surface states",
+            validate_presentation_contracts,
         ),
         ("decision register table integrity", validate_decision_register),
         ("CDDL grammar parse and required rules", validate_cddl_file),

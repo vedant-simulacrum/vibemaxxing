@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "profile_id": "exceptional-surface-states-v1",
+  "states": [
+    {
+      "state_id": "loading",
+      "origin": "client-local",
+      "disclosure": "generic-unavailable",
+      "recovery_action": "wait",
+      "note": "A request is in flight. It discloses nothing because it knows nothing yet, and a surface that renders a skeleton shaped like the answer it expects is guessing at data it has not received."
+    },
+    {
+      "state_id": "empty",
+      "origin": "client-local",
+      "disclosure": "generic-unavailable",
+      "recovery_action": "none",
+      "note": "The response arrived and held no items. It is deliberately not distinguishable from a page every one of whose entries the viewer is unauthorized to see, because a count of what was filtered is a disclosure of what was filtered."
+    },
+    {
+      "state_id": "blocked",
+      "origin": "server-derived",
+      "authorization_input": "directional-block",
+      "disclosure": "indistinguishable-from-absent",
+      "recovery_action": "none",
+      "note": "Rendered on the blocker's own surfaces so they can see the block is in force. On every other surface the subject is simply absent, because a marker where a person used to be tells the blocked party they were blocked."
+    },
+    {
+      "state_id": "private",
+      "origin": "server-derived",
+      "authorization_input": "subject-visibility",
+      "disclosure": "indistinguishable-from-absent",
+      "recovery_action": "none",
+      "note": "A private subject and a blocked one look identical to an unauthorized viewer. That is the point: two distinguishable refusals let a viewer determine which one applies, and one of them is a fact about a relationship the other party did not disclose."
+    },
+    {
+      "state_id": "stale",
+      "origin": "client-local",
+      "disclosure": "generic-unavailable",
+      "recovery_action": "refresh",
+      "note": "The held data is older than the public_cache_stale_seconds budget in packages/schemas/policy-defaults-v1.json. A leaderboard rendered from a superseded generation says which generation it is showing rather than pretending to be current, because D-212 makes a superseded generation readable through the cursor that names it."
+    },
+    {
+      "state_id": "retracted",
+      "origin": "server-derived",
+      "machine_id": "notification-delivery",
+      "source_states": ["retracted"],
+      "disclosure": "reason-code-only",
+      "recovery_action": "none",
+      "note": "A correction, a moderation reversal or a projection rebuild invalidated an inbox item. The item is replaced rather than deleted, because a notification that silently disappears leaves the recipient believing something that is no longer true."
+    },
+    {
+      "state_id": "appeal",
+      "origin": "server-derived",
+      "machine_id": "appeal",
+      "source_states": [
+        "submitted",
+        "reviewing",
+        "needs-information",
+        "approved",
+        "denied",
+        "withdrawn",
+        "expired"
+      ],
+      "disclosure": "full-detail-to-subject",
+      "recovery_action": "open-appeal",
+      "note": "The appellant's own surface, so the detail is theirs. `screening` is absent deliberately: the binding table marks it internal because an automated pre-review pass is not a decision and gives the appellant nothing to act on, so they see `submitted` until a human is assigned."
+    },
+    {
+      "state_id": "recovery",
+      "origin": "server-derived",
+      "machine_id": "recovery-case",
+      "source_states": [
+        "requested",
+        "verifying",
+        "cooling-off",
+        "applied",
+        "denied",
+        "cancelled",
+        "expired"
+      ],
+      "disclosure": "full-detail-to-subject",
+      "recovery_action": "complete-recovery",
+      "note": "Shown to every live session the moment a case opens, which is what gives a participant who still has access the chance to cancel it inside the cooling-off window. It names the window and the cancel route and never which factor was presented, because that would tell an attacker which factor to attack next."
+    }
+  ]
+}

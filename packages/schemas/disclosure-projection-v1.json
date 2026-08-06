@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "profile_id": "disclosure-projection-v1",
+  "audiences": ["self", "authorized-viewer", "public"],
+  "projections": [
+    {
+      "api_schema": "RankEntry",
+      "audience": "public",
+      "note": "What a leaderboard row is. Every field here is public, which is the point: an entry that carried one narrower field would be a shape the server has to redact per viewer, and a redaction that fails open publishes it.",
+      "fields": [
+        { "name": "ranking_view_id", "audience": "public", "classification": "non-personal" },
+        { "name": "snapshot_id", "audience": "public", "classification": "non-personal" },
+        { "name": "position", "audience": "public", "classification": "derived-personal" },
+        { "name": "previous_position", "audience": "public", "classification": "derived-personal" },
+        { "name": "rank_movement", "audience": "public", "classification": "derived-personal" },
+        { "name": "account_id", "audience": "public", "classification": "observed-personal" },
+        { "name": "handle", "audience": "public", "classification": "observed-personal" },
+        { "name": "display_name", "audience": "public", "classification": "observed-personal" },
+        { "name": "avatar_id", "audience": "public", "classification": "observed-personal" },
+        { "name": "credited_token_burn", "audience": "public", "classification": "derived-personal" },
+        { "name": "evidence_class", "audience": "public", "classification": "server-assigned" },
+        { "name": "availability", "audience": "public", "classification": "derived-personal" },
+        { "name": "top_model_alias", "audience": "public", "classification": "derived-personal" },
+        { "name": "revision", "audience": "public", "classification": "non-personal" }
+      ]
+    },
+    {
+      "api_schema": "SelfRankEntry",
+      "audience": "self",
+      "note": "The four fields that never leave the participant's own surface. This shape exists so that the narrowing is a schema boundary rather than a per-field redaction on a public shape.",
+      "fields": [
+        { "name": "entry", "audience": "public", "classification": "derived-personal" },
+        {
+          "name": "token_burn_total",
+          "audience": "self",
+          "classification": "observed-personal",
+          "reason": "D-144. Published beside credited_token_burn it yields the composite weight by division, and since evidence_class is already public that yields the trust factor and therefore the sanction D-084 keeps private."
+        },
+        {
+          "name": "confidence_weight_hundredths",
+          "audience": "self",
+          "classification": "server-assigned",
+          "reason": "The composite ADR-020 weight. Publishing it is publishing the sanction directly rather than by division."
+        },
+        {
+          "name": "evidence_factor_hundredths",
+          "audience": "self",
+          "classification": "server-assigned",
+          "reason": "One of the two factors. Public alone it would let the trust factor be recovered from the composite."
+        },
+        {
+          "name": "trust_factor_hundredths",
+          "audience": "self",
+          "classification": "server-assigned",
+          "reason": "The ranked-identity trust state expressed as a number. It is the sanction."
+        },
+        {
+          "name": "recent_credited_token_burn",
+          "audience": "self",
+          "classification": "derived-personal",
+          "reason": "A short-window series. Differencing it against the published credited figure recovers the weight over that window."
+        },
+        {
+          "name": "trust_notice_id",
+          "audience": "self",
+          "classification": "server-assigned",
+          "reason": "D-227 records the limit it works around: the ranked-identity states ADR-020 reads are marked internal, so a participant reaches their own trust state as a notice reference rather than by name."
+        }
+      ]
+    },
+    {
+      "api_schema": "PublicProfile",
+      "audience": "public",
+      "note": "Served only after the current-viewer-authorization profile admits the viewer. Public here means public-once-authorized, and the authorization is the D-326 rule rather than a property of this shape.",
+      "fields": [
+        { "name": "account_id", "audience": "public", "classification": "observed-personal" },
+        { "name": "handle", "audience": "public", "classification": "observed-personal" },
+        { "name": "display_name", "audience": "public", "classification": "observed-personal" },
+        { "name": "avatar_id", "audience": "public", "classification": "observed-personal" },
+        { "name": "credited_token_burn", "audience": "public", "classification": "derived-personal" },
+        { "name": "evidence_class", "audience": "public", "classification": "server-assigned" },
+        { "name": "ranked_state", "audience": "public", "classification": "server-assigned" },
+        { "name": "availability", "audience": "public", "classification": "derived-personal" },
+        { "name": "top_model_alias", "audience": "public", "classification": "derived-personal" },
+        { "name": "friend_count", "audience": "public", "classification": "derived-personal" },
+        { "name": "board_count", "audience": "public", "classification": "derived-personal" },
+        { "name": "created_at", "audience": "public", "classification": "observed-personal" }
+      ]
+    },
+    {
+      "api_schema": "AccountProfile",
+      "audience": "self",
+      "note": "The participant's own account. `admitted` is a boolean rather than a lifecycle under D-288, because the account is told none of the five invite states.",
+      "fields": [
+        { "name": "account_id", "audience": "public", "classification": "observed-personal" },
+        { "name": "handle", "audience": "public", "classification": "observed-personal" },
+        { "name": "display_name", "audience": "public", "classification": "observed-personal" },
+        { "name": "avatar_id", "audience": "public", "classification": "observed-personal" },
+        { "name": "evidence_class", "audience": "public", "classification": "server-assigned" },
+        { "name": "ranked_state", "audience": "public", "classification": "server-assigned" },
+        {
+          "name": "visibility",
+          "audience": "self",
+          "classification": "observed-personal",
+          "reason": "A viewer who could read the setting could tell a private profile from one they are merely not authorized for, which is the distinction privacy exists to remove."
+        },
+        {
+          "name": "admitted",
+          "audience": "self",
+          "classification": "server-assigned",
+          "reason": "D-288. It renders the redemption screen without provoking a 403, and it says nothing to anyone else about the size or membership of the invite ring."
+        },
+        { "name": "revision", "audience": "self", "classification": "non-personal", "reason": "A concurrency token for the participant's own conditional updates; it has no meaning to a third party." }
+      ]
+    },
+    {
+      "api_schema": "ClaimRecord",
+      "audience": "self",
+      "note": "An accepted claim as its own submitter sees it. No claim is ever public: the binding rules admit only fixed-schema aggregate accounting across the device boundary, and a per-claim record on a public surface would be an activity timeline.",
+      "fields": [
+        { "name": "claim_id", "audience": "self", "classification": "observed-personal", "reason": "Names one submission by one device at one time." },
+        { "name": "device_id", "audience": "self", "classification": "observed-personal", "reason": "Which of the participant's machines was working." },
+        { "name": "sequence", "audience": "self", "classification": "observed-personal", "reason": "The lineage position; a sequence disclosed publicly is a count of the participant's sessions." },
+        { "name": "state", "audience": "self", "classification": "server-assigned", "reason": "A retracted or quarantined claim is an integrity outcome, which D-084 keeps private to the participant." },
+        { "name": "evidence_class", "audience": "self", "classification": "server-assigned", "reason": "Public in aggregate on the profile; per claim it would let an observer locate the exact submission that changed a participant's class." },
+        { "name": "payload_digest", "audience": "self", "classification": "non-personal", "reason": "Bound to one claim, so it is an identifier for a submission even though the digest itself discloses nothing." },
+        { "name": "appraisal_id", "audience": "self", "classification": "server-assigned", "reason": "Names the verifier appraisal, which is integrity-private." },
+        { "name": "accepted_at", "audience": "self", "classification": "observed-personal", "reason": "An exact acceptance time is a working-hours signal at a resolution the presence projection deliberately does not offer." }
+      ]
+    },
+    {
+      "api_schema": "PresenceLease",
+      "audience": "authorized-viewer",
+      "note": "The projection, never the lease. `availability` is the three-value collapse the binding table declares; the underlying five-state lease, the device and the generation stay server-side.",
+      "fields": [
+        { "name": "account_id", "audience": "authorized-viewer", "classification": "observed-personal" },
+        { "name": "availability", "audience": "authorized-viewer", "classification": "derived-personal" },
+        { "name": "lease_expires_at", "audience": "authorized-viewer", "classification": "derived-personal" },
+        { "name": "revision", "audience": "authorized-viewer", "classification": "non-personal" }
+      ]
+    },
+    {
+      "api_schema": "Notification",
+      "audience": "self",
+      "note": "A closed-world typed event. There is no free-text field and no payload, which is what makes it impossible for a notification to carry source-derived content.",
+      "fields": [
+        { "name": "notification_id", "audience": "self", "classification": "non-personal", "reason": "Addresses one row in one participant's inbox." },
+        { "name": "type", "audience": "self", "classification": "server-assigned", "reason": "The event class; it is the participant's own inbox and nobody else's." },
+        { "name": "actor_account_id", "audience": "self", "classification": "observed-personal", "reason": "Who caused it. Disclosed to the recipient only, and rechecked at delivery time under D-326 in case the actor was blocked after the row was created." },
+        { "name": "scope_id", "audience": "self", "classification": "non-personal", "reason": "The board, generation or case the event is about." },
+        { "name": "state", "audience": "self", "classification": "server-assigned", "reason": "Includes retracted, which is a correction to this recipient and to nobody else." },
+        { "name": "created_at", "audience": "self", "classification": "observed-personal", "reason": "The recipient's own inbox timeline." }
+      ]
+    }
+  ]
+}

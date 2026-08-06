@@ -214,3 +214,13 @@ Deterministic rules and verifier policy are authoritative.
 Server anomaly detectors use privacy-safe aggregate features and begin in shadow mode.
 
 The SLM is post-launch research only. It is not an evidence source, accounting authority or attestation verifier. It may produce a bounded advisory risk signal but cannot alter totals, award a profile or permanently ban.
+
+## Disclosure projection
+
+Which of these figures reaches whom is a record rather than a property of whichever response shape was written first. `packages/schemas/disclosure-projection-v1.json` classifies every property of seven API schemas by audience — `self`, `authorized-viewer`, `public` — and by the observed-versus-derived line D-108 uses to decide Article 20 portability. D-333 records the choices, and the validator resolves every field against `packages/schemas/openapi-v1.yaml` so the projection cannot drift from the shapes it governs.
+
+The load-bearing rule is that no field may be narrower than the shape carrying it. A narrower field on a wider shape is a redaction the server performs per response, and a redaction that fails open publishes the field; narrowing is therefore expressed by a separate shape, which is what `SelfRankEntry` is for.
+
+`token_burn_total`, `confidence_weight_hundredths`, `evidence_factor_hundredths` and `trust_factor_hundredths` are pinned to `self` by name. That is D-144: the raw figure published beside the credited one yields the composite weight by division, and since `evidence_class` is already public it yields the trust factor and therefore the sanction D-084 keeps private.
+
+`evidence_class` itself is public and is an assessment of self-report quality assigned by the server verifier. Under D-100 no provider offers an individual-account attestation path, so no surface may present it as a confirmation from a provider.

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/disclosure-projection-v1.schema.json",
+  "title": "Privacy and evidence disclosure projections v1",
+  "description": "Which field reaches which audience, as data rather than as a property of whichever response shape happened to be written first. docs/privacy/PRIVACY_CONTRACT.md and docs/product/PRODUCT_SPEC.md are the normative owners; the fields themselves live on the response schemas in packages/schemas/openapi-v1.yaml, and the validator fails when a field named here does not exist there. D-226 recorded that the projection was being carried by the difference between two response shapes and that the separate record PF-046 names had not been authored; this is it. The rule it exists to make checkable is D-144: a public surface publishes credited_token_burn and never token_burn_total, because the two together yield the confidence weight by division and, since evidence_class is already public, yield the trust factor and therefore the sanction D-084 keeps private. No client invents any of this.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "profile_id", "audiences", "projections"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "profile_id": { "const": "disclosure-projection-v1" },
+    "audiences": {
+      "description": "Ordered from narrowest to widest. A field disclosed to a wider audience than another is disclosed to every narrower one, and the validator checks that monotonicity rather than trusting it.",
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "enum": ["self", "authorized-viewer", "public"]
+      }
+    },
+    "projections": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/projection" }
+    }
+  },
+  "$defs": {
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["api_schema", "fields"],
+      "properties": {
+        "api_schema": {
+          "description": "A schema name under components/schemas in packages/schemas/openapi-v1.yaml.",
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]*$"
+        },
+        "audience": {
+          "description": "The widest audience this shape is ever served to. No field on it may be narrower than that, because a narrower field on a wider shape is a redaction the server has to perform per response — and a redaction that fails open publishes the field. Narrowing is expressed by putting the field on a different shape, which is why SelfRankEntry exists.",
+          "enum": ["self", "authorized-viewer", "public"]
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/field" }
+        },
+        "note": { "type": "string" }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "audience", "classification"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "audience": {
+          "enum": ["self", "authorized-viewer", "public"]
+        },
+        "classification": {
+          "description": "derived fields are not portable under Article 20 and remain accessible under Article 15, which D-108 fixes on the WP242 rev.01 observed-versus-derived line. server-assigned fields are never selected by a client, which is the same rule that makes public evidence status the verifier's to award.",
+          "enum": [
+            "observed-personal",
+            "derived-personal",
+            "server-assigned",
+            "non-personal"
+          ]
+        },
+        "reason": {
+          "description": "Why this field stops where it does. Required on any field narrower than the shape that carries it, because a narrowing with no recorded reason is one nobody can re-examine.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "audience": { "const": "self" } },
+            "required": ["audience"]
+          },
+          "then": { "required": ["reason"] }
+        }
+      ]
+    }
+  }
+}

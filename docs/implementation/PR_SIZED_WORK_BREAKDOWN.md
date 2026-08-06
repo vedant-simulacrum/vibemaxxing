@@ -73,13 +73,12 @@ Units: 259. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 65 assertions across 21 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 14.
 
 `PF-001`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-008`.
 
-Statuses additionally checkable against artifact presence: 196 of 259. The other 63 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 195 of 259. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -666,13 +665,16 @@ Status: in-progress
 The defect as found: no operation declared 401, 403, 404, 409 or 422 — only 200, 429 and default — and all twenty reason codes referenced `state_machine: "vibeproof-v1"`, which is not a registered machine, so every code dangled.
 
 ### PF-046 — Represent evidence class in the public API
-Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/evidence-disclosure-v1.schema.json` (new), `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`
+Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/disclosure-projection-v1.json`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`
 Acceptance: `grep -c evidence_class packages/schemas/openapi-v1.yaml` returns non-zero; the disclosure projection defines exactly what a viewer may see.
 Depends: PF-043
 Est: 4-6
-Status: in-progress
+Status: landed
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: evidence_class
+Evidence: exists packages/schemas/disclosure-projection-v1.json
+Evidence: exists packages/schemas/disclosure-projection-v1.schema.json
 
-**Half landed in `963f6f6` under D-226.** `evidence_class` crosses the boundary on `PublicProfile`, `RankEntry`, `AccountProfile` and `ClaimRecord` with the three values D-143 fixed. `packages/schemas/evidence-disclosure-v1.schema.json` (new) was not authored, so the second clause of this unit's acceptance — the projection defining exactly what a viewer may see — is unmet. This unit was recorded as `landed` on the strength of the first clause and `validate_work_unit_status.py` refused it, which is the check doing the job it was added for.
+**Half landed in `963f6f6` under D-226; the rest under D-333.** `evidence_class` crosses the boundary on `PublicProfile`, `RankEntry`, `AccountProfile` and `ClaimRecord` with the three values D-143 fixed. The projection this unit's second clause names is `packages/schemas/disclosure-projection-v1.json`, which classifies every property of seven API schemas by audience; the file was previously named as `evidence-disclosure-v1.schema.json` and is renamed here because it governs privacy disclosure as well as evidence. `validate_planning_artifacts.py` resolves every field against the OpenAPI document. The unit was once recorded as `landed` on the strength of the first clause alone and `validate_work_unit_status.py` refused it, which is the check doing the job it was added for; what makes the status correct now is that both clauses are observable.
 
 The defect as found: the string did not appear anywhere in the OpenAPI document, so the product's central differentiator was unrepresentable in its own API, and four competing vocabularies existed for the concept — `packages/ui` used `Hardened|Standard|Imported`, `crates/vibeproof-core` used a five-value scale, `evidence-profile-policy-v1.json` used `profile_id` values, and the API had none.
 
@@ -2525,6 +2527,8 @@ Est: 12-16
 Status: not-started
 
 The prose range `W-002 through W-009` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it, which is what makes the hosted web product gate launch.
+
+The matrix has an authority under D-334: `packages/schemas/ui-state-projection-v1.json` enumerates the eight exceptional states and resolves each to a registered machine, a viewer-authorization input, or nothing at all where it is genuinely client-local. The acceptance names four cells; the record names eight, and `blocked` and `private` are both required to render indistinguishably from a subject that does not exist, which a matrix test can assert and a screenshot cannot.
 
 ## Epic X — Operations, open source and launch evidence
 

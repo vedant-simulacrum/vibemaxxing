@@ -146,8 +146,8 @@ Syntax validity, schema parsing, fixture loading, symbolic race plans, prototype
 |---|---|---|---|---|
 | Product routes and UX | product specification | OpenAPI and future generated clients | present-blocked | web remains fixture-backed until integration |
 | Design system | approved design direction and `assets/` | shared UI components/tokens | prototype-only | preserve canonical assets and accessibility requirements |
-| Privacy/evidence disclosures | product/privacy contracts | typed API projection schemas | planned-missing | no client-side policy invention |
-| Exceptional states | owning state machines | future generated UI state mapping | planned-missing | loading, empty, blocked, private, stale, retracted, appeal and recovery states |
+| Privacy/evidence disclosures | product/privacy contracts | `packages/schemas/disclosure-projection-v1.schema.json`; `packages/schemas/disclosure-projection-v1.json` | present-provisional | D-333. Every property of seven API schemas classified by audience and by the observed-versus-derived line D-108 uses, resolved against the OpenAPI document, with no field permitted to be narrower than the shape carrying it and the four D-144 figures pinned to `self` by name. Provisional because no client reads it; `packages/ui` remains fixture-backed |
+| Exceptional states | owning state machines | `packages/schemas/ui-state-projection-v1.schema.json`; `packages/schemas/ui-state-projection-v1.json` | present-provisional | D-334. All eight states, each either client-local or resolved to a registered machine's declared states or to a viewer-authorization input. Provisional because no surface renders any of them and no generated UI mapping exists |
 
 ## Required specification qualities
 
