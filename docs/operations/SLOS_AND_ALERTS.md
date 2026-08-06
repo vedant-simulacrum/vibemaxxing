@@ -45,7 +45,7 @@ The latency triggers sit at roughly twice the engineering budgets in `docs/engin
 
 The 26-hour backup trigger follows from a daily backup schedule: 26 hours means one backup has been missed and the next has not arrived.
 
-The 80 USD spend trigger leaves 20% of headroom under the D-093 ceiling of 100 USD, which is enough warning to act before the ceiling is breached rather than after.
+The 80 USD spend trigger was set against the fixed 100-USD ceiling D-360 has since replaced with the measured steady-state cost. It is retained as an absolute figure rather than rescaled, because the measurement D-363 schedules has not been taken and a trigger derived from an unmeasured ceiling would be arithmetic dressed as a threshold. It is re-derived when that number exists.
 
 ## The recovery objectives, and the conflict that is not resolved here
 
@@ -53,11 +53,11 @@ The 80 USD spend trigger leaves 20% of headroom under the D-093 ceiling of 100 U
 
 A 5-minute recovery point objective requires continuous point-in-time recovery: archived write-ahead logs, retained and restorable to an arbitrary instant. That is a paid tier on every provider on the ADR-017 shortlist. A daily snapshot, which is what the free and lowest tiers provide, is a recovery point objective of **24 hours**.
 
-D-094 records that the D-093 ceiling of under 100 USD per month, the 100,000 ranked-identity scale target and those recovery objectives cannot all hold at once, and that the conflict is open rather than resolved. ADR-017's step 4 halts provider selection rather than absorbing the overrun, precisely so this surfaces as a blocked decision instead of as a discovery during an incident.
+**The reason this is not underwritten has changed, and the fact has not.** D-094's three-way conflict is resolved: D-360 replaced the fixed ceiling with the measured steady-state cost and D-361 selected AWS, whose managed PostgreSQL offers continuous point-in-time recovery on a tier the credit balance can fund. So the objective is no longer unaffordable. It is unprovisioned — no account, no instance, no backup schedule and no restore drill exists — and an objective nothing implements is not met, however affordable it has become.
 
-The consequence for this document, stated plainly: **the operations contract's commitment that acknowledged claims are never lost is not underwritten at a 24-hour recovery point objective.** A restore from yesterday's snapshot loses up to a day of accepted claims, and the append-only ledger cannot recreate them because the originating device has already advanced its sequence past them. That is a real gap between two documents in this repository, it is owned by D-094, and closing it requires the owner to move one of the three — the ceiling, the scale target, or the objective — not a rewording here.
+The consequence for this document, stated plainly: **the operations contract's commitment that acknowledged claims are never lost is not underwritten at a 24-hour recovery point objective.** A restore from yesterday's snapshot loses up to a day of accepted claims, and the append-only ledger cannot recreate them because the originating device has already advanced its sequence past them. That is a real gap between two documents in this repository. It is no longer blocked on a decision — it is blocked on provisioning, and on D-363's measurement showing that continuous recovery fits inside the steady-state cost once the credits are gone.
 
-Until it moves, the honest statement of the recovery position is: recovery point objective 24 hours, recovery time objective best effort, and the 5-minute and 60-minute figures in the operations contract are the target that the budget decision has not yet funded.
+Until an instance exists with a verified recovery configuration, the honest statement of the recovery position is: recovery point objective 24 hours, recovery time objective best effort, and the 5-minute and 60-minute figures in the operations contract are a target that nothing implements. D-094, now superseded, made them a target nothing could *afford*; they are now a target nothing has *built*.
 
 ## Alerts
 
@@ -69,7 +69,7 @@ Delivered as an email and a push notification to the owner, at any hour. Reserve
 
 - A privacy-boundary canary violation. `vibemaxxing.privacy.canary.violation` is the one metric whose correct value is a constant; any non-zero reading is the operations contract's highest severity until scoped.
 - Detected data loss or corruption in the claim ledger.
-- Monthly spend exceeding the D-093 ceiling of 100 USD.
+- Monthly spend exceeding 100 USD. That figure is the superseded D-093 ceiling retained as an absolute trigger, not a derived one: D-360 makes the ceiling the measured steady-state cost, and D-363 schedules the measurement. The trigger is re-derived when that number exists.
 - Release-signing or TUF key material used outside a recorded signing event.
 
 There is no committed response time even for these. What exists instead is that each has a **single documented containment action the owner can take from a phone**: disable ingestion, disable the affected route, or revoke a key. Containment is one command; diagnosis waits for morning. That is the realistic shape of a solo operator's incident response and it is better written down than improvised.

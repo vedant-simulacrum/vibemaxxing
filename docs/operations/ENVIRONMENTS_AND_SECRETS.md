@@ -16,7 +16,7 @@ Decisions: D-238, D-239
 | `local` | the engineer's machine | containerised PostgreSQL 16 | synthetic fixtures | none |
 | `ci` | GitHub Actions ephemeral runner | `postgres:16` service container, destroyed with the job | synthetic fixtures | included in the free tier |
 | `preview` | per-pull-request static hosting | **none** | synthetic fixtures compiled into the build | none |
-| `production` | one European Union region, the ADR-017 selection | one managed PostgreSQL instance | real | the whole D-093 budget |
+| `production` | one European Union region, AWS under D-361 | one managed PostgreSQL instance | real | the whole measured budget under D-360 |
 
 `ci` is the environment the launch contract calls `test`. The name changes to the one everybody actually uses; nothing else about it does.
 
@@ -31,7 +31,7 @@ That removal has real consequences and they are not hidden:
 - There is no place to observe a build under realistic load before production. The compensation is the private beta ring itself. Under D-180 the beta is invite-only and the owner issues every invite, so the participant set *is* the pre-production population, and the honest description is that beta participants absorb the risk a staging environment would otherwise absorb. `TERMS.md` already states that availability figures are aspirational rather than committed, which is the same admission from the participant's side.
 - A change reaching production has been exercised in `ci` and by the author locally, and nowhere else.
 
-`staging` is reinstated when either of the two things that make it affordable happens: a second maintainer under D-091, or a budget above the D-093 ceiling.
+`staging` is reinstated when either of the two things that make it affordable happens: a second maintainer under D-091, or a measured steady-state cost under D-360 that leaves room for a second environment. The fixed 100-USD ceiling this originally named no longer exists; the constraint is now what the configuration actually costs, which D-363 schedules the measurement of.
 
 ### Promotion
 

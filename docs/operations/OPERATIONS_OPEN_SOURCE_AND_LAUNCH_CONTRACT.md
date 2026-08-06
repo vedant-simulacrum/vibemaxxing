@@ -13,7 +13,7 @@ Provider and region are selected during implementation through an ADR using late
 
 Environments are `local`, `ci`, `preview` and `production`. Production data never enters lower environments. Preview uses synthetic fixtures. Configuration is typed and separate from secrets. `docs/operations/ENVIRONMENTS_AND_SECRETS.md` owns what each environment is, what it holds and how a change moves between them.
 
-This paragraph previously named five environments including `staging`. D-238 records that no standing pre-production environment is provisioned or funded under D-093, renames `test` to the `ci` everyone uses, and moves the preproduction restore drill that ADR-018 requires into an ephemeral `ci` database restored from a production backup. The consequence — that no build is observed under realistic load before it reaches the private beta ring — is stated in that document rather than absorbed here.
+This paragraph previously named five environments including `staging`. D-238 records that no standing pre-production environment is provisioned or funded under the budget position D-360 now governs, renames `test` to the `ci` everyone uses, and moves the preproduction restore drill that ADR-018 requires into an ephemeral `ci` database restored from a production backup. The consequence — that no build is observed under realistic load before it reaches the private beta ring — is stated in that document rather than absorbed here.
 
 `docs/engineering/LOCAL_DEVELOPMENT.md` owns bringing the stack up on a developer machine.
 
@@ -41,7 +41,7 @@ No platform family is considered launched because another platform family works.
 - Public leaderboard/API: 99.9% monthly. **Target only.** The reviewed observation trigger is 99.0%.
 - Acknowledged claims: no loss. **Not underwritten at the current budget** — see the recovery-point note below.
 - Leaderboard freshness p95: <=90 seconds.
-- PostgreSQL RPO <=5 minutes and RTO <=60 minutes. **Requires continuous point-in-time recovery, which is a paid tier on every ADR-017 shortlist candidate.** At a daily snapshot the recovery point objective is 24 hours, and at 24 hours the no-loss line above does not hold. D-094 owns this conflict, it is open, and neither this document nor the service-expectations document resolves it.
+- PostgreSQL RPO <=5 minutes and RTO <=60 minutes. **Requires continuous point-in-time recovery, which is a paid tier on every ADR-017 shortlist candidate.** At a daily snapshot the recovery point objective is 24 hours, and at 24 hours the no-loss line above does not hold. D-094's cost conflict is resolved by D-360 and D-361 — AWS managed PostgreSQL offers continuous recovery on a tier the credits can fund — so what remains is not a decision but a provisioning gap: nothing is provisioned, so nothing meets the objective. `docs/operations/SLOS_AND_ALERTS.md` states the current recovery position.
 - Stateless service RTO <=15 minutes.
 - Release/update metadata availability: 99.95%.
 - OAuth outage degrades login/linking while existing sessions and local collection continue.

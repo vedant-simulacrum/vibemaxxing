@@ -2754,7 +2754,7 @@ Depends: OS-005, PF-049
 Est: 5-8
 Status: not-started
 
-There is no trace export: a hosted tracing backend is a recurring cost against D-093 and would have to process inside the EU under ADR-017. Four span boundaries are recorded locally.
+There is no trace export: a hosted tracing backend is a recurring cost against the measured ceiling D-360 sets and would have to process inside the EU under ADR-017. Four span boundaries are recorded locally.
 
 ### OS-007 Local development stack
 Files: `compose.yaml` (new), `Makefile`, `.env.example` (new), `docs/engineering/LOCAL_DEVELOPMENT.md`

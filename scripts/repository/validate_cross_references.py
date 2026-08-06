@@ -749,6 +749,10 @@ def scan(files: list[str] | None = None) -> Report:
                         )
                     )
 
+    superseded = report_superseded_citations()
+    dangles.extend(superseded)
+    counts["superseded"] = counts.get("superseded", 0) + len(superseded)
+
     return Report(dangles=dangles, scanned_files=scanned, counts=dict(counts))
 
 
@@ -774,6 +778,7 @@ CLASS_ORDER = (
     "json-ref",
     "operation",
     "non-authority",
+    "superseded",
 )
 
 
@@ -792,6 +797,110 @@ def render_report(report: Report, stream) -> None:
         )
         for row in sorted(rows, key=lambda row: (row.path, row.line, row.token)):
             print(f"  {row.render()}", file=stream)
+
+
+# Scoped to documents that state what is true now, rather than to everything.
+#
+# A record of the past cites superseded decisions because that is its job: the
+# register explains what changed, `docs/history/` is archival by definition,
+# `decision-traceability/` maps decisions to the units that implemented them,
+# and `conformance/p1140e/` is a completed gate's evidence, frozen at the head
+# it was taken against. Flagging those would produce an exemption list longer
+# than the rule, which is the failure mode this check exists to prevent.
+#
+# What is checked is the live normative surface: the documents an engineer
+# reads to learn what the product does today.
+SUPERSEDED_CITATION_ROOTS = (
+    "docs/decisions/",
+    "docs/architecture/",
+    "docs/product/",
+    "docs/privacy/",
+    "docs/security/",
+    "docs/operations/",
+    "docs/integrations/",
+    "docs/engineering/",
+    "docs/verification/",
+    "packages/",
+)
+
+SUPERSEDED_CITATION_EXEMPT = frozenset(
+    {
+        # Amended in place, so it explains the position it replaced. Removing the
+        # superseded ids would remove the explanation.
+        "docs/decisions/ADR-017-HOSTING_REGION_AND_RESIDENCY.md",
+    }
+)
+
+
+def superseded_decisions() -> dict[str, str]:
+    """Decision ids the register marks superseded, with their replacement note."""
+    superseded: dict[str, str] = {}
+    for line in DECISION_REGISTER.read_text(encoding="utf-8").split("\n"):
+        if not line.startswith("| D-"):
+            continue
+        cells = line.split("|")
+        if len(cells) != 6:
+            continue
+        identifier, _, status, condition = (cell.strip() for cell in cells[1:5])
+        if status == "superseded":
+            superseded[identifier] = condition
+    return superseded
+
+
+def report_superseded_citations() -> list[Dangle]:
+    """A superseded decision cited as though it still holds is stale authority.
+
+    It is not a dangling reference: the row exists and resolves. It is worse,
+    because it resolves to something that was true and is not. Six documents
+    were reasoning from a spending ceiling that had been replaced, and one of
+    them concluded a recovery objective was unaffordable when it had become
+    merely unbuilt.
+
+    A citation that explicitly says the decision is superseded is fine, and is
+    how a document records history. The rule is about citations that read as
+    current.
+    """
+    superseded = superseded_decisions()
+    if not superseded:
+        return []
+    found: list[Dangle] = []
+    for relative in tracked_files():
+        if not relative.startswith(SUPERSEDED_CITATION_ROOTS):
+            continue
+        if relative in SUPERSEDED_CITATION_EXEMPT:
+            continue
+        text = (ROOT / relative).read_text(encoding="utf-8", errors="replace")
+        for number, line in enumerate(text.split("\n"), start=1):
+            lowered = line.lower()
+            # A citation that marks the decision as past is how a document
+            # records history rather than asserting a stale fact. The rule is
+            # about citations that read as current.
+            if any(
+                marker in lowered
+                for marker in (
+                    "supersed",
+                    "no longer",
+                    "used to",
+                    "is resolved",
+                    "resolved by",
+                    "replaced by",
+                    "previously",
+                    "was fixed by",
+                )
+            ):
+                continue
+            for identifier in superseded:
+                if identifier in line:
+                    found.append(
+                        Dangle(
+                            kind="superseded",
+                            token=identifier,
+                            path=relative,
+                            line=number,
+                            detail=f"cited as current; {superseded[identifier]}",
+                        )
+                    )
+    return found
 
 
 def main(argv: list[str] | None = None) -> int:

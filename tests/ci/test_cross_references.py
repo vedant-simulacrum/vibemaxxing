@@ -148,6 +148,60 @@ class CrossReferenceValidatorTests(unittest.TestCase):
             "KNOWN_GAPS with the reason",
         )
 
+    def test_a_superseded_decision_cited_as_current_is_reported(self) -> None:
+        """Stale authority resolves, which is what makes it worse than a dangle.
+
+        Six live documents were reasoning from a spending ceiling that had been
+        superseded, and one concluded a recovery objective was unaffordable
+        when it had become merely unbuilt. Every one of those citations
+        resolved to a real register row.
+        """
+        superseded = self.validator.superseded_decisions()
+        self.assertTrue(superseded, "the register records no superseded decision")
+        identifier = sorted(superseded)[0]
+
+        document = ROOT / "docs" / "operations" / "SLOS_AND_ALERTS.md"
+        original = document.read_text(encoding="utf-8")
+        document.write_text(f"Spend is capped by {identifier}.\n" + original, "utf-8")
+        try:
+            found = self.validator.report_superseded_citations()
+        finally:
+            document.write_text(original, encoding="utf-8")
+
+        self.assertTrue(any(d.token == identifier for d in found))
+
+    def test_a_citation_marked_as_past_is_not_reported(self) -> None:
+        """Recording history is how a document stays honest, not a defect."""
+        identifier = sorted(self.validator.superseded_decisions())[0]
+        document = ROOT / "docs" / "operations" / "SLOS_AND_ALERTS.md"
+        original = document.read_text(encoding="utf-8")
+        document.write_text(
+            f"Spend was capped by {identifier}, now superseded.\n" + original, "utf-8"
+        )
+        try:
+            found = self.validator.report_superseded_citations()
+        finally:
+            document.write_text(original, encoding="utf-8")
+
+        self.assertEqual([d for d in found if d.token == identifier], [])
+
+    def test_archival_trees_are_out_of_scope(self) -> None:
+        """`docs/history/` cites superseded decisions because that is its job.
+
+        Checking it would need an exemption list longer than the rule, which is
+        the failure mode this check exists to prevent.
+        """
+        identifier = sorted(self.validator.superseded_decisions())[0]
+        document = ROOT / "docs" / "history" / "FINAL_PLANNING_EXIT_AUDIT.md"
+        original = document.read_text(encoding="utf-8")
+        document.write_text(original + f"\n{identifier} caps spend.\n", "utf-8")
+        try:
+            found = self.validator.report_superseded_citations()
+        finally:
+            document.write_text(original, encoding="utf-8")
+
+        self.assertEqual([d for d in found if d.token == identifier], [])
+
     def test_clean_repository_passes_in_both_modes(self) -> None:
         stdout, stderr = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
