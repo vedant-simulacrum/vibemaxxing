@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/ranking-event-v1.schema.json",
+  "title": "Rank movement, overtake and streak event v1",
+  "description": "Typed ranking events, each naming the exact prior and current sealed generations it compares. docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md is the normative owner. Events are keyed on erasure-domain pseudonyms, so an erasure suppresses an event by the same key destruction that suppresses an entry, rather than by a second deletion path.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ranking_movement_event_id",
+    "ranking_view_id",
+    "event_type",
+    "subject_erasure_domain_id",
+    "prior_generation",
+    "current_generation",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "ranking_movement_event_id": { "type": "string", "format": "uuid" },
+    "ranking_view_id": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "event_type": {
+      "enum": [
+        "rank-movement",
+        "overtake",
+        "streak-started",
+        "streak-extended",
+        "streak-broken"
+      ]
+    },
+    "subject_erasure_domain_id": { "type": "string", "format": "uuid" },
+    "counterpart_erasure_domain_id": {
+      "description": "Present exactly on an overtake, which is the only two-party event. An overtake requires strictly greater credited burn than the counterpart, not display-order movement within a tie.",
+      "type": "string",
+      "format": "uuid"
+    },
+    "prior_generation": { "type": "integer", "minimum": 0 },
+    "current_generation": {
+      "description": "Strictly greater than prior_generation. Both name sealed generations of the same view, so an event always cites two comparable snapshots rather than a live read.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "prior_position": { "type": "integer", "minimum": 1 },
+    "current_position": { "type": "integer", "minimum": 1 },
+    "streak_length": { "type": "integer", "minimum": 1 },
+    "retracted_at": {
+      "description": "A late claim or a correction can make an emitted event untrue. Retraction is appended rather than applied by deleting the event, and the notification it produced is retracted through the notification-delivery machine.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "retraction_reason_code": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "event_type": { "const": "overtake" } },
+        "required": ["event_type"]
+      },
+      "then": {
+        "required": [
+          "counterpart_erasure_domain_id",
+          "prior_position",
+          "current_position"
+        ]
+      },
+      "else": { "not": { "required": ["counterpart_erasure_domain_id"] } }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "enum": ["streak-started", "streak-extended", "streak-broken"]
+          }
+        },
+        "required": ["event_type"]
+      },
+      "then": { "required": ["streak_length"] }
+    },
+    {
+      "if": { "required": ["retracted_at"] },
+      "then": { "required": ["retraction_reason_code"] },
+      "else": { "not": { "required": ["retraction_reason_code"] } }
+    }
+  ]
+}

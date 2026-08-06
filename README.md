@@ -6,7 +6,8 @@ Developers burn tokens all day and have no shared way to see it. VibeMaxxing ran
 
 A local daemon watches your agent, counts tokens, signs the count on-device, and sends **only fixed-schema aggregates** to the server. No prompts. No transcripts. No filenames. No content-derived hashes. That boundary is the product.
 
-- **Token Burn** — the ranked metric. Raw accepted tokens.
+- **Token Burn** — raw accepted tokens. Your own figure, not published on the public board.
+- **Credited Token Burn** — Token Burn times a server-assigned confidence weight from how well the usage was evidenced. This is what public rank is computed on and what the board shows.
 - **Estimated Cash Burn** — an API-equivalent price interpretation, always labeled estimated, never real spend.
 
 ---

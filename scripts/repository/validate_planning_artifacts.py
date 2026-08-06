@@ -1173,6 +1173,162 @@ def validate_protobuf_files() -> None:
             )
 
 
+_CREATE_TABLE_RE = re.compile(r"(?im)^create\s+table\s+([a-z_][a-z0-9_]*)\s*\(")
+
+
+def _planning_table_bodies() -> dict[str, str]:
+    """Return the parenthesised body of every `create table` in the planning DDL."""
+    sql = (SCHEMAS / "planning-schema.sql").read_text(encoding="utf-8")
+    bodies: dict[str, str] = {}
+    for match in _CREATE_TABLE_RE.finditer(sql):
+        depth = 1
+        index = match.end()
+        while index < len(sql) and depth:
+            character = sql[index]
+            if character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+            index += 1
+        bodies[match.group(1)] = sql[match.end() : index - 1]
+    return bodies
+
+
+def validate_data_disposition() -> None:
+    """Prove the retention registry covers the schema and resolves to real windows.
+
+    PF-050's problem was that retention lived in prose and `expires_at` columns were
+    enforced by nobody. Three things make that checkable rather than aspirational:
+    every persistence owner has a disposition row, every numeric window names a policy
+    key that exists, and every table carrying an `expires_at` column names the actor
+    that acts when the timestamp passes. An expiry with no actor is a comment.
+
+    This proves coverage and resolution. It does not prove that any sweeper exists;
+    none does.
+    """
+    schema = validate_schema_file(SCHEMAS / "data-disposition-v1.schema.json")
+    registry = load_json(SCHEMAS / "data-disposition-v1.json")
+    validate_instance(schema, registry, "data disposition registry")
+
+    entries = registry["entries"]
+    tables = [entry["table"] for entry in entries]
+    assert_unique(tables, "data disposition tables")
+
+    bodies = _planning_table_bodies()
+    declared = set(bodies)
+    covered = set(tables)
+    missing = sorted(declared - covered)
+    if missing:
+        raise ValidationFailure(f"planning tables without a disposition row: {missing}")
+    unknown = sorted(covered - declared)
+    if unknown:
+        raise ValidationFailure(
+            f"disposition rows naming tables the planning DDL does not define: {unknown}"
+        )
+
+    policies = load_json(SCHEMAS / "policy-defaults-v1.json")["policies"]
+    for entry in entries:
+        for field in ("retention", "attribution_retention"):
+            window = entry.get(field)
+            if not window:
+                continue
+            key = window.get("policy_key")
+            if key and key not in policies:
+                raise ValidationFailure(
+                    f"{entry['table']}.{field} names unknown policy key: {key}"
+                )
+    for field in ("backup_retention_policy_key", "journal_retention_policy_key"):
+        if registry[field] not in policies:
+            raise ValidationFailure(
+                f"{field} names unknown policy key: {registry[field]}"
+            )
+
+    expiring = {
+        table
+        for table, body in bodies.items()
+        if re.search(r"(?m)^\s*expires_at\b", body)
+    }
+    by_table = {entry["table"]: entry for entry in entries}
+    unenforced = sorted(
+        table for table in expiring if "expiry_enforcement" not in by_table[table]
+    )
+    if unenforced:
+        raise ValidationFailure(
+            f"tables with an expires_at column and no enforcement owner: {unenforced}"
+        )
+    spurious = sorted(
+        entry["table"]
+        for entry in entries
+        if "expiry_enforcement" in entry and entry["table"] not in expiring
+    )
+    if spurious:
+        raise ValidationFailure(
+            f"disposition rows declaring expiry enforcement for a table with no "
+            f"expires_at column: {spurious}"
+        )
+
+    # D-214: the erasure journal has to outlive the backups it exists to correct,
+    # by exactly one day. Longer keeps identifiers of erased participants past the
+    # point any restore could need them; shorter leaves a restore with nothing to
+    # replay. The two windows are separately editable, so the relation is checked
+    # rather than assumed.
+    backup_days = policies[registry["backup_retention_policy_key"]]["value"]
+    journal_days = policies[registry["journal_retention_policy_key"]]["value"]
+    if journal_days != backup_days + 1:
+        raise ValidationFailure(
+            f"erasure journal retention is {journal_days} days against a "
+            f"{backup_days}-day backup window; it must be exactly one day longer"
+        )
+
+
+def validate_erasure_contract() -> None:
+    """Prove the erasure invariants that a check constraint can carry are carried.
+
+    D-210 rests on constraints rather than on worker discipline, so the constraints
+    are the thing to verify. This is structural agreement between the schema, the DDL
+    and the decision. It is not evidence that any erasure has been executed.
+    """
+    validate_schema_file(SCHEMAS / "erasure-record-v1.schema.json")
+    validate_schema_file(SCHEMAS / "ranking-generation-v1.schema.json")
+    validate_schema_file(SCHEMAS / "score-contribution-v1.schema.json")
+    validate_schema_file(SCHEMAS / "ranking-event-v1.schema.json")
+    validate_schema_file(SCHEMAS / "period-calendar-v1.schema.json")
+
+    bodies = _planning_table_bodies()
+    required = {
+        # A key is present or destroyed, never both and never neither.
+        "erasure_keys": "check ((key_material is null) = (destroyed_at is not null))",
+        # A restore cannot record traffic admitted before the erasure replay finished.
+        "erasure_restore_receipts": (
+            "check (traffic_admitted_at is null or traffic_admitted_at >= reapply_completed_at)"
+        ),
+        # The weight only ever discounts, so ADR-020's ceiling is enforced per entry.
+        "ranking_entries": "check (credited_token_burn <= token_burn_total)",
+        # The chain has exactly one root.
+        "erasure_records": "check ((chain_sequence = 1) = (previous_record_digest is null))",
+    }
+    for table, constraint in required.items():
+        body = bodies.get(table)
+        if body is None:
+            raise ValidationFailure(f"planning DDL lacks the {table} table")
+        if constraint not in " ".join(body.split()):
+            raise ValidationFailure(
+                f"{table} lacks its required erasure invariant: {constraint}"
+            )
+
+    entry_body = " ".join(bodies["ranking_entries"].split())
+    if "account_id" in entry_body:
+        raise ValidationFailure(
+            "ranking_entries names an account identifier; a sealed entry is keyed on "
+            "the erasure-domain pseudonym so that key destruction is sufficient"
+        )
+    for banned_table in ("minute_scores", "period_scores"):
+        if re.search(r"(?m)^\s*score\s+bigint", bodies[banned_table]):
+            raise ValidationFailure(
+                f"{banned_table} retains a column named score, which ADR-020 bans"
+            )
+
+
 def validate_postgres_ddl(database_url: str) -> None:
     sql = (SCHEMAS / "planning-schema.sql").read_text(encoding="utf-8")
     if "P-1140D REPAIRED PLANNING MIGRATION CONTRACT" not in sql:
@@ -2106,6 +2262,8 @@ def main() -> int:
         ("JSON schemas, examples, and registries", validate_json_schemas_and_examples),
         ("adapter-one OTLP identity boundary", validate_adapter_one_boundary),
         ("policy and observability artifacts", validate_policy_and_observability),
+        ("data disposition and retention coverage", validate_data_disposition),
+        ("erasure and sealed-generation invariants", validate_erasure_contract),
         ("OpenAPI", validate_openapi_file),
         ("API error matrix and operation classes", validate_api_error_matrix),
         ("P-1140D state and platform contracts", validate_p1140d_contracts),

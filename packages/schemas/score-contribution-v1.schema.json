@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/score-contribution-v1.schema.json",
+  "title": "Score contribution and correction manifest v1",
+  "description": "Claim-level explainability for a period figure. Every delta that moved a participant's period total is one entry, so a standing can be explained to the participant it describes and an appeal is about an arithmetic rather than about a feeling. docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md is the normative owner. Contributions are keyed on the erasure-domain pseudonym and are retained after an erasure with the claim reference cleared.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "period_id", "erasure_domain_id", "contributions"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "period_id": { "type": "string", "format": "uuid" },
+    "erasure_domain_id": { "type": "string", "format": "uuid" },
+    "token_burn_total": {
+      "description": "The sum of every non-superseded token_burn_delta below. A manifest whose entries do not sum to it is a defect in the aggregation, not a rounding difference: the whole path is integer.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "contributions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/contribution" }
+    }
+  },
+  "$defs": {
+    "contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contribution_id", "origin", "token_burn_delta", "source_revision", "created_at"],
+      "properties": {
+        "contribution_id": { "type": "string", "format": "uuid" },
+        "claim_id": {
+          "description": "Absent on a consolidation contribution, which has no single originating claim, and cleared on every contribution whose claim an erasure deleted. The arithmetic stays auditable; the link to the claim does not survive.",
+          "type": "string",
+          "format": "uuid"
+        },
+        "origin": {
+          "description": "consolidation carries D-070 duplicate-account contributions under the surviving identity, preserving original period attribution. Stored account totals are never added together, so a consolidation is a set of claim-level deltas rather than one summed figure.",
+          "enum": ["claim", "correction", "consolidation", "retraction"]
+        },
+        "token_burn_delta": {
+          "description": "Signed. A correction inserts an inverse delta and a forward delta rather than editing the original, which is what keeps the accepted claim immutable.",
+          "type": "integer"
+        },
+        "source_revision": { "type": "integer", "minimum": 0 },
+        "superseded_by_contribution_id": { "type": "string", "format": "uuid" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "origin": { "const": "consolidation" } },
+            "required": ["origin"]
+          },
+          "then": { "not": { "required": ["claim_id"] } }
+        }
+      ]
+    }
+  }
+}

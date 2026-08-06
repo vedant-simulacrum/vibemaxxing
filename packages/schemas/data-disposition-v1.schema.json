@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/data-disposition-v1.schema.json",
+  "title": "Data disposition registry v1",
+  "description": "One row per persistence owner in packages/schemas/planning-schema.sql, stating how long it is kept, what an Article 17 erasure does to it, whether it is inside the database backup set, and which worker enforces the window. docs/privacy/DATA_MAP.md is the Article 30 record and the prose authority; this file is the machine-readable form of the windows it states.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_version",
+    "backup_retention_policy_key",
+    "journal_retention_policy_key",
+    "entries"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "registry_version": { "type": "string", "minLength": 1 },
+    "backup_retention_policy_key": { "type": "string", "minLength": 1 },
+    "journal_retention_policy_key": { "type": "string", "minLength": 1 },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "table",
+        "classification",
+        "retention",
+        "erasure_action",
+        "backup_set",
+        "enforcement_owner"
+      ],
+      "properties": {
+        "table": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "classification": {
+          "description": "personal identifies a natural person directly or through a live mapping the controller holds; pseudonymous identifies one only through a binding that an erasure destroys; non-personal never identifies one.",
+          "enum": ["personal", "pseudonymous", "non-personal"]
+        },
+        "retention": { "$ref": "#/$defs/retention" },
+        "attribution_retention": {
+          "description": "How long the ability to link a pseudonymous row to a person is kept, where that differs from how long the row is kept. Present only on pseudonymous rows.",
+          "$ref": "#/$defs/retention"
+        },
+        "erasure_action": {
+          "description": "delete removes the row; key-destroy-retain keeps it and destroys the key that binds it to a person; retain-pseudonymous keeps a row that was never bound to a person by a destroyable key; retain-unlinked keeps a row whose subject row is deleted; not-applicable means an erasure never reaches it.",
+          "enum": [
+            "delete",
+            "key-destroy-retain",
+            "retain-pseudonymous",
+            "retain-unlinked",
+            "not-applicable"
+          ]
+        },
+        "backup_set": {
+          "enum": ["in-backup-set", "mirrored-outside-backup-set"]
+        },
+        "enforcement_owner": {
+          "enum": [
+            "retention-sweeper",
+            "partition-dropper",
+            "session-reaper",
+            "erasure-worker",
+            "projection-worker",
+            "operator",
+            "none-required"
+          ]
+        },
+        "expiry_enforcement": {
+          "description": "Required for every table carrying an expires_at column. Names what acts when the timestamp passes; an expiry with no actor is a comment.",
+          "enum": [
+            "session-reaper",
+            "retention-sweeper",
+            "erasure-worker",
+            "projection-worker",
+            "operator",
+            "rejected-at-read"
+          ]
+        },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "classification": { "const": "pseudonymous" } },
+            "required": ["classification"]
+          },
+          "then": { "required": ["attribution_retention"] }
+        }
+      ]
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        { "required": ["policy_key"] },
+        { "required": ["rule"] }
+      ],
+      "properties": {
+        "policy_key": {
+          "description": "A key in packages/schemas/policy-defaults-v1.json. The value there governs.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "rule": {
+          "description": "A window that no clock expresses, tied to the life of another aggregate.",
+          "enum": [
+            "account-lifetime",
+            "ranked-identity-lifetime",
+            "device-registration-lifetime",
+            "claim-lifetime",
+            "board-membership-lifetime",
+            "session-lifetime",
+            "until-superseded",
+            "indefinite-non-personal",
+            "no-retention"
+          ]
+        }
+      }
+    }
+  }
+}

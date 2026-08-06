@@ -37,7 +37,7 @@ This list is unchanged by the P-1104 decision. The executable prototypes are not
 ## Binding product posture
 
 - Servers never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, repository/project names, credentials, embeddings, summaries, classifications, personal insights, or content-derived hashes.
-- Token Burn is the default raw ranking metric. Estimated Cash Burn is always labelled estimated and is server interpreted.
+- Token Burn is the raw ranking metric of record. Public rank is computed on Credited Token Burn under ADR-020, and only the credited figure is published publicly. Estimated Cash Burn is always labelled estimated and is server interpreted.
 - Historical imports never enter active competition.
 - Public evidence status is assigned by the server verifier, never selected by the client.
 - Deterministic controls are authoritative. SLM/statistical detection remains local-only, advisory, and post-launch.

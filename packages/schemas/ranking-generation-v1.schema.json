@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/ranking-generation-v1.schema.json",
+  "title": "Sealed ranking generation, entry and snapshot v1",
+  "description": "The machine-readable form of a sealed ranking generation. packages/schemas/ranking-view-v1.schema.json identifies the view a generation belongs to; this schema describes one generation of it, its entries and its snapshot. docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md is the normative owner. An entry names an erasure-domain pseudonym rather than an account, which is what lets an Article 17 erasure leave the generation, its positions and its content hash untouched.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ranking_view_id",
+    "generation",
+    "state",
+    "source_revision",
+    "weight_table_digest",
+    "entries"
+  ],
+  "properties": {
+    "ranking_view_id": { "$ref": "#/$defs/digest" },
+    "generation": { "type": "integer", "minimum": 0 },
+    "state": {
+      "description": "The ranking-projection machine. A generation is sealed exactly when it reaches active, and stays sealed through superseded.",
+      "enum": ["building", "validating", "active", "superseded", "failed"]
+    },
+    "source_revision": { "type": "integer", "minimum": 0 },
+    "weight_table_digest": {
+      "description": "Digest of the ADR-020 confidence weight table that produced these entries. It is one of the inputs to rules_digest, so a recalibration produces a different ranking_view_id and a silent recalibration is not expressible.",
+      "$ref": "#/$defs/digest"
+    },
+    "snapshot_id": {
+      "description": "The durable client-visible name for this generation. One snapshot per generation. An erasure inside the generation does not mint a new one.",
+      "type": "string",
+      "format": "uuid"
+    },
+    "content_hash": {
+      "description": "SHA-256 over the deterministic CBOR encoding of the entry array in position order. It covers no handle, no account identifier and no appraisal detail, so a rename, a block, a visibility change and an erasure all leave it intact. Present exactly when sealed_at is.",
+      "$ref": "#/$defs/digest"
+    },
+    "sealed_at": { "type": "string", "format": "date-time" },
+    "published_at": { "type": "string", "format": "date-time" },
+    "superseded_by_generation": { "type": "integer", "minimum": 1 },
+    "sealed_entry_count": {
+      "description": "Frozen at seal and never recomputed. Republishing a recomputed count for one generation would let an observer difference two publications and recover the figure of a participant who has since been erased.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "sealed_total_credited_token_burn": { "type": "integer", "minimum": 0 },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "state": { "enum": ["active", "superseded"] } },
+        "required": ["state"]
+      },
+      "then": {
+        "required": [
+          "sealed_at",
+          "content_hash",
+          "snapshot_id",
+          "sealed_entry_count",
+          "sealed_total_credited_token_burn"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": { "state": { "const": "superseded" } },
+        "required": ["state"]
+      },
+      "then": { "required": ["superseded_by_generation"] },
+      "else": { "not": { "required": ["superseded_by_generation"] } }
+    }
+  ],
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "position",
+        "erasure_domain_id",
+        "token_burn_total",
+        "evidence_profile_id",
+        "evidence_class",
+        "trust_state_at_projection",
+        "evidence_weight_hundredths",
+        "trust_weight_hundredths",
+        "confidence_weight_hundredths",
+        "credited_token_burn",
+        "first_reached_at"
+      ],
+      "properties": {
+        "position": {
+          "description": "The rank() value at seal. Immutable, and the anchor a durable cursor names. It is not the index of the entry in a rendered page, because suppressed entries render nothing.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "erasure_domain_id": {
+          "description": "The pseudonym. It resolves to a person only through erasure_domains.bound_subject_ciphertext, under a key that an erasure destroys.",
+          "type": "string",
+          "format": "uuid"
+        },
+        "token_burn_total": {
+          "description": "The raw accepted quantity. Not published on any public surface, because publishing it beside the credited figure would let an observer recover the confidence weight by division and, since the evidence class is public, recover the sanction that D-084 keeps private.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "evidence_profile_id": { "type": "string", "minLength": 1 },
+        "evidence_class": {
+          "description": "imported is absent: an imported record is never ranked and therefore produces no entry.",
+          "enum": ["hardened", "standard"]
+        },
+        "trust_state_at_projection": {
+          "description": "The ranked-identity-eligibility state that produced trust_weight_hundredths, frozen so the entry stays explainable after the identity moves on. retired is absent: it produces no entry.",
+          "enum": [
+            "unverified",
+            "eligible",
+            "investigating",
+            "restricted",
+            "consolidating",
+            "appealed",
+            "reversed"
+          ]
+        },
+        "evidence_weight_hundredths": { "$ref": "#/$defs/weight" },
+        "trust_weight_hundredths": { "$ref": "#/$defs/weight" },
+        "confidence_weight_hundredths": { "$ref": "#/$defs/weight" },
+        "credited_token_burn": {
+          "description": "floor(token_burn_total x confidence_weight_hundredths / 100). Integer throughout: ADR-020 admits no floating point on this path, and D-193 keeps floats out of the encoded profile entirely.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "first_reached_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "weight": {
+      "description": "ADR-020 bounds every weight at 25 below and 100 above. The floor is not zero because a zero weight removes a participant from the standings without saying so, which destroys the appeal right D-084 depends on.",
+      "type": "integer",
+      "minimum": 25,
+      "maximum": 100
+    }
+  }
+}

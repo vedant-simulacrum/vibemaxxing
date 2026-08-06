@@ -227,7 +227,7 @@ Under ADR-011 and D-062 through D-066:
 - Servers never receive prompts, responses, transcripts, code, diffs, commands, tool contents, filenames, paths, project/repository names, credentials, embeddings, summaries, classifications, personal insights or content-derived hashes.
 - Only fixed-schema aggregate accounting and integrity metadata crosses the device boundary.
 - Transcript-capable processes have no network access; networked synchronization processes cannot inspect transcript content.
-- Token Burn is the default raw ranking metric; Estimated Cash Burn is always explicitly an estimate and is computed server-side from immutable usage facts and versioned pricing rules.
+- Token Burn is the raw ranking metric of record; public rank is computed on Credited Token Burn, which is Token Burn times a server-assigned confidence weight under ADR-020, and public surfaces publish the credited figure only. Estimated Cash Burn is always explicitly an estimate and is computed server-side from immutable usage facts and versioned pricing rules.
 - Historical imports remain private analytics and never enter active competition.
 - Authentic intentionally pointless usage counts when non-duplicated.
 - Deterministic controls own accounting, signatures, canonicalization, sequences, replay, duplicates, continuity and hard eligibility.

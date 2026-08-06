@@ -30,7 +30,7 @@ You may close your account at any time. Closing it is not the same as erasure; t
 
 ## 4. What gets published
 
-By creating an account and connecting an agent you are asking to be put on a public leaderboard. Your handle, your Token Burn at period granularity, your rank, an Estimated Cash Burn figure and the evidence profile the server awarded you are visible to anyone on the internet with no account.
+By creating an account and connecting an agent you are asking to be put on a public leaderboard. Your handle, your Credited Token Burn at period granularity, your rank, an Estimated Cash Burn figure and the evidence profile the server awarded you are visible to anyone on the internet with no account. Your raw Token Burn total and the confidence weight applied to it are not public; they are on your own page and on surfaces you authorize.
 
 **Estimated Cash Burn is an estimate and never an invoice.** It is computed on the server from a versioned public pricing dataset, and it is not what you were charged, not what your provider billed you, and not a claim about your actual spending. It is always labelled as estimated wherever it appears.
 
