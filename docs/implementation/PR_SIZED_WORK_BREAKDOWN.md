@@ -70,19 +70,19 @@ Units: 259. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 227 |
+| `not-started` | 226 |
 | `in-progress` | 6 |
-| `landed` | 20 |
+| `landed` | 21 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 61 assertions across 20 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 65 assertions across 21 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 14.
 
 `PF-001`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-008`.
 
-Statuses additionally checkable against artifact presence: 197 of 259. The other 62 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 196 of 259. The other 63 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -947,17 +947,25 @@ Coverage is driven by a hardcoded `BINDINGS` table, so an aggregate whose `sql=`
 Make omission explicit: require every aggregate to declare either a binding or a recorded reason for having none, and have the summary line state three-way, two-way, and format-only counts separately so a green run cannot be read as more than it is.
 
 ### PF-068 — Author the Ed25519 divergence-case conformance corpus
-Files: `conformance/vibeproof/v1/ed25519-divergence-corpus.json` (new), `conformance/vibeproof/v1/README.md` (new), `scripts/repository/generate_vibeproof_vectors.py`, `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`
-Acceptance: the corpus contains at least one case for each of non-canonical `A`, non-canonical `R`, small-order `A`, and `S >= l`; every case records its expected ZIP-215 verdict; and a generator reproduces the corpus byte-identically from recorded inputs, so no verdict is asserted by hand.
-Depends: PF-005
+Files: `conformance/vibeproof/v1/ed25519-divergence-corpus.json`, `conformance/vibeproof/v1/README.md`, `conformance/vibeproof/v1/zip215-oracle-run.json`, `conformance/vibeproof/v1/zip215-oracle/main.go`, `scripts/repository/generate_ed25519_divergence_corpus.py`, `scripts/repository/run_ed25519_oracles.py`, `tests/ci/test_ed25519_divergence_corpus.py`, `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`
+Acceptance: the corpus contains at least one case for each of non-canonical `A`, non-canonical `R`, small-order `A`, and `S >= l`; every case records its expected ZIP-215 verdict; a generator reproduces the corpus byte-identically from recorded inputs, so no verdict is asserted by hand; and every ZIP-215 verdict is either confirmed against an independent ZIP-215 implementation with the run recorded, or marked `unconfirmed` with the command that would confirm it.
+Depends: none
 Est: 8-12
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/generate_ed25519_divergence_corpus.py --check
+Evidence: unittest tests.ci.test_ed25519_divergence_corpus
+Evidence: exists conformance/vibeproof/v1/README.md
+Evidence: contains 9 conformance/vibeproof/v1/ed25519-divergence-corpus.json :: "status": "confirmed"
 
 VibeProof v1 pins Ed25519 verification to ZIP-215 because RFC 8032 does not pin it: SS5.1.7 permits both the cofactored and cofactorless group equations, and FIPS 186-5 SS7.7 repeats that permission verbatim. A cofactored verifier accepts a strictly larger set of signatures than a cofactorless one, and the implication runs one way only, so a Rust signer and a Go verifier that both conform to RFC 8032 can disagree without any round-trip test noticing.
 
-RFC 8032's own test vectors cannot detect this. They are well-formed signatures that pass under every implementation, which is exactly why they prove nothing about the axes that diverge. Only adversarial inputs separate the criteria sets.
+RFC 8032's own test vectors cannot detect this. They are well-formed signatures that pass under every implementation, which is exactly why they prove nothing about the axes that diverge. Only adversarial inputs separate the criteria sets. `tests/ci/test_ed25519_divergence_corpus.py` asserts that insufficiency executably by running RFC 8032 SS7.1 TEST 1 through both verification rules and requiring both to accept.
 
-The corpus is a precondition of any cross-language conformance claim, and it cannot be authored by asserting verdicts from the specification text alone - each expected outcome has to be confirmed against a ZIP-215 reference implementation, or the corpus repeats the original defect at one remove. Go's `crypto/ed25519` is cofactorless and will fail these cases by design; selecting a ZIP-215-capable Go implementation is part of the D-012 bakeoff.
+The corpus is nine cases and D-340 records their construction. Five separate the two criteria, and `cofactored-only-order8-r` is the one that shows the divergence is the group equation rather than a story about malformed encodings: every byte in it is canonical and `A` is an ordinary public key. `s-equals-l` and `s-plus-l` record where ZIP-215 is not more permissive, because an implementer who reads it as uniformly laxer drops the range check that stops malleability.
+
+Verdicts are confirmed, not asserted. D-341 fixes the rule: a ZIP-215 verdict is `confirmed` only when an independent implementation returned it against a digest of the case's exact bytes, `unconfirmed` otherwise with the command that would confirm it, and a contradiction between the oracle and the generator stops the corpus being written at all. All nine are currently confirmed by `github.com/hdevalence/ed25519consensus` v0.2.0 under `conformance/vibeproof/v1/zip215-oracle-run.json`. Go's `crypto/ed25519` and Python's `cryptography` are run as contrast oracles and D-342 forbids either verdict being recorded as a ZIP-215 one; selecting a ZIP-215-capable Go implementation for the product remains part of the D-012 bakeoff, and using one as a measuring instrument is not adopting it. D-343 records what running the contrast oracles found: two deployed cofactorless verifiers accept a non-canonical `A` encoding RFC 8032 SS5.1.3 says must fail to decode, so the corpus separates divergence from the strict text and divergence from a measured implementation rather than reporting one number.
+
+This unit authors the corpus. It does not make anything conformant: no implementation reads the corpus, `P-003` and `P-004` are the units that make the Rust and Go verifiers yield its recorded verdicts, and `P-003` already names that as its acceptance criterion.
 
 ### PF-069 — Specify the private-beta invite aggregate
 Files: `docs/security/PRIVATE_BETA_ADMISSION.md` (new), `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `packages/schemas/policy-defaults-v1.json`, `packages/schemas/data-disposition-v1.json`, `docs/privacy/DATA_MAP.md`

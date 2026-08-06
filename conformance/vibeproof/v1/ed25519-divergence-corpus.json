@@ -1,0 +1,647 @@
+{
+  "schema_version": 1,
+  "corpus_id": "vibeproof-v1-ed25519-divergence-001",
+  "generator": "scripts/repository/generate_ed25519_divergence_corpus.py",
+  "normative_rule": "ZIP-215",
+  "normative_owner": "docs/architecture/VIBEPROOF_V1_PROTOCOL.md",
+  "decision": "D-192",
+  "authority_class": "normative-planning",
+  "evidence_ceiling": "fixture-consistent",
+  "scope": "raw Ed25519 signature verification only. The COSE_Sign1 and canonical CBOR bindings are owned by exact-byte-vectors.json; a message here is fixed ASCII so a failure localises to the verification rule and not to an encoder.",
+  "not_evidence_of": [
+    "any implementation being conformant, because no implementation consumes this corpus yet",
+    "cross-language parity, which requires two implementations to run it",
+    "security or launch readiness of any kind"
+  ],
+  "inputs": {
+    "signer_seed_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "message_ascii": "VIBEPROOF/V1 ED25519 DIVERGENCE CORPUS",
+    "message_hex": "5649424550524f4f462f5631204544323535313920444956455247454e434520434f52505553",
+    "nonce_a": 12345,
+    "nonce_b": 777
+  },
+  "derived_facts": {
+    "l": "7237005577332262213973186563042994240857116359379907606001950938285454250989",
+    "cofactor": 8,
+    "eight_torsion": [
+      {
+        "encoding_hex": "0100000000000000000000000000000000000000000000000000000000000000",
+        "order": 1
+      },
+      {
+        "encoding_hex": "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a",
+        "order": 8
+      },
+      {
+        "encoding_hex": "0000000000000000000000000000000000000000000000000000000000000080",
+        "order": 4
+      },
+      {
+        "encoding_hex": "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05",
+        "order": 8
+      },
+      {
+        "encoding_hex": "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "order": 2
+      },
+      {
+        "encoding_hex": "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85",
+        "order": 8
+      },
+      {
+        "encoding_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+        "order": 4
+      },
+      {
+        "encoding_hex": "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa",
+        "order": 8
+      }
+    ],
+    "non_canonical_curve_points": [
+      {
+        "encoding_hex": "edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 0,
+        "point_class": "small-order-4"
+      },
+      {
+        "encoding_hex": "edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 0,
+        "point_class": "small-order-4"
+      },
+      {
+        "encoding_hex": "eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 1,
+        "point_class": "identity"
+      },
+      {
+        "encoding_hex": "eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 1,
+        "point_class": "identity"
+      },
+      {
+        "encoding_hex": "f0ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 3,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f0ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 3,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 4,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 4,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f2ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 5,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f2ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 5,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 6,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 6,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f6ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 9,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f6ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 9,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 10,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "f7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 10,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "fbffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 14,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "fbffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 14,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "fcffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 15,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "fcffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 15,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "fdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 16,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "fdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 16,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+        "reduced_y": 18,
+        "point_class": "mixed-order"
+      },
+      {
+        "encoding_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "reduced_y": 18,
+        "point_class": "mixed-order"
+      }
+    ]
+  },
+  "zip215_confirmation": {
+    "schema_version": 1,
+    "record_kind": "reproducible-generated-artifact",
+    "produced_by": "scripts/repository/run_ed25519_oracles.py",
+    "command": "go run ./conformance/vibeproof/v1/zip215-oracle <corpus>",
+    "generated_at": "2026-08-06T08:51:12Z",
+    "zip215_oracle": {
+      "id": "github.com/hdevalence/ed25519consensus",
+      "version": "v0.2.0",
+      "go_sum_h1": "h1:37ICyZqdyj0lAZ8P4D1d1id3HqbbG1N3iBb1Tb4rdcU=",
+      "toolchain": "go version go1.26.4 darwin/arm64",
+      "why_this_one": "the ZIP-215 implementation Zcash and CometBFT use, written by a co-author of the ZIP. It is independent of the generator: the generator's arithmetic is Python written for this corpus and this is not a port of it."
+    },
+    "contrast_oracles": [
+      {
+        "id": "go crypto/ed25519",
+        "criterion": "cofactorless",
+        "role": "contrast only; never recorded as a ZIP-215 verdict"
+      },
+      {
+        "id": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+        "criterion": "cofactorless, libsodium-like",
+        "role": "contrast only; never recorded as a ZIP-215 verdict"
+      }
+    ],
+    "establishes": "that these three libraries returned these verdicts for these exact bytes, each case bound by a SHA-256 digest over its own id, public key, R, S and message",
+    "does_not_establish": [
+      "that any VibeProof implementation is conformant; none consumes this corpus",
+      "cross-language parity, which needs the Rust and Go verifiers of P-002 and S-002",
+      "anything about security, privacy or launch readiness"
+    ]
+  },
+  "case_count": 9,
+  "confirmed_case_count": 9,
+  "diverging_case_count": 5,
+  "cases_a_measured_cofactorless_verifier_disagrees_with": 4,
+  "cases": [
+    {
+      "id": "control-canonical-valid",
+      "axis": "control",
+      "intent": "A well-formed RFC 8032 signature. It is in the corpus to be the thing every other case is measured against: it passes under both criteria, which is exactly why RFC 8032's own vectors prove nothing.",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "signature_hex": "f7ff3cb7443db9d346efeab5243c42c42dc8b4a979f40897e91e359ebe1779347d885b5fa406ad180f2ba8e8a3e3ff70f4d1ac985b388bf1e22bbd06b6838200",
+      "message_hex": "5649424550524f4f462f5631204544323535313920444956455247454e434520434f52505553",
+      "case_digest": "0681338bce9a4f630af1d0247f0947fd2bc87c716e607ecba5e470bddb6b6ac9",
+      "decoded": {
+        "a_encoding": "canonical",
+        "a_point": "prime-order",
+        "r_encoding": "canonical",
+        "r_point": "prime-order",
+        "s_less_than_l": true
+      },
+      "zip215": {
+        "verdict": "accept",
+        "deciding_rule": "cofactored equation holds",
+        "confirmation": {
+          "status": "confirmed",
+          "confirmed_by": "github.com/hdevalence/ed25519consensus",
+          "oracle_verdict": "accept"
+        }
+      },
+      "cofactorless": {
+        "verdict": "accept",
+        "deciding_rule": "cofactorless equation holds",
+        "source": "computed by this generator from strict RFC 8032 s5.1.3 and s5.1.7",
+        "observed": [
+          {
+            "implementation": "go crypto/ed25519",
+            "criterion": "cofactorless",
+            "verdict": "accept"
+          },
+          {
+            "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+            "criterion": "cofactorless",
+            "verdict": "accept"
+          }
+        ]
+      },
+      "divergence": {
+        "against_strict_rfc8032": false,
+        "against_observed_cofactorless": []
+      }
+    },
+    {
+      "id": "non-canonical-a-identity",
+      "axis": "non-canonical-A",
+      "intent": "A is the identity written as y = p + 1, an unreduced encoding. [k]A is the identity either way, so both group equations hold and the only thing that can separate the two verifiers is whether they accept the encoding. This isolates the non-canonical-A axis with the cofactor held out of it.",
+      "public_key_hex": "eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+      "signature_hex": "ef4f62f8479733ad879cfaced3c89a9c39dd4fc795ef2efa1c3eafe4d729a0813930000000000000000000000000000000000000000000000000000000000000",
+      "message_hex": "5649424550524f4f462f5631204544323535313920444956455247454e434520434f52505553",
+      "case_digest": "b01ba67e05fe8a0921dd6821823754817f25d6bd5992e2460a6d87ed536c7cc4",
+      "decoded": {
+        "a_encoding": "non-canonical",
+        "a_point": "identity",
+        "r_encoding": "canonical",
+        "r_point": "prime-order",
+        "s_less_than_l": true
+      },
+      "zip215": {
+        "verdict": "accept",
+        "deciding_rule": "cofactored equation holds",
+        "confirmation": {
+          "status": "confirmed",
+          "confirmed_by": "github.com/hdevalence/ed25519consensus",
+          "oracle_verdict": "accept"
+        }
+      },
+      "cofactorless": {
+        "verdict": "reject",
+        "deciding_rule": "A is non-canonical or not a curve point",
+        "source": "computed by this generator from strict RFC 8032 s5.1.3 and s5.1.7",
+        "observed": [
+          {
+            "implementation": "go crypto/ed25519",
+            "criterion": "cofactorless",
+            "verdict": "accept"
+          },
+          {
+            "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+            "criterion": "cofactorless",
+            "verdict": "accept"
+          }
+        ]
+      },
+      "divergence": {
+        "against_strict_rfc8032": true,
+        "against_observed_cofactorless": []
+      }
+    },
+    {
+      "id": "non-canonical-a-mixed-order",
+      "axis": "non-canonical-A",
+      "intent": "A is y = p + 3, an unreduced encoding of a point that is on the curve and outside the 8-torsion. ZIP-215 accepts the encoding and then rejects the signature, because accepting a non-canonical point is not accepting a signature over it. A verifier that skips the check rather than performing it passes the case above and fails here.",
+      "public_key_hex": "f0ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+      "signature_hex": "ef4f62f8479733ad879cfaced3c89a9c39dd4fc795ef2efa1c3eafe4d729a0813930000000000000000000000000000000000000000000000000000000000000",
+      "message_hex": "5649424550524f4f462f5631204544323535313920444956455247454e434520434f52505553",
+      "case_digest": "4abb45db18c134225a2a254ba7b0d06124ad1cd9a0d36fcb0ccdc74098d52507",
+      "decoded": {
+        "a_encoding": "non-canonical",
+        "a_point": "mixed-order",
+        "r_encoding": "canonical",
+        "r_point": "prime-order",
+        "s_less_than_l": true
+      },
+      "zip215": {
+        "verdict": "reject",
+        "deciding_rule": "cofactored equation does not hold",
+        "confirmation": {
+          "status": "confirmed",
+          "confirmed_by": "github.com/hdevalence/ed25519consensus",
+          "oracle_verdict": "reject"
+        }
+      },
+      "cofactorless": {
+        "verdict": "reject",
+        "deciding_rule": "A is non-canonical or not a curve point",
+        "source": "computed by this generator from strict RFC 8032 s5.1.3 and s5.1.7",
+        "observed": [
+          {
+            "implementation": "go crypto/ed25519",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          },
+          {
+            "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          }
+        ]
+      },
+      "divergence": {
+        "against_strict_rfc8032": false,
+        "against_observed_cofactorless": []
+      }
+    },
+    {
+      "id": "non-canonical-r-identity",
+      "axis": "non-canonical-R",
+      "intent": "R is the identity written as y = p + 1: a y-coordinate unreduced modulo 2^255 - 19. Both group equations hold, so as with the A case the encoding rule alone decides. It also separates the two shapes of cofactorless verifier, because one that recomputes R' and compares encodings can never match a non-canonical R even when the equation holds.",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "signature_hex": "eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f42b90a9424d681c826d68cecbeb62151c3cc4bfbc31d065471deb6d871dd8608",
+      "message_hex": "5649424550524f4f462f5631204544323535313920444956455247454e434520434f52505553",
+      "case_digest": "002db9e1a03973348e12c2e6bd32a8e995c162c62af139c5d5e63e012b98d89d",
+      "decoded": {
+        "a_encoding": "canonical",
+        "a_point": "prime-order",
+        "r_encoding": "non-canonical",
+        "r_point": "identity",
+        "s_less_than_l": true
+      },
+      "zip215": {
+        "verdict": "accept",
+        "deciding_rule": "cofactored equation holds",
+        "confirmation": {
+          "status": "confirmed",
+          "confirmed_by": "github.com/hdevalence/ed25519consensus",
+          "oracle_verdict": "accept"
+        }
+      },
+      "cofactorless": {
+        "verdict": "reject",
+        "deciding_rule": "R is non-canonical or not a curve point",
+        "source": "computed by this generator from strict RFC 8032 s5.1.3 and s5.1.7",
+        "observed": [
+          {
+            "implementation": "go crypto/ed25519",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          },
+          {
+            "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          }
+        ]
+      },
+      "divergence": {
+        "against_strict_rfc8032": true,
+        "against_observed_cofactorless": [
+          "go crypto/ed25519",
+          "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026"
+        ]
+      }
+    },
+    {
+      "id": "non-canonical-r-order4",
+      "axis": "non-canonical-R",
+      "intent": "R is y = p, the unreduced encoding of an order-4 point. The cofactor annihilates R and the cofactored equation holds; the cofactorless one carries the order-4 component and fails. Non-canonical encoding and cofactor are both in play here, which is why the identity case above exists to separate them.",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "signature_hex": "edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f2fe9e3fabddb58eefef0034740d37dd362520ad57179fb1ccb79325926f0c90f",
+      "message_hex": "5649424550524f4f462f5631204544323535313920444956455247454e434520434f52505553",
+      "case_digest": "491dc7faad15089a6f8cb66d655dd97d6b80d73527ab76a623c5a255a1ced354",
+      "decoded": {
+        "a_encoding": "canonical",
+        "a_point": "prime-order",
+        "r_encoding": "non-canonical",
+        "r_point": "small-order-4",
+        "s_less_than_l": true
+      },
+      "zip215": {
+        "verdict": "accept",
+        "deciding_rule": "cofactored equation holds",
+        "confirmation": {
+          "status": "confirmed",
+          "confirmed_by": "github.com/hdevalence/ed25519consensus",
+          "oracle_verdict": "accept"
+        }
+      },
+      "cofactorless": {
+        "verdict": "reject",
+        "deciding_rule": "R is non-canonical or not a curve point",
+        "source": "computed by this generator from strict RFC 8032 s5.1.3 and s5.1.7",
+        "observed": [
+          {
+            "implementation": "go crypto/ed25519",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          },
+          {
+            "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          }
+        ]
+      },
+      "divergence": {
+        "against_strict_rfc8032": true,
+        "against_observed_cofactorless": [
+          "go crypto/ed25519",
+          "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026"
+        ]
+      }
+    },
+    {
+      "id": "small-order-a-order8",
+      "axis": "small-order-A",
+      "intent": "A is a canonically encoded point of order 8. [8]A is the identity so A drops out of the cofactored equation entirely and the signature verifies; the cofactorless equation keeps [k]A and fails. ZIP-215 carries no excluded-point list, so this is accepted by rule and not by oversight.",
+      "public_key_hex": "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a",
+      "signature_hex": "1d84c09c915b1e355f4130b3950f6754270b37696f36f1b6ca5d4a9b4cf488600903000000000000000000000000000000000000000000000000000000000000",
+      "message_hex": "5649424550524f4f462f5631204544323535313920444956455247454e434520434f52505553",
+      "case_digest": "71bad1e08506215901f798a5f6d19e179d5a1c01c63fc9b7b43a900f34ed8256",
+      "decoded": {
+        "a_encoding": "canonical",
+        "a_point": "small-order-8",
+        "r_encoding": "canonical",
+        "r_point": "prime-order",
+        "s_less_than_l": true
+      },
+      "zip215": {
+        "verdict": "accept",
+        "deciding_rule": "cofactored equation holds",
+        "confirmation": {
+          "status": "confirmed",
+          "confirmed_by": "github.com/hdevalence/ed25519consensus",
+          "oracle_verdict": "accept"
+        }
+      },
+      "cofactorless": {
+        "verdict": "reject",
+        "deciding_rule": "cofactorless equation does not hold",
+        "source": "computed by this generator from strict RFC 8032 s5.1.3 and s5.1.7",
+        "observed": [
+          {
+            "implementation": "go crypto/ed25519",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          },
+          {
+            "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          }
+        ]
+      },
+      "divergence": {
+        "against_strict_rfc8032": true,
+        "against_observed_cofactorless": [
+          "go crypto/ed25519",
+          "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026"
+        ]
+      }
+    },
+    {
+      "id": "cofactored-only-order8-r",
+      "axis": "cofactor",
+      "intent": "Every byte is canonical, A is an ordinary public key, and the two criteria still disagree. R is an order-8 point that the cofactor annihilates. This is the case that shows the divergence is not a story about malformed encodings: it is the group equation itself.",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "signature_hex": "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a3cfcf0bfbce538b8193c206cf6846ea404330ea45f7c355f10ab0c792816b00f",
+      "message_hex": "5649424550524f4f462f5631204544323535313920444956455247454e434520434f52505553",
+      "case_digest": "fb2cb4b38e35297dc61233dabe0f8988816d120b956986de7e28f3d4bd77d89f",
+      "decoded": {
+        "a_encoding": "canonical",
+        "a_point": "prime-order",
+        "r_encoding": "canonical",
+        "r_point": "small-order-8",
+        "s_less_than_l": true
+      },
+      "zip215": {
+        "verdict": "accept",
+        "deciding_rule": "cofactored equation holds",
+        "confirmation": {
+          "status": "confirmed",
+          "confirmed_by": "github.com/hdevalence/ed25519consensus",
+          "oracle_verdict": "accept"
+        }
+      },
+      "cofactorless": {
+        "verdict": "reject",
+        "deciding_rule": "cofactorless equation does not hold",
+        "source": "computed by this generator from strict RFC 8032 s5.1.3 and s5.1.7",
+        "observed": [
+          {
+            "implementation": "go crypto/ed25519",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          },
+          {
+            "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          }
+        ]
+      },
+      "divergence": {
+        "against_strict_rfc8032": true,
+        "against_observed_cofactorless": [
+          "go crypto/ed25519",
+          "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026"
+        ]
+      }
+    },
+    {
+      "id": "s-equals-l",
+      "axis": "S-not-less-than-l",
+      "intent": "S = l exactly, the first excluded value. ZIP-215 requires S < l and so does RFC 8032 Section 5.1.7, so the two agree here - which is the point worth recording, because ZIP-215 is not uniformly more permissive and an implementer who reads it that way drops the one range check that stops malleability.",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "signature_hex": "f7ff3cb7443db9d346efeab5243c42c42dc8b4a979f40897e91e359ebe177934edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010",
+      "message_hex": "5649424550524f4f462f5631204544323535313920444956455247454e434520434f52505553",
+      "case_digest": "38ffc133c80568872cba976c9b6bbca8d4ba1d78947fb80eea3a5675e5f09dc7",
+      "decoded": {
+        "a_encoding": "canonical",
+        "a_point": "prime-order",
+        "r_encoding": "canonical",
+        "r_point": "prime-order",
+        "s_less_than_l": false
+      },
+      "zip215": {
+        "verdict": "reject",
+        "deciding_rule": "S is not less than l",
+        "confirmation": {
+          "status": "confirmed",
+          "confirmed_by": "github.com/hdevalence/ed25519consensus",
+          "oracle_verdict": "reject"
+        }
+      },
+      "cofactorless": {
+        "verdict": "reject",
+        "deciding_rule": "S is not less than l",
+        "source": "computed by this generator from strict RFC 8032 s5.1.3 and s5.1.7",
+        "observed": [
+          {
+            "implementation": "go crypto/ed25519",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          },
+          {
+            "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          }
+        ]
+      },
+      "divergence": {
+        "against_strict_rfc8032": false,
+        "against_observed_cofactorless": []
+      }
+    },
+    {
+      "id": "s-plus-l",
+      "axis": "S-not-less-than-l",
+      "intent": "The control signature with l added to S. S mod l is the valid scalar, so the group equation would hold if the range check were skipped or the scalar reduced first, and the case therefore fails for the range rule and for nothing else. Historic ref10-derived verifiers accept it.",
+      "public_key_hex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+      "signature_hex": "f7ff3cb7443db9d346efeab5243c42c42dc8b4a979f40897e91e359ebe1779346a5c51bcbe69bf70e5c79f8b82ddde85f4d1ac985b388bf1e22bbd06b6838210",
+      "message_hex": "5649424550524f4f462f5631204544323535313920444956455247454e434520434f52505553",
+      "case_digest": "f1a935bd3b60e41cbe01b214453a24cd95f0ebf657d84edd6b9634045a4ec350",
+      "decoded": {
+        "a_encoding": "canonical",
+        "a_point": "prime-order",
+        "r_encoding": "canonical",
+        "r_point": "prime-order",
+        "s_less_than_l": false
+      },
+      "zip215": {
+        "verdict": "reject",
+        "deciding_rule": "S is not less than l",
+        "confirmation": {
+          "status": "confirmed",
+          "confirmed_by": "github.com/hdevalence/ed25519consensus",
+          "oracle_verdict": "reject"
+        }
+      },
+      "cofactorless": {
+        "verdict": "reject",
+        "deciding_rule": "S is not less than l",
+        "source": "computed by this generator from strict RFC 8032 s5.1.3 and s5.1.7",
+        "observed": [
+          {
+            "implementation": "go crypto/ed25519",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          },
+          {
+            "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+            "criterion": "cofactorless",
+            "verdict": "reject"
+          }
+        ]
+      },
+      "divergence": {
+        "against_strict_rfc8032": false,
+        "against_observed_cofactorless": []
+      }
+    }
+  ]
+}
