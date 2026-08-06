@@ -5,7 +5,12 @@
   "recorded_at": "2026-08-06",
   "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/52",
   "note": "The outcome every verification lane produced when this ceiling was recorded. The matrix fails when a lane produces a worse outcome than the one recorded here, when a recorded lane disappears, when a lane appears that this file does not record, or when any lane actually fails. A lane sitting at its recorded outcome does not fail the build, so a known hole stays visible without holding a required check red; improving a lane never fails it either. Editing this file is the only sanctioned way to record a worse outcome, so a deliberate one leaves a reviewable diff and a silent one turns the matrix red.",
-  "outcome_order": ["uncovered", "not_applicable", "partial", "pass"],
+  "outcome_order": [
+    "uncovered",
+    "not_applicable",
+    "partial",
+    "pass"
+  ],
   "claim_scope": "recorded-coverage-only",
   "claim_note": "A recorded outcome says what the lane did, not that what it did was sufficient. Two of these ten lanes executed nothing they were named for.",
   "lanes": {
@@ -15,7 +20,7 @@
     "go-build": "pass",
     "go-test": "pass",
     "go-vet": "pass",
-    "node": "uncovered",
+    "node": "pass",
     "rust-clippy": "pass",
     "rust-fmt": "pass",
     "rust-test": "pass"
@@ -25,11 +30,6 @@
       "outcome": "partial",
       "reference": "evals/suites/status-baseline-v1.json",
       "note": "24 of the 27 declared eval suites report not_applicable and execute nothing. The suite status ceiling recorded beside the registry is what stops that number growing; this lane is partial rather than pass so the matrix never reports 27 suites of coverage when it has 3."
-    },
-    "node": {
-      "outcome": "uncovered",
-      "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/52",
-      "note": "No root package.json exists, so the node lane runs nothing, while apps/web, packages/ui and scripts/brand are npm workspaces with lockfiles. The lane cannot simply be switched on: apps/web/app/page.tsx renders LeaderboardFirstPrototype from the ui package and apps/web/app/globals.css imports its stylesheet, but packages/ui/src/concepts/leaderboard-first.css has never existed in git, so the home page has never rendered. The component carries 46 class-name uses on an lf- prefixed system and its sibling stylesheet is 235 lines, so authoring it is design work rather than a mechanical repair, and the alternative is deciding to delete the concept. That decision is tracked and unmade. Recording the hole keeps it visible and makes it impossible for a second lane to go dark unnoticed."
     }
   }
 }
