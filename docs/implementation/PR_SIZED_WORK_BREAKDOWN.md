@@ -70,11 +70,8 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 217 |
+| `not-started` | 216 |
 | `in-progress` | 14 |
-| `landed` | 22 |
-| `not-started` | 218 |
-| `in-progress` | 12 |
 | `landed` | 24 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |

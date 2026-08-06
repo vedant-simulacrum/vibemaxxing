@@ -1843,6 +1843,7 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
+        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
         - name: notification_id
           in: path
