@@ -57,14 +57,14 @@ Units: 245. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 228 |
-| `in-progress` | 6 |
-| `landed` | 11 |
+| `not-started` | 227 |
+| `in-progress` | 4 |
+| `landed` | 14 |
 | `superseded-by` | 0 |
 
-Startable now — not landed, and every dependency landed: 15.
+Startable now — not landed, and every dependency landed: 13.
 
-`PF-001`, `PF-004`, `PF-037`, `PF-039`, `PF-040`, `PF-043`, `PF-044`, `PF-045`, `PF-048`, `PF-049`, `PF-050`, `PF-054`, `PF-062`, `PF-064`, `PF-067`.
+`PF-001`, `PF-004`, `PF-037`, `PF-040`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-050`, `PF-054`, `PF-062`, `PF-064`, `PF-067`.
 
 Statuses checkable against artifact evidence: 189 of 245. The other 56 declare no new file in `Files:`, so this check can neither confirm nor refute them and does not claim to.
 
@@ -566,9 +566,11 @@ Files: `docs/decisions/ADR-015-SESSION_AUTHENTICATION.md` (new), `packages/schem
 Acceptance: `openapi-v1.yaml` declares a `securitySchemes` entry matching the ADR; a refresh operation exists if the ADR requires one; `grep -c "bearerAuth" openapi-v1.yaml` no longer returns a global-only result.
 Depends: none
 Est: 6-8
-Status: in-progress
+Status: landed 963f6f6
 
-`AUTHENTICATION_AND_RECOVERY.md:63-66` specifies HTTP-only same-site cookies with refresh-token rotation. `openapi-v1.yaml:13-16,1710-1715` declares a single global opaque `bearerAuth` with no cookie scheme, no OAuth2 flows, no scopes, and no refresh endpoint among its 39 paths. These are two different architectures and the first authenticated request cannot be implemented until one is chosen. The `web-session-family` machine has a `replay-detected` state that neither SQL nor the API can persist.
+**Landed in `963f6f6` under D-220 and D-221.** The document declares `bearerAuth`, `sessionCookie` and `refreshCookie`, and `refreshSession` and `revokeAllSessions` exist.
+
+The defect as found: `AUTHENTICATION_AND_RECOVERY.md:63-66` specified HTTP-only same-site cookies with refresh-token rotation while the OpenAPI document declared a single global opaque `bearerAuth` with no cookie scheme, no OAuth2 flows, no scopes and no refresh endpoint. Those were two different architectures and the first authenticated request could not be implemented until one was chosen. The `web-session-family` machine's `replay-detected` state is persisted by `O-006`, which is where the remaining half of that sentence lives.
 
 ### PF-040 — Specify accounting arithmetic
 Files: `packages/schemas/accounting-profile.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `conformance/accounting/arithmetic-vectors-v1.json` (new)
@@ -613,9 +615,11 @@ Files: `packages/schemas/openapi-v1.yaml`
 Acceptance: every operation returning a collection declares `cursor` and `limit` parameters with the contract's default 50 and maximum 200; zero collection operations without both.
 Depends: none
 Est: 3-4
-Status: not-started
+Status: landed 963f6f6
 
-Twelve operations lack both: `listSessions:279`, `listIdentities:339`, `listDevices:446`, `listFriends:868`, `listFriendRequests:894`, `listBlocks:959`, `listRivals:1024`, `listBoards:1089`, `listOrganizations:1198`, `listCommunities:1263`, `listModerationCases:1427`, `listAppeals:1492`. `SERVER_API_DATA_AND_RANKING_CONTRACT.md:44` already specifies the contract they violate.
+**Landed in `963f6f6` under D-222.** All seventeen collection operations declare `cursor` and `limit`.
+
+The defect as found: twelve operations declared neither — `listSessions`, `listIdentities`, `listDevices`, `listFriends`, `listFriendRequests`, `listBlocks`, `listRivals`, `listBoards`, `listOrganizations`, `listCommunities`, `listModerationCases`, `listAppeals` — while `SERVER_API_DATA_AND_RANKING_CONTRACT.md:44` already specified the contract they violated.
 
 ### PF-045 — Specify the error response matrix
 Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
@@ -624,7 +628,9 @@ Depends: PF-038
 Est: 8-10
 Status: in-progress
 
-No operation currently declares 401, 403, 404, 409, or 422 — only 200, 429, and default. `reason-codes-v1.json` has 20 codes for a 39-path API and 24 state machines, and all 20 reference `state_machine: "vibeproof-v1"`, which is not one of the registered machines. Every code dangles.
+**Mostly landed in `963f6f6` under D-223, and D-224 records what did not.** Operations now declare their 4xx responses and the matrix lives in `packages/schemas/reason-codes-v1.json` rather than inline. What remains, and why this unit is `in-progress` rather than `landed`: D-224 records that the repair of the twenty pre-existing `state_machine: "vibeproof-v1"` values is complete only in part. A code that still names a machine the registry does not declare is a dangling reference wearing a valid-looking value, so this unit closes when every code resolves and not before.
+
+The defect as found: no operation declared 401, 403, 404, 409 or 422 — only 200, 429 and default — and all twenty reason codes referenced `state_machine: "vibeproof-v1"`, which is not a registered machine, so every code dangled.
 
 ### PF-046 — Represent evidence class in the public API
 Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/evidence-disclosure-v1.schema.json` (new), `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`
@@ -633,16 +639,20 @@ Depends: PF-043
 Est: 4-6
 Status: in-progress
 
-The string `evidence_class` does not appear in 3,780 lines of OpenAPI. The product's central differentiator is currently unrepresentable in its own API. Four vocabularies exist for this concept — `packages/ui` uses `Hardened|Standard|Imported`, `crates/vibeproof-core` uses `Authoritative|Structured|Observed|Estimated|Imported`, `evidence-profile-policy-v1.json` uses `authoritative-profile`, and the API has none. Reconcile to one.
+**Half landed in `963f6f6` under D-226.** `evidence_class` crosses the boundary on `PublicProfile`, `RankEntry`, `AccountProfile` and `ClaimRecord` with the three values D-143 fixed. `packages/schemas/evidence-disclosure-v1.schema.json` (new) was not authored, so the second clause of this unit's acceptance — the projection defining exactly what a viewer may see — is unmet. This unit was recorded as `landed` on the strength of the first clause and `validate_work_unit_status.py` refused it, which is the check doing the job it was added for.
+
+The defect as found: the string did not appear anywhere in the OpenAPI document, so the product's central differentiator was unrepresentable in its own API, and four competing vocabularies existed for the concept — `packages/ui` used `Hardened|Standard|Imported`, `crates/vibeproof-core` used a five-value scale, `evidence-profile-policy-v1.json` used `profile_id` values, and the API had none.
 
 ### PF-047 — Expand profile and rank entry schemas to the rendered product
 Files: `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
 Acceptance: every field rendered by `packages/ui/src/concepts/product-storyboards.tsx` and `packages/ui/src/patterns/product-system.tsx` resolves to an API field; no storyboard depends on a value the API cannot return.
 Depends: PF-046
 Est: 6-8
-Status: in-progress
+Status: landed 963f6f6
 
-`PublicProfile` has 4 fields and `RankEntry` has 7, both `additionalProperties: false`. The finished 2,900-LOC design system renders avatars, evidence badges, rank movement, sparklines, and board standings that no operation can supply. This unit also removes the banned copy at `product-storyboards.tsx:56,105,111` ("Verified competitor", "All sources verified", "Rankings are based on verified Token Burn"), which `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md:134-138` and `docs/product/PRODUCT_SPEC.md:109` prohibit.
+**Landed in `963f6f6` under D-227 and D-228.** `RankEntry` lost `score` and gained `credited_token_burn` and the rendered fields, and the four banned claim strings in `packages/ui/src/concepts/product-storyboards.tsx` were replaced rather than softened.
+
+The defect as found: `PublicProfile` had 4 fields and `RankEntry` had 7, both `additionalProperties: false`, while the finished design system rendered avatars, evidence badges, rank movement, sparklines and board standings that no operation could supply.
 
 ### PF-048 — Author the indexing and partitioning plan
 Files: `packages/schemas/planning-schema.sql`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
@@ -651,7 +661,7 @@ Depends: PF-038
 Est: 8-12
 Status: not-started
 
-73 tables carry 3 indexes total at `:651-653` and zero `PARTITION BY`, while `SERVER_API_DATA_AND_RANKING_CONTRACT.md:70` states claims are partitioned by receipt month. `friend_edges:275` and `rival_edges:289` have no reverse-direction index, so bidirectional queries sequential-scan. The 300 ms leaderboard SLO is unreachable as written.
+**98 tables carry 3 indexes total** and zero `PARTITION BY`, while `SERVER_API_DATA_AND_RANKING_CONTRACT.md:70` states claims are partitioned by receipt month. The recorded figure was 73 tables; the DDL has grown and the index count has not. `friend_edges` and `rival_edges` have no reverse-direction index, so bidirectional queries sequential-scan. The 300 ms leaderboard SLO is unreachable as written, and `X-014` cannot produce evidence for a budget this makes unmeetable.
 
 ### PF-049 — Repair the idempotency contract
 Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`
@@ -660,11 +670,13 @@ Depends: PF-038
 Est: 4-6
 Status: in-progress
 
-`planning-schema.sql:420-430` stores a nullable `response_digest` with no response-body column, so exact replay cannot return the original response. The primary key at `:426` is `(actor_account_id, idempotency_key)` with no global uniqueness, and the principal is account-only.
+**The API half landed in `963f6f6` under D-225; the SQL half has not.** The wire contract now states the scoped key and byte-identical replay under one `x-idempotency-contract` block. `packages/schemas/planning-schema.sql` still stores a nullable `response_digest` with no response-body column, so nothing in the database can return the original response the API now promises. That gap is the reason this unit is `in-progress`: a contract that states an invariant its storage cannot hold is worse than one that states nothing, because it reads as satisfied.
+
+The defect as found: `planning-schema.sql` stored a nullable `response_digest` with no response-body column; its primary key was `(actor_account_id, idempotency_key)` with no global uniqueness; and the principal was account-only.
 
 ### PF-050 — Populate retention and disposition policy
 Files: `packages/schemas/policy-defaults-v1.json`, `packages/schemas/data-disposition-v1.json` (new), `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
-Acceptance: every one of the 73 tables has a declared retention class; no `expires_at` column exists without a documented enforcement owner.
+Acceptance: every one of the 98 tables in `packages/schemas/planning-schema.sql` has a declared retention class, which a script asserts by diffing the table list against the policy file in both directions; no `expires_at` column exists without a named enforcement owner.
 Depends: PF-038
 Est: 6-8
 Status: not-started
