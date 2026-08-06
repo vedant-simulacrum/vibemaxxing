@@ -686,7 +686,9 @@ def validate_api_error_matrix() -> None:
         if key not in registry:
             raise ValidationFailure(f"reason registry lacks {key}")
     if tuple(registry["operation_class_definitions"]) != OPERATION_CLASS_RULES:
-        raise ValidationFailure("reason registry class definitions differ from the rules")
+        raise ValidationFailure(
+            "reason registry class definitions differ from the rules"
+        )
 
     derived = derive_operation_classes(spec)
     for name in OPERATION_CLASS_RULES:
@@ -702,11 +704,15 @@ def validate_api_error_matrix() -> None:
     expected: dict[str, set[int]] = {name: set() for name in derived["all"]}
     for code in registry["codes"]:
         if code["transport"] not in transports:
-            raise ValidationFailure(f"reason code names an unknown transport: {code['code']}")
+            raise ValidationFailure(
+                f"reason code names an unknown transport: {code['code']}"
+            )
         status = code["http_status"]
         if code["transport"] == "problem":
             if status is None:
-                raise ValidationFailure(f"problem-transport code lacks a status: {code['code']}")
+                raise ValidationFailure(
+                    f"problem-transport code lacks a status: {code['code']}"
+                )
         elif status is not None:
             raise ValidationFailure(
                 f"code carries a status but never reaches the wire: {code['code']}"
@@ -728,7 +734,9 @@ def validate_api_error_matrix() -> None:
         if status >= 500:
             continue
         if status not in MATRIX_STATUS_RESPONSES:
-            raise ValidationFailure(f"reason code binds an unmapped status: {code['code']}")
+            raise ValidationFailure(
+                f"reason code binds an unmapped status: {code['code']}"
+            )
         if not targets:
             raise ValidationFailure(
                 f"wire-visible reason code binds to no operation: {code['code']}"
@@ -739,7 +747,9 @@ def validate_api_error_matrix() -> None:
     responses = spec["components"]["responses"]
     for status, component in MATRIX_STATUS_RESPONSES.items():
         if component not in responses:
-            raise ValidationFailure(f"OpenAPI lacks the {status} response component {component}")
+            raise ValidationFailure(
+                f"OpenAPI lacks the {status} response component {component}"
+            )
 
     for path, item in spec["paths"].items():
         for method, operation in item.items():
@@ -787,6 +797,7 @@ def validate_p1140d_contracts() -> None:
         "rivalry",
         "board-membership",
         "board-invitation",
+        "invite-code",
         "presence-lease",
         "notification-delivery",
         "moderation-case",

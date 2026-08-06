@@ -64,7 +64,7 @@ Each class is a token bucket: `rate` refills continuously, `burst` is the bucket
 | `presence` | `device` | 4 / minute | 8 | presence heartbeat |
 | `social-mutate` | `account` | 30 / hour | 30 | friend requests, blocks, rivals, board invitations |
 | `board-create` | `account` | 5 / day | 5 | board and community creation |
-| `auth-start` | `address` | 10 / hour | 10 | OAuth start and callback, device-authorization start |
+| `auth-start` | `address` | 10 / hour | 10 | OAuth start and callback, device-authorization start, private-beta invite redemption |
 | `device-poll` | `enrolment` | 1 per 5 seconds | 1 | device-authorization polling |
 | `subject-rights` | `account` | 5 / day | 5 | export requests, deletion requests |
 | `appeal` | `account` | 5 / day | 5 | appeals against moderation outcomes |
@@ -76,6 +76,7 @@ Notes that each number depends on:
 - **`presence` at 4 per minute** is twice the 30-second `presence_heartbeat_seconds` cadence, which allows one retry per interval without eating the next interval's allowance.
 - **`social-mutate` at 30 per hour** is an anti-abuse number, not a capacity number. `ANTI_CHEAT_ATTACK_CATALOG.md` names rate limits as the control for Sybil farming (AC-A-022) and appeal spam (AC-A-045); 30 friend requests an hour is far beyond ordinary use and far below what makes mass solicitation worthwhile.
 - **`device-poll` is an interval, not a bucket.** The device-authorization code expires after 15 minutes under ADR-015, and `DeviceAuthorizationStatus.retry_after_seconds` already caps a server-requested pause at 60 seconds. A 5-second minimum interval permits at most 180 polls against a code that lives 15 minutes, which is the ceiling; a poll arriving early returns `429` with `Retry-After` set to the remaining interval and does not consume the code.
+- **`redeemInvite` is charged to `auth-start` rather than to an authenticated class.** It is an authenticated operation, so `authenticated-read` or `social-mutate` would be the ordinary reading, but the adversary against an invite code is an address cycling through accounts rather than an account, and only an address-keyed bucket bounds that. It is the admission flow, which is what this class already is. `docs/security/PRIVATE_BETA_ADMISSION.md` states the guessing arithmetic against this quota and adds a per-account lockout that this document does not own.
 - **`subject-rights` is limited but never refused outright.** Article 12(5) of Regulation (EU) 2016/679 permits refusal only for manifestly unfounded or excessive requests, so the limit exists to stop automated hammering and not to gate the right. The first request from a principal in any 24-hour window is always admitted regardless of bucket state, and a throttled subject-rights request returns `429` with a `Retry-After` no greater than 3,600 seconds.
 
 ### Adaptive limits are separate and unpublished

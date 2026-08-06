@@ -62,8 +62,12 @@ Every row is a processing activity in the Article 30(1) sense. "Crosses device b
 | Provider subject identifier (`linked_identities.provider_subject`) | Received from GitHub or X during the authorization exchange | Received server-side; never sent to the device | 6(1)(a) consent | Until unlink or account erasure; deleted immediately on unlink | Hosting processor. Never public, never shared with board administrators |
 | Provider-reported account creation timestamp | Received from GitHub or X during the authorization exchange, under D-081 | Server-side only | 6(1)(a) consent | Until unlink or account erasure | Hosting processor. Never public |
 | Profile visibility setting (`profiles`) | Server, from the participant | Server-side only | 6(1)(a) consent | Life of the account | Hosting processor |
+| Private-beta invite redemption, binding the issuing owner to the admitted account (`invite_redemptions`) | Server, when the participant redeems the code the owner sent them | Server-side only | 6(1)(a) consent | Life of the account; deleted on account deletion and on erasure, in the same transaction that retires the code | Hosting processor. Never public, never shared with board administrators, and never disclosed to the invitee |
+| Private-beta invite code record: issuing account, issue, expiry, redemption and retirement times, and a SHA-256 digest of the code (`invite_codes`) | Server, at issuance | Server-side only | 6(1)(a) consent | Indefinite. The row names no invitee, so an erasure leaves it in place; retaining it is what stops a spent 125-bit code from being issued a second time | Hosting processor |
 
 Article 14 applies to the two provider-sourced rows because they are obtained from GitHub and X rather than from the participant. The Article 14(2)(f) source statement is in `PRIVACY.md` and names those two providers.
+
+**The invite redemption is a social-graph edge held by the controller.** It records that the owner admitted this specific person, and it is the only place that edge is stored — no chain, no ancestry, and no depth beyond one, because participants cannot issue invites. It is processed on consent as part of account creation rather than on Article 6(1)(f), because the edge exists to admit the participant rather than to secure the service, and D-101 confines the legitimate-interests basis to security and fraud prevention. The issuer is not disclosed to the invitee on any surface. `docs/security/PRIVATE_BETA_ADMISSION.md` is the mechanism and D-284 records the disclosure decision.
 
 ### Authentication and session
 

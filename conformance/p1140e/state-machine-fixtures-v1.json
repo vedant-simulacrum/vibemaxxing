@@ -418,6 +418,22 @@
         "transition_id": "device-enroll",
         "expected": "reject-without-mutation"
       }
+    },
+    {
+      "machine_id": "invite-code",
+      "positive": {
+        "case_id": "invite-code-valid-transition",
+        "from": "issued",
+        "transition_id": "beta-invite-redeem",
+        "expected_to": "redeemed",
+        "expected": "bind-one-account-and-commit-once"
+      },
+      "negative": {
+        "case_id": "invite-code-invalid-transition",
+        "from": "redeemed",
+        "transition_id": "beta-invite-redeem",
+        "expected": "reject-without-mutation"
+      }
     }
   ]
 }

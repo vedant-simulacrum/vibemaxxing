@@ -904,6 +904,74 @@
       "fixture_refs": [
         "packages/schemas/data-disposition-v1.json"
       ]
+    },
+    "invite_code_expiry_days": {
+      "value": 14,
+      "min": 1,
+      "max": 90,
+      "owner": "identity",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-08-06T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "owner-recorded-checklist",
+      "fixture_refs": [
+        "packages/schemas/planning-schema.sql"
+      ]
+    },
+    "invite_outstanding_max": {
+      "value": 200,
+      "min": 1,
+      "max": 1000,
+      "owner": "identity",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "codes",
+      "effective_at": "2026-08-06T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "owner-recorded-checklist",
+      "fixture_refs": [
+        "docs/security/PRIVATE_BETA_ADMISSION.md"
+      ]
+    },
+    "invite_redemption_failure_lockout_attempts": {
+      "value": 5,
+      "min": 3,
+      "max": 20,
+      "owner": "identity",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "attempts",
+      "effective_at": "2026-08-06T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "owner-recorded-checklist",
+      "fixture_refs": [
+        "docs/security/PRIVATE_BETA_ADMISSION.md"
+      ]
+    },
+    "invite_redemption_lockout_hours": {
+      "value": 24,
+      "min": 1,
+      "max": 168,
+      "owner": "identity",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "hours",
+      "effective_at": "2026-08-06T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "owner-recorded-checklist",
+      "fixture_refs": [
+        "docs/security/PRIVATE_BETA_ADMISSION.md"
+      ]
     }
   }
 }

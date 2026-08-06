@@ -195,6 +195,16 @@ BINDINGS: tuple[Binding, ...] = (
         note="Archive flag on a container; mutable board concepts have their own machines.",
     ),
     Binding(
+        aggregate="invite-code",
+        machine="invite-code",
+        states=("issued", "redeemed", "expired", "revoked", "retired"),
+        sql=("invite_codes.state",),
+        note="Private-beta admission under D-180. No API enum: the invitee is told "
+        "whether the redemption succeeded and never the code's lifecycle, because "
+        "distinguishing unknown from expired from already-redeemed is what makes "
+        "code enumeration productive.",
+    ),
+    Binding(
         aggregate="presence-lease",
         machine="presence-lease",
         states=("absent", "active", "idle", "expired", "revoked"),

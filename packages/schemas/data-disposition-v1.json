@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "registry_version": "1.0.0-pf050",
+  "registry_version": "1.1.0-d280",
   "backup_retention_policy_key": "backup_retention_days",
   "journal_retention_policy_key": "erasure_journal_retention_days",
   "entries": [
@@ -123,6 +123,9 @@
     {"table": "shell_sessions", "classification": "non-personal", "retention": {"rule": "until-superseded"}, "erasure_action": "not-applicable", "backup_set": "in-backup-set", "enforcement_owner": "none-required"},
     {"table": "shell_ipc_peers", "classification": "non-personal", "retention": {"rule": "until-superseded"}, "erasure_action": "not-applicable", "backup_set": "in-backup-set", "enforcement_owner": "none-required"},
     {"table": "privileged_supervisor_instances", "classification": "non-personal", "retention": {"rule": "until-superseded"}, "erasure_action": "not-applicable", "backup_set": "in-backup-set", "enforcement_owner": "none-required"},
-    {"table": "privileged_consents", "classification": "personal", "retention": {"policy_key": "security_audit_retention_days"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "erasure-worker"}
+    {"table": "privileged_consents", "classification": "personal", "retention": {"policy_key": "security_audit_retention_days"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "erasure-worker"},
+
+    {"table": "invite_codes", "classification": "non-personal", "retention": {"rule": "indefinite-non-personal"}, "erasure_action": "retain-unlinked", "backup_set": "in-backup-set", "enforcement_owner": "none-required", "expiry_enforcement": "retention-sweeper", "note": "The row names the issuing owner and a digest of a secret; it names no invitee, so an invitee's erasure never deletes it. It is retained indefinitely because a retired code must stay unusable: deleting the row would let the same code value be issued again and would let a deletion recycle an invite. The sweeper moves an unredeemed code to expired at invite_code_expiry_days."},
+    {"table": "invite_redemptions", "classification": "personal", "retention": {"rule": "account-lifetime"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "erasure-worker", "note": "This row is the issuer-to-invitee edge and is the only place that edge is stored. It is deleted on account deletion and on Article 17 erasure, in the same transaction that moves the code to retired, so the edge disappears and the invite does not return to the pool."}
   ]
 }

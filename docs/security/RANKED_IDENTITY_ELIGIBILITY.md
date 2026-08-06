@@ -27,6 +27,8 @@ A ranked identity becomes eligible only after:
 
 Additional linked providers strengthen recovery and duplicate detection but do not create additional ranked identities.
 
+Eligibility is not admission. During the private beta the account must also hold an invite redemption before it may reach any surface other than its own data-subject-rights routes, and `docs/security/PRIVATE_BETA_ADMISSION.md` owns that mechanism, the order the age floor of D-103 and the 90-day provider-account gate of D-081 are evaluated in relative to it, and what each refusal discloses. An invite is admission control and is not evidence about the person: it proves that the owner chose to admit the account and nothing else, so it neither establishes unique humanity nor substitutes for the duplicate handling below.
+
 ## Unverified accounts
 
 Unverified users may:

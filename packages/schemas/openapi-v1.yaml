@@ -532,6 +532,59 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/IdentityMutationRequest'
+  /invites/redeem:
+    post:
+      operationId: redeemInvite
+      summary: Redeem a private-beta invite code and admit the calling account
+      description: 'Admission control for the private beta of D-180. The calling account is already authenticated, because the invite is redeemed after the OAuth exchange rather than before it, and the account-age gate of D-081 and the age floor of D-103 are evaluated ahead of this operation. Success binds the code to exactly one account and is irreversible. A code that is unknown, expired, revoked or already redeemed produces one indistinguishable 422 under INVITE_CODE_NOT_REDEEMABLE, so an attacker enumerating codes learns nothing about which values exist. An invite is admission control and nothing else: it is not proof of humanity and it is not a Sybil control on its own, because under D-100 no provider offers individual-account attestation.'
+      x-authorization: authenticated-account
+      x-recent-auth: required
+      x-idempotency: required-durable-request-hash
+      x-rate-limit-class: auth-start
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: InviteRedemption
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteRedemption'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteRedemptionRequest'
   /devices:
     get:
       operationId: listDevices
@@ -2220,6 +2273,34 @@ components:
         committed_at:
           type: string
           format: date-time
+    InviteRedemptionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - invite_code
+      properties:
+        invite_code:
+          type: string
+          minLength: 25
+          maxLength: 29
+          pattern: ^[0-9A-Za-z]{5}(?:-?[0-9A-Za-z]{5}){4}$
+          description: 'A private-beta invite code: 125 bits from a cryptographically secure random source, encoded in Crockford base 32 as 25 characters and displayed in five groups of five. The server normalises before hashing — uppercase, hyphens and whitespace removed, and the Crockford confusable folding that maps I and L to 1 and O to 0 — so a transcription error in those characters is accepted rather than refused. The generating alphabet excludes I, L, O and U, so the folding costs no entropy.'
+    InviteRedemption:
+      type: object
+      additionalProperties: false
+      required:
+        - redeemed_at
+        - revision
+      properties:
+        redeemed_at:
+          type: string
+          format: date-time
+          description: When the redemption row committed. A byte-identical replay under the same idempotency key returns the original instant rather than the replay instant.
+        revision:
+          type: integer
+          minimum: 1
+          description: Revision of the invite-code aggregate after the redemption committed.
+      description: The response deliberately carries no invite identifier, no issuer identifier and no invite-code lifecycle state. Under D-284 the issuer is not disclosed to the invitee, so nothing here names the person who issued the code.
     OAuthStartRequest:
       type: object
       additionalProperties: false
@@ -2941,6 +3022,7 @@ components:
         - ranked_state
         - evidence_class
         - visibility
+        - admitted
         - revision
       properties:
         account_id:
@@ -2950,6 +3032,9 @@ components:
           type: string
           minLength: 3
           maxLength: 30
+        admitted:
+          type: boolean
+          description: 'True when this account holds a private-beta invite redemption under D-180. False means the account exists, is authenticated, and may reach only the redemption operation and its own data-subject-rights operations; every other authenticated operation answers 403 with INVITE_REQUIRED. It is a boolean rather than a lifecycle: the invite-code aggregate has states and the account is not told them. The field appears on this self-only shape and on no shape another participant can read.'
         display_name:
           type:
             - string
