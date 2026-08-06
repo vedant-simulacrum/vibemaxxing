@@ -955,6 +955,56 @@ def validate_p1140d_contracts() -> None:
             )
 
 
+def validate_decision_register() -> None:
+    """Every decision row must parse as four cells with a legal status.
+
+    An unescaped pipe inside a decision's text silently splits the Markdown row
+    into extra cells, which shifts every column right: the status column then
+    reads whatever fragment landed there, or nothing at all. It has happened
+    twice - once from a state vocabulary written `a | b | c`, once from a hash
+    preimage written with `||`. Both were invisible until something tried to
+    read the status as data.
+    """
+    register = ROOT / "docs" / "planning" / "DECISION_REGISTER.md"
+    text = register.read_text(encoding="utf-8")
+
+    allowed: set[str] = set()
+    for line in text.split("\n"):
+        if line.startswith("Allowed statuses:"):
+            allowed = set(re.findall(r"`([a-z-]+)`", line))
+            break
+    if not allowed:
+        raise ValidationFailure("DECISION_REGISTER.md declares no allowed statuses")
+
+    seen: set[str] = set()
+    for number, line in enumerate(text.split("\n"), start=1):
+        if not line.startswith("| D-"):
+            continue
+        cells = line.split("|")
+        if len(cells) != 6:
+            raise ValidationFailure(
+                f"DECISION_REGISTER.md:{number} splits into {len(cells) - 2} cells, "
+                f"not 4; escape the pipe inside the text"
+            )
+        identifier, _, status, condition = (cell.strip() for cell in cells[1:5])
+        if status not in allowed:
+            raise ValidationFailure(
+                f"DECISION_REGISTER.md:{number} {identifier} has status "
+                f"{status!r}, which is not one of {sorted(allowed)}"
+            )
+        if not condition:
+            raise ValidationFailure(
+                f"DECISION_REGISTER.md:{number} {identifier} records no validation "
+                f"or reopen condition"
+            )
+        if identifier in seen:
+            raise ValidationFailure(
+                f"DECISION_REGISTER.md:{number} repeats {identifier}; decision ids "
+                f"are stable references and must be unique"
+            )
+        seen.add(identifier)
+
+
 def validate_cddl_file() -> None:
     """Parse the CDDL and assert the rules the contracts depend on are present.
 
@@ -2288,6 +2338,7 @@ def main() -> int:
             "source receipt, appraisal policy and appraisal result",
             validate_evidence_chain,
         ),
+        ("decision register table integrity", validate_decision_register),
         ("CDDL grammar parse and required rules", validate_cddl_file),
         ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),
         ("VibeProof vector reproducibility", validate_vector_reproducibility),
