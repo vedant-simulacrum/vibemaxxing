@@ -176,7 +176,8 @@ create table evidence_assessments (
 
 create table moderation_cases (
   case_id uuid primary key,
-  account_id uuid references accounts(account_id),
+  -- Deliberately not a foreign key: the case survives erasure unlinked; a nullable reference still blocks the delete.
+  account_id uuid,
   state text not null check (state in ('open','investigating','actioned','awaiting-appeal','reversed','closed')),
   policy_version text not null,
   created_at timestamptz not null
@@ -194,7 +195,8 @@ create table moderation_actions (
 create table appeals (
   appeal_id uuid primary key,
   case_id uuid not null references moderation_cases(case_id),
-  account_id uuid not null references accounts(account_id),
+  -- Deliberately not a foreign key: the appeal survives erasure unlinked; the account row does not.
+  account_id uuid not null,
   state text not null check (state in ('submitted','screening','needs-information','reviewing','approved','denied','withdrawn','expired')),
   created_at timestamptz not null
 );
@@ -283,7 +285,8 @@ create table score_snapshots (
 
 create table ranking_corrections (
   ranking_correction_id uuid primary key,
-  correction_id uuid not null references claim_corrections(correction_id),
+  -- Deliberately not a foreign key: claim_corrections is deleted by erasure; the correction is retained pseudonymously.
+  correction_id uuid not null,
   ranking_view_id text not null,
   token_burn_total_delta bigint not null
 );
@@ -355,14 +358,16 @@ create table rival_edges (
 
 create table organizations (
   organization_id uuid primary key,
-  owner_account_id uuid not null references accounts(account_id),
+  -- Deliberately not a foreign key: an organization outlives its owner's erasure.
+  owner_account_id uuid not null,
   name text not null,
   state text not null check (state in ('active','archived'))
 );
 
 create table communities (
   community_id uuid primary key,
-  owner_account_id uuid not null references accounts(account_id),
+  -- Deliberately not a foreign key: a community outlives its owner's erasure.
+  owner_account_id uuid not null,
   name text not null,
   state text not null check (state in ('active','archived'))
 );
@@ -541,7 +546,8 @@ create table exports (
 
 create table deletion_jobs (
   deletion_job_id uuid primary key,
-  account_id uuid not null references accounts(account_id),
+  -- Deliberately not a foreign key: the job is the proof the deletion happened; it cannot reference what it deleted.
+  account_id uuid not null,
   scope text not null check (scope in ('server','local','everything')),
   state text not null check (state in ('requested','recent-auth-verified','cooling-off','processing','rebuilding-projections','awaiting-local-receipt','complete','failed'))
 );
@@ -699,7 +705,8 @@ create table social_integrity_events (
   aggregate_id uuid not null,
   aggregate_revision bigint not null check (aggregate_revision >= 0),
   event_type text not null,
-  actor_account_id uuid references accounts(account_id),
+  -- Deliberately not a foreign key: the event survives erasure unlinked; a nullable reference still blocks the delete.
+  actor_account_id uuid,
   idempotency_key uuid,
   reason_code text not null,
   policy_version_digest bytea not null check (octet_length(policy_version_digest) = 32),
@@ -1232,7 +1239,8 @@ create table social_events (
 -- than continuing on stale data.
 create table tuf_metadata (
   tuf_metadata_id uuid primary key,
-  device_id uuid not null references devices(device_id),
+  -- Deliberately not a foreign key: trusted-client state outlives the device row an erasure deletes.
+  device_id uuid not null,
   role text not null check (role in ('root','timestamp','snapshot','targets','delegated-targets')),
   version bigint not null check (version > 0),
   metadata_digest bytea not null check (octet_length(metadata_digest) = 32),
@@ -1376,7 +1384,8 @@ create table invite_codes (
   -- displayed once at issuance and is never recoverable from this table.
   code_hash bytea not null unique check (octet_length(code_hash) = 32),
   state text not null check (state in ('issued','redeemed','expired','revoked','retired')),
-  issued_by_account_id uuid not null references accounts(account_id),
+  -- Deliberately not a foreign key: an issued code outlives the issuer's erasure.
+  issued_by_account_id uuid not null,
   issued_at timestamptz not null,
   expires_at timestamptz not null,
   redeemed_at timestamptz,
