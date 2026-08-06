@@ -87,7 +87,7 @@ Every floor above was written before anything had been measured, which made each
 |---|---:|---|---|
 | `crates/vibeproof-core` | **90.97%** | line, 292 of 321 | clears 90% by 0.97 points |
 | `apps/api` | **72.86%** | statement, 51 of 70 | no floor applies |
-| `scripts/ci` + `scripts/repository` | **55.89%** | line-and-branch, 3,969 of 7,102 | the floor is this number rounded down |
+| `scripts/ci` + `scripts/repository` | **55.87%** | line-and-branch, 3,967 of 7,100 | the floor is this number rounded down |
 
 Three findings sit behind those three numbers, and none of them is resolved by having measured.
 
@@ -205,7 +205,7 @@ That removes the reason not to specify a larger scenario set and leaves a better
 
 Most of this still does not run, and the parts that do are now measured rather than asserted.
 
-**Measured.** `make test` runs 16 Python validator test files. Three surfaces carry a real coverage number, recorded in `scripts/ci/measured-coverage-baseline-v1.json` and re-measured per pull request by the `measured-coverage` job: Rust at 90.97% line, Go at 72.86% statement, Python at 55.89% line-and-branch. The non-regression rule has something to regress against for the first time, and `tests/ci/test_measure_coverage.py` drives each direction of the comparison — worse fails with the fall attributed, the same passes, better passes and is reported, and a missing, malformed or unmeasurable input fails closed — because a gate that cannot be shown to fire is not evidence either.
+**Measured.** `make test` runs 16 Python validator test files. Three surfaces carry a real coverage number, recorded in `scripts/ci/measured-coverage-baseline-v1.json` and re-measured per pull request by the `measured-coverage` job: Rust at 90.97% line, Go at 72.86% statement, Python at 55.87% line-and-branch. The non-regression rule has something to regress against for the first time, and `tests/ci/test_measure_coverage.py` drives each direction of the comparison — worse fails with the fall attributed, the same passes, better passes and is reported, and a missing, malformed or unmeasurable input fails closed — because a gate that cannot be shown to fire is not evidence either.
 
 **Still not measured, and not claimed.** `packages/ui` and `apps/web` build under the node lane and have no coverage number, so their 70% and 60% floors remain thresholds with nothing on the other side of them; that is the same defect this section previously recorded for all five scopes, now reduced to two. Both Go floors have no subject, because `apps/api` holds one `main` package. 24 of 27 eval suites still execute nothing. No mutation pass has run.
 

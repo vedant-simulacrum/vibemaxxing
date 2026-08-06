@@ -681,14 +681,12 @@ def regressions(
     for name in sorted(set(observed) & set(scopes)):
         measurement, record = observed[name], scopes[name]
         if not measurement.measured:
-            message = f"scope {name} was not measured: {measurement.note}"
-            if allow_unmeasured:
-                continue
-            failures.append(
-                message
-                + ". An unmeasured surface is an absence of evidence, never a pass; "
-                "pass --allow-unmeasured only where the toolchain is genuinely absent"
-            )
+            if not allow_unmeasured:
+                failures.append(
+                    f"scope {name} was not measured: {measurement.note}. An unmeasured "
+                    "surface is an absence of evidence, never a pass; pass "
+                    "--allow-unmeasured only where the toolchain is genuinely absent"
+                )
             continue
         if (
             measurement.language != record["language"]

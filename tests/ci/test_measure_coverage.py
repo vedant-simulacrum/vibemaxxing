@@ -25,6 +25,7 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import re
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 import sys
@@ -87,6 +88,86 @@ class MeasurementFactory:
         }
         values.update(overrides)
         return self.module.Measurement(**values)  # type: ignore[attr-defined]
+
+
+class RecordedNumbersMatchTheDocumentTests(unittest.TestCase):
+    """The prose must not drift from the record it is quoting.
+
+    `docs/verification/TEST_STRATEGY.md` restates the measured number for every surface
+    and states the floor each is held to. Two files holding the same number is how one
+    of them goes stale: the baseline moves on the commit that changes coverage and the
+    document keeps quoting whatever it quoted before, and a reader takes the document at
+    its word. Nothing else in this repository would catch that, so this does.
+    """
+
+    def setUp(self) -> None:
+        self.document = baseline_document()
+        self.strategy = (
+            ROOT / "docs" / "verification" / "TEST_STRATEGY.md"
+        ).read_text()
+
+    def test_every_measured_percentage_appears_in_the_strategy(self) -> None:
+        for scope, record in self.document["scopes"].items():
+            with self.subTest(scope=scope):
+                self.assertIn(
+                    f"{record['percent']:.2f}%",
+                    self.strategy,
+                    f"{scope} is recorded at {record['percent']:.2f}% and TEST_STRATEGY.md does not "
+                    "quote that number; one of the two is stale",
+                )
+
+    def test_every_recorded_unit_count_appears_in_the_strategy(self) -> None:
+        # Denominators are what the regression attribution is read against, so a stale
+        # one in the document misleads exactly the reader trying to interpret a failure.
+        for scope, record in self.document["scopes"].items():
+            with self.subTest(scope=scope):
+                self.assertIn(
+                    f"{record['covered_units']:,} of {record['total_units']:,}",
+                    self.strategy,
+                    f"{scope} is recorded at {record['covered_units']} of {record['total_units']} "
+                    "units and TEST_STRATEGY.md does not quote that pair",
+                )
+
+    def test_every_recorded_floor_is_the_one_the_strategy_states(self) -> None:
+        # A floor recorded here that the document does not state is a floor nobody
+        # agreed to, and floor_source claims the document as its authority.
+        for scope, record in self.document["scopes"].items():
+            floor = record.get("floor_percent")
+            if floor is None:
+                continue
+            with self.subTest(scope=scope):
+                self.assertEqual(
+                    record["floor_source"], "docs/verification/TEST_STRATEGY.md"
+                )
+                self.assertIn(
+                    f"{floor:g}% ",
+                    self.strategy,
+                    f"{scope} is held to a {floor:g}% floor that TEST_STRATEGY.md does not state",
+                )
+
+    def test_the_zero_coverage_modules_named_in_the_baseline_still_exist(self) -> None:
+        # The list is the argument for where the Python floor starts. A module in it
+        # that has been deleted or renamed makes that argument quietly wrong.
+        note = self.document["scopes"]["python-planning-tooling"]["note"]
+        # Only the enumerated list, not every filename the prose happens to mention:
+        # the note also names coverage.py, which is the tool rather than a module here.
+        listed = re.search(r"are at 0%: (.+?)\. ", note)
+        self.assertIsNotNone(
+            listed, "the baseline note no longer enumerates the uncovered modules"
+        )
+        assert listed is not None
+        named = re.findall(r"\b([a-z0-9_]+\.py)\b", listed.group(1))
+        self.assertEqual(len(named), 10)
+        for module in named:
+            with self.subTest(module=module):
+                candidates = [
+                    ROOT / "scripts" / "ci" / module,
+                    ROOT / "scripts" / "repository" / module,
+                ]
+                self.assertTrue(
+                    any(path.is_file() for path in candidates),
+                    f"the baseline names {module} as uncovered and no such module exists",
+                )
 
 
 class BaselineLoadingTests(unittest.TestCase):
