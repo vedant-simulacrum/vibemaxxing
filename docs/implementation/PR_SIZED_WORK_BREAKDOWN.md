@@ -98,6 +98,8 @@ Status: not-started
 
 `Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
 
+`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
+
 - classify `crates/vibeproof-core` and Go fixture codec as exploratory prototype;
 - remove VibeProof v1 naming from incompatible 11-field fixtures or remove them;
 - prohibit product imports from the shadow model;
@@ -133,6 +135,8 @@ Acceptance: `python3 scripts/repository/validate_state_vocabularies.py` exits 0 
 Depends: none
 Est: 12-16
 Status: not-started
+
+`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
 
 `Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
 
@@ -493,6 +497,8 @@ Acceptance: `python3 scripts/repository/validate_planning_coverage.py` exits 0 w
 Depends: PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033
 Est: 12-16
 Status: not-started
+
+The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
 
 The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
 
@@ -904,12 +910,18 @@ The prose range `F-001 through F-007` is expanded because `Depends:` admits unit
 
 This unit was an orphan. `F-010` and `X-011` now depend on it.
 
+The prose range `F-001 through F-007` is expanded because `Depends:` admits unit IDs only. The prose condition `separate automation authorization` is not a dependency and is recorded here instead: activating these jobs is product automation and is outside the current authorization, per `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`.
+
+This unit was an orphan. `F-010` and `X-011` now depend on it.
+
 ### F-009 Local development environment
 Files: `docs/engineering/LOCAL_DEVELOPMENT.md` (new), `scripts/dev/bootstrap.sh` (new), `compose.dev.yaml` (new), `Makefile`
 Acceptance: `make dev-up` brings up PostgreSQL and the API from a clean checkout with no manual step, `make dev-check` exits 0, and `bash scripts/dev/bootstrap.sh --verify` exits non-zero when a toolchain version pinned by `F-001` is missing or wrong.
 Depends: F-001, F-002
 Est: 8-12
 Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
 
 One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
 
@@ -926,12 +938,18 @@ One of the thirteen categories that previously had no unit anywhere. Deployment 
 
 One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
 
+One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
+
 ### F-011 Feature-flag mechanics
 Files: `packages/schemas/feature-flag-v1.schema.json` (new), `apps/api/internal/flags/flags.go` (new), `packages/schemas/planning-schema.sql`, `packages/schemas/policy-defaults-v1.json`
 Acceptance: `go test ./internal/flags/...` exits 0 with cases proving evaluation is deterministic for a given `(flag, principal, revision)` triple, that an unknown flag resolves to its recorded default rather than erroring, and that no flag name or evaluation result appears in any egress buffer under the `F-006` canary suite.
 Depends: F-007, S-002
 Est: 8-12
 Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. `feature_flags` is the persistence owner and had no owning unit before this one.
+
+Distinct from `F-007`: that unit revokes a capability in an emergency and is a safety control; this one is ordinary staged rollout. A flag evaluation is not an analytics event and must never be reported as one.
 
 One of the thirteen categories that previously had no unit anywhere. `feature_flags` is the persistence owner and had no owning unit before this one.
 
@@ -1021,6 +1039,10 @@ The prose condition `separate security/eval workflow authorization` is not a dep
 
 This unit was an orphan. `X-010` now depends on it.
 
+The prose condition `separate security/eval workflow authorization` is not a dependency and is recorded here instead: the fuzz workflow named in the file list may not be activated under P-1104.
+
+This unit was an orphan. `X-010` now depends on it.
+
 ## Epic A — Accounting and deterministic integrity
 
 ### A-001 Immutable accounting-profile loader and digest verification
@@ -1085,6 +1107,8 @@ Acceptance: `go test ./internal/pricing/...` exits 0; an unpriced model yields n
 Depends: A-001
 Est: 8-12
 Status: not-started
+
+Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
 
 Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
 
@@ -1206,6 +1230,8 @@ Status: not-started
 
 `shell_sessions` had no owning unit before this one.
 
+`shell_sessions` had no owning unit before this one.
+
 ### N-016 Shell subsystem projections and action separation
 Files: `crates/vibemaxxing-cli/src/shell/projections.rs` (new)
 Acceptance: a matrix test asserts that UI exit, pause collection, pause sync, stop daemon, logout and uninstall each produce their own recorded effect and none produces another's; the daemon, collection, sync, auth, permission, update and connectivity projections are read independently and no command mutates a projection it does not own.
@@ -1222,12 +1248,16 @@ Status: not-started
 
 The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
 
+The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
+
 ### N-018 Sleep/resume/reboot/login/logout/offline suite
 Files: `crates/vibemaxxing-daemon/tests/platform_lifecycle.rs` (new), `evals/suites/suites.yaml`
 Acceptance: `python3 scripts/ci/run_evals.py --suite resilience` exits 0 with a status that is not `not_applicable`, carrying one case per transition — sleep, resume, reboot, login, logout and offline — each with a recorded expected outcome; a transition with no case fails the suite rather than being absent from it.
 Depends: N-009, N-015
 Est: 10-14
 Status: not-started
+
+This unit was an orphan. `X-010` now depends on it.
 
 This unit was an orphan. `X-010` now depends on it.
 
@@ -1240,12 +1270,16 @@ Status: not-started
 
 This unit was an orphan. `X-010` now depends on it.
 
+This unit was an orphan. `X-010` now depends on it.
+
 ### N-020 Content-egress and local-role adversarial suite
 Files: `crates/vibemaxxing-canary/src/lib.rs` (new), `conformance/telemetry/canaries.json`, `evals/suites/suites.yaml`
 Acceptance: `python3 scripts/ci/run_evals.py --suite privacy-boundary` exits 0 with a status that is not `not_applicable`; every forbidden content class named in `docs/privacy/PRIVACY_CONTRACT.md` has at least one attempted-egress case from every local role, and every attempt is blocked.
 Depends: N-003, N-004, N-005, N-006, N-007, N-008, N-009, N-010, N-011, N-012, N-013, N-014, N-015, N-016, N-017
 Est: 12-16
 Status: not-started
+
+The prose range `N-003 through N-017` is expanded because `Depends:` admits unit IDs only.
 
 The prose range `N-003 through N-017` is expanded because `Depends:` admits unit IDs only.
 
@@ -1260,12 +1294,16 @@ Status: not-started
 
 This unit was an orphan: `S-002` through `S-015` did not depend on the Go service foundation they are all built on. `S-002` now depends on it and every later Epic S unit reaches it transitively.
 
+This unit was an orphan: `S-002` through `S-015` did not depend on the Go service foundation they are all built on. `S-002` now depends on it and every later Epic S unit reaches it transitively.
+
 ### S-002 PostgreSQL migration runner, roles and recovery
 Files: `migrations/0001_init.sql` (new), `apps/api/internal/db/migrate.go` (new), `packages/schemas/planning-schema.sql`, `docs/decisions/ADR-018-DATABASE_AND_MIGRATION_TOOLING.md`
 Acceptance: applying every migration to an empty database produces a schema dump byte-identical to one produced from `packages/schemas/planning-schema.sql`; `schema_migrations` records each version exactly once; every reversible step has a down path and every irreversible one is declared irreversible rather than left undefined.
 Depends: S-001, F-001
 Est: 12-16
 Status: not-started
+
+Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
 
 Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
 
@@ -1285,6 +1323,8 @@ Status: not-started
 
 This unit was an orphan. `S-010` now depends on it, which is correct: claim acceptance is the mutation whose replay has to be exact.
 
+This unit was an orphan. `S-010` now depends on it, which is correct: claim acceptance is the mutation whose replay has to be exact.
+
 ### S-005 Provider/OAuth transaction persistence
 Files: `apps/api/internal/oauth/store.go` (new), `migrations/0003_oauth.sql` (new), `packages/schemas/planning-schema.sql`
 Acceptance: an `oauth_transactions` row binds action, account or session, recent-auth grant, provider revision, redirect, state, PKCE verifier and expiry; a second consumption of the same transaction is rejected by a constraint, which a concurrent double-callback test exercises.
@@ -1301,6 +1341,8 @@ Status: not-started
 
 `optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
 
+`optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
+
 ### S-007 Ranked identity, consolidation and appeal persistence
 Files: `apps/api/internal/rankedidentity/store.go` (new), `migrations/0005_ranked_identity.sql` (new), `packages/schemas/planning-schema.sql`
 Acceptance: `ranked_identities` is a separate table from `accounts` with at most one active resolved row per person, enforced by a partial unique index; `appeals` and `appeal_decisions` record the investigation privately, and no query path sums two accounts' scores.
@@ -1314,6 +1356,8 @@ Acceptance: `devices`, `device_keys`, `device_enrollment_grants`, `device_lineag
 Depends: S-002
 Est: 12-16
 Status: not-started
+
+`adapter_installations` had no owning unit before this one.
 
 `adapter_installations` had no owning unit before this one.
 
@@ -1354,6 +1398,8 @@ Status: not-started
 
 The prose range `S-008 through S-012` is expanded because `Depends:` admits unit IDs only.
 
+The prose range `S-008 through S-012` is expanded because `Depends:` admits unit IDs only.
+
 ### S-014 Compatibility/certification policy persistence
 Files: `apps/api/internal/certification/store.go` (new), `migrations/0012_certification.sql` (new), `packages/schemas/planning-schema.sql`
 Acceptance: `platform_profiles` and `platform_certifications` bind an exact compatibility tuple; a query for support returns nothing when the certification is empty, planned, expired or suspended, which a table test asserts for each of those four states.
@@ -1370,12 +1416,16 @@ Status: not-started
 
 The prose range `S-010 through S-012` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
 
+The prose range `S-010 through S-012` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
+
 ### S-016 Error taxonomy and reason-code mapping
 Files: `apps/api/internal/apierr/apierr.go` (new), `apps/api/internal/apierr/apierr_test.go` (new), `packages/schemas/reason-codes-v1.json`, `packages/schemas/openapi-v1.yaml`
 Acceptance: `go test ./internal/apierr/...` exits 0 with a table test proving every code in `packages/schemas/reason-codes-v1.json` maps to exactly one HTTP status and one registered state machine, and that no handler can return a status or reason absent from the registry.
 Depends: S-001, PF-045
 Est: 8-12
 Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere. `PF-045` decides the matrix; this unit is the runtime that cannot deviate from it.
 
 One of the thirteen categories that previously had no unit anywhere. `PF-045` decides the matrix; this unit is the runtime that cannot deviate from it.
 
@@ -1388,12 +1438,16 @@ Status: not-started
 
 One of the thirteen categories that previously had no unit anywhere.
 
+One of the thirteen categories that previously had no unit anywhere.
+
 ### S-018 Rate limiting and quota enforcement
 Files: `apps/api/internal/ratelimit/ratelimit.go` (new), `apps/api/internal/ratelimit/ratelimit_test.go` (new), `packages/schemas/policy-defaults-v1.json`, `packages/schemas/openapi-v1.yaml`
 Acceptance: `go test ./internal/ratelimit/...` exits 0; a table test asserts in both directions that every operation declaring a 429 has a configured limit and every configured limit names an existing operation; limits key on the authenticated principal and never on a content-derived value, which a test proves by rejecting a key derived from request content.
 Depends: S-001, S-016
 Est: 8-12
 Status: not-started
+
+One of the thirteen categories that previously had no unit anywhere.
 
 One of the thirteen categories that previously had no unit anywhere.
 
@@ -1406,6 +1460,8 @@ Status: not-started
 
 `audit_events` had no owning unit before this one.
 
+`audit_events` had no owning unit before this one.
+
 ### S-020 Data migration and backfill runner
 Files: `apps/api/internal/backfill/runner.go` (new), `apps/api/internal/backfill/runner_test.go` (new), `docs/operations/DATA_MIGRATION_AND_BACKFILL.md` (new)
 Acceptance: `go test ./internal/backfill/...` exits 0; a backfill resumes from its recorded `worker_checkpoints` row after a kill, and re-running a completed backfill changes no row, which a table-checksum comparison before and after asserts.
@@ -1415,113 +1471,272 @@ Status: not-started
 
 One of the thirteen categories that previously had no unit anywhere. Distinct from `S-002`, which runs schema migrations: this unit moves and rebuilds data behind them, which is the operation that can starve online traffic and the one that has to be resumable.
 
+One of the thirteen categories that previously had no unit anywhere. Distinct from `S-002`, which runs schema migrations: this unit moves and rebuilds data behind them, which is the operation that can starve online traffic and the one that has to be resumable.
+
 ## Epic O — OAuth, sessions and ranked identity
 
 ### O-001 GitHub provider capability implementation
-Dependencies: S-005.
+Files: `apps/api/internal/oauth/github.go` (new), `packages/schemas/oauth-provider-registry-v1.json` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new)
+Acceptance: `go test ./internal/oauth/ -run GitHub` exits 0 against the recorded provider fixture; every capability the registry row claims — PKCE method, RFC 9207 `iss`, device flow — is exercised by a case, and a claimed capability with no case fails the test rather than being assumed.
+Depends: S-005, PF-005
+Est: 8-12
+Status: not-started
 
 ### O-002 X provider capability implementation
-Dependencies: S-005.
+Files: `apps/api/internal/oauth/x.go` (new), `packages/schemas/oauth-provider-registry-v1.json` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new)
+Acceptance: `go test ./internal/oauth/ -run XProvider` exits 0 against the recorded provider fixture, under the same claimed-capability-must-have-a-case rule as `O-001`.
+Depends: S-005, PF-005
+Est: 8-12
+Status: not-started
 
 ### O-003 Desktop browser Authorization Code + PKCE
-Dependencies: O-001, O-002.
+Files: `apps/api/internal/oauth/authcode.go` (new), `crates/vibemaxxing-cli/src/auth.rs` (new)
+Acceptance: the loopback redirect binds a single-use port and a state value; a callback carrying a mismatched state, a reused code or no PKCE verifier is refused, one test case each, and the refusal reason resolves in `packages/schemas/reason-codes-v1.json`.
+Depends: O-001, O-002
+Est: 10-14
+Status: not-started
 
 ### O-004 Callback issuer/redirect/mix-up protection
-Dependencies: O-003.
+Files: `apps/api/internal/oauth/callback.go` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new)
+Acceptance: every vector in the mix-up fixture yields its recorded verdict, including an authorization response from provider B replayed to provider A's callback; a provider that returns no `iss` takes the recorded fallback path rather than trusting the response, asserted by a case for each provider.
+Depends: O-003
+Est: 10-14
+Status: not-started
 
 ### O-005 Limited-input interactive device flow
-Dependencies: provider capability; never CI default.
+Files: `apps/api/internal/oauth/deviceflow.go` (new), `crates/vibemaxxing-cli/src/auth.rs` (new), `packages/schemas/oauth-provider-registry-v1.json` (new)
+Acceptance: a table test asserts the flow starts only for providers whose registry row records device-flow capability; a test that sets `CI=true` expects a refusal, so the flow cannot become a CI default by omission.
+Depends: O-001, O-002, O-003
+Est: 8-12
+Status: not-started
+
+The prose dependency `provider capability; never CI default` is replaced. The capability half is now the resolvable dependency on `O-001` and `O-002`; the never-CI-default half was never a dependency at all and is an acceptance clause, which is where it now lives.
 
 ### O-006 Web/native session and refresh-family rotation
-Dependencies: S-006.
+Files: `apps/api/internal/session/session.go` (new), `docs/decisions/ADR-015-SESSION_AUTHENTICATION.md`, `packages/schemas/planning-schema.sql`
+Acceptance: reusing a refresh token moves the `session_families` row to `replay-detected` and revokes every descendant; the state is read back from SQL rather than inferred in memory, which a direct query asserts.
+Depends: S-006, PF-039
+Est: 10-14
+Status: not-started
 
 ### O-007 Linked identity and exact unlink
-Dependencies: O-004, O-006.
+Files: `apps/api/internal/identity/link.go` (new), `apps/api/internal/identity/link_test.go` (new)
+Acceptance: unlinking the last authentication method is refused; an unlink revokes exactly the sessions and device grants the contract names and no others, asserted row by row before and after.
+Depends: O-004, O-006
+Est: 8-12
+Status: not-started
 
 ### O-008 Provider loss/compromise recovery
-Dependencies: O-007.
+Files: `apps/api/internal/identity/recovery.go` (new), `apps/api/internal/identity/recovery_test.go` (new)
+Acceptance: a recovery attempted before the cooling-off period recorded in `packages/schemas/policy-defaults-v1.json` is refused; a compromised identity moves to `compromised` and then `recovery-pending`, and a notification row exists per affected session.
+Depends: O-007
+Est: 10-14
+Status: not-started
 
 ### O-009 Ranked eligibility and investigation
-Dependencies: S-007, O-007.
+Files: `apps/api/internal/rankedidentity/eligibility.go` (new), `apps/api/internal/rankedidentity/eligibility_test.go` (new)
+Acceptance: an account with no resolved ranked identity returns no row from any ranking query; fetching the public projection of an account under investigation returns no investigation field, and the test fails if one appears.
+Depends: S-007, O-007
+Est: 10-14
+Status: not-started
 
 ### O-010 Duplicate-account consolidation execution
-Dependencies: O-008, O-009, S-011.
+Files: `apps/api/internal/rankedidentity/consolidate.go` (new), `packages/schemas/consolidation-plan-v1.schema.json` (new)
+Acceptance: a fixture with deliberately overlapping claims consolidates to strictly less than the sum of the two accounts' totals, which is the check that history is recomputed from non-overlapping contributions rather than added; the consolidation plan validates against its schema.
+Depends: O-008, O-009, S-011
+Est: 12-16
+Status: not-started
 
 ### O-011 Restriction, appeal, reversal and retirement
-Dependencies: O-009.
+Files: `apps/api/internal/moderation/restriction.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: every restriction row has a reachable appeal path in the `appeal` machine and every reversal is a new append-only row; `appeal_decisions` exposes the outcome and no investigation evidence, asserted by a column-level test on the published projection.
+Depends: O-009
+Est: 10-14
+Status: not-started
 
 ### O-012 OAuth, recovery and consolidation race suite
-Dependencies: O-004 through O-011.
+Files: `evals/suites/suites.yaml`, `tests/conformance/test_oauth_races.py` (new)
+Acceptance: `python3 scripts/ci/run_evals.py --suite oauth-session-identity` exits 0 with a status that is not `not_applicable`; concurrent callbacks, concurrent unlinks and simultaneous consolidation of the same pair each end in exactly one recorded outcome, and a run that ends in two fails the suite.
+Depends: O-004, O-005, O-006, O-007, O-008, O-009, O-010, O-011
+Est: 12-16
+Status: not-started
+
+The prose range `O-004 through O-011` is expanded because `Depends:` admits unit IDs only.
+
+### O-013 Optional authenticator and recovery-code enrollment
+Files: `apps/api/internal/authenticator/authenticator.go` (new), `apps/api/internal/authenticator/authenticator_test.go` (new), `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `packages/schemas/planning-schema.sql`
+Acceptance: `go test ./internal/authenticator/...` exits 0; a recovery code is single-use and a direct read of `recovery_codes` returns only a hash; an `optional_authenticators` row cannot become the last remaining method without the recorded explicit confirmation, asserted by a refused case.
+Depends: O-006, S-006
+Est: 8-12
+Status: not-started
+
+D-028 makes passkeys and hardware credentials optional stronger factors rather than mandatory primary authentication. `optional_authenticators` and `recovery_codes` are persisted by `S-006` and had no runtime unit before this one.
 
 ## Epic V — First source vertical slice and certification
 
 ### V-001 Select one local runtime source
-Dependencies: A-010, N-020.
+Files: `docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, `conformance/adapters/agent-registry-v1.json`
+Acceptance: exactly one registry row is marked selected for the local-runtime lane and its compatibility tuple resolves in `packages/schemas/platform-profile-registry-v1.json`; a second selected row in the same lane fails the registry validator.
+Depends: A-010, N-020
+Est: 6-8
+Status: not-started
 
 ### V-002 Select one cloud structured-usage source
-Dependencies: A-010, S-014.
+Files: `conformance/adapters/agent-registry-v1.json`, `docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md`
+Acceptance: exactly one registry row is marked selected for the cloud structured-usage lane and names the provider endpoint it reads; a second selected row in the same lane fails the registry validator.
+Depends: A-010, S-014
+Est: 6-8
+Status: not-started
 
 ### V-003 Compatibility tuple and capability probe runtime
-Dependencies: V-001, V-002.
+Files: `crates/vibeproof-adapters/src/probe.rs` (new), `packages/schemas/compatibility-tuple-v1.schema.json` (new), `scripts/research/agent_capability_probe.py`
+Acceptance: the probe emits a tuple that validates against the schema and whose digest equals the registry row's; a host whose probe result differs from the certified tuple is reported unsupported rather than downgraded, asserted by a deliberately mismatched fixture.
+Depends: V-001, V-002
+Est: 10-14
+Status: not-started
 
 ### V-004 Local adapter implementation
-Dependencies: V-003.
+Files: `crates/vibeproof-adapters/src/local/mod.rs` (new), `conformance/adapters/claude-code-otel/source-observation.valid.json`, `conformance/adapters/claude-code-otel/otlp-attribute-disposition-v1.json`
+Acceptance: `cargo test -p vibeproof-adapters --test local` exits 0; the valid fixture produces its recorded normalized event, and each of the four invalid-identity fixtures beside it is rejected with its recorded reason.
+Depends: V-003
+Est: 12-16
+Status: not-started
 
 ### V-005 Cloud adapter implementation
-Dependencies: V-003.
+Files: `crates/vibeproof-adapters/src/cloud/mod.rs` (new), `conformance/adapters/agent-registry-v1.json`
+Acceptance: a schema assertion on every fetched payload rejects a provider response carrying a prompt, response or transcript field rather than filtering it, which a deliberately content-bearing fixture proves; the adapter reads aggregate usage only.
+Depends: V-003
+Est: 12-16
+Status: not-started
 
 ### V-006 Certification runner and signed result bundle
-Dependencies: V-004, V-005.
+Files: `scripts/ci/run_certification.py` (new), `packages/schemas/certification-result-v1.schema.json` (new)
+Acceptance: the emitted bundle validates against its schema and carries suite and case digests, a validity interval and a signer reference; two runs against the same tuple produce the same case digests, and a changed fixture changes them.
+Depends: V-004, V-005
+Est: 12-16
+Status: not-started
 
 ### V-007 Source upgrade-break and privacy fixtures
-Dependencies: V-006.
+Files: `conformance/adapters/upgrade-break-fixtures-v1.json` (new), `crates/vibeproof-adapters/tests/upgrade_break.rs` (new)
+Acceptance: a fixture recorded from a newer source version with a changed field set makes the adapter report an uncertified tuple rather than parse best-effort; every privacy fixture in the set is blocked by the `F-006` canary suite.
+Depends: V-006
+Est: 8-12
+Status: not-started
 
 ### V-008 Multi-observer duplicate reconciliation
-Dependencies: V-004, V-005, A-006.
+Files: `crates/vibeproof-adapters/tests/multi_observer.rs` (new), `conformance/accounting/dedup-vectors-v1.json` (new)
+Acceptance: the dedup vectors run end to end through both adapters and yield one counted event per real operation; starting the two observers in the opposite order produces the same count.
+Depends: V-004, V-005, A-006
+Est: 10-14
+Status: not-started
 
 ### V-009 Emergency suspend/degrade/reinstate
-Dependencies: V-006, S-014.
+Files: `apps/api/internal/certification/suspend.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: suspending one tuple leaves every other tuple certified, asserted row by row; a suspended tuple returns no support claim from any query, and reinstatement restores exactly the prior row rather than a fresh one.
+Depends: V-006, S-014
+Est: 8-12
+Status: not-started
 
 ### V-010 Support registry publication
-Dependencies: V-006 through V-009.
+Files: `conformance/adapters/agent-registry-v1.json`, `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`
+Acceptance: `python3 scripts/repository/validate_planning_artifacts.py --allow-no-postgres` exits 0 and the published registry lists only tuples holding a current, non-expired, non-suspended certification; a row with an empty certification set fails the validator, which is what stops a registry implying exercised support.
+Depends: V-006, V-007, V-008, V-009
+Est: 8-12
+Status: not-started
+
+The prose range `V-006 through V-009` is expanded because `Depends:` admits unit IDs only.
 
 ## Epic R — Ranking and pricing
 
 ### R-001 Period and season registry
-Dependencies: S-002.
+Files: `apps/api/internal/ranking/periods.go` (new), `migrations/0013_periods.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: each `periods` row names an exact calendar and timezone and all five states of the period machine are reachable; a claim whose receipt timestamp falls in no open period is rejected rather than assigned to the nearest one.
+Depends: S-002
+Est: 8-12
+Status: not-started
 
 ### R-002 Immutable score contributions
-Dependencies: S-011, R-001.
+Files: `apps/api/internal/ranking/contributions.go` (new), `migrations/0014_scores.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: `minute_scores` and `period_scores` reject `UPDATE` and `DELETE` at the database level; replaying an already-accepted claim leaves the row count unchanged, which is the check that a contribution is written exactly once.
+Depends: S-011, R-001
+Est: 10-14
+Status: not-started
+
+`minute_scores` had no owning unit before this one.
 
 ### R-003 Ranking definitions and audience instances
-Dependencies: O-009, R-001.
+Files: `apps/api/internal/ranking/views.go` (new), `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/planning-schema.sql`
+Acceptance: a `ranking_views` row names a metric version, a period and its evidence, source, agent, provider and model filters, and a column assertion fails if it carries any viewer or audience field — audience belongs to the request, not the definition.
+Depends: O-009, R-001
+Est: 10-14
+Status: not-started
 
 ### R-004 Generation-keyed entries and isolated build
-Dependencies: R-002, R-003.
+Files: `apps/api/internal/ranking/build.go` (new), `migrations/0015_ranking_generations.sql` (new), `packages/schemas/planning-schema.sql`
+Acceptance: every entry key includes its `ranking_projection_generations` generation; a read concurrent with a build returns only the previously active generation, which a test asserts by reading during a deliberately slow build.
+Depends: R-002, R-003
+Est: 12-16
+Status: not-started
 
 ### R-005 Generation validation and atomic promotion
-Dependencies: R-004.
+Files: `apps/api/internal/ranking/promote.go` (new), `apps/api/internal/ranking/promote_test.go` (new)
+Acceptance: a partial unique index permits exactly one active generation; promotion is a single statement, and an injected validation failure leaves the previous generation active with no window in which none is.
+Depends: R-004
+Est: 8-12
+Status: not-started
 
 ### R-006 Immutable snapshots and viewer-bound cursors
-Dependencies: R-005.
+Files: `apps/api/internal/ranking/cursor.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: a cursor replayed by a different viewer is rejected; a cursor whose authorization revision is stale is rejected rather than silently refreshed; `score_snapshots` rejects `UPDATE` at the database level.
+Depends: R-005
+Est: 10-14
+Status: not-started
 
 ### R-007 Tie rank and deterministic display ordering
-Dependencies: R-004.
+Files: `apps/api/internal/ranking/order.go` (new), `apps/api/internal/ranking/order_test.go` (new)
+Acceptance: two entries with equal scores receive the same `rank()` value and a stable display order that is byte-identical across two independent builds; the display key is a separate column and never participates in the peer grouping.
+Depends: R-004
+Est: 6-8
+Status: not-started
 
 ### R-008 Evidence/source/environment filters
-Dependencies: R-002, S-014.
+Files: `apps/api/internal/ranking/filters.go` (new), `packages/schemas/ranking-view-v1.schema.json`
+Acceptance: every filter value resolves to a certified tuple or to an `evidence_class` the API publishes; a filter naming an uncertified tuple returns an empty result and never an unfiltered one, asserted by a case that would otherwise leak every row.
+Depends: R-002, S-014
+Est: 8-12
+Status: not-started
 
 ### R-009 Estimated pricing line items
-Dependencies: A-009, R-002.
+Files: `apps/api/internal/ranking/lineitems.go` (new), `packages/schemas/pricing-interpretation.schema.json`
+Acceptance: every cash figure carries the estimated label and a `cost_interpretations` reference; a model with no pricing entry yields no line item rather than a zero one, which a fixture with an unpriced model asserts.
+Depends: A-009, R-002
+Est: 8-12
+Status: not-started
 
 ### R-010 Corrections and rebuild equivalence
-Dependencies: R-002 through R-009.
+Files: `apps/api/internal/ranking/corrections.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: a rebuild from the contribution ledger reproduces the promoted generation byte-for-byte; every `ranking_corrections` row is an inverse or replacement referencing the original, which the ledger's append-only constraint enforces rather than application code.
+Depends: R-002, R-003, R-004, R-005, R-006, R-007, R-008, R-009
+Est: 12-16
+Status: not-started
+
+The prose range `R-002 through R-009` is expanded because `Depends:` admits unit IDs only.
 
 ### R-011 Movement, overtakes, streaks and retractions
-Dependencies: R-006, R-010.
+Files: `apps/api/internal/ranking/events.go` (new), `packages/schemas/planning-schema.sql`
+Acceptance: every movement, overtake and streak event references the generation that produced it, and a retraction is a new event referencing the retracted one; a retracted event is absent from the viewer projection while remaining in the ledger, asserted by reading both.
+Depends: R-006, R-010
+Est: 10-14
+Status: not-started
 
 ### R-012 Authorization/pagination/correction concurrency suite
-Dependencies: R-003 through R-011.
+Files: `evals/suites/suites.yaml`, `tests/conformance/test_ranking_races.py` (new)
+Acceptance: `python3 scripts/ci/run_evals.py --suite ranking-accounting` exits 0 with a status that is not `not_applicable`; paginating across a promotion, and correcting a period while a viewer paginates it, each end in one recorded outcome and never in a page mixing two generations.
+Depends: R-003, R-004, R-005, R-006, R-007, R-008, R-009, R-010, R-011
+Est: 12-16
+Status: not-started
+
+The prose range `R-003 through R-011` is expanded because `Depends:` admits unit IDs only.
 
 ## Epic G — Social, boards, presence and notifications
 
