@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "registry_version": "1.3.0-p1140f",
+  "registry_version": "1.4.0-p1140f",
   "transports": {
     "problem": "Returned to the client as the reason_code of an RFC 9457 Problem body under the declared http_status.",
     "claim-rejection": "Returned inside ClaimBatchResult.rejections against one claim index. The batch operation itself answers 200, so http_status is null.",
@@ -58,6 +58,7 @@
       "listRivals",
       "listSessions",
       "pollDeviceAuth",
+      "redeemInvite",
       "refreshSession",
       "renewPresence",
       "requestDeletion",
@@ -116,6 +117,7 @@
       "listOrganizations",
       "listRivals",
       "listSessions",
+      "redeemInvite",
       "refreshSession",
       "renewPresence",
       "requestDeletion",
@@ -147,6 +149,7 @@
       "exchangeDeviceAuth",
       "linkIdentity",
       "pollDeviceAuth",
+      "redeemInvite",
       "refreshSession",
       "renewPresence",
       "requestDeletion",
@@ -175,6 +178,7 @@
       "createRival",
       "enrollDevice",
       "linkIdentity",
+      "redeemInvite",
       "refreshSession",
       "renewPresence",
       "requestDeletion",
@@ -192,6 +196,7 @@
       "createModerationCase",
       "enrollDevice",
       "linkIdentity",
+      "redeemInvite",
       "requestDeletion",
       "requestExport",
       "revokeAllSessions",
@@ -212,6 +217,7 @@
       "createRival",
       "enrollDevice",
       "linkIdentity",
+      "redeemInvite",
       "renewPresence",
       "requestDeletion",
       "requestExport",
@@ -266,6 +272,7 @@
       "exchangeDeviceAuth",
       "linkIdentity",
       "pollDeviceAuth",
+      "redeemInvite",
       "refreshSession",
       "renewPresence",
       "requestDeletion",
@@ -1465,6 +1472,69 @@
       ],
       "operations": [],
       "introduced_in": "1.3.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "INVITE_REQUIRED",
+      "class": "admission",
+      "default_outcome": "rejected_forbidden",
+      "user_safe": true,
+      "subsystem": "account",
+      "retryable": false,
+      "public_message_key": "reason.invite_required",
+      "internal_visibility": "support-and-security",
+      "severity": "low",
+      "appealability": "not-eligible",
+      "state_machine": "invite-code",
+      "transport": "problem",
+      "http_status": 403,
+      "operation_classes": [
+        "authenticated"
+      ],
+      "operations": [],
+      "introduced_in": "1.4.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "INVITE_ALREADY_REDEEMED",
+      "class": "admission",
+      "default_outcome": "rejected_conflict",
+      "user_safe": true,
+      "subsystem": "account",
+      "retryable": false,
+      "public_message_key": "reason.invite_already_redeemed",
+      "internal_visibility": "support-and-security",
+      "severity": "low",
+      "appealability": "not-eligible",
+      "state_machine": "invite-code",
+      "transport": "problem",
+      "http_status": 409,
+      "operation_classes": [],
+      "operations": [
+        "redeemInvite"
+      ],
+      "introduced_in": "1.4.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "INVITE_CODE_NOT_REDEEMABLE",
+      "class": "admission",
+      "default_outcome": "rejected_invalid",
+      "user_safe": true,
+      "subsystem": "account",
+      "retryable": false,
+      "public_message_key": "reason.invite_code_not_redeemable",
+      "internal_visibility": "support-and-security",
+      "severity": "low",
+      "appealability": "not-eligible",
+      "state_machine": "invite-code",
+      "transport": "problem",
+      "http_status": 422,
+      "operation_classes": [],
+      "operations": [
+        "redeemInvite"
+      ],
+      "introduced_in": "1.4.0",
       "deprecated_in": null
     }
   ]

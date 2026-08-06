@@ -47,6 +47,7 @@ An internal state is one a client must never be shown. Every omission from an AP
 | `board-membership` | `board-membership` | `board_memberships.state` | — | — |
 | `board-invitation` | `board-invitation` | `board_invites.state` | — | — |
 | `board-container` | — | `boards.state`, `communities.state`, `organizations.state` | `Board.state`, `Community.state`, `Organization.state` | — |
+| `invite-code` | `invite-code` | `invite_codes.state` | — | — |
 | `presence-lease` | `presence-lease` | `presence_leases.state` | — | — |
 | `notification-delivery` | `notification-delivery` | `notification_events.state`, `notifications.state` | `Notification.state` | `grouped`, `ready` |
 | `moderation-case` | `moderation-case` | `moderation_cases.state` | `ModerationCase.state` | — |

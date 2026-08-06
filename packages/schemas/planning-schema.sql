@@ -1124,6 +1124,63 @@ create table ranking_movement_events (
 );
 
 
+-- Private-beta admission. D-180, and D-280 through D-288.
+--
+-- The invite code is the whole admission boundary of the private beta. There is
+-- no public signup, so an account that holds no row in `invite_redemptions` is
+-- an account the owner did not admit.
+--
+-- Two properties are carried by constraints rather than by worker discipline,
+-- because both are races an application-level check loses. `invite_redemptions`
+-- is keyed on `invite_code_id`, so a code binds at most one account and two
+-- concurrent redemptions of one code cannot both insert. `account_id` is unique
+-- in the same table, so an account holds at most one redemption and cannot
+-- accumulate invites. Neither outcome is representable, so neither depends on a
+-- transaction the application remembered to make serializable.
+--
+-- The code itself is never stored. `code_hash` is SHA-256 over the domain
+-- separator, a zero byte and the 25-character canonical code, which carries 125
+-- bits of entropy from a cryptographically secure source. A plain digest rather
+-- than a memory-hard derivation is deliberate: at 125 bits a preimage search is
+-- infeasible, and a slow derivation would turn the redemption lookup into a
+-- sequential scan of every live code. `docs/security/PRIVATE_BETA_ADMISSION.md`
+-- is the normative owner of the format, the gate order and the guessing controls.
+
+create table invite_codes (
+  invite_code_id uuid primary key,
+  -- SHA-256 over 'vibemaxxing-invite-v1' || 0x00 || canonical_code. The code is
+  -- displayed once at issuance and is never recoverable from this table.
+  code_hash bytea not null unique check (octet_length(code_hash) = 32),
+  state text not null check (state in ('issued','redeemed','expired','revoked','retired')),
+  issued_by_account_id uuid not null references accounts(account_id),
+  issued_at timestamptz not null,
+  expires_at timestamptz not null,
+  redeemed_at timestamptz,
+  revoked_at timestamptz,
+  retired_at timestamptz,
+  revision integer not null default 1 check (revision > 0),
+  check (expires_at > issued_at),
+  -- The timestamp set is the state, so a row cannot claim one lifecycle and
+  -- record another. A retired code was redeemed first, which is what keeps a
+  -- code the owner already spent from returning to the pool when the account
+  -- that spent it is erased.
+  check ((state = 'redeemed') = (redeemed_at is not null and retired_at is null)),
+  check ((state = 'revoked') = (revoked_at is not null)),
+  check ((state = 'retired') = (retired_at is not null)),
+  check (retired_at is null or redeemed_at is not null)
+);
+
+-- One row per redeemed code. The row is the issuer-to-invitee edge, so it is
+-- deleted outright on account deletion or Article 17 erasure rather than
+-- retained pseudonymously; the code moves to `retired` in the same transaction
+-- so the deletion cannot recycle an invite.
+create table invite_redemptions (
+  invite_code_id uuid primary key references invite_codes(invite_code_id),
+  account_id uuid not null unique references accounts(account_id),
+  redeemed_at timestamptz not null
+);
+
+
 -- ---------------------------------------------------------------------------
 -- Indexes. PF-048.
 --
@@ -1216,6 +1273,13 @@ create index presence_leases_device_idx on presence_leases (device_id);
 create index notifications_actor_idx on notifications (actor_account_id);
 create index social_integrity_events_actor_idx on social_integrity_events (actor_account_id);
 
+-- Foreign-key referencing side: admission.
+--
+-- `invite_redemptions.account_id` and `invite_redemptions.invite_code_id` need
+-- no index here: the first is unique and the second is the primary key, so both
+-- already carry one, and those two constraints are also the atomicity control.
+create index invite_codes_issuer_idx on invite_codes (issued_by_account_id);
+
 -- Foreign-key referencing side: rights, erasure, release.
 create index exports_account_idx on exports (account_id);
 create index deletion_jobs_account_idx on deletion_jobs (account_id);
@@ -1248,6 +1312,7 @@ create index board_invites_expiry_idx on board_invites (expires_at) where state 
 create index exports_expiry_idx on exports (expires_at);
 create index oauth_transactions_expiry_idx on oauth_transactions (expires_at);
 create index device_enrollment_grants_expiry_idx on device_enrollment_grants (expires_at) where consumed_at is null;
+create index invite_codes_expiry_idx on invite_codes (expires_at) where state = 'issued';
 create index local_deletion_commands_expiry_idx on local_deletion_commands (expires_at);
 create index seasons_window_idx on seasons (starts_at, ends_at);
 create index periods_type_window_idx on periods (period_type, starts_at desc);

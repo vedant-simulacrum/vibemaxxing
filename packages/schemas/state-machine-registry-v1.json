@@ -1389,6 +1389,91 @@
       ]
     },
     {
+      "machine_id": "invite-code",
+      "semantic_owner": "admission",
+      "persistence_owner": [
+        "invite-codes",
+        "invite-redemptions"
+      ],
+      "aggregate_key": "invite-code-id",
+      "initial_state": "issued",
+      "states": [
+        "issued",
+        "redeemed",
+        "expired",
+        "revoked",
+        "retired"
+      ],
+      "terminal_states": [
+        "expired",
+        "revoked",
+        "retired"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "beta-invite-redeem",
+          "from": [
+            "issued"
+          ],
+          "action": "bind-exactly-one-account-and-admit",
+          "to": "redeemed",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "exact-request-replay",
+          "audit_event": "beta-invite-redeem.audit",
+          "reversal": "none",
+          "transaction_boundary": "invite-and-admission"
+        },
+        {
+          "transition_id": "beta-invite-expire",
+          "from": [
+            "issued"
+          ],
+          "action": "expire-unredeemed-code",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "beta-invite-expire.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "beta-invite-revoke",
+          "from": [
+            "issued"
+          ],
+          "action": "revoke-unredeemed-code",
+          "to": "revoked",
+          "actor": "moderator",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "beta-invite-revoke.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "beta-invite-retire",
+          "from": [
+            "redeemed"
+          ],
+          "action": "retire-on-redeeming-account-erasure",
+          "to": "retired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "beta-invite-retire.audit",
+          "reversal": "none",
+          "transaction_boundary": "deletion-transaction"
+        }
+      ]
+    },
+    {
       "machine_id": "presence-lease",
       "semantic_owner": "presence",
       "persistence_owner": [

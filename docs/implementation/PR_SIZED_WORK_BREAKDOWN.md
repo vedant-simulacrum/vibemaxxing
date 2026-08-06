@@ -66,23 +66,23 @@ Ordering principle: each specification is paired with the artifact or code that 
 
 <!-- generated: work-unit-status -->
 
-Units: 258. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
+Units: 259. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
 
 | Status | Units |
 |---|---|
 | `not-started` | 227 |
 | `in-progress` | 6 |
-| `landed` | 19 |
+| `landed` | 20 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 54 assertions across 19 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 61 assertions across 20 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 14.
 
 `PF-001`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-008`.
 
-Statuses additionally checkable against artifact presence: 196 of 258. The other 62 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 197 of 259. The other 62 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -958,6 +958,26 @@ VibeProof v1 pins Ed25519 verification to ZIP-215 because RFC 8032 does not pin 
 RFC 8032's own test vectors cannot detect this. They are well-formed signatures that pass under every implementation, which is exactly why they prove nothing about the axes that diverge. Only adversarial inputs separate the criteria sets.
 
 The corpus is a precondition of any cross-language conformance claim, and it cannot be authored by asserting verdicts from the specification text alone - each expected outcome has to be confirmed against a ZIP-215 reference implementation, or the corpus repeats the original defect at one remove. Go's `crypto/ed25519` is cofactorless and will fail these cases by design; selecting a ZIP-215-capable Go implementation is part of the D-012 bakeoff.
+
+### PF-069 — Specify the private-beta invite aggregate
+Files: `docs/security/PRIVATE_BETA_ADMISSION.md` (new), `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `packages/schemas/policy-defaults-v1.json`, `packages/schemas/data-disposition-v1.json`, `docs/privacy/DATA_MAP.md`
+Acceptance: `invite_codes` and `invite_redemptions` exist with a state vocabulary that agrees across the registry, the SQL `CHECK` and the binding table; a redemption is keyed so that two concurrent redemptions of one code cannot both insert and one account cannot hold two; `redeemInvite` declares its own `security` requirement and a 4xx set that resolves against the reason registry in both directions; and the issuer-to-invitee edge has a lawful basis and a retention window in the Article 30 record.
+Depends: PF-038, PF-050
+Est: 8-12
+Status: landed
+Evidence: exists docs/security/PRIVATE_BETA_ADMISSION.md
+Evidence: contains 1 packages/schemas/planning-schema.sql :: create table invite_codes
+Evidence: contains 1 packages/schemas/planning-schema.sql :: create table invite_redemptions
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: redeemInvite
+Evidence: contains 1 packages/schemas/reason-codes-v1.json :: INVITE_CODE_NOT_REDEEMABLE
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+
+D-180 recorded that the private beta had no admission mechanism at all: codes needed issuance, a redemption binding exactly one account, quota, expiry, revocation, a state machine, a persistence owner and an API surface, and none of those existed. Everything downstream already assumed the ring — `docs/architecture/API_EDGE_CONTRACT.md` derives every rate-limit quota from a 200-participant invite-only population, and D-238 makes that ring the substitute for a staging environment.
+
+This unit is the specification and not the implementation. No code is issued, no redemption runs, no expiry sweeper exists, and the lockout counter is edge-side state that nothing writes. D-280 through D-288 record the substantive choices, and `docs/security/PRIVATE_BETA_ADMISSION.md` states in its own Evidence section which claims are arguments from a constraint rather than measured results.
+
+The unit that follows from this one is the handler: the serializable redemption transaction, the admission middleware that answers `INVITE_REQUIRED` outside the six-operation exempt set, the issuance tool, the expiry sweeper, and the erasure integration that deletes the redemption row and moves the code to `retired` in one transaction. Each is blocked behind P-1104 alongside every other implementation epic.
 
 ## Implementation epics — specified, blocked until P-1104
 
