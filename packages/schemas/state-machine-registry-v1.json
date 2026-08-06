@@ -1566,6 +1566,7 @@
       "semantic_owner": "notifications",
       "persistence_owner": [
         "notification-events",
+        "notifications",
         "notification-deliveries",
         "notification-preferences"
       ],

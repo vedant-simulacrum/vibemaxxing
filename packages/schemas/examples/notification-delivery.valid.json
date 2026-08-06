@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "policy_keys": {
+    "retention_policy_key": "notification_retention_days",
+    "overtake_hysteresis_policy_key": "overtake_notification_hysteresis_hours",
+    "overtake_material_lead_policy_key": "overtake_material_lead_tokens"
+  },
+  "source_event": {
+    "notification_event_id": "018f2c60-0000-7000-8000-000000000901",
+    "event_type": "rank_overtake",
+    "recipient_account_id": "018f2c60-0000-7000-8000-000000000001",
+    "source_aggregate_id": "018f2c60-0000-7000-8000-000000000401",
+    "source_revision": 47,
+    "actor_account_id": "018f2c60-0000-7000-8000-000000000002",
+    "scope_id": "018f2c60-0000-7000-8000-000000000402",
+    "grouping_digest": "3f1c2b8e5a4d6079c1b2e3f405162738495a6b7c8d9e0f1a2b3c4d5e6f708192",
+    "authorization_revision": 12,
+    "state": "delivered",
+    "occurred_at": "2026-08-06T09:58:00Z"
+  },
+  "inbox_item": {
+    "notification_id": "018f2c60-0000-7000-8000-000000000911",
+    "recipient_account_id": "018f2c60-0000-7000-8000-000000000001",
+    "event_type": "rank_overtake",
+    "state": "read",
+    "group_count": 3,
+    "authorization_revision": 12,
+    "actor_account_id": "018f2c60-0000-7000-8000-000000000002",
+    "scope_id": "018f2c60-0000-7000-8000-000000000402",
+    "created_at": "2026-08-06T09:58:00Z",
+    "delivered_at": "2026-08-06T10:00:00Z",
+    "read_at": "2026-08-06T10:04:12Z"
+  },
+  "delivery_attempt": {
+    "notification_delivery_id": "018f2c60-0000-7000-8000-000000000921",
+    "notification_id": "018f2c60-0000-7000-8000-000000000911",
+    "transport": "server-inbox",
+    "attempt": 1,
+    "state": "accepted",
+    "created_at": "2026-08-06T10:00:00Z"
+  },
+  "preferences": {
+    "account_id": "018f2c60-0000-7000-8000-000000000001",
+    "social_enabled": true,
+    "ranking_enabled": true,
+    "moderation_enabled": true,
+    "security_enabled": true,
+    "quiet_hours_start_minute": 1320,
+    "quiet_hours_end_minute": 420,
+    "quiet_hours_scope": "best-effort-transports-only",
+    "timezone_name": "Europe/Brussels",
+    "push_opt_in_at": null,
+    "email_opt_in_at": null
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "composition": {
+    "hosted_mechanism": "cryptographic-tombstone-and-key-destruction",
+    "hosted_owner": "docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md",
+    "local_mechanism": "device-executed-delete-with-signed-receipt",
+    "hosted_completion_waits_for_devices": false,
+    "receipt_absence_meaning": "command-expired-unanswered-device-state-unobserved"
+  },
+  "command": {
+    "command_id": "018f2c60-0000-7000-8000-000000000a01",
+    "deletion_job_id": "018f2c60-0000-7000-8000-000000000a11",
+    "device_id": "018f2c60-0000-7000-8000-000000000701",
+    "scope": "everything",
+    "command_digest": "0f1e2d3c4b5a69788796a5b4c3d2e1f00112233445566778899aabbccddeeff0",
+    "state": "failed",
+    "issued_at": "2026-08-06T10:00:00Z",
+    "acknowledged_at": "2026-08-06T10:00:41Z",
+    "expires_at": "2026-08-13T10:00:00Z"
+  },
+  "receipt": {
+    "command_id": "018f2c60-0000-7000-8000-000000000a01",
+    "device_id": "018f2c60-0000-7000-8000-000000000701",
+    "command_digest": "0f1e2d3c4b5a69788796a5b4c3d2e1f00112233445566778899aabbccddeeff0",
+    "receipt_digest": "112233445566778899aabbccddeeff000f1e2d3c4b5a69788796a5b4c3d2e1f0",
+    "outcome": "partial",
+    "tables_cleared": 9,
+    "keystore_entries_destroyed": 2,
+    "residual_risk": "backup-copy-possible",
+    "signing_device_key_id": "device-key-018f2c60-0701-1",
+    "completed_at": "2026-08-06T10:01:07Z",
+    "attests": "daemon-executed-named-deletes-over-controlled-stores"
+  },
+  "device_disposition": {
+    "device_id": "018f2c60-0000-7000-8000-000000000702",
+    "disposition": "unreachable",
+    "issued_at": "2026-08-06T10:00:00Z",
+    "expires_at": "2026-08-13T10:00:00Z"
+  }
+}

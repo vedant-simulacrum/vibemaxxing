@@ -92,18 +92,57 @@ Closing the menu-bar/tray shell does not end collection; disabling presence does
 
 Launch notification types include friend request/acceptance, rival suggestion, overtake, rank movement, board invitation/administration, device/security event, quarantine, appeal, compatibility change and release/security notice.
 
-Notifications use typed schemas rather than unrestricted JSON. Each type defines:
+Notifications use typed schemas rather than unrestricted JSON. `packages/schemas/notification-delivery-v1.schema.json` is the machine-readable form of this section, `packages/schemas/planning-schema.sql` is the persistence authority, and the `notification-delivery` machine in `packages/schemas/state-machine-registry-v1.json` owns the lifecycle. Nothing below is implemented: no aggregate appends an event, no worker groups one, and no surface renders an inbox.
 
-- allowed privacy-safe fields;
-- stable source-event identity;
-- deduplication/grouping;
-- hysteresis;
-- quiet-hour and channel behavior;
-- block/revocation interaction;
-- correction/retraction semantics;
-- retention and deletion.
+### What generates a source event
 
-In-app is the initial required channel. Email or push requires explicit preference. Security and recovery notices cannot be fully muted.
+A source event is appended by the aggregate that changed, in the transaction that changed it, and by nothing else. Friendship and board transitions append their own; moderation and appeal decisions append theirs; a sealed ranking generation appends `rank_overtake` through the movement events that cite two generations; device, security, compatibility and release events append theirs. No worker decides that something is interesting, which is what keeps the type set closed and what makes every event traceable to a revision of a named aggregate.
+
+An event names references and carries no rendered sentence. There is no title, body, summary or preview anywhere in the model, and a validator refuses those names. A sentence written at append time freezes a handle, a figure and an authorization decision at the moment of the change, so a later rename is wrong, a later block leaks, and a retraction arrives after the recipient has already read the claim it withdraws. The surface renders from current state at read time, or renders nothing.
+
+### Deduplication, grouping and hysteresis
+
+These are three different mechanisms and the contract keeps them apart.
+
+**Deduplication is exact and is a database constraint.** `notification_events` is unique on recipient, event type, source aggregate and source revision — the same pair `outbox_events` carries — so an at-least-once outbox is exactly-once for the recipient and no worker has to get that right.
+
+**Grouping is a digest, not a decision.** `grouping_digest` is SHA-256 over the deterministic CBOR encoding of the recipient, the event type, the scope and the group window start, under D-191. Two workers presented with the same facts collapse the same events without coordinating, and a group is reproducible afterwards. A group is one inbox item carrying `group_count`, never n items, so it cannot be unwound into the flood it collapsed.
+
+**Hysteresis applies to `rank_overtake` and to nothing else.** An overtake that does not clear `overtake_material_lead_tokens`, or that reverses inside `overtake_notification_hysteresis_hours`, is suppressed. Both numbers live in `packages/schemas/policy-defaults-v1.json` and are named rather than repeated.
+
+`grouped`, `ready` and `suppressed` exist only between the dedup worker and the delivery worker, and `created` exists before either. All four are internal: a notification exists for its recipient exactly when it is in the inbox, so no client is ever shown a state from before that. A suppressed event records which of the five causes suppressed it, because a suppressed event and a lost event otherwise leave the same trace.
+
+### The inbox projection
+
+`notifications` is the recipient's inbox and is the notification authority. An item exists when a row is there. Every item carries the D-386 authorization revision it was generated under; the read path rechecks current authorization and refuses to render an item whose recorded revision is stale, so a block or a board removal between generation and read cannot be served out of the inbox. Retention is `notification_retention_days` and is enforced by dropping whole partitions.
+
+### Delivery attempts and transports
+
+`notification_deliveries` records one row per transport attempt. Only `server-inbox` rows exist at launch, because D-086 ships no push and no email; the transport half is specified now so that shipping one later adds rows rather than changing the model.
+
+Three constraints carry the authority relation rather than leaving it to a worker. A `server-inbox` attempt is written in the same transaction as the inbox item and therefore has the single outcome `accepted`. A `push` or `email` attempt cannot exist without the opt-in timestamp that authorized it, copied from the preferences row at send time, so no such row is writable until a participant opts in. And the table has no read column: `accepted` means a provider took the message and `acknowledged` means a device confirmed receipt, and neither is ever a read.
+
+### Preferences and quiet hours
+
+The four category flags decide whether an inbox item is created at all. Quiet hours and the two opt-in timestamps decide only whether a best-effort transport carries a hint about an item that exists either way. The split is fixed rather than configurable: the inbox is the authority, so an inbox item withheld overnight is a lost notification and not a deferred one. With no transport shipping at launch, quiet hours therefore have no observable effect, which is stated here rather than shipped as a control that appears to do something.
+
+Security and recovery notices cannot be muted. `security_enabled` is constrained true in the schema and in the DDL, and a `security` event has no suppression path at all.
+
+### Retraction
+
+Corrections, moderation reversals and rebuilds retract prior notifications, and `retracted` is API-visible.
+
+A retracted item stays in the inbox. Deleting it would leave a participant who already read the original holding a fact the product has withdrawn, with nothing to tell them it withdrew it. Each retraction carries one of three registered reason codes and, for a rebuild, the superseding generation.
+
+Rebuild retraction is deterministic rather than a judgement: when a rebuild supersedes a generation, every item whose source event cites that generation is retracted. It follows from ADR-020 making rebuild the mechanism for a trust-state change, and it is the notification half of the correction path ADR-022 describes for sealed generations.
+
+### What inbox-only costs
+
+In-app is the only channel at launch. D-086 records the decision and the tension it accepts: the owner's stated day-7 retention mechanism is rank movement and overtake notification, and an inbox-only product delivers that only once the participant opens the product — which is the behaviour the notification was supposed to cause. The model here does not work around it. No push or email path is half-built to soften it, and no retention claim is made for it; the decision's reopen condition is measured retention evidence that inbox-only is insufficient, and no such evidence exists in either direction.
+
+### What this does not close
+
+SR-015 in `conformance/p1140f/semantic-findings-v1.json` covers current authorization at every display and delivery boundary. Recording the authorization revision on every inbox item, and requiring the read path to recheck rather than trust it, is a precondition for that recheck and is not the recheck: nothing evaluates it, because no surface exists. SR-015 is advanced and remains open, and this change records no closure evidence and no review verdict against it.
 
 ## Moderation and integrity policy
 

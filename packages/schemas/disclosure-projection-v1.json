@@ -149,7 +149,25 @@
         { "name": "actor_account_id", "audience": "self", "classification": "observed-personal", "reason": "Who caused it. Disclosed to the recipient only, and rechecked at delivery time under D-386 in case the actor was blocked after the row was created." },
         { "name": "scope_id", "audience": "self", "classification": "non-personal", "reason": "The board, generation or case the event is about." },
         { "name": "state", "audience": "self", "classification": "server-assigned", "reason": "Includes retracted, which is a correction to this recipient and to nobody else." },
-        { "name": "created_at", "audience": "self", "classification": "observed-personal", "reason": "The recipient's own inbox timeline." }
+        { "name": "created_at", "audience": "self", "classification": "observed-personal", "reason": "The recipient's own inbox timeline." },
+        { "name": "delivered_at", "audience": "self", "classification": "server-assigned", "reason": "When the item reached the server inbox. Server-assigned because no transport may set it: a push acceptance is a hint about this item and never evidence that it arrived." },
+        { "name": "group_count", "audience": "self", "classification": "server-assigned", "reason": "How many source events this one item stands for. It is a count over the recipient's own events and names none of them." },
+        { "name": "read_at", "audience": "self", "classification": "observed-personal", "reason": "When the recipient marked it read. It is the recipient's own act, disclosed to nobody else, and no transport acknowledgement can produce it." },
+        { "name": "retracted_at", "audience": "self", "classification": "server-assigned", "reason": "When the product withdrew the item. A correction to this recipient and to nobody else." },
+        { "name": "retraction_reason_code", "audience": "self", "classification": "server-assigned", "reason": "Why it was withdrawn, from the reason registry. A closed vocabulary, so a retraction cannot smuggle free text into an inbox that has no free-text field." }
+      ]
+    },
+    {
+      "api_schema": "LocalDeletionOutcome",
+      "audience": "self",
+      "note": "What one of the participant's own devices did with one deletion command. It is self-only in every field: a deletion is not a social event, and the set of devices a person enrolled is integrity data that no viewer, board administrator or other participant may read. Nothing here names a path, a project, a repository or a file, because a deletion receipt that had to say what it deleted would have to carry the thing the privacy boundary forbids crossing it.",
+      "fields": [
+        { "name": "device_id", "audience": "self", "classification": "observed-personal", "reason": "Which of the participant's devices. Disclosed to the participant only." },
+        { "name": "disposition", "audience": "self", "classification": "server-assigned", "reason": "The per-device answer D-076 requires. Derived from the command row and never selected by the device or the client." },
+        { "name": "issued_at", "audience": "self", "classification": "server-assigned", "reason": "When the command was written." },
+        { "name": "expires_at", "audience": "self", "classification": "server-assigned", "reason": "When an unanswered command stops waiting. It is what makes unreachable a bounded answer rather than an indefinite one." },
+        { "name": "receipt_received_at", "audience": "self", "classification": "observed-personal", "reason": "When the device's signed receipt arrived. Absent when none did, which is the normal case and is reported as such." },
+        { "name": "residual_risk", "audience": "self", "classification": "server-assigned", "reason": "What the device could not rule out. Present only with a receipt, never inferred from its absence, and its strongest value says observed rather than none." }
       ]
     }
   ]

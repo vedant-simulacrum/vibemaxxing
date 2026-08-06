@@ -229,7 +229,11 @@ BINDINGS: tuple[Binding, ...] = (
             "notifications.state",
         ),
         api=("Notification.state",),
-        internal_states=("grouped", "ready"),
+        internal_states=("created", "grouped", "ready", "suppressed"),
+        note=(
+            "The API enum is exactly the states that reached the inbox. "
+            "Everything before delivery is worker state; see D-420."
+        ),
     ),
     Binding(
         aggregate="moderation-case",
@@ -556,6 +560,41 @@ SQL_LOCAL_VOCABULARIES: dict[str, tuple[str, ...]] = {
         "revoked",
     ),
     "appeal_decisions.decision": ("upheld", "partially-upheld", "reversed"),
+    # One transport attempt, not the notification. It is a sub-entity vocabulary
+    # rather than an aggregate because the aggregate is the notification and a
+    # transport attempt has no independent lifecycle: it is queued against an item
+    # that already exists in the inbox, and its worst outcome loses a hint rather
+    # than a notification. The table's own CHECK constraints hold the rest of the
+    # rule — an inbox attempt has only `accepted`, and no attempt of any transport
+    # carries a read.
+    "notification_deliveries.state": (
+        "queued",
+        "deferred",
+        "accepted",
+        "acknowledged",
+        "failed",
+        "expired",
+    ),
+    # The participant-facing per-device answer under D-076. It is the
+    # `local-deletion-command` machine coarsened by two facts the machine cannot
+    # hold: whether the command was ever acknowledged, which separates a device
+    # that never heard the request from one that heard it and stopped, and whether
+    # the participant waived it. The DDL makes it equal that coarsening by
+    # construction, so this declaration cannot drift from the state column beside
+    # it.
+    "local_deletion_commands.disposition": (
+        "pending",
+        "complete",
+        "failed",
+        "expired",
+        "unreachable",
+        "waived",
+    ),
+    # The device's own answer, and deliberately the same four values
+    # `packages/schemas/local-store-v1.sql` declares on the device-side receipt.
+    # The server row is the transported form of the device row; a second spelling
+    # for the same fact is the duplication SR-009 exists to remove.
+    "local_deletion_receipts.outcome": ("complete", "partial", "refused", "expired"),
     "evidence_assessments.public_state": (
         "hardened",
         "standard",
@@ -612,6 +651,7 @@ SQL_LOCAL_VOCABULARIES: dict[str, tuple[str, ...]] = {
 # SQL_LOCAL_VOCABULARIES entry that owns the vocabulary; value is the API enum that mirrors it.
 OUTCOME_MIRRORS: dict[str, str] = {
     "appeal_decisions.decision": "Appeal.decision",
+    "local_deletion_commands.disposition": "LocalDeletionOutcome.disposition",
 }
 
 # API enums that report the outcome of a single request rather than a stored aggregate state.

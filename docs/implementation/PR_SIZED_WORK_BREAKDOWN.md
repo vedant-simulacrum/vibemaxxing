@@ -70,8 +70,8 @@ Units: 259. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 219 |
-| `in-progress` | 12 |
+| `not-started` | 217 |
+| `in-progress` | 14 |
 | `landed` | 22 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
@@ -431,17 +431,19 @@ Status: not-started
 - private/block/relationship/board visibility as separate viewer projection.
 
 ### PF-027 — Notification source, inbox and channel model
-Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`
-Acceptance: `notification_events` is append-only and `notifications` carries the recipient projection with an authorization revision; the `notification` machine can express `retracted`; a delivery attempt row records `queued`, `deferred`, `accepted`, `acknowledged`, `failed` or `expired` and never maps `accepted` to a read.
+Files: `packages/schemas/notification-delivery-v1.schema.json`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `packages/schemas/disclosure-projection-v1.json`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
+Acceptance: `notification_events` is unique on recipient, type, source aggregate and source revision, and `notifications` carries the recipient projection with an authorization revision; the `notification-delivery` machine can express `retracted`; a delivery attempt row records `queued`, `deferred`, `accepted`, `acknowledged`, `failed` or `expired` and never maps `accepted` to a read.
 Depends: PF-024, PF-026
 Est: 12-16
-Status: not-started
+Status: in-progress
 
 - immutable source event and revision;
 - recipient inbox item, grouping, authorization revision, read/dismiss/expiry/retraction;
 - per-channel queued/deferred/accepted/acknowledged/failed/expired attempts;
 - preferences, quiet hours, security-critical policy and subscription lifecycle;
 - push provider acceptance is not user read or guaranteed delivery.
+
+The schema, DDL and API half landed under D-420 through D-423. `packages/schemas/notification-delivery-v1.schema.json` carries the source event, inbox item, delivery attempt and preferences; `notification_events` and `notification_deliveries` are real tables rather than the three-column stubs they were; `Notification` publishes only the four post-delivery states; `markNotificationRead` gives the `notification-read` transition its first route; and four reason codes carry retraction on a transport of its own. The unit is not finished. No aggregate appends an event, no worker groups one, no surface renders an inbox, and `notification_preferences` still has no API operation, so a participant cannot set one.
 
 ### PF-028 — Export authority
 Files: `packages/schemas/export-manifest-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`
@@ -456,11 +458,11 @@ Status: not-started
 - rights-of-others filtering and download audit.
 
 ### PF-029 — Deletion plan, per-effect outcomes and tombstones
-Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
+Files: `packages/schemas/local-deletion-v1.schema.json`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/privacy/PRIVACY_CONTRACT.md`, `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
 Acceptance: `deletion_jobs`, `deletion_effects`, `local_deletion_commands` and `local_deletion_receipts` cover every domain named in `docs/privacy/DATA_MAP.md`, with a per-device outcome of `complete`, `pending`, `expired`, `unreachable` or `waived`; `grep -in 'forensic' docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md` returns no claim of erasure.
 Depends: PF-023, PF-024, PF-027, PF-028
 Est: 12-16
-Status: not-started
+Status: in-progress
 
 - hosted and local device deletion separated;
 - immutable domain/effect plan;
@@ -469,6 +471,8 @@ Status: not-started
 - per-device command/result: complete, pending, expired, unreachable, waived;
 - execution receipt does not claim forensic erasure;
 - legal holds, retention and backup tombstone reapplication.
+
+The per-device half landed under D-424 and D-425. `packages/schemas/local-deletion-v1.schema.json` carries the command, the signed receipt and the disposition; `local_deletion_commands` gains the disposition column, checked equal to the machine coarsened by acknowledgement and waiver, so `unreachable` is no longer reported as `expired`; `local_deletion_receipts` gains the four columns the device store already declares plus the COSE signature; and `DeletionJob.device_outcomes` is required, so a client cannot render one aggregate success. The unit is not finished. The hosted half — the immutable domain-and-effect plan, the account mutation freeze during execution, legal holds and backup tombstone reapplication — is untouched, `deletion_effects` still names no domain set, and `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md` is unchanged by this work.
 
 ### PF-030 — Release authorization and component manifest
 Files: `packages/schemas/release-set-v1.schema.json`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`

@@ -1,0 +1,346 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/notification-delivery-v1.schema.json",
+  "title": "Notification source event, inbox item, delivery attempt and preferences v1",
+  "description": "The four records the inventory recorded as proposed and the repository lacked: what a source event is, what the inbox projection holds, what a transport attempt records, and what a preference decides. docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md is the normative owner, packages/schemas/planning-schema.sql#notification_events, #notifications, #notification_deliveries and #notification_preferences are the persistence owners, and the notification-delivery machine owns the lifecycle. The binding rule this file exists to make executable is that the server inbox is notification authority and push and email are best-effort hints: a notification exists for its recipient exactly when a row is in the inbox, and no transport can create one, keep one alive, or mark one read. D-086 ships the inbox alone; the transport half is specified now so that shipping one later adds rows rather than changes the model.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "policy_keys"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "policy_keys": { "$ref": "#/$defs/policy_keys" },
+    "source_event": { "$ref": "#/$defs/source_event" },
+    "inbox_item": { "$ref": "#/$defs/inbox_item" },
+    "delivery_attempt": { "$ref": "#/$defs/delivery_attempt" },
+    "preferences": { "$ref": "#/$defs/preferences" }
+  },
+  "$defs": {
+    "policy_keys": {
+      "description": "Every number this model uses lives in packages/schemas/policy-defaults-v1.json and is named here rather than repeated. The two overtake keys are why the rank_overtake type has a suppression path the other types do not: an overtake that does not clear the material lead, or that reverses inside the hysteresis window, is a flip-flop and not news.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retention_policy_key",
+        "overtake_hysteresis_policy_key",
+        "overtake_material_lead_policy_key"
+      ],
+      "properties": {
+        "retention_policy_key": { "const": "notification_retention_days" },
+        "overtake_hysteresis_policy_key": {
+          "const": "overtake_notification_hysteresis_hours"
+        },
+        "overtake_material_lead_policy_key": {
+          "const": "overtake_material_lead_tokens"
+        }
+      }
+    },
+    "source_event": {
+      "description": "What a changed aggregate appends when something happened that a recipient may need to know. It is not an inbox item and it is not a message. It names references and carries no rendered sentence, because a sentence written here would freeze a handle, a figure and an authorization decision at the moment of the change, and all three can be wrong by the time anyone reads it.\n\nAn event is produced by an aggregate transition and never by a worker deciding that something is interesting: friendship and board transitions produce their own, moderation and appeal decisions produce their own, a sealed ranking generation produces rank_overtake through the movement events that cite two generations, and device, compatibility and release events produce theirs. Nothing else may write one, which is what keeps the type set closed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "notification_event_id",
+        "event_type",
+        "recipient_account_id",
+        "source_aggregate_id",
+        "source_revision",
+        "grouping_digest",
+        "authorization_revision",
+        "state",
+        "occurred_at"
+      ],
+      "properties": {
+        "notification_event_id": { "type": "string", "format": "uuid" },
+        "event_type": {
+          "enum": [
+            "friend_request",
+            "board_invitation",
+            "rank_overtake",
+            "moderation",
+            "appeal",
+            "security",
+            "compatibility",
+            "release"
+          ]
+        },
+        "recipient_account_id": { "type": "string", "format": "uuid" },
+        "source_aggregate_id": {
+          "description": "The aggregate that changed, paired with the revision at which it changed. It is the same pair packages/schemas/planning-schema.sql#outbox_events uses, and the unique constraint over recipient, type, aggregate and revision is what makes an at-least-once outbox exactly-once for the recipient. Deduplication is therefore a database constraint and not something a worker has to get right.",
+          "type": "string",
+          "format": "uuid"
+        },
+        "source_revision": { "type": "integer", "minimum": 0 },
+        "actor_account_id": {
+          "description": "Who caused it, when a person did. Null for compatibility and release events, which have no actor.",
+          "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }]
+        },
+        "scope_id": {
+          "description": "The board, case, generation or release the event is about. It is an identifier and never a name.",
+          "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }]
+        },
+        "grouping_digest": {
+          "description": "SHA-256 over the deterministic CBOR encoding of the recipient, the event type, the scope and the group window start, under the Core Deterministic Encoding profile D-191 fixes for the whole protocol. Grouping is a digest rather than a decision so that two workers presented with the same facts collapse the same events without coordinating, and so that a group is reproducible after the fact. It is not a content-derived hash: every input is an identifier or a clock boundary, and none of them is derived from a prompt, a response, a path or a project.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "authorization_revision": {
+          "description": "The D-386 revision the event was evaluated under. It is recorded so the read path can tell that its own recheck is looking at newer state, not so the read path can skip the recheck.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "enum": [
+            "created",
+            "grouped",
+            "suppressed",
+            "ready",
+            "delivered",
+            "read",
+            "retracted",
+            "expired"
+          ]
+        },
+        "suppression_cause": {
+          "description": "Why an event produced no inbox item. Present exactly when the state is suppressed. Recording it is what separates a suppressed event from a lost one: without a cause, a worker that dropped an event on the floor and a worker that honoured a preference leave the same trace.",
+          "enum": [
+            "category-disabled",
+            "overtake-below-material-lead",
+            "overtake-within-hysteresis-window",
+            "recipient-blocked-actor",
+            "viewer-authorization-withdrawn"
+          ]
+        },
+        "occurred_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "const": "suppressed" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["suppression_cause"] },
+          "else": {
+            "properties": { "suppression_cause": false }
+          }
+        },
+        {
+          "description": "Security and recovery notices cannot be fully muted. There is no suppression path for them at all, rather than a preference that application code is trusted to ignore.",
+          "if": {
+            "properties": { "event_type": { "const": "security" } },
+            "required": ["event_type"]
+          },
+          "then": {
+            "properties": {
+              "state": { "not": { "const": "suppressed" } }
+            }
+          }
+        }
+      ]
+    },
+    "inbox_item": {
+      "description": "One row of the participant's inbox, and the notification itself. Its state vocabulary is the four states that reached the inbox; created, grouped, ready and suppressed are worker states that no client is shown, which the binding table in docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md records and D-420 explains.\n\nThere is no title, body, summary or preview field, and adding one would be a defect rather than a feature. The surface renders from current state at read time, so a handle rename is correct, a block takes effect, an erased actor renders nothing, and a retraction reaches a participant who has not looked yet.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "notification_id",
+        "recipient_account_id",
+        "event_type",
+        "state",
+        "group_count",
+        "authorization_revision",
+        "created_at",
+        "delivered_at"
+      ],
+      "properties": {
+        "notification_id": { "type": "string", "format": "uuid" },
+        "recipient_account_id": { "type": "string", "format": "uuid" },
+        "event_type": {
+          "enum": [
+            "friend_request",
+            "board_invitation",
+            "rank_overtake",
+            "moderation",
+            "appeal",
+            "security",
+            "compatibility",
+            "release"
+          ]
+        },
+        "state": { "enum": ["delivered", "read", "retracted", "expired"] },
+        "group_count": {
+          "description": "How many source events this one item stands for. A group is one item with a count and never n items, so a grouping cannot be undone into the flood it collapsed.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "authorization_revision": { "type": "integer", "minimum": 0 },
+        "actor_account_id": {
+          "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }]
+        },
+        "scope_id": {
+          "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }]
+        },
+        "created_at": { "type": "string", "format": "date-time" },
+        "delivered_at": {
+          "description": "When the item was written to the server inbox. Required and non-null on every item in this record, because an item that has not been written to the inbox is not an inbox item — it is a source event, and it belongs in the record above. Nothing outside the inbox write may set it: a push acceptance and a device acknowledgement are hints about this row, not evidence that it exists.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "read_at": {
+          "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }]
+        },
+        "retraction": { "$ref": "#/$defs/retraction" }
+      },
+      "allOf": [
+        {
+          "description": "A read time exists exactly when the item is read. There is no other way to be read, and in particular no transport signal can produce one.",
+          "if": {
+            "properties": { "state": { "const": "read" } },
+            "required": ["state"]
+          },
+          "then": {
+            "required": ["read_at"],
+            "properties": { "read_at": { "type": "string" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "state": { "const": "retracted" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["retraction"] },
+          "else": { "properties": { "retraction": false } }
+        }
+      ]
+    },
+    "retraction": {
+      "description": "A withdrawal of something the product already told the participant. The social contract requires corrections, moderation reversals and rebuilds to retract or replace prior notifications, and a ranking rebuild retracts deterministically rather than by judgement: every item whose source event cites a generation that a rebuild superseded is retracted, and the retraction names the superseding generation.\n\nThe item stays in the inbox. Deleting it would leave a participant who already read the original holding a fact the product has withdrawn, with nothing to tell them it withdrew it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retracted_at", "reason_code"],
+      "properties": {
+        "retracted_at": { "type": "string", "format": "date-time" },
+        "reason_code": {
+          "description": "One of the three notification-transport codes in packages/schemas/reason-codes-v1.json. A closed vocabulary, so a retraction cannot introduce free text into an inbox that has no free-text field.",
+          "enum": [
+            "NOTIFICATION_RETRACTED_BY_CORRECTION",
+            "NOTIFICATION_RETRACTED_BY_MODERATION_REVERSAL",
+            "NOTIFICATION_RETRACTED_BY_RANKING_REBUILD"
+          ]
+        },
+        "superseding_generation": {
+          "description": "The sealed generation that replaced the one the retracted item was derived from. Present on a ranking-rebuild retraction and meaningless on the other two.",
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "reason_code": {
+                "const": "NOTIFICATION_RETRACTED_BY_RANKING_REBUILD"
+              }
+            },
+            "required": ["reason_code"]
+          },
+          "then": { "required": ["superseding_generation"] }
+        }
+      ]
+    },
+    "delivery_attempt": {
+      "description": "One attempt to carry a hint about an inbox item over one transport. At launch the only transport is the inbox itself, because D-086 ships no push and no email; this record exists now so that shipping one later adds rows rather than changing the model.\n\nThree rules make the authority relation executable rather than asserted. A server-inbox attempt is written in the same transaction as the item and therefore has the single outcome accepted: there is nothing between the write and the authority, because they are the same write. A push or email attempt requires the opt-in timestamp that authorized it, copied from the preferences row at send time, so the row records which consent permitted the send rather than asserting that one existed — and at launch, with no opt-in reachable, no such row can be written at all. And there is no read field anywhere in this record: accepted means a provider took the message, acknowledged means a device confirmed receipt, and D-423 records that treating either as a read would end the inbox's authority.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "notification_delivery_id",
+        "notification_id",
+        "transport",
+        "attempt",
+        "state",
+        "created_at"
+      ],
+      "properties": {
+        "notification_delivery_id": { "type": "string", "format": "uuid" },
+        "notification_id": { "type": "string", "format": "uuid" },
+        "transport": { "enum": ["server-inbox", "push", "email"] },
+        "attempt": { "type": "integer", "minimum": 1 },
+        "state": {
+          "enum": [
+            "queued",
+            "deferred",
+            "accepted",
+            "acknowledged",
+            "failed",
+            "expired"
+          ]
+        },
+        "failure_reason_code": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "preference_opt_in_at": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "transport": { "const": "server-inbox" } },
+            "required": ["transport"]
+          },
+          "then": {
+            "properties": {
+              "state": { "const": "accepted" },
+              "attempt": { "const": 1 },
+              "preference_opt_in_at": false
+            }
+          },
+          "else": { "required": ["preference_opt_in_at"] }
+        },
+        {
+          "if": {
+            "properties": { "state": { "const": "failed" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["failure_reason_code"] },
+          "else": { "properties": { "failure_reason_code": false } }
+        }
+      ]
+    },
+    "preferences": {
+      "description": "What a participant decides. The four category flags decide whether an inbox item is created at all; quiet hours and the two opt-in timestamps decide only whether a best-effort transport carries a hint about an item that exists either way.\n\nThat split is the whole point of quiet_hours_scope, and D-422 records why it is fixed rather than configurable: the inbox is the authority, so an inbox item withheld overnight is a lost notification and not a deferred one. With no transport shipping at launch, quiet hours therefore have no observable effect, and saying so is more honest than shipping a control that appears to do something.\n\nsecurity_enabled is constrained true. Security and recovery notices cannot be muted, and a preferences record that claims otherwise is unrepresentable rather than overridden downstream.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "account_id",
+        "social_enabled",
+        "ranking_enabled",
+        "moderation_enabled",
+        "security_enabled",
+        "timezone_name",
+        "quiet_hours_scope"
+      ],
+      "properties": {
+        "account_id": { "type": "string", "format": "uuid" },
+        "social_enabled": { "type": "boolean" },
+        "ranking_enabled": { "type": "boolean" },
+        "moderation_enabled": { "type": "boolean" },
+        "security_enabled": { "const": true },
+        "quiet_hours_start_minute": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1439
+        },
+        "quiet_hours_end_minute": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1439
+        },
+        "quiet_hours_scope": { "const": "best-effort-transports-only" },
+        "timezone_name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "push_opt_in_at": {
+          "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }]
+        },
+        "email_opt_in_at": {
+          "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }]
+        }
+      }
+    }
+  }
+}

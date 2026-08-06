@@ -337,6 +337,24 @@ Server deletion and local deletion are separate state machines.
 - “Delete everything” is a coordinated UX workflow, not one server command claiming remote local erasure.
 - Restored backups must reapply deletion tombstones before serving production traffic.
 
+### Per-device deletion
+
+`packages/schemas/local-deletion-v1.schema.json` is the machine-readable form of this section; `packages/schemas/planning-schema.sql` holds `local_deletion_commands` and `local_deletion_receipts`, and the `local-deletion-command` machine owns the lifecycle. Nothing here is implemented: no command has been issued, no daemon has executed one, and no receipt has been signed.
+
+**How it composes with the hosted erasure.** The two mechanisms answer different questions and are never merged into one result. The hosted side destroys the erasure-domain key and appends a signed record under ADR-022 and `docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md`; that record proves which key was destroyed and says nothing whatever about any device. The local side deletes device-held stores and produces a device-signed receipt that says nothing whatever about the server. They share a deletion job and nothing else.
+
+**The hosted side does not wait for devices.** `server-deletion` reaches `complete` from `awaiting-local-receipt` deliberately. A device that is offline, wiped, sold or never opened again is the normal case, and blocking an Article 17 erasure on one would make the right unexercisable. What the participant sees instead is every device reported separately, which is what D-076 requires, and a completed hosted erasure alongside devices that are still `pending`, `unreachable` or `waived` is a correct display and not an inconsistency.
+
+**What a receipt attests.** That the daemon holding the named device key ran the delete operations the command named, over the stores that daemon controls, at the stated time, and counted the rows and keystore entries it reports. The signature is COSE_Sign1 with Ed25519 under D-190, D-191 and D-192 — the same profile as the evidence protocol and the erasure log.
+
+**What it does not attest, and no surface may imply.** That the bytes are unrecoverable. That no operating-system backup, filesystem snapshot or cloud-synced home directory holds a copy. That the participant made no copy. That the physical residue block remapping leaves on flash storage has been reached. A user-space process observes none of those, so no field reports on them; `residual_risk` names what could not be ruled out, and its strongest value is `none-observed`, which says observed and not none. A `partial` receipt is a first-class outcome, and a command whose device answered `partial` or `refused` reaches `failed` rather than rounding an incomplete deletion up to a success.
+
+**What it means when a receipt never arrives.** The command expires, and the product may say exactly one thing: the command expired unanswered. It may not say the device was cleared and it may not say it was not. It observed nothing, and reporting an absence of evidence as either outcome is the claim D-076 exists to forbid. A command that expired without ever being acknowledged is reported `unreachable` rather than `expired`, because a device that never heard the request and a device that heard it and then stopped are different facts about the participant's own hardware.
+
+**Waiver.** A participant may proceed without a device rather than wait. The waiver is recorded, is reported as `waived` rather than as a success, and is not final: a waived device that later returns and completes reports what it actually did.
+
+**What this does not close.** SR-013 in `conformance/p1140f/semantic-findings-v1.json` covers export, deletion, retention and backup tombstones. This section supplies the per-device half of its deletion part; `docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md` supplies the hosted and backup half, and the export, retention and legal-hold parts are untouched. SR-009 covers duplicated authority, and reusing the device store's receipt vocabulary instead of inventing a second one advances it in one place. Both findings remain open, and this change records no closure evidence and no review verdict against either.
+
 ## Export privacy
 
 Exports require:
