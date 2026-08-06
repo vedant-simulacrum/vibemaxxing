@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "profile_id": "current-viewer-authorization-v1",
+  "inputs": [
+    {
+      "input_id": "directional-block",
+      "persistence_owner": "blocks",
+      "revision_source": "blocks.established_at",
+      "effect": "deny-hard",
+      "note": "Evaluated in both directions. Blocks are directional as relationships and symmetric as visibility: a one-way hole in a leaderboard is itself a disclosure, because the blocked party sees a gap where a person used to be."
+    },
+    {
+      "input_id": "subject-visibility",
+      "persistence_owner": "profiles",
+      "revision_source": "profiles.updated_at",
+      "effect": "deny-unless-authorized",
+      "note": "public, friends and private. Only the global leaderboard is universally public by default; every other view is viewer-relative."
+    },
+    {
+      "input_id": "friendship-edge",
+      "persistence_owner": "friend_edges",
+      "revision_source": "friend_edges.established_at",
+      "effect": "widen",
+      "note": "Symmetric and independent of the block state, which is why an ended friendship and a block are two changes and not one."
+    },
+    {
+      "input_id": "rival-edge",
+      "persistence_owner": "rival_edges",
+      "revision_source": "rival_edges.state",
+      "effect": "widen",
+      "note": "No revision column exists on this table, so the state is the only change signal. It detects a change and cannot order two, and that is a limitation of the input rather than of the rule."
+    },
+    {
+      "input_id": "board-membership",
+      "persistence_owner": "board_memberships",
+      "revision_source": "board_memberships.state",
+      "effect": "widen",
+      "note": "Only the four active- states widen. invited does not: an unaccepted invitation is not membership, and treating it as one would let an inviter grant themselves a view of the invitee."
+    },
+    {
+      "input_id": "board-container-state",
+      "persistence_owner": "boards",
+      "revision_source": "boards.state",
+      "effect": "deny-unless-authorized",
+      "note": "An archived board stops widening. Membership of an archived board is history, not current authorization."
+    },
+    {
+      "input_id": "presence-visibility",
+      "persistence_owner": "presence_leases",
+      "revision_source": "presence_leases.visibility",
+      "effect": "deny-unless-authorized",
+      "note": "Applies to the presence projection only. A private participant still holds a lease and still transitions; the projection is suppressed rather than the lease."
+    },
+    {
+      "input_id": "account-lifecycle",
+      "persistence_owner": "accounts",
+      "revision_source": "accounts.state",
+      "effect": "deny-hard",
+      "note": "deletion-pending and deleted deny every surface. An account inside its deletion cooling-off window is not a readable subject."
+    },
+    {
+      "input_id": "ranked-identity-state",
+      "persistence_owner": "ranked_identities",
+      "revision_source": "ranked_identities.revision",
+      "effect": "deny-unless-authorized",
+      "note": "A retired identity is not projected. A restricted one still appears with its credited figure, because D-084 keeps a sanction silent toward the public and hiding the entry would announce it."
+    }
+  ],
+  "surfaces": [
+    {
+      "surface_id": "leaderboard-page",
+      "recheck_point": "read-time",
+      "note": "The figures come from a sealed generation and the authorization does not. That separation is what lets a block change what a viewer sees without changing what was sealed."
+    },
+    { "surface_id": "public-profile", "recheck_point": "read-time" },
+    { "surface_id": "presence-projection", "recheck_point": "read-time" },
+    {
+      "surface_id": "notification-delivery",
+      "recheck_point": "delivery-time",
+      "note": "The case SR-015 names most directly. A notification created while the viewer was authorized must not be delivered after they were blocked, so the check happens as the inbox item is handed over and not when it was created."
+    },
+    { "surface_id": "notification-render", "recheck_point": "delivery-time" },
+    { "surface_id": "board-member-list", "recheck_point": "read-time" },
+    { "surface_id": "friend-list", "recheck_point": "read-time" },
+    { "surface_id": "rival-list", "recheck_point": "read-time" },
+    {
+      "surface_id": "export-package",
+      "recheck_point": "snapshot-time",
+      "note": "The one snapshot-time surface. An export is the participant's own data under Article 15 and Article 20, so the subject and the viewer are the same person and there is no third party whose authorization could change under it."
+    }
+  ],
+  "evaluation": {
+    "order": "deny-hard-then-deny-unless-authorized-then-widen",
+    "cache_policy": "no-authorization-result-cache",
+    "race_resolution": "revision-recheck-then-fail-closed",
+    "failure_mode": "fail-closed",
+    "note": "Nothing here is implemented. This is the rule an implementation is measured against, and no surface in this repository evaluates it."
+  }
+}

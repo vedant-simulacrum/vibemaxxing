@@ -3522,6 +3522,566 @@
           "transaction_boundary": "platform-certification"
         }
       ]
+    },
+    {
+      "machine_id": "recovery-case",
+      "semantic_owner": "authentication-and-recovery",
+      "persistence_owner": [
+        "recovery-cases"
+      ],
+      "aggregate_key": "recovery-case-id",
+      "initial_state": "requested",
+      "states": [
+        "requested",
+        "verifying",
+        "cooling-off",
+        "applied",
+        "denied",
+        "cancelled",
+        "expired"
+      ],
+      "terminal_states": [
+        "applied",
+        "denied",
+        "cancelled",
+        "expired"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "recovery-present-factor",
+          "from": [
+            "requested"
+          ],
+          "action": "present-locally-held-recovery-factor",
+          "to": "verifying",
+          "actor": "user",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "recovery-factor-presented.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "recovery-factor-accepted",
+          "from": [
+            "verifying"
+          ],
+          "action": "accept-factor-and-open-cooling-off",
+          "to": "cooling-off",
+          "actor": "server-verifier",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "recovery-cooling-off-opened.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "recovery-and-notification"
+        },
+        {
+          "transition_id": "recovery-factor-rejected",
+          "from": [
+            "requested",
+            "verifying"
+          ],
+          "action": "reject-recovery-without-mutation",
+          "to": "denied",
+          "actor": "server-verifier",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "recovery-denied.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "recovery-cancel",
+          "from": [
+            "requested",
+            "verifying",
+            "cooling-off"
+          ],
+          "action": "cancel-from-a-session-that-still-has-access",
+          "to": "cancelled",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "recovery-cancelled.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "recovery-apply",
+          "from": [
+            "cooling-off"
+          ],
+          "action": "rebind-access-revoke-sessions-and-quarantine-devices",
+          "to": "applied",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "recovery-applied.audit",
+          "reversal": "none",
+          "transaction_boundary": "recovery-session-and-device"
+        },
+        {
+          "transition_id": "recovery-expire",
+          "from": [
+            "requested",
+            "verifying",
+            "cooling-off"
+          ],
+          "action": "expire-unfinished-case",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "recovery-expired.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "identity-investigation",
+      "semantic_owner": "ranked-identity-eligibility",
+      "persistence_owner": [
+        "identity-investigations"
+      ],
+      "aggregate_key": "identity-investigation-id",
+      "initial_state": "opened",
+      "states": [
+        "opened",
+        "gathering",
+        "awaiting-participant",
+        "concluded-no-action",
+        "concluded-restricted",
+        "concluded-consolidation",
+        "withdrawn",
+        "expired"
+      ],
+      "terminal_states": [
+        "concluded-no-action",
+        "concluded-restricted",
+        "concluded-consolidation",
+        "withdrawn",
+        "expired"
+      ],
+      "privacy_boundary": "integrity-private",
+      "transitions": [
+        {
+          "transition_id": "investigation-gather",
+          "from": [
+            "opened"
+          ],
+          "action": "collect-deterministic-control-output",
+          "to": "gathering",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "investigation-gathering.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "investigation-request-response",
+          "from": [
+            "gathering"
+          ],
+          "action": "ask-participant-for-a-response",
+          "to": "awaiting-participant",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "investigation-response-requested.audit",
+          "reversal": "none",
+          "transaction_boundary": "investigation-and-notification"
+        },
+        {
+          "transition_id": "investigation-response-received",
+          "from": [
+            "awaiting-participant"
+          ],
+          "action": "record-participant-response",
+          "to": "gathering",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "investigation-response-received.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "investigation-close-no-action",
+          "from": [
+            "opened",
+            "gathering"
+          ],
+          "action": "close-without-effect",
+          "to": "concluded-no-action",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "investigation-concluded.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "investigation-close-restricted",
+          "from": [
+            "gathering"
+          ],
+          "action": "restrict-ranked-identity-and-notify-privately",
+          "to": "concluded-restricted",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "investigation-restricted.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "investigation-identity-and-notification"
+        },
+        {
+          "transition_id": "investigation-close-consolidation",
+          "from": [
+            "gathering"
+          ],
+          "action": "open-a-consolidation-case-for-the-duplicate",
+          "to": "concluded-consolidation",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "investigation-consolidation.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "investigation-and-consolidation"
+        },
+        {
+          "transition_id": "investigation-withdraw",
+          "from": [
+            "opened",
+            "gathering",
+            "awaiting-participant"
+          ],
+          "action": "withdraw-case-opened-in-error",
+          "to": "withdrawn",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "investigation-withdrawn.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "investigation-expire",
+          "from": [
+            "awaiting-participant"
+          ],
+          "action": "expire-case-with-no-participant-response",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "investigation-expired.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "account-consolidation",
+      "semantic_owner": "ranked-identity-eligibility",
+      "persistence_owner": [
+        "consolidation-cases",
+        "consolidation-contributions"
+      ],
+      "aggregate_key": "consolidation-case-id",
+      "initial_state": "requested",
+      "states": [
+        "requested",
+        "planning",
+        "awaiting-confirmation",
+        "applying",
+        "applied",
+        "rejected",
+        "reversed",
+        "expired"
+      ],
+      "terminal_states": [
+        "rejected",
+        "reversed",
+        "expired"
+      ],
+      "privacy_boundary": "account-private",
+      "transitions": [
+        {
+          "transition_id": "consolidation-plan",
+          "from": [
+            "requested"
+          ],
+          "action": "enumerate-absorbed-claim-level-contributions",
+          "to": "planning",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "consolidation-planning.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "consolidation-present-plan",
+          "from": [
+            "planning"
+          ],
+          "action": "present-plan-for-participant-confirmation",
+          "to": "awaiting-confirmation",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "consolidation-plan-presented.audit",
+          "reversal": "none",
+          "transaction_boundary": "consolidation-and-notification"
+        },
+        {
+          "transition_id": "consolidation-confirm",
+          "from": [
+            "awaiting-confirmation"
+          ],
+          "action": "confirm-plan-under-recent-authentication",
+          "to": "applying",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "exact-request-replay",
+          "audit_event": "consolidation-confirmed.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "consolidation-commit",
+          "from": [
+            "applying"
+          ],
+          "action": "retire-absorbed-identity-and-write-contributions",
+          "to": "applied",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "consolidation-applied.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "consolidation-identity-and-contributions"
+        },
+        {
+          "transition_id": "consolidation-reject",
+          "from": [
+            "requested",
+            "planning",
+            "awaiting-confirmation",
+            "applying"
+          ],
+          "action": "reject-without-absorbing-anything",
+          "to": "rejected",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "consolidation-rejected.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "consolidation-reverse",
+          "from": [
+            "applied"
+          ],
+          "action": "append-inverse-contributions-on-a-successful-appeal",
+          "to": "reversed",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "consolidation-reversed.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "consolidation-and-ranking-correction"
+        },
+        {
+          "transition_id": "consolidation-expire",
+          "from": [
+            "awaiting-confirmation"
+          ],
+          "action": "expire-unconfirmed-plan",
+          "to": "expired",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "consolidation-expired.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "lineage-fork-case",
+      "semantic_owner": "integrity-model",
+      "persistence_owner": [
+        "lineage-fork-cases",
+        "lineage-fork-branches"
+      ],
+      "aggregate_key": "lineage-fork-case-id",
+      "initial_state": "detected",
+      "states": [
+        "detected",
+        "quarantined",
+        "survivor-selected",
+        "requalifying",
+        "resumed",
+        "unresolved",
+        "appealed",
+        "reversed"
+      ],
+      "terminal_states": [
+        "resumed",
+        "reversed"
+      ],
+      "privacy_boundary": "integrity-private",
+      "transitions": [
+        {
+          "transition_id": "fork-quarantine",
+          "from": [
+            "detected"
+          ],
+          "action": "quarantine-every-post-fork-branch",
+          "to": "quarantined",
+          "actor": "server-verifier",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "fork-quarantined.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "fork-case-and-branches"
+        },
+        {
+          "transition_id": "fork-select-survivor",
+          "from": [
+            "quarantined"
+          ],
+          "action": "select-one-survivor-branch",
+          "to": "survivor-selected",
+          "actor": "server-verifier",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "fork-survivor-selected.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "fork-case-and-branches"
+        },
+        {
+          "transition_id": "fork-requalify",
+          "from": [
+            "survivor-selected"
+          ],
+          "action": "requalify-survivor-device-continuity",
+          "to": "requalifying",
+          "actor": "native-device",
+          "authentication": "device-signature",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "fork-requalifying.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "fork-resume",
+          "from": [
+            "requalifying"
+          ],
+          "action": "resume-on-a-new-lineage-generation",
+          "to": "resumed",
+          "actor": "server-verifier",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "fork-resumed.audit",
+          "reversal": "none",
+          "transaction_boundary": "fork-case-and-lineage"
+        },
+        {
+          "transition_id": "fork-abandon",
+          "from": [
+            "quarantined",
+            "survivor-selected",
+            "requalifying"
+          ],
+          "action": "leave-unresolved-with-every-branch-quarantined",
+          "to": "unresolved",
+          "actor": "server-verifier",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "fork-unresolved.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "fork-appeal",
+          "from": [
+            "quarantined",
+            "unresolved"
+          ],
+          "action": "open-an-appeal-against-the-fork-resolution",
+          "to": "appealed",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "fork-appealed.audit",
+          "reversal": "none",
+          "transaction_boundary": "fork-case-and-appeal"
+        },
+        {
+          "transition_id": "fork-appeal-upheld",
+          "from": [
+            "appealed"
+          ],
+          "action": "release-quarantine-and-restore-branch-claims",
+          "to": "reversed",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "fork-reversed.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "fork-case-quarantine-and-ranking-correction"
+        },
+        {
+          "transition_id": "fork-appeal-denied",
+          "from": [
+            "appealed"
+          ],
+          "action": "leave-the-resolution-standing",
+          "to": "unresolved",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "fork-appeal-denied.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
     }
   ]
 }

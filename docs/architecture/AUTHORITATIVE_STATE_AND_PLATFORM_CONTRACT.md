@@ -66,6 +66,10 @@ An internal state is one a client must never be shown. Every omission from an AP
 | `device-authorization-grant` | — | `device_enrollment_grants.state` | `DeviceAuthorizationStatus.state` | — |
 | `identity-link` | — | `linked_identities.state` | `Identity.state` | — |
 | `claim-record` | — | — | `ClaimRecord.state` | — |
+| `recovery-case` | `recovery-case` | `recovery_cases.state` | — | — |
+| `identity-investigation` | `identity-investigation` | `identity_investigations.state` | — | — |
+| `account-consolidation` | `account-consolidation` | `consolidation_cases.state` | — | — |
+| `lineage-fork-case` | `lineage-fork-case` | `lineage_fork_cases.state` | — | — |
 
 ### Why each state is internal
 

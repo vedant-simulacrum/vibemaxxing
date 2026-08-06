@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "registry_version": "1.1.0-d280",
+  "registry_version": "1.2.0-d320",
   "backup_retention_policy_key": "backup_retention_days",
   "journal_retention_policy_key": "erasure_journal_retention_days",
   "entries": [
@@ -10,7 +10,12 @@
     {"table": "profiles", "classification": "personal", "retention": {"rule": "account-lifetime"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "erasure-worker"},
     {"table": "ranked_identities", "classification": "personal", "retention": {"rule": "ranked-identity-lifetime"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "erasure-worker"},
     {"table": "identity_events", "classification": "personal", "retention": {"rule": "ranked-identity-lifetime"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "erasure-worker"},
-    {"table": "identity_investigations", "classification": "personal", "retention": {"policy_key": "security_audit_retention_days"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "retention-sweeper"},
+    {"table": "identity_investigations", "classification": "personal", "retention": {"policy_key": "security_audit_retention_days"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "retention-sweeper", "expiry_enforcement": "retention-sweeper", "note": "expires_at bounds how long a case may stay open, not how long it is kept. The sweeper closes an unconcluded case to expired; the security-audit window then governs the row."},
+    {"table": "recovery_cases", "classification": "personal", "retention": {"policy_key": "security_audit_retention_days"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "retention-sweeper", "expiry_enforcement": "retention-sweeper", "note": "A recovery case is a security record about an access-path change and is kept for the security-audit window rather than for the life of the account. The sweeper moves an unfinished case to expired at expires_at."},
+    {"table": "consolidation_cases", "classification": "personal", "retention": {"rule": "ranked-identity-lifetime"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "erasure-worker", "expiry_enforcement": "retention-sweeper", "note": "Kept for the life of the surviving identity because it is the explanation of that identity's standing. The sweeper expires an unconfirmed case at expires_at."},
+    {"table": "consolidation_contributions", "classification": "personal", "retention": {"rule": "ranked-identity-lifetime"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "erasure-worker", "note": "Claim-level absorbed contributions under D-070. claim_id clears when an erasure deletes the claim; the row itself names a ranked identity through its case and is deleted by that identity's erasure."},
+    {"table": "lineage_fork_cases", "classification": "personal", "retention": {"policy_key": "security_audit_retention_days"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "retention-sweeper"},
+    {"table": "lineage_fork_branches", "classification": "personal", "retention": {"policy_key": "security_audit_retention_days"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "retention-sweeper"},
 
     {"table": "web_sessions", "classification": "personal", "retention": {"policy_key": "revoked_session_purge_days"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "session-reaper", "expiry_enforcement": "session-reaper"},
     {"table": "native_sessions", "classification": "personal", "retention": {"policy_key": "revoked_session_purge_days"}, "erasure_action": "delete", "backup_set": "in-backup-set", "enforcement_owner": "session-reaper", "expiry_enforcement": "session-reaper"},

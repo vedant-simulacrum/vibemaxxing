@@ -813,6 +813,10 @@ def validate_p1140d_contracts() -> None:
         "platform-certification",
         "account-lifecycle",
         "device-enrollment",
+        "recovery-case",
+        "identity-investigation",
+        "account-consolidation",
+        "lineage-fork-case",
     }
     if set(machine_ids) != required_machines:
         raise ValidationFailure(
@@ -1340,6 +1344,226 @@ def validate_data_disposition() -> None:
             f"erasure journal retention is {journal_days} days against a "
             f"{backup_days}-day backup window; it must be exactly one day longer"
         )
+
+
+IDENTITY_LIFECYCLE_SCHEMAS: dict[str, str] = {
+    "recovery-case-v1.schema.json": "recovery-case",
+    "ranked-identity-v1.schema.json": "identity-investigation",
+    "consolidation-plan-v1.schema.json": "account-consolidation",
+    "fork-resolution-v1.schema.json": "lineage-fork-case",
+}
+
+# Where each schema keeps the state vocabulary that must equal its machine's.
+IDENTITY_LIFECYCLE_STATE_POINTERS: dict[str, tuple[str, ...]] = {
+    "recovery-case-v1.schema.json": ("recovery_case",),
+    "ranked-identity-v1.schema.json": ("investigation",),
+    "consolidation-plan-v1.schema.json": ("consolidation_case",),
+    "fork-resolution-v1.schema.json": ("fork_case",),
+}
+
+IDENTITY_LIFECYCLE_EXAMPLES: tuple[tuple[str, str, bool], ...] = (
+    ("recovery-case-v1.schema.json", "recovery-case.valid.json", True),
+    (
+        "recovery-case-v1.schema.json",
+        "recovery-case.invalid-skipped-cooling-off.json",
+        False,
+    ),
+    ("ranked-identity-v1.schema.json", "ranked-identity.valid.json", True),
+    (
+        "ranked-identity-v1.schema.json",
+        "ranked-identity.invalid-two-case-causes.json",
+        False,
+    ),
+    ("consolidation-plan-v1.schema.json", "consolidation-plan.valid.json", True),
+    (
+        "consolidation-plan-v1.schema.json",
+        "consolidation-plan.invalid-summed-total.json",
+        False,
+    ),
+    ("fork-resolution-v1.schema.json", "fork-resolution.valid.json", True),
+    (
+        "fork-resolution-v1.schema.json",
+        "fork-resolution.invalid-resumed-without-generation.json",
+        False,
+    ),
+    ("presence-pulse-v1.schema.json", "presence-pulse.valid.json", True),
+    (
+        "presence-pulse-v1.schema.json",
+        "presence-pulse.invalid-blocked-viewer-sees-online.json",
+        False,
+    ),
+)
+
+# Names no schema in this cluster may carry, each with the rule it would break.
+IDENTITY_LIFECYCLE_BANNED_FIELDS: dict[str, str] = {
+    "combined_token_burn_total": "D-070 forbids adding two stored account totals",
+    "provider_verified": "D-100: no provider attests an individual account",
+    "provider_attestation": "D-100: no provider attests an individual account",
+    "file_path": "the privacy boundary forbids paths crossing it",
+    "project_name": "the privacy boundary forbids project names crossing it",
+    "repository_name": "the privacy boundary forbids repository names crossing it",
+    "content_hash": "the privacy boundary forbids content-derived hashes",
+}
+
+
+def _schema_state_enum(schema: dict[str, Any], definition: str) -> set[str]:
+    node = schema["$defs"][definition]["properties"]["state"]
+    return set(node["enum"])
+
+
+def validate_identity_lifecycle_contracts() -> None:
+    """Prove the identity-lifecycle artifacts agree with the authorities they cite.
+
+    Four things are checked, none of which is behaviour. The state vocabulary in
+    each schema equals the vocabulary its registered machine declares, so D-079's
+    one-spelling rule holds across a fourth surface as well as the three
+    `validate_state_vocabularies.py` already covers. Every persistence owner and
+    revision source named by the current-viewer-authorization profile resolves to
+    a real table and a real column in the planning DDL. The presence thresholds
+    bind policy keys that exist. And no schema in the cluster carries a field name
+    that a binding product rule forbids.
+
+    This proves reference agreement. No recovery, consolidation, investigation,
+    fork resolution or authorization check is implemented, and this validator
+    would pass identically if none ever were.
+    """
+    registry = load_json(SCHEMAS / "state-machine-registry-v1.json")
+    machines = {item["machine_id"]: item for item in registry["machines"]}
+
+    loaded: dict[str, dict[str, Any]] = {}
+    for filename in (
+        *IDENTITY_LIFECYCLE_SCHEMAS,
+        "presence-pulse-v1.schema.json",
+        "projection-authorization-v1.schema.json",
+    ):
+        loaded[filename] = validate_schema_file(SCHEMAS / filename)
+
+    for filename, machine_id in IDENTITY_LIFECYCLE_SCHEMAS.items():
+        if machine_id not in machines:
+            raise ValidationFailure(
+                f"{filename} names an unregistered machine: {machine_id}"
+            )
+        expected = set(machines[machine_id]["states"])
+        for definition in IDENTITY_LIFECYCLE_STATE_POINTERS[filename]:
+            actual = _schema_state_enum(loaded[filename], definition)
+            if actual != expected:
+                raise ValidationFailure(
+                    f"{filename}#{definition}.state differs from {machine_id}: "
+                    f"only-in-schema={sorted(actual - expected)} "
+                    f"only-in-registry={sorted(expected - actual)}"
+                )
+
+    # The ranked identity itself is governed by a machine the binding table
+    # already owns, so it is checked against that one rather than against a new
+    # vocabulary invented here.
+    identity_states = _schema_state_enum(
+        loaded["ranked-identity-v1.schema.json"], "ranked_identity"
+    )
+    if identity_states != set(machines["ranked-identity-eligibility"]["states"]):
+        raise ValidationFailure(
+            "ranked-identity-v1.schema.json ranked_identity.state differs from "
+            "ranked-identity-eligibility"
+        )
+
+    lease_states = _schema_state_enum(loaded["presence-pulse-v1.schema.json"], "lease")
+    if lease_states != set(machines["presence-lease"]["states"]):
+        raise ValidationFailure(
+            "presence-pulse-v1.schema.json lease.state differs from presence-lease"
+        )
+
+    for filename, example, expect_valid in IDENTITY_LIFECYCLE_EXAMPLES:
+        instance = load_json(SCHEMAS / "examples" / example)
+        if expect_valid:
+            validate_instance(loaded[filename], instance, example)
+        else:
+            expect_invalid(loaded[filename], instance, example)
+
+    # The cross-field rule the schema cannot express: a resumed fork continues on
+    # a strictly later generation. Merging two commitment chains is what D-072
+    # forbids, and a resolution that resumed on the generation it forked at would
+    # be that merge under another name.
+    fork = load_json(SCHEMAS / "examples" / "fork-resolution.valid.json")["case"]
+    if fork["resumed_generation"] <= fork["fork_generation"]:
+        raise ValidationFailure(
+            "fork-resolution.valid.json resumes on a generation that is not later "
+            "than the fork generation"
+        )
+
+    profile_schema = loaded["projection-authorization-v1.schema.json"]
+    profile = load_json(SCHEMAS / "projection-authorization-v1.json")
+    validate_instance(profile_schema, profile, "viewer authorization profile")
+
+    bodies = _planning_table_bodies()
+    for entry in profile["inputs"]:
+        table = entry["persistence_owner"]
+        if table not in bodies:
+            raise ValidationFailure(
+                f"viewer authorization input {entry['input_id']} names a table the "
+                f"planning DDL does not define: {table}"
+            )
+        source = entry["revision_source"]
+        if "." not in source:
+            raise ValidationFailure(
+                f"viewer authorization input {entry['input_id']} names a revision "
+                f"source without a table: {source}"
+            )
+        source_table, column = source.split(".", 1)
+        if source_table != table:
+            raise ValidationFailure(
+                f"viewer authorization input {entry['input_id']} reads {source} but "
+                f"declares {table} as its persistence owner"
+            )
+        if not re.search(rf"(?m)^\s*{re.escape(column)}\s", bodies[table]):
+            raise ValidationFailure(
+                f"viewer authorization input {entry['input_id']} names a column "
+                f"{table} does not declare: {column}"
+            )
+
+    policies = load_json(SCHEMAS / "policy-defaults-v1.json")["policies"]
+    thresholds = load_json(SCHEMAS / "examples" / "presence-pulse.valid.json")[
+        "thresholds"
+    ]
+    for field, key in thresholds.items():
+        if key not in policies:
+            raise ValidationFailure(
+                f"presence threshold {field} names an unknown policy key: {key}"
+            )
+    # D-073 fixes the three numbers; the two misnamed keys make it worth checking
+    # the values rather than trusting the names.
+    expected_values = {
+        "pulse_interval_policy_key": 30,
+        "idle_after_policy_key": 90,
+        "offline_after_policy_key": 300,
+    }
+    for field, value in expected_values.items():
+        actual = policies[thresholds[field]]["value"]
+        if actual != value:
+            raise ValidationFailure(
+                f"presence threshold {field} resolves to {actual}, not the D-073 "
+                f"value {value}"
+            )
+
+    for filename, schema in loaded.items():
+        text = json.dumps(schema)
+        for banned, why in IDENTITY_LIFECYCLE_BANNED_FIELDS.items():
+            if f'"{banned}"' in text:
+                raise ValidationFailure(f"{filename} declares {banned}: {why}")
+
+    local_store = (SCHEMAS / "local-store-v1.sql").read_text(encoding="utf-8")
+    for required in (
+        "pragma journal_mode = wal;",
+        "pragma synchronous = full;",
+        "create table outbox_claims (",
+        "create table claim_commitments (",
+        "create table source_receipts (",
+        "create table local_deletion_receipts (",
+    ):
+        if required not in local_store:
+            raise ValidationFailure(f"local-store-v1.sql lacks {required!r}")
+    # A key column in the local store would put the key beside the ciphertext it
+    # protects, which is the arrangement D-213 rejects on the server side.
+    if re.search(r"(?im)^\s*\w*key_material\b", local_store):
+        raise ValidationFailure("local-store-v1.sql declares key material")
 
 
 def validate_erasure_contract() -> None:
@@ -2337,6 +2561,10 @@ def main() -> int:
         (
             "source receipt, appraisal policy and appraisal result",
             validate_evidence_chain,
+        ),
+        (
+            "identity lifecycle, presence and viewer authorization contracts",
+            validate_identity_lifecycle_contracts,
         ),
         ("decision register table integrity", validate_decision_register),
         ("CDDL grammar parse and required rules", validate_cddl_file),

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "case": {
+    "recovery_case_id": "018f2c60-0000-7000-8000-000000000102",
+    "account_id": "018f2c60-0000-7000-8000-000000000001",
+    "state": "applied",
+    "verified_factor_class": "none",
+    "requested_at": "2026-08-01T09:00:00Z",
+    "expires_at": "2026-08-15T09:00:00Z",
+    "revision": 2,
+    "effects": {
+      "sessions_revoked": false,
+      "devices_quarantined": false
+    }
+  }
+}

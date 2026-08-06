@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "case": {
+    "consolidation_case_id": "018f2c60-0000-7000-8000-000000000310",
+    "surviving_ranked_identity_id": "018f2c60-0000-7000-8000-000000000201",
+    "absorbed_ranked_identity_id": "018f2c60-0000-7000-8000-000000000210",
+    "state": "applied",
+    "initiated_by": "participant",
+    "requested_at": "2026-07-01T09:00:00Z",
+    "confirmed_at": "2026-07-02T09:00:00Z",
+    "applied_at": "2026-07-02T09:01:00Z",
+    "expires_at": "2026-07-15T09:00:00Z",
+    "revision": 6
+  },
+  "contributions": [],
+  "result": {
+    "absorbed_contribution_count": 0,
+    "excluded_contribution_count": 0,
+    "affected_period_count": 0,
+    "combined_token_burn_total": 192000
+  }
+}

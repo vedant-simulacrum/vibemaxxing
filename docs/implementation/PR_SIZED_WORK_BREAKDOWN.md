@@ -70,9 +70,6 @@ Units: 259. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 226 |
-| `in-progress` | 6 |
-| `landed` | 21 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
@@ -201,7 +198,9 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml
 Acceptance: `ranked_identities` is a separate table from `accounts` with a survivor reference; the consolidation-plan schema validates a fixture covering identities, devices, claims, social state, boards, moderation, exports and deletions; no path in the API sums two accounts' scores.
 Depends: PF-007
 Est: 12-16
-Status: not-started
+Status: in-progress
+
+The schema and the DDL half landed under D-322: `ranked_identities` carries `absorbed_into_ranked_identity_id`, `consolidation_cases` and `consolidation_contributions` exist, and `packages/schemas/consolidation-plan-v1.schema.json` validates against two fixtures. The unit is not finished. The fixture covers identities, claims and periods and not devices, social state, boards, moderation, exports or deletions, and `packages/schemas/openapi-v1.yaml` declares no consolidation operation at all.
 
 - separate account and ranked identity;
 - canonical survivor, retired duplicates, private investigation evidence, restrictions, appeal and reversal;
@@ -1576,6 +1575,8 @@ Depends: S-002
 Est: 12-16
 Status: not-started
 
+The unit also persists `recovery_cases`, whose cooling-off window, session revocation and device quarantine are carried by check constraints rather than by handler discipline.
+
 `optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
 
 `optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
@@ -1591,12 +1592,16 @@ Depends: S-006
 Est: 12-16
 Status: not-started
 
+The unit also persists `identity_investigations`, `identity_events`, `consolidation_cases` and `consolidation_contributions`, which the planning DDL now defines with their constraints. `consolidation_contributions` is the row-level form of the D-070 rule this unit's acceptance already states: one row per absorbed claim with its original period attribution, and no summed figure anywhere in the path.
+
 ### S-008 Device, key, installation and lineage persistence
 Files: `apps/api/internal/device/store.go` (new), `migrations/0006_devices.sql` (new), `packages/schemas/planning-schema.sql`
 Acceptance: `devices`, `device_keys`, `device_enrollment_grants`, `device_lineages`, `device_key_events` and `adapter_installations` are keyed so that continuity is lineage-scoped rather than device-row-scoped, which a test proves by replacing a device row and showing the lineage survives.
 Depends: S-002
 Est: 12-16
 Status: not-started
+
+The unit also persists `lineage_fork_cases` and `lineage_fork_branches`, the D-072 fork and clone resolution tables, because a fork is a property of a lineage and belongs with the lineage keying this unit owns.
 
 `adapter_installations` had no owning unit before this one.
 
@@ -1828,7 +1833,9 @@ Files: `apps/api/internal/rankedidentity/consolidate.go` (new), `packages/schema
 Acceptance: a fixture with deliberately overlapping claims consolidates to strictly less than the sum of the two accounts' totals, which is the check that history is recomputed from non-overlapping contributions rather than added; the consolidation plan validates against its schema.
 Depends: O-008, O-009, S-011
 Est: 12-16
-Status: not-started
+Status: in-progress
+
+`packages/schemas/consolidation-plan-v1.schema.json` exists and validates. The execution path does not: no Go package reads it, and the overlapping-claims fixture the acceptance names has not been written.
 
 ### O-011 Restriction, appeal, reversal and retirement
 Files: `apps/api/internal/moderation/restriction.go` (new), `packages/schemas/planning-schema.sql`

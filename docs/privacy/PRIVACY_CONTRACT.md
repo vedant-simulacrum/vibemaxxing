@@ -201,6 +201,22 @@ It must never retain prompts, project names, filenames, repository names, tool c
 
 Blocking, device revocation and privacy changes invalidate visibility immediately. Multiple devices merge into a deterministic public state without exposing which project or source is active.
 
+### Pulse, lease generation and audience projection
+
+`packages/schemas/presence-pulse-v1.schema.json` is the machine-readable form of the three records this section needs, and D-325 records the choices.
+
+A qualifying pulse names a device, a lease generation and a boolean. `qualifying` is a boolean rather than a description because a description would be content. Only a native collector produces one: a browser tab open on a leaderboard is not evidence that a participant is working, and counting it would make presence a measure of who is looking at the product.
+
+The lease generation is what stops a resumed process from reviving an expired lease. A daemon restart mints a new generation, and a pulse naming a superseded one is discarded rather than applied.
+
+`visibility` is a policy on the lease and not a state of it. A private participant still holds a lease and still transitions; what changes is who may read the projection. Collapsing the two would make going private indistinguishable from going offline.
+
+The three D-073 thresholds are bound to policy keys by `const` in that schema, and the validator asserts the resolved values are 30, 90 and 300 seconds. Two of the keys are misnamed — `presence_lease_expiry_seconds` holds the idle threshold and `presence_idle_after_seconds` holds the offline threshold — and the binding is stated rather than the keys renamed, because three other artifacts and one validator require those exact spellings.
+
+None of this is a presence history. ADR-019 accepts a live-sampling risk on the stated basis that no history is stored, so `presence_events` carries `no-retention` in `packages/schemas/data-disposition-v1.json` and rows are discarded when their generation closes. Retaining them would convert an accepted risk into a larger one without anybody deciding to.
+
+A projection suppressed for a reason other than the subject being offline records why, and never discloses it to the viewer: telling a viewer they were suppressed tells them the subject is online.
+
 ## Notification privacy
 
 Notification payloads are typed closed-world events. They may contain only IDs and display fields authorized for the recipient at delivery time.
@@ -214,6 +230,22 @@ Required controls:
 - no arbitrary JSON payload;
 - no source-content-derived text;
 - quiet hours and preference enforcement without leaking event details to disabled channels.
+
+## Current viewer authorization
+
+The rule above — recheck before delivery and rendering — appears in this contract, in the social contract and in the product specification, and none of them said what is rechecked or against what. SR-015 records that gap. `packages/schemas/projection-authorization-v1.json` closes the naming half of it and D-326 records the choices.
+
+Nine inputs are read. Each names the table it reads and the column that changes when it changes, and the validator fails when either does not resolve: directional blocks, subject visibility, friendship, rivalry, board membership, board container state, presence visibility, account lifecycle and ranked-identity state.
+
+Deny inputs are evaluated before widen inputs, in that fixed order, because two orders decide differently for a viewer who is simultaneously a friend and blocked. A directional block and a `deletion-pending` account are hard denials that no other input restores.
+
+No authorization result is cached anywhere, including in a request-scoped memo that outlives the statement that produced it. A cached decision is the defect, not an optimisation of it. A projection may be cached only when it is identical for every viewer, which is true of a sealed generation's figures and of nothing else.
+
+A change racing the response fails the request rather than serving the earlier answer: the decision compares the revisions it read against the revisions present when the response is emitted. A participant who pressed block is entitled to assume it took effect, and a retry costs one request. An input that cannot be read is a denial, because an authorization system whose outage widens access has the wrong default.
+
+Nine surfaces evaluate it. Eight recheck at read or delivery time; the export package is the single snapshot-time exception, and it is one because the subject and the viewer are the same person and no third party's authorization can change under it.
+
+This names the rule. No surface in this repository evaluates it, so SR-015 is advanced and not closed.
 
 ## Moderation and support privacy
 

@@ -100,6 +100,34 @@ Required controls:
 - reason codes and appeal path;
 - no access to prompts, source code, projects, or local activity content during recovery.
 
+### The recovery case aggregate
+
+The controls above are requirements. The aggregate that carries them is the recovery case, and D-320 records the choices inside it.
+
+| Concern | Owner |
+|---|---|
+| Lifecycle | the `recovery-case` machine in `packages/schemas/state-machine-registry-v1.json` |
+| Persistence | `packages/schemas/planning-schema.sql`, table `recovery_cases` |
+| Record | `packages/schemas/recovery-case-v1.schema.json` |
+| Revision model | `recovery_cases.revision`, monotonic, incremented inside the transaction that changes the row; a conditional update naming a stale revision is refused |
+| Transaction boundary | `recovery-session-and-device`: rebinding access, revoking every session family and quarantining every enrolled device commit together |
+| Expiry | `expires_at`; an unfinished case moves to `expired` and the participant starts again |
+| Reversal | none. An applied recovery is not undone; a wrongly applied one is answered by a new case, because the access it revoked cannot be un-revoked |
+
+The states are `requested`, `verifying`, `cooling-off`, `applied`, `denied`, `cancelled` and `expired`. Four of them are terminal.
+
+Three properties are check constraints rather than handler discipline, because each is a race an application-level check loses:
+
+- applying before `cooling_off_ends_at` is unrepresentable, so the window cannot be skipped by a retry that arrives early;
+- an applied case that did not revoke sessions and quarantine devices cannot be written, so the two effects cannot drift apart from the state that claims them;
+- a partial unique index permits one live case per account, so an attacker cannot open a second case to outlast the notice on the first.
+
+What a case verifies is a locally-held factor: a recovery code, an optional authenticator, or a signature from an enrolled device. Under D-100 no provider offers an individual-account attestation path, so `verified_factor_class` names none of them and no surface may present a recovery as provider-confirmed.
+
+The error paths are `denied` with a reason code from `packages/schemas/reason-codes-v1.json`, `expired` when the case outlives its window, and `cancelled` by a participant who still holds access. A denied case records the code; the participant is told the outcome and not which factor failed, because that distinction tells an attacker which factor to attack next.
+
+Nothing here resurrects an identifier a D-085 erasure destroyed. An erasure deletes the account row a case references, so an erased account has no case to recover and no pseudonym to re-bind.
+
 ## Provider compromise or loss
 
 If a provider account is compromised, suspended, deleted, or renamed:

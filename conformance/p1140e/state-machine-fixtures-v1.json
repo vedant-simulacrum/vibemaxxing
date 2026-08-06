@@ -434,6 +434,70 @@
         "transition_id": "beta-invite-redeem",
         "expected": "reject-without-mutation"
       }
+    },
+    {
+      "machine_id": "recovery-case",
+      "positive": {
+        "case_id": "recovery-case-valid-transition",
+        "from": "cooling-off",
+        "transition_id": "recovery-apply",
+        "expected_to": "applied",
+        "expected": "revoke-sessions-quarantine-devices-and-commit-once"
+      },
+      "negative": {
+        "case_id": "recovery-case-invalid-transition",
+        "from": "verifying",
+        "transition_id": "recovery-apply",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "identity-investigation",
+      "positive": {
+        "case_id": "identity-investigation-valid-transition",
+        "from": "gathering",
+        "transition_id": "investigation-close-restricted",
+        "expected_to": "concluded-restricted",
+        "expected": "restrict-and-notify-privately"
+      },
+      "negative": {
+        "case_id": "identity-investigation-invalid-transition",
+        "from": "opened",
+        "transition_id": "investigation-close-restricted",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "account-consolidation",
+      "positive": {
+        "case_id": "account-consolidation-valid-transition",
+        "from": "applying",
+        "transition_id": "consolidation-commit",
+        "expected_to": "applied",
+        "expected": "write-claim-level-contributions-without-summing-totals"
+      },
+      "negative": {
+        "case_id": "account-consolidation-invalid-transition",
+        "from": "awaiting-confirmation",
+        "transition_id": "consolidation-commit",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "lineage-fork-case",
+      "positive": {
+        "case_id": "lineage-fork-case-valid-transition",
+        "from": "detected",
+        "transition_id": "fork-quarantine",
+        "expected_to": "quarantined",
+        "expected": "quarantine-every-post-fork-branch-and-preserve-pre-fork-claims"
+      },
+      "negative": {
+        "case_id": "lineage-fork-case-invalid-transition",
+        "from": "resumed",
+        "transition_id": "fork-quarantine",
+        "expected": "reject-without-mutation"
+      }
     }
   ]
 }

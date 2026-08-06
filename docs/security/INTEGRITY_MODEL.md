@@ -68,6 +68,31 @@ Continuity must distinguish:
 
 An upload-time challenge does not prove an offline event existed before the challenge. A local chain proves ordering but gains stronger retrospective resistance only through prior/following server checkpoints or platform-backed rollback-resistant state.
 
+### Fork and clone resolution
+
+A lineage fork is the case where two device installations present continuations of one lineage generation. D-072 states the outcome and D-323 records the aggregate that carries it.
+
+| Concern | Owner |
+|---|---|
+| Lifecycle | the `lineage-fork-case` machine |
+| Persistence | `lineage_fork_cases` and `lineage_fork_branches` |
+| Record | `packages/schemas/fork-resolution-v1.schema.json` |
+| Revision model | `lineage_fork_cases.revision` |
+| Transaction boundary | `fork-case-and-branches` while quarantining and selecting, `fork-case-and-lineage` when the survivor resumes |
+| Reversal | `reversed`, reached only through an appeal, which releases the quarantine and restores the branch's claims |
+
+The states are `detected`, `quarantined`, `survivor-selected`, `requalifying`, `resumed`, `unresolved`, `appealed` and `reversed`. Only `resumed` and `reversed` are terminal; `unresolved` is not, because a denied appeal returns the case to it and a later appeal is still possible.
+
+Three properties are constraints rather than procedure:
+
+- a resumed generation is strictly greater than the fork generation, so a resolution cannot replay the fork it resolved and cannot be read as a merge of two commitment chains;
+- one survivor exists per case, enforced by a partial unique index, so two operators cannot select two;
+- one open case exists per lineage generation.
+
+Claims accepted at or before the fork generation are untouched, because a fork says nothing about work already accepted. Post-fork claims on a quarantined branch are held by `quarantines` and are not deleted: the resolution is appealable, and an appeal needs the evidence a deletion would have destroyed. Every branch is recorded including the ones that lost, for the same reason.
+
+Detection is deterministic — a duplicate sequence continuation, a divergent commitment chain, a duplicate installation identity, or a checkpoint mismatch. None of the four is a statistical inference, which D-053 confines to a local advisory detector.
+
 ## Environment interpretation
 
 Signed builds, process binding, OS key protection and attestation are independent evidence inputs. None alone proves token accounting.

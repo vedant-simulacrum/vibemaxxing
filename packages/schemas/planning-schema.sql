@@ -333,10 +333,17 @@ create table friend_edges (
   check (account_id_a < account_id_b)
 );
 
+-- A block is the existence of a row rather than a state, which is why it has
+-- no state column and no machine. `established_at` is not decoration: current
+-- viewer authorization under D-326 compares what it read against what is
+-- present when the response is emitted, and existence alone cannot order two
+-- changes to the same pair.
 create table blocks (
   blocker_account_id uuid not null references accounts(account_id),
   blocked_account_id uuid not null references accounts(account_id),
-  primary key (blocker_account_id, blocked_account_id)
+  established_at timestamptz not null,
+  primary key (blocker_account_id, blocked_account_id),
+  check (blocker_account_id <> blocked_account_id)
 );
 
 create table rival_edges (
@@ -389,12 +396,26 @@ create table board_invites (
   expires_at timestamptz not null
 );
 
+-- The current presence answer for one device, server-derived under D-073 from
+-- qualifying native pulses. `lease_generation` is monotonic per row and is what
+-- makes a pulse from a resumed process unable to revive an expired lease: the
+-- pulse names the generation it was minted under, and a pulse naming a
+-- superseded generation is discarded rather than applied.
+--
+-- `visibility` is an independent policy and not a state. A private participant
+-- still has a lease and still transitions; what changes is who may read the
+-- projection of it. Collapsing the two would make going private look like going
+-- offline to the server as well as to the viewer.
 create table presence_leases (
   account_id uuid not null references accounts(account_id),
   device_id uuid not null references devices(device_id),
   state text not null check (state in ('absent','active','idle','expired','revoked')),
+  lease_generation bigint not null default 0 check (lease_generation >= 0),
+  visibility text not null default 'authorized-viewers' check (visibility in ('authorized-viewers','private')),
+  last_qualifying_pulse_at timestamptz,
   expires_at timestamptz not null,
-  primary key (account_id, device_id)
+  primary key (account_id, device_id),
+  check (state not in ('active','idle') or last_qualifying_pulse_at is not null)
 );
 
 -- Partitioned by creation month: retention is 90 days, no foreign key points
@@ -774,13 +795,6 @@ create table privileged_supervisor_instances (
   created_at timestamptz not null
 );
 
-create table ranked_identities (
-  ranked_identity_id uuid primary key,
-  state text not null check (state in ('unverified','eligible','investigating','restricted','consolidating','appealed','reversed','retired')),
-  revision integer not null default 1 check (revision > 0),
-  created_at timestamptz not null
-);
-
 create table service_instances (
   service_instance_id uuid primary key,
   state text not null check (state in ('unregistered','registered','starting','healthy','paused','offline','degraded','recovery','stopping','stopped','uninstalled')),
@@ -932,20 +946,6 @@ create table export_download_grants (
   created_at timestamptz not null
 );
 
-create table identity_events (
-  identity_event_id uuid primary key,
-  subject_id uuid not null,
-  event_type text not null,
-  created_at timestamptz not null
-);
-
-create table identity_investigations (
-  identity_investigation_id uuid primary key,
-  subject_id uuid not null,
-  revision integer not null default 1 check (revision > 0),
-  created_at timestamptz not null
-);
-
 create table notification_deliveries (
   notification_delivery_id uuid primary key,
   subject_id uuid not null,
@@ -955,13 +955,6 @@ create table notification_deliveries (
 
 create table oauth_authorization_events (
   oauth_authorization_event_id uuid primary key,
-  subject_id uuid not null,
-  event_type text not null,
-  created_at timestamptz not null
-);
-
-create table presence_events (
-  presence_event_id uuid primary key,
   subject_id uuid not null,
   event_type text not null,
   created_at timestamptz not null
@@ -1182,6 +1175,374 @@ create table invite_redemptions (
 
 
 -- ---------------------------------------------------------------------------
+-- Identity lifecycle: ranked identity, investigation, recovery, consolidation
+-- and lineage fork resolution. D-054, D-070, D-072, D-081, D-085, D-100.
+--
+-- These five aggregates were the densest remaining gap in
+-- `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`: each was named by a
+-- normative document and by a decision, and none had a persistence owner, a
+-- revision model or a transaction boundary. They are placed here rather than in
+-- the earlier persistence-owner block because four of them hold a foreign key
+-- to `erasure_domains`, which is created below that block, and PostgreSQL
+-- resolves a foreign key at statement time rather than at the end of the file.
+--
+-- Three rules bind every table in this section.
+--
+-- Nothing here resurrects an identifier. D-085 erases by destroying the key
+-- that binds an erasure-domain pseudonym to a person. A recovery, a
+-- consolidation and a fork resolution all operate on live rows that an erasure
+-- deletes, so none of them can reintroduce a destroyed binding: the rows they
+-- would need are gone, and the pseudonym they would need to re-bind has no
+-- decryptable preimage.
+--
+-- Nothing here implies provider verification. Under D-100 no provider offers an
+-- individual-account usage attestation path, so no column in this section
+-- records a provider confirming a person, an account or a figure. The strongest
+-- thing any of them records is which locally-held factor the participant
+-- presented.
+--
+-- Nothing here sums a stored total. D-070 requires consolidation to carry
+-- claim-level contributions, so `consolidation_contributions` holds one row per
+-- absorbed claim with its original period attribution and no summed figure
+-- exists anywhere in the path.
+-- ---------------------------------------------------------------------------
+
+-- The ranked identity is the competitive subject. D-054 permits one active
+-- resolved ranked identity per person; what the engine can enforce is the
+-- weaker half of that, one non-retired ranked identity per account, which the
+-- partial unique index below carries. The stronger half — that two accounts do
+-- not belong to one person — is not a constraint and is not claimed to be. It
+-- is reached through `identity_investigations` and `consolidation_cases`, both
+-- of which are appealable and neither of which asserts a verified human.
+--
+-- `erasure_domain_id` is the pseudonym a sealed ranking entry is keyed on, so
+-- an erased ranked identity leaves its entries in place and unattributable
+-- under D-085 and D-210. It is null only before the first sealed generation
+-- names the identity.
+--
+-- No confidence weight is stored here. ADR-020 applies the weight at projection
+-- and freezes it into `ranking_entries`; a weight column on the identity would
+-- be a second authority for one number.
+create table ranked_identities (
+  ranked_identity_id uuid primary key,
+  account_id uuid not null references accounts(account_id),
+  erasure_domain_id uuid references erasure_domains(erasure_domain_id),
+  state text not null check (state in ('unverified','eligible','investigating','restricted','consolidating','appealed','reversed','retired')),
+  -- Which route resolved this identity. `self-asserted` is the launch default
+  -- and carries no verification claim at all.
+  resolution_basis text not null check (resolution_basis in ('self-asserted','investigation-resolved','consolidation-survivor')),
+  -- The surviving identity this one was absorbed into, set only by an applied
+  -- consolidation. Self-reference is refused.
+  absorbed_into_ranked_identity_id uuid references ranked_identities(ranked_identity_id),
+  resolved_at timestamptz,
+  retired_at timestamptz,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null,
+  check ((state = 'retired') = (retired_at is not null)),
+  check (resolution_basis = 'self-asserted' or resolved_at is not null),
+  check (resolved_at is null or resolved_at >= created_at),
+  check (absorbed_into_ranked_identity_id is null or absorbed_into_ranked_identity_id <> ranked_identity_id),
+  -- An absorbed identity is retired in the same transaction that absorbs it,
+  -- so a live identity can never point at a survivor.
+  check (absorbed_into_ranked_identity_id is null or retired_at is not null)
+);
+
+-- One non-retired ranked identity per account. The retired row survives so a
+-- consolidation survivor can name what it absorbed.
+create unique index ranked_identities_account_live_idx
+  on ranked_identities (account_id)
+  where retired_at is null;
+
+-- An integrity investigation into whether a ranked identity is a duplicate, a
+-- fork, or otherwise ineligible. Its states are `integrity-private` under the
+-- binding table: telling a participant an investigation is open is itself an
+-- anti-cheat signal, so the ranked identity shows `restricted` and nothing
+-- finer. Concluding an investigation never reverses anything by itself; a
+-- reversal is an `appeals` outcome that moves `ranked_identities.state`, which
+-- is why this table has no `reversed` state of its own.
+create table identity_investigations (
+  identity_investigation_id uuid primary key,
+  ranked_identity_id uuid not null references ranked_identities(ranked_identity_id),
+  state text not null check (state in (
+    'opened','gathering','awaiting-participant','concluded-no-action',
+    'concluded-restricted','concluded-consolidation','withdrawn','expired')),
+  -- What triggered it. `statistical-signal` is deliberately absent: D-053 keeps
+  -- statistical detection local, advisory and post-launch, so it cannot open a
+  -- server-side case.
+  trigger text not null check (trigger in ('deterministic-control','operator-review','participant-report','fork-detection')),
+  opened_at timestamptz not null,
+  response_due_at timestamptz,
+  concluded_at timestamptz,
+  expires_at timestamptz not null,
+  revision integer not null default 1 check (revision > 0),
+  check (expires_at > opened_at),
+  check ((state in ('concluded-no-action','concluded-restricted','concluded-consolidation','withdrawn')) = (concluded_at is not null)),
+  check (state <> 'awaiting-participant' or response_due_at is not null),
+  check (concluded_at is null or concluded_at >= opened_at)
+);
+
+-- At most one open investigation per ranked identity. Two open cases would let
+-- two operators reach two conclusions about one subject.
+create unique index identity_investigations_open_idx
+  on identity_investigations (ranked_identity_id)
+  where state in ('opened','gathering','awaiting-participant');
+
+-- Account recovery. The whole aggregate exists because D-055 makes provider
+-- OAuth the only routine access path and a lost provider account would
+-- otherwise be an unrecoverable loss of a competitive history.
+--
+-- What a recovery proves is control of a locally-held factor: a recovery code
+-- from `recovery_codes`, an authenticator from `optional_authenticators`, or a
+-- device signature from an enrolled row in `devices`. Under D-100 none of these
+-- is a provider confirming anything, so `verified_factor_class` names the
+-- factor and never a provider.
+--
+-- The cooling-off window is the control that makes a stolen factor survivable:
+-- the case is announced to every existing session and inbox at the moment it is
+-- opened, and the participant who still holds access can cancel it. Applying
+-- before the window closes is unrepresentable rather than discouraged.
+--
+-- Applying a recovery revokes every session family and quarantines every
+-- enrolled device, because the case admits that the previous access path is
+-- compromised. Both effects are recorded as booleans on the row and the last
+-- check makes an applied case that did neither impossible to write.
+create table recovery_cases (
+  recovery_case_id uuid primary key,
+  account_id uuid not null references accounts(account_id),
+  state text not null check (state in ('requested','verifying','cooling-off','applied','denied','cancelled','expired')),
+  verified_factor_class text not null check (verified_factor_class in (
+    'none','recovery-code','optional-authenticator','enrolled-device','recovery-code-and-device')),
+  requested_at timestamptz not null,
+  cooling_off_ends_at timestamptz,
+  applied_at timestamptz,
+  denied_at timestamptz,
+  cancelled_at timestamptz,
+  expires_at timestamptz not null,
+  sessions_revoked boolean not null default false,
+  devices_quarantined boolean not null default false,
+  revision integer not null default 1 check (revision > 0),
+  check (expires_at > requested_at),
+  check ((state = 'applied') = (applied_at is not null)),
+  check ((state = 'denied') = (denied_at is not null)),
+  check ((state = 'cancelled') = (cancelled_at is not null)),
+  check (state not in ('cooling-off','applied') or cooling_off_ends_at is not null),
+  check (state not in ('cooling-off','applied') or verified_factor_class <> 'none'),
+  -- The cooling-off window cannot be skipped.
+  check (applied_at is null or applied_at >= cooling_off_ends_at),
+  -- An applied recovery has performed both effects.
+  check (applied_at is null or (sessions_revoked and devices_quarantined))
+);
+
+-- One live recovery case per account. Two concurrent cases would let an
+-- attacker open a second case to outlast the notice on the first.
+create unique index recovery_cases_live_idx
+  on recovery_cases (account_id)
+  where state in ('requested','verifying','cooling-off');
+
+-- D-070 duplicate-account consolidation. The surviving and absorbed identities
+-- are named on the case, the plan is the set of rows in
+-- `consolidation_contributions`, and the result is the case reaching `applied`.
+--
+-- The transaction boundary is the whole case: absorbing identity retirement,
+-- every contribution row, the `erasure_domain_links` edge and the
+-- `identity_events` rows commit together or not at all, because a partial
+-- consolidation leaves two live identities that each believe they own the same
+-- history.
+--
+-- Reversal is an explicit transition rather than a delete. `reversed` retracts
+-- the contributions by appending inverse rows in `score_contributions`; the
+-- absorbed identity is not un-retired, because its account may have been
+-- deleted in the interval and a resurrection would be exactly the identifier
+-- revival D-085 forbids.
+create table consolidation_cases (
+  consolidation_case_id uuid primary key,
+  surviving_ranked_identity_id uuid not null references ranked_identities(ranked_identity_id),
+  absorbed_ranked_identity_id uuid not null references ranked_identities(ranked_identity_id),
+  state text not null check (state in (
+    'requested','planning','awaiting-confirmation','applying','applied','rejected','reversed','expired')),
+  -- Who asked. A participant-initiated consolidation and an
+  -- investigation-initiated one differ in what the participant is told, not in
+  -- what the arithmetic does.
+  initiated_by text not null check (initiated_by in ('participant','investigation')),
+  identity_investigation_id uuid references identity_investigations(identity_investigation_id),
+  requested_at timestamptz not null,
+  confirmed_at timestamptz,
+  applied_at timestamptz,
+  reversed_at timestamptz,
+  expires_at timestamptz not null,
+  revision integer not null default 1 check (revision > 0),
+  check (expires_at > requested_at),
+  check (surviving_ranked_identity_id <> absorbed_ranked_identity_id),
+  check ((initiated_by = 'investigation') = (identity_investigation_id is not null)),
+  check ((state = 'applied') = (applied_at is not null and reversed_at is null)),
+  check ((state = 'reversed') = (reversed_at is not null)),
+  check (applied_at is null or confirmed_at is not null),
+  check (reversed_at is null or applied_at is not null)
+);
+
+-- An identity is absorbed at most once, and a live identity is never the
+-- absorbed side of two cases at the same time.
+create unique index consolidation_cases_absorbed_idx
+  on consolidation_cases (absorbed_ranked_identity_id)
+  where state in ('requested','planning','awaiting-confirmation','applying','applied');
+
+-- One row per absorbed claim. This is the executable form of the D-070 rule
+-- that stored account totals are never added together: the case carries claim
+-- identities and original period attribution, and the surviving standing is
+-- recomputed from them rather than incremented by a figure.
+--
+-- `claim_id` is nullable and clears on delete for the same reason it does in
+-- `score_contributions`: an erasure deletes the claim and the arithmetic that
+-- produced a sealed standing stays auditable without it.
+--
+-- `duplicate_domain_commitment` is the observer-equivalence key from
+-- `packages/schemas/observer-equivalence-v1.json`. A contribution whose
+-- commitment already appears under the surviving identity is excluded rather
+-- than counted twice, which is the overlapping-contribution rule of D-070
+-- expressed as a unique constraint.
+create table consolidation_contributions (
+  consolidation_contribution_id uuid primary key,
+  consolidation_case_id uuid not null references consolidation_cases(consolidation_case_id),
+  claim_id uuid references claims(claim_id) on delete set null,
+  period_id uuid not null references periods(period_id),
+  duplicate_domain_commitment bytea not null check (octet_length(duplicate_domain_commitment) = 32),
+  token_burn_total bigint not null check (token_burn_total >= 0),
+  disposition text not null check (disposition in ('absorbed','excluded-duplicate','excluded-imported','excluded-quarantined')),
+  created_at timestamptz not null,
+  -- One commitment counts once inside a case. Imported records are excluded by
+  -- disposition rather than by omission, so the case explains what it dropped.
+  unique (consolidation_case_id, duplicate_domain_commitment)
+);
+
+-- D-072 lineage fork and clone resolution. A fork is detected when two device
+-- installations present continuations of one lineage generation; the case
+-- quarantines every post-fork branch, preserves accepted pre-fork claims, and
+-- resumes through a new lineage generation rather than merging two commitment
+-- chains.
+--
+-- `fork_generation` is the lineage generation at which the branches diverged,
+-- and `resumed_generation` is the new one the survivor continues on. They are
+-- separate columns because a resumed lineage is not the forked one repaired:
+-- it is a successor, and the constraint that it be strictly greater is what
+-- keeps a resolution from replaying the fork.
+create table lineage_fork_cases (
+  lineage_fork_case_id uuid primary key,
+  lineage_id uuid not null references device_lineages(lineage_id),
+  ranked_identity_id uuid not null references ranked_identities(ranked_identity_id),
+  state text not null check (state in (
+    'detected','quarantined','survivor-selected','requalifying','resumed','unresolved','appealed','reversed')),
+  fork_generation bigint not null check (fork_generation >= 0),
+  resumed_generation bigint,
+  survivor_device_id uuid references devices(device_id),
+  appeal_id uuid references appeals(appeal_id),
+  detected_at timestamptz not null,
+  quarantined_at timestamptz,
+  resumed_at timestamptz,
+  revision integer not null default 1 check (revision > 0),
+  check (state not in ('quarantined','survivor-selected','requalifying','resumed') or quarantined_at is not null),
+  check ((state = 'resumed') = (resumed_at is not null)),
+  check (resumed_generation is null or resumed_generation > fork_generation),
+  check ((state = 'resumed') = (resumed_generation is not null)),
+  check (state not in ('survivor-selected','requalifying','resumed') or survivor_device_id is not null),
+  check ((state in ('appealed','reversed')) = (appeal_id is not null))
+);
+
+-- One open fork case per lineage generation. Two cases over one fork would let
+-- two survivors be selected.
+create unique index lineage_fork_cases_open_idx
+  on lineage_fork_cases (lineage_id, fork_generation)
+  where state in ('detected','quarantined','survivor-selected','requalifying');
+
+-- Every branch a fork produced, including the one that becomes the survivor.
+-- Claims accepted before `fork_generation` are untouched; claims on a
+-- quarantined branch are held by `quarantines` and are not deleted, because
+-- D-072 makes the resolution appealable and an appeal needs the evidence.
+create table lineage_fork_branches (
+  lineage_fork_branch_id uuid primary key,
+  lineage_fork_case_id uuid not null references lineage_fork_cases(lineage_fork_case_id),
+  device_id uuid not null references devices(device_id),
+  branch_head_sequence bigint not null check (branch_head_sequence >= 0),
+  disposition text not null check (disposition in ('survivor','quarantined','requalified','abandoned')),
+  post_fork_claim_count bigint not null check (post_fork_claim_count >= 0),
+  created_at timestamptz not null,
+  unique (lineage_fork_case_id, device_id)
+);
+
+-- Exactly one survivor per case, and only while the case has selected one.
+create unique index lineage_fork_branches_survivor_idx
+  on lineage_fork_branches (lineage_fork_case_id)
+  where disposition = 'survivor';
+
+-- The append-only history of every identity-affecting act. It is the record an
+-- appeal reads, so it is written inside the same transaction as the act it
+-- describes rather than by a follower reading a queue. It is last in this
+-- section because it holds a foreign key to each of the four case tables above.
+--
+-- At most one case reference is set, so an event names one cause rather than a
+-- correlation. `reason_code` is drawn from `packages/schemas/reason-codes-v1.json`
+-- and this column never carries free text, a path, a project name or any other
+-- content-derived value.
+create table identity_events (
+  identity_event_id uuid primary key,
+  ranked_identity_id uuid not null references ranked_identities(ranked_identity_id),
+  event_type text not null check (event_type in (
+    'identity-created','identity-resolved','investigation-opened','investigation-concluded',
+    'recovery-applied','consolidation-applied','consolidation-reversed',
+    'fork-quarantined','fork-resumed','restriction-applied','restriction-reversed','identity-retired')),
+  identity_investigation_id uuid references identity_investigations(identity_investigation_id),
+  recovery_case_id uuid references recovery_cases(recovery_case_id),
+  consolidation_case_id uuid references consolidation_cases(consolidation_case_id),
+  lineage_fork_case_id uuid references lineage_fork_cases(lineage_fork_case_id),
+  reason_code text,
+  occurred_at timestamptz not null,
+  check (
+    (case when identity_investigation_id is null then 0 else 1 end)
+    + (case when recovery_case_id is null then 0 else 1 end)
+    + (case when consolidation_case_id is null then 0 else 1 end)
+    + (case when lineage_fork_case_id is null then 0 else 1 end) <= 1
+  )
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Presence pulses and lease generations. D-073, D-095.
+-- ---------------------------------------------------------------------------
+
+-- Pulse admission for the current lease generation, and nothing older.
+--
+-- This is deliberately not a presence history. ADR-019 accepts a live-sampling
+-- risk — an authorized viewer can infer working hours by watching — on the
+-- stated basis that no stored history exists, and `presence_events` carries
+-- `no-retention` in `packages/schemas/data-disposition-v1.json` for exactly
+-- that reason: rows are discarded when the generation they belong to closes.
+-- Keeping them would convert an accepted risk into a different and larger one
+-- without anybody deciding to.
+--
+-- What the table does is make the lease derivable rather than asserted. The
+-- unique constraint is the deduplication rule for a retried pulse delivery, and
+-- the lease generation is what stops a pulse from a resumed process reviving an
+-- expired lease.
+--
+-- A pulse carries no content of any kind. It names the device, the generation
+-- and whether the device was doing qualifying work — never what the work was.
+-- That is why `qualifying` is a boolean rather than a description.
+create table presence_events (
+  presence_event_id uuid primary key,
+  account_id uuid not null references accounts(account_id),
+  device_id uuid not null references devices(device_id),
+  -- Monotonic per (account, device). A restart mints a new generation rather
+  -- than continuing the old one, so a stale pulse from a resumed process
+  -- cannot revive an expired lease.
+  lease_generation bigint not null check (lease_generation >= 0),
+  event_type text not null check (event_type in ('pulse','lease-opened','lease-idled','lease-expired','lease-revoked')),
+  qualifying boolean not null,
+  occurred_at timestamptz not null,
+  -- A pulse is idempotent per generation and per second. A duplicate delivery
+  -- is a no-op rather than a second observation.
+  unique (account_id, device_id, lease_generation, occurred_at)
+);
+
+-- ---------------------------------------------------------------------------
 -- Indexes. PF-048.
 --
 -- PostgreSQL indexes the referenced side of a foreign key and not the
@@ -1314,6 +1675,34 @@ create index oauth_transactions_expiry_idx on oauth_transactions (expires_at);
 create index device_enrollment_grants_expiry_idx on device_enrollment_grants (expires_at) where consumed_at is null;
 create index invite_codes_expiry_idx on invite_codes (expires_at) where state = 'issued';
 create index local_deletion_commands_expiry_idx on local_deletion_commands (expires_at);
+-- Identity lifecycle: referencing side of every foreign key added with the
+-- ranked identity, investigation, recovery, consolidation and fork tables.
+create index ranked_identities_erasure_domain_idx on ranked_identities (erasure_domain_id);
+create index ranked_identities_absorbed_into_idx on ranked_identities (absorbed_into_ranked_identity_id);
+create index identity_investigations_identity_idx on identity_investigations (ranked_identity_id);
+create index recovery_cases_account_idx on recovery_cases (account_id);
+create index recovery_cases_expiry_idx on recovery_cases (expires_at) where state in ('requested','verifying','cooling-off');
+create index identity_investigations_expiry_idx on identity_investigations (expires_at) where state = 'awaiting-participant';
+create index consolidation_cases_surviving_idx on consolidation_cases (surviving_ranked_identity_id);
+create index consolidation_cases_investigation_idx on consolidation_cases (identity_investigation_id);
+create index consolidation_cases_expiry_idx on consolidation_cases (expires_at) where state = 'awaiting-confirmation';
+create index consolidation_contributions_case_idx on consolidation_contributions (consolidation_case_id);
+create index consolidation_contributions_claim_idx on consolidation_contributions (claim_id);
+create index consolidation_contributions_period_idx on consolidation_contributions (period_id);
+create index lineage_fork_cases_lineage_idx on lineage_fork_cases (lineage_id);
+create index lineage_fork_cases_identity_idx on lineage_fork_cases (ranked_identity_id);
+create index lineage_fork_cases_survivor_device_idx on lineage_fork_cases (survivor_device_id);
+create index lineage_fork_cases_appeal_idx on lineage_fork_cases (appeal_id);
+create index lineage_fork_branches_case_idx on lineage_fork_branches (lineage_fork_case_id);
+create index lineage_fork_branches_device_idx on lineage_fork_branches (device_id);
+create index identity_events_identity_idx on identity_events (ranked_identity_id, occurred_at desc);
+create index identity_events_investigation_idx on identity_events (identity_investigation_id);
+create index identity_events_recovery_idx on identity_events (recovery_case_id);
+create index identity_events_consolidation_idx on identity_events (consolidation_case_id);
+create index identity_events_fork_idx on identity_events (lineage_fork_case_id);
+create index presence_events_account_device_idx on presence_events (account_id, device_id, occurred_at desc);
+create index presence_events_device_idx on presence_events (device_id);
+
 create index seasons_window_idx on seasons (starts_at, ends_at);
 create index periods_type_window_idx on periods (period_type, starts_at desc);
 create index score_snapshots_view_generation_idx on score_snapshots (ranking_view_id, generation desc);

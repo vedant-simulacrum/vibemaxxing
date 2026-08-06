@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/fork-resolution-v1.schema.json",
+  "title": "Lineage fork case, survivor decision and requalification result v1",
+  "description": "The D-072 record of a detected device-lineage fork: which branches existed, which was selected to survive, what requalifying it required, and on which new lineage generation it resumed. docs/security/INTEGRITY_MODEL.md and docs/security/THREAT_MODEL.md are the normative owners, packages/schemas/planning-schema.sql#lineage_fork_cases and #lineage_fork_branches are the persistence owners, and the lineage-fork-case machine owns the lifecycle. Two rules are structural rather than advisory: every post-fork branch is quarantined before anything else happens, and two commitment chains are never merged — a resolution resumes on a strictly later generation, which is a successor and not a repair.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case", "branches"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "case": { "$ref": "#/$defs/fork_case" },
+    "branches": {
+      "description": "Every branch the fork produced, including the survivor. A resolution that names only the survivor cannot explain what it quarantined, which is exactly what an appeal needs.",
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/branch" }
+    },
+    "requalification": { "$ref": "#/$defs/requalification" }
+  },
+  "$defs": {
+    "fork_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lineage_fork_case_id",
+        "lineage_id",
+        "ranked_identity_id",
+        "state",
+        "fork_generation",
+        "detected_at",
+        "revision"
+      ],
+      "properties": {
+        "lineage_fork_case_id": { "type": "string", "format": "uuid" },
+        "lineage_id": { "type": "string", "format": "uuid" },
+        "ranked_identity_id": { "type": "string", "format": "uuid" },
+        "state": {
+          "description": "unresolved is not terminal. D-072 makes the resolution appealable, and a denied appeal returns the case to it rather than closing it, so a later appeal is still possible.",
+          "enum": [
+            "detected",
+            "quarantined",
+            "survivor-selected",
+            "requalifying",
+            "resumed",
+            "unresolved",
+            "appealed",
+            "reversed"
+          ]
+        },
+        "detection_basis": {
+          "description": "How the fork was observed. Every value is a deterministic control under the binding rule that deterministic controls are authoritative; none of them is a statistical inference, which D-053 keeps local and advisory.",
+          "enum": [
+            "duplicate-sequence-continuation",
+            "divergent-commitment-chain",
+            "duplicate-installation-identity",
+            "checkpoint-mismatch"
+          ]
+        },
+        "fork_generation": {
+          "description": "The lineage generation at which the branches diverged. Claims accepted at or before it are preserved, because a fork says nothing about work already accepted.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "resumed_generation": {
+          "description": "The new generation the survivor continues on. Strictly greater than fork_generation, which is what keeps a resolution from replaying the fork it resolved.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "survivor_device_id": { "type": "string", "format": "uuid" },
+        "appeal_id": { "type": "string", "format": "uuid" },
+        "detected_at": { "type": "string", "format": "date-time" },
+        "quarantined_at": { "type": "string", "format": "date-time" },
+        "resumed_at": { "type": "string", "format": "date-time" },
+        "revision": { "type": "integer", "minimum": 1 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "const": "resumed" } },
+            "required": ["state"]
+          },
+          "then": {
+            "required": [
+              "resumed_generation",
+              "resumed_at",
+              "survivor_device_id",
+              "quarantined_at"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": { "enum": ["appealed", "reversed"] }
+            },
+            "required": ["state"]
+          },
+          "then": { "required": ["appeal_id"] }
+        }
+      ]
+    },
+    "branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lineage_fork_branch_id",
+        "device_id",
+        "branch_head_sequence",
+        "disposition",
+        "post_fork_claim_count",
+        "created_at"
+      ],
+      "properties": {
+        "lineage_fork_branch_id": { "type": "string", "format": "uuid" },
+        "device_id": { "type": "string", "format": "uuid" },
+        "branch_head_sequence": { "type": "integer", "minimum": 0 },
+        "disposition": {
+          "description": "quarantined claims are held rather than deleted, because the resolution is appealable and an appeal needs the evidence it would otherwise have destroyed.",
+          "enum": ["survivor", "quarantined", "requalified", "abandoned"]
+        },
+        "post_fork_claim_count": { "type": "integer", "minimum": 0 },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "requalification": {
+      "description": "What the survivor device had to prove before the lineage resumed. It re-establishes continuity on a new generation; it does not merge the quarantined branch's chain into it, and no field here can express such a merge.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "checks"],
+      "properties": {
+        "outcome": { "enum": ["passed", "failed", "abandoned"] },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "device-key-signature",
+              "installation-identity",
+              "platform-profile-match",
+              "sequence-continuity",
+              "checkpoint-acknowledgement"
+            ]
+          }
+        },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "reason_code": {
+          "description": "Present on a failed requalification. Drawn from packages/schemas/reason-codes-v1.json.",
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "outcome": { "const": "failed" } },
+            "required": ["outcome"]
+          },
+          "then": { "required": ["reason_code"] }
+        }
+      ]
+    }
+  }
+}
