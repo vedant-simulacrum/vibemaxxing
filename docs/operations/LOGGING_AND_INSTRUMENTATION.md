@@ -21,7 +21,7 @@ The distinction that motivates it: the allowlist says what may not be exported. 
 
 ### Format
 
-One JSON object per line, written to standard output. The platform collects standard output; no service writes a log file, rotates one, or ships its own logs. On a single managed container under D-093 there is no log-shipping sidecar to pay for, and a service that writes to a file on an ephemeral filesystem is a service whose logs disappear with it.
+One JSON object per line, written to standard output. The platform collects standard output; no service writes a log file, rotates one, or ships its own logs. On a single managed container under the budget position D-360 governs there is no log-shipping sidecar to pay for, and a service that writes to a file on an ephemeral filesystem is a service whose logs disappear with it.
 
 | Runtime | Library | Handler |
 |---|---|---|
@@ -71,7 +71,7 @@ Server request lines additionally carry `route_template`, `status_class`, `laten
 
 It is returned to the caller in the `X-Request-Id` response header and is the value a participant quotes in a support request.
 
-`trace_id` and `span_id` are generated and logged. They are **not exported to a tracing backend**, because there is no tracing backend: a hosted trace vendor is a recurring cost against the D-093 ceiling and, under ADR-017, would have to process inside the European Union, which narrows the field to options that cost more. Correlation is therefore done in logs, which the platform already collects at no additional cost. Emitting the identifiers anyway costs nothing and means that adopting a backend later is a configuration change rather than an instrumentation project.
+`trace_id` and `span_id` are generated and logged. They are **not exported to a tracing backend**, because there is no tracing backend: a hosted trace vendor is a recurring cost against the measured ceiling D-360 sets and, under ADR-017, would have to process inside the European Union, which narrows the field to options that cost more. Correlation is therefore done in logs, which the platform already collects at no additional cost. Emitting the identifiers anyway costs nothing and means that adopting a backend later is a configuration change rather than an instrumentation project.
 
 The local daemon's `correlation_id` in the local IPC message envelope is a separate identifier with a separate lifetime. It never crosses the device boundary. A local correlation identifier that reached the server would let the server join a participant's local activity, which is precisely the joinability the privacy contract exists to prevent.
 

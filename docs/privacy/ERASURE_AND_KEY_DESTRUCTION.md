@@ -51,7 +51,7 @@ The domain keys live in a keyring that is logically separate from the ranking da
 
 **Co-locating the keyring with the ciphertext gives no confidentiality at all.** An attacker who reads the database reads the keys and the ciphertext together. That is not a defect in this design, it is a statement of what the design is for: crypto-shredding here is a *deletion* control, not a confidentiality control, and it must never be presented as encryption at rest.
 
-D-093 caps hosted spend below 100 USD per month and D-094 already records that cap as being in unresolved conflict with the recovery objectives and the scale target. A separately backed keyring is a cost input to that unresolved conflict. The mechanism works either way; what changes is the length of the restore window in the backups section below.
+D-360 replaced the fixed sub-100-USD ceiling with the measured steady-state cost of the selected configuration, and D-361 selected AWS, so a separately backed keyring is now a cost to measure rather than a conflict to resolve. It is not yet measured: D-363 records that the measurement falls due before the credits funding the runway are consumed. The mechanism works either way; what changes is the length of the restore window in the backups section below.
 
 ### Rotation
 
@@ -239,6 +239,6 @@ Six of them, in descending order of how much they matter.
 ## What is not decided here
 
 - The API projection of a suppressed entry is stated above but is not yet expressed in `packages/schemas/openapi-v1.yaml`, which is owned by another work unit.
-- The keyring's deployment topology depends on the unresolved cost conflict in D-094.
+- The keyring's deployment topology depends on the steady-state cost D-360 makes the ceiling and D-363 schedules the measurement of.
 - SR-013 in `conformance/p1140f/semantic-findings-v1.json` covers export, deletion, retention and backup tombstones. This document supplies the deletion and backup half of what that finding needs. It does not close it, and no closure evidence or review verdict is recorded by this change.
 - SR-015 covers the current-authorization recheck at every display and delivery boundary. Resolving the handle at read time rather than freezing it into a snapshot is a precondition for that recheck and is not the recheck. It does not close SR-015.

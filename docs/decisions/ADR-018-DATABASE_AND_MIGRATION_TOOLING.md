@@ -33,7 +33,7 @@ Sequential numbering rather than timestamps is chosen because D-091 fixes a sing
 - **It supports `-- +goose NO TRANSACTION`,** which is what makes online index creation actually possible. `CREATE INDEX CONCURRENTLY` cannot run inside a transaction block, and the operations contract requires online index creation on a table that is serving traffic. A runner that wraps every migration in a transaction with no escape hatch cannot execute a required migration class at all. This is a hard capability requirement, not a convenience.
 - **`-- +goose StatementBegin` and `-- +goose StatementEnd`** let a single migration carry a function or `DO` block containing semicolons without the runner mis-splitting it, which a backfill or a constraint-validation step needs.
 - **Down sections are ordinary SQL in the same file**, so a rollback is reviewable in the same diff as the change it reverses and is executable in a preproduction restore drill. The contract requires tested rollback; a tool whose rollback is generated rather than written is a tool whose rollback is not reviewed.
-- **It is Apache-2.0 licensed and has no commercial tier**, so there is no feature boundary that a project on a sub-100-USD budget under D-093 might collide with later.
+- **It is Apache-2.0 licensed and has no commercial tier**, so there is no feature boundary a budget-constrained project might collide with later. D-360 replaced the fixed ceiling this argument originally cited with the measured steady-state cost, which weakens the argument's premise and not its conclusion: a tool with no paid tier cannot become a cost at any ceiling.
 
 ### Rejected alternatives
 
