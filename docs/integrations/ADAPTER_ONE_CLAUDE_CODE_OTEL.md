@@ -198,7 +198,8 @@ Controls that narrow the surface without closing it:
 - one accepted route, a 1 MiB body limit, and a per-connection rate limit;
 - a monotonic export ordinal per attribute-set key, so a replayed datapoint is a duplicate rather than an addition;
 - rejection of a cumulative counter that decreases without a corresponding start-time change;
-- loopback peer credentials where the platform exposes them.
+- loopback peer credentials where the platform exposes them;
+- the `Host` allowlist and `Origin` rules in `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`, which are what stop a web page in the participant's own browser from reaching this socket by DNS rebinding. The list above previously had no browser-facing control at all, and the loopback bind is not one: a browser is already inside the machine.
 
 What none of these prove: that the posting process is Claude Code. Peer credentials yield a uid that is the uid the local attacker already holds. This is the mechanism's ceiling, not an implementation gap.
 

@@ -1,8 +1,9 @@
 # Operations, Open-Source, and Launch Contract
 
 Status: normative planning contract
-Version: 3
-Updated: 2026-07-23
+Version: 4
+Updated: 2026-08-06
+Decisions: D-238, D-239, D-243
 
 ## Deployment baseline
 
@@ -10,7 +11,11 @@ Production is cloud-portable: managed containers for Go services and Next.js, ma
 
 Provider and region are selected during implementation through an ADR using latency, price, compliance, operational maturity, available credits and portability. Core behavior cannot depend on one provider.
 
-Environments are local, test, preview, staging and production. Production data never enters lower environments. Preview uses synthetic fixtures. Configuration is typed and separate from secrets.
+Environments are `local`, `ci`, `preview` and `production`. Production data never enters lower environments. Preview uses synthetic fixtures. Configuration is typed and separate from secrets. `docs/operations/ENVIRONMENTS_AND_SECRETS.md` owns what each environment is, what it holds and how a change moves between them.
+
+This paragraph previously named five environments including `staging`. D-238 records that no standing pre-production environment is provisioned or funded under D-093, renames `test` to the `ci` everyone uses, and moves the preproduction restore drill that ADR-018 requires into an ephemeral `ci` database restored from a production backup. The consequence — that no build is observed under realistic load before it reaches the private beta ring — is stated in that document rather than absorbed here.
+
+`docs/engineering/LOCAL_DEVELOPMENT.md` owns bringing the stack up on a developer machine.
 
 ## Launch platform baseline
 
@@ -31,21 +36,25 @@ No platform family is considered launched because another platform family works.
 
 ## Availability and recovery targets
 
-- Public leaderboard/API: 99.9% monthly.
-- Acknowledged claims: no loss.
+**These are unfunded targets, not commitments.** D-092 records that availability is best effort with no paging, no on-call rotation and no committed response time, and `docs/operations/SLOS_AND_ALERTS.md` restates the operable position: four commitments met by deterministic mechanisms, and a set of observation triggers that promise nothing. The figures below are retained as the target state a funded deployment would meet, and every one of them is currently unmet because nothing is deployed.
+
+- Public leaderboard/API: 99.9% monthly. **Target only.** The reviewed observation trigger is 99.0%.
+- Acknowledged claims: no loss. **Not underwritten at the current budget** — see the recovery-point note below.
 - Leaderboard freshness p95: <=90 seconds.
-- PostgreSQL RPO <=5 minutes and RTO <=60 minutes.
+- PostgreSQL RPO <=5 minutes and RTO <=60 minutes. **Requires continuous point-in-time recovery, which is a paid tier on every ADR-017 shortlist candidate.** At a daily snapshot the recovery point objective is 24 hours, and at 24 hours the no-loss line above does not hold. D-094 owns this conflict, it is open, and neither this document nor the service-expectations document resolves it.
 - Stateless service RTO <=15 minutes.
 - Release/update metadata availability: 99.95%.
 - OAuth outage degrades login/linking while existing sessions and local collection continue.
 - Local daemon availability target: >=99.9% while its declared service context exists.
 - Mandatory update service must preserve update, export and uninstall paths during ordinary control-plane degradation.
 
-Backups are encrypted, cross-account where practical, retention-tiered and restore-tested monthly. Quarterly DR exercises rebuild from infrastructure code, backups, release artifacts and documented key procedures.
+Backups are encrypted, cross-account where practical, retention-tiered and restore-tested monthly. Quarterly DR exercises rebuild from infrastructure code, backups, release artifacts and documented key procedures. Both run in an ephemeral `ci` environment rather than in a standing one, per D-238.
 
 ## Secrets, identities and release keys
 
 Separate OAuth, session, device-enrollment, release-signing, TUF, database, backup and observability keys. Use least privilege, workload identity, no long-lived cloud CI credentials, rotation, dual control for root/release keys, offline TUF root where practical, revocation and compromise playbooks.
+
+`docs/operations/ENVIRONMENTS_AND_SECRETS.md` owns the mechanism, the per-class rotation cadence and the blast radius of each compromise. It also records, rather than papers over, that dual control is unsatisfiable under D-091's single maintainer and that what exists in its place is a single-operator checklist.
 
 Privileged machine-supervisor artifacts and keys are separate from ordinary user claim keys. CI uses short-lived workload/job identity. Container images and platform packages bind provenance to exact source commits and release-set identity.
 
@@ -134,9 +143,9 @@ Scheduled expensive audits must be actionable and deduplicated.
 
 ## Observability
 
-The canonical allowlist is `packages/schemas/observability-allowlist-v1.yaml`. Collection is deny-by-default. Never export prompts, responses, claim payloads, handles, repository names, paths, OAuth tokens, cookies, headers or free-text exceptions.
+The canonical allowlist is `packages/schemas/observability-allowlist-v1.yaml`. Collection is deny-by-default. Never export prompts, responses, claim payloads, handles, repository names, paths, OAuth tokens, cookies, headers or free-text exceptions. The allowlist governs structured log fields as well as metric and span attributes; `docs/operations/LOGGING_AND_INSTRUMENTATION.md` owns the emitted form — format, levels, correlation, the metric inventory and the never-logged list — and `docs/operations/OBSERVABILITY_PRIVACY.md` remains the owner of the principle and the forbidden classes.
 
-Alerts cover:
+Alert classes and routing are owned by `docs/operations/SLOS_AND_ALERTS.md`; under D-092 there is no pager and no rotation. Alerts cover:
 
 - ingestion and queue failure;
 - database saturation and SLO burn;

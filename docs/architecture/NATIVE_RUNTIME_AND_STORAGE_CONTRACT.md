@@ -1,8 +1,9 @@
 # Native Runtime, Storage, and IPC Contract
 
 Status: normative planning contract
-Version: 3
-Updated: 2026-07-23
+Version: 4
+Updated: 2026-08-06
+Decisions: D-231
 
 ## Processes
 
@@ -11,7 +12,7 @@ Updated: 2026-07-23
 3. `vibemaxxing-daemon`: always-on service supervisor and local control plane; owns lifecycle, health, local policy, service-manager reconciliation and IPC routing but not transcript contents.
 4. `vibemaxxing-cli`: installer and noninteractive control client.
 5. `vibemaxxing-shell`: macOS menu-bar and Windows/Linux tray UI.
-6. `local-dashboard`: loopback-only control UI protected by an ephemeral local session token.
+6. `local-dashboard`: loopback-only control UI protected by an ephemeral local session token. Loopback binding is a network control and a browser on the same machine is not on the network, so the dashboard is also a cross-site request forgery and DNS-rebinding surface; `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md` owns the `Host` allowlist, `Origin` rules, token handling and expiry that make the binding a boundary.
 7. optional `vibemaxxing-machine-supervisor`: separately installed privileged lifecycle component under ADR-012; it cannot inspect source content or hold ordinary user claim keys.
 
 Closing the shell never stops collection. Pausing collection or sync never stops the daemon. The CLI, shell and dashboard are replaceable clients of the same versioned local control API.

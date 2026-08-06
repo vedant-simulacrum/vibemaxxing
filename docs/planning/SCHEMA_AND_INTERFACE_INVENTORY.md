@@ -1,7 +1,7 @@
 # Schema and Interface Inventory
 
 Status: authoritative planning inventory; all entries remain blocked by P-1140F unless explicitly marked otherwise
-Updated: 2026-08-04
+Updated: 2026-08-06
 
 ## Purpose
 
@@ -107,6 +107,8 @@ Syntax validity, schema parsing, fixture loading, symbolic race plans, prototype
 | Data disposition registry | privacy contract | proposed domain-disposition registry | planned-missing | export/delete/anonymize/retract/retain/legal-hold/backup for every store |
 | Retention and legal hold | privacy/operations contracts | policy registry additions | present-blocked | exact artifact, audit, tombstone, grant and command windows |
 | Telemetry and logs | privacy/operations contracts | observability allowlist | present-blocked | fixed allowlist, no content-derived values and bounded retention |
+| Application logging form | `docs/operations/LOGGING_AND_INSTRUMENTATION.md`; D-236 | observability allowlist, scope extended to log fields | present-provisional | static message literals, server-generated correlation identifier, salted principal references; no runtime emits a line yet |
+| Emitted signal inventory | `docs/operations/LOGGING_AND_INSTRUMENTATION.md`; D-237 | observability allowlist attributes; proposed metric registry | present-provisional | eighteen named metrics and four span boundaries; no export backend, no instrumented service |
 
 ## Release, packaging and operations specifications
 
@@ -120,6 +122,22 @@ Syntax validity, schema parsing, fixture loading, symbolic race plans, prototype
 | Support/certification publication | universal compatibility/operations contracts | compatibility registry | present-blocked | only active non-expired exact tuples are advertised |
 | Deployment and operations | operations contract | future infrastructure and runbook artifacts | planned-missing | after P-1104; no deployment automation during planning |
 | Open-source release | operations contract; D-033/D-040 | future governance/release checklist | planned-missing | license/dependency review, security policy, contribution path and public docs |
+| Environments and promotion | `docs/operations/ENVIRONMENTS_AND_SECRETS.md`; D-238 | future deployment workflow definitions | present-provisional | four environments, no staging; the restore drill runs in an ephemeral `ci` database |
+| Secrets custody and rotation | `docs/operations/ENVIRONMENTS_AND_SECRETS.md`; D-239 | provider secret store selected under ADR-017 | present-provisional | cadence per class; dual control unsatisfiable under D-091 and recorded as such |
+| Service expectations and alerting | `docs/operations/SLOS_AND_ALERTS.md`; D-243 | policy registry thresholds; future alert definitions | present-provisional | four commitments, six observations; recovery-point conflict owned by D-094 and open |
+| Local development environment | `docs/engineering/LOCAL_DEVELOPMENT.md`; D-244 | proposed `compose.yaml` and `make` targets | planned-missing | specification only; the file lands with the first service |
+
+## API edge, origin and time specifications
+
+| Specification family | Normative owner | Machine owner | Status | Repair / implementation dependency |
+|---|---|---|---|---|
+| Rate-limit classes and quotas | `docs/architecture/API_EDGE_CONTRACT.md`; D-232 | `packages/schemas/policy-defaults-v1.json`; `RATE_LIMIT_EXCEEDED` in `packages/schemas/reason-codes-v1.json` | present-provisional | quotas are planning figures derived from a 200-participant population and no limiter exists |
+| API versioning and deprecation | `docs/architecture/API_EDGE_CONTRACT.md`; D-234 | OpenAPI `deprecated` flags; `api_deprecation_window_days` | present-provisional | OpenAPI declares no deprecation flag and no `Sunset` header on any operation |
+| Client retry, backoff and budgets | `docs/architecture/API_EDGE_CONTRACT.md`; D-233 | `packages/schemas/policy-defaults-v1.json`; `x-idempotency-contract` in `packages/schemas/openapi-v1.yaml` | present-blocked | the wire half of exact replay landed under D-225; the persistence half is unrepaired and SR-012 stays open |
+| Origin validation and loopback controls | `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`; D-230, D-231 | proposed CORS and loopback listener configuration | planned-missing | OpenAPI declares no `Origin` parameter and no preflight response |
+| Clock synchronization and skew bounds | `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`; D-235 | `packages/schemas/policy-defaults-v1.json` | present-blocked | the CDDL carries `time_uncertainty_ms` but no clock-domain identifier or generation counter |
+| Test strategy and load scenarios | `docs/verification/TEST_STRATEGY.md`; D-240, D-241 | `scripts/ci/coverage-baseline-v1.json`; proposed load scripts | planned-missing | no coverage number has ever been measured, so the floors have no baseline |
+| Conformance harness | `docs/verification/CONFORMANCE_HARNESS.md`; D-242 | proposed per-suite `manifest.json` and runners | planned-missing | no manifest and no runner exists in any suite |
 
 ## Hosted web and design-system specifications
 

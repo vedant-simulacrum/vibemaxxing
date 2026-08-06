@@ -51,11 +51,19 @@ The technical-specification completeness authority is `docs/planning/SCHEMA_AND_
 - Public-by-default publication risk acceptance and the legal analysis behind the three documents above: ADR-021
 - Security: `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`, ADR-015
 - Ranking computation and the credited-score model: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, ADR-020
+- API edge numbers — rate-limit classes and quotas, API versioning and deprecation policy, and client retry, backoff, retry-budget and circuit obligations: `docs/architecture/API_EDGE_CONTRACT.md`. The server API contract owns the rules; this document owns the numbers underneath them and defers to the authoritative state contract on idempotency
+- Origin validation, both for the public API and for every loopback listener, including the DNS-rebinding and cross-site request forgery defence for the local dashboard and the OTLP receiver: `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`
 - Accepted residual risks without a normative owner: ADR-019
 - Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, ADR-010 through ADR-013
 - Operations/release/open source: `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, ADR-013
+- Service expectations, review triggers and alert routing under best-effort availability: `docs/operations/SLOS_AND_ALERTS.md`
+- Environments, the promotion path, data separation, and secrets mechanism and rotation cadence: `docs/operations/ENVIRONMENTS_AND_SECRETS.md`
+- Structured logging conventions, the never-logged list, and the emitted metric and span inventory: `docs/operations/LOGGING_AND_INSTRUMENTATION.md`. `docs/operations/OBSERVABILITY_PRIVACY.md` keeps the principle and the forbidden classes; the allowlist in `packages/schemas/observability-allowlist-v1.yaml` governs log fields as well as telemetry attributes
 - Hosting region, data residency and provider selection: ADR-017
 - Database and migration tooling: ADR-018
+- Local development environment and stack bring-up: `docs/engineering/LOCAL_DEVELOPMENT.md`
+- Test shape, frameworks, coverage floors, flake policy and load scenarios: `docs/verification/TEST_STRATEGY.md`
+- Conformance fixture, manifest and runner design: `docs/verification/CONFORMANCE_HARNESS.md`
 - Future implementation order: `docs/implementation/IMPLEMENTATION_HANDOFF.md`
 - Future PR-sized units: `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`
 - Future repository layout: `docs/implementation/REPOSITORY_LAYOUT.md`
@@ -91,15 +99,15 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 | `project/` | **Top authority.** Product, phase, and this map | `PROJECT.md`, `STATUS.md`, `DOCUMENTATION.md` |
 | `planning/` | Decisions, gates, scope, policy | `DECISION_REGISTER.md`, `TASK_CATALOG.md`, `SCHEMA_AND_INTERFACE_INVENTORY.md`, `ARTIFACT_POLICY.md`, `PRODUCT_SCOPE_FREEZE.md`, `REPOSITORY_OPERATIONS.md`, `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`, `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `CROSS_PLATFORM_COMPLETENESS_AUDIT.md`, `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, `decision-traceability/` (D-001..D-069 + `README.md`) |
 | `decisions/` | Accepted ADRs | `ADR-001` … `ADR-021` |
-| `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
+| `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `API_EDGE_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
 | `product/` | Product surface and metrics | `PRODUCT_SPEC.md`, `ACCOUNTING_AND_TIME_CONTRACT.md`, `TOKEN_ACCOUNTING_SPEC.md`, `CASH_BURN_PRICING_PROVENANCE.md`, `SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, `ONBOARDING_AND_PRIVACY_VERIFICATION.md`, `METRICS.md`, `SOCIAL_RANKING_AND_ABUSE_RESEARCH.md` |
 | `privacy/` | **The boundary.** The invariant everything else serves, plus the personal-data record that follows from it | `PRIVACY_CONTRACT.md`, `PRIVACY_PRESERVING_USAGE_EVIDENCE.md`, `DATA_MAP.md` |
-| `security/` | Threat, integrity, attestation, abuse | `THREAT_MODEL.md`, `INTEGRITY_MODEL.md`, `EVIDENCE_AND_ATTESTATION_PROFILES.md`, `AUTHENTICATION_AND_RECOVERY.md`, `RANKED_IDENTITY_ELIGIBILITY.md`, `ANTI_CHEAT_ATTACK_CATALOG.md`, `ANTI_CHEAT_RESEARCH_PROGRAM.md`, `ADVERSARIAL_TABLETOPS.md`, `LOCAL_IPC_AND_DEVICE_IDENTITY.md`, `PLATFORM_ISOLATION.md`, `ABUSE_AND_COUNTRY_PRIVACY.md` |
+| `security/` | Threat, integrity, attestation, abuse | `THREAT_MODEL.md`, `INTEGRITY_MODEL.md`, `EVIDENCE_AND_ATTESTATION_PROFILES.md`, `AUTHENTICATION_AND_RECOVERY.md`, `RANKED_IDENTITY_ELIGIBILITY.md`, `ANTI_CHEAT_ATTACK_CATALOG.md`, `ANTI_CHEAT_RESEARCH_PROGRAM.md`, `ADVERSARIAL_TABLETOPS.md`, `LOCAL_IPC_AND_DEVICE_IDENTITY.md`, `ORIGIN_AND_LOOPBACK_CONTROLS.md`, `PLATFORM_ISOLATION.md`, `ABUSE_AND_COUNTRY_PRIVACY.md` |
 | `integrations/` | Agent compatibility and certification | `UNIVERSAL_AGENT_COMPATIBILITY.md`, `ADAPTER_CERTIFICATION_POLICY.md`, `ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, `AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `T20_CERTIFICATION_AND_SELECTION_SPEC.md`, `T20_MODEL_HARDENING_CONTRACT.md` |
-| `operations/` | Launch, running, recovery | `OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, `RELEASE_VERIFICATION.md`, `PRODUCTION_READINESS.md`, `COMPETITIVE_BETA_GATE.md`, `INCIDENT_RESPONSE.md`, `SLOS_AND_ALERTS.md`, `OBSERVABILITY_PRIVACY.md`, `DATA_LIFECYCLE_AND_RECOVERY.md` |
+| `operations/` | Launch, running, recovery | `OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, `RELEASE_VERIFICATION.md`, `PRODUCTION_READINESS.md`, `COMPETITIVE_BETA_GATE.md`, `INCIDENT_RESPONSE.md`, `SLOS_AND_ALERTS.md`, `OBSERVABILITY_PRIVACY.md`, `LOGGING_AND_INSTRUMENTATION.md`, `ENVIRONMENTS_AND_SECRETS.md`, `DATA_LIFECYCLE_AND_RECOVERY.md` |
 | `implementation/` | Work decomposition | `IMPLEMENTATION_HANDOFF.md`, `PR_SIZED_WORK_BREAKDOWN.md`, `ISSUE_GENERATION.md`, `REPOSITORY_LAYOUT.md` |
-| `engineering/` | Engineering standards and budgets | `ENGINEERING_SYSTEM.md`, `PERFORMANCE_BUDGETS.md`, `COLLECTOR_PERFORMANCE_AND_POWER.md` |
-| `verification/` | Acceptance gates, evaluation, benchmark and evidence protocol | `ACCEPTANCE_GATES.md`, `EVAL_SYSTEM.md`, `BENCHMARK_AND_EVIDENCE_PROTOCOLS.md` |
+| `engineering/` | Engineering standards and budgets | `ENGINEERING_SYSTEM.md`, `LOCAL_DEVELOPMENT.md`, `PERFORMANCE_BUDGETS.md`, `COLLECTOR_PERFORMANCE_AND_POWER.md` |
+| `verification/` | Acceptance gates, evaluation, benchmark and evidence protocol | `ACCEPTANCE_GATES.md`, `EVAL_SYSTEM.md`, `TEST_STRATEGY.md`, `CONFORMANCE_HARNESS.md`, `BENCHMARK_AND_EVIDENCE_PROTOCOLS.md` |
 | `style-guide/` | UI system and brand, owned by `packages/ui` | `README.md` (entry point), `BRAND.md`, `UI_FOUNDATIONS.md`, `UI_ARCHITECTURE.md`, `COMPONENT_STANDARD.md`, `COMPONENT_INVENTORY.md`, `AI_UI_RULES.md`, `ASSET_SYSTEM.md`, `LEADERBOARD_FIRST_BASELINE.md`, `LEADERBOARD_BENTO_BASELINE.md`, `MIGRATION.md`, `RESEARCH.md`, `references/` (approved captures) |
 | `research/` | Primary evidence, historical | `README.md` (sole entrypoint), `RESEARCH_AUDIT_2026-07{,_WAVE2..5}.md`, `ANTI_CHEAT_SYSTEMS_RESEARCH_2026-07-23.md` |
 | `history/` | **Non-authoritative.** Superseded reports | See `docs/history/README.md` |
@@ -123,7 +131,7 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 
 ### Small directories, with reasons
 
-`privacy/` (3 files) is deliberately isolated: it holds the invariant the whole system exists to serve, and burying it inside `security/` would make it look like one control among many. `project/` (3) is the top authority and must stay at a short, obvious path. `engineering/` (3) and `verification/` (3) are coherent single subjects with room to grow and no better host. No other directory under `docs/` holds fewer than four files.
+`privacy/` (3 files) is deliberately isolated: it holds the invariant the whole system exists to serve, and burying it inside `security/` would make it look like one control among many. `project/` (3) is the top authority and must stay at a short, obvious path. `engineering/` (4) and `verification/` (5) were the two that had room to grow and did, absorbing the local-development, test-strategy and conformance-harness owners added on 2026-08-06. No other directory under `docs/` holds fewer than four files.
 
 ### Structural changes on 2026-08-06
 
@@ -131,6 +139,19 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 - `style-guide/ARCHITECTURE.md` renamed to `style-guide/UI_ARCHITECTURE.md` so it can no longer be confused with `architecture/ARCHITECTURE.md`.
 - `style-guide/COMPONENTS.md` merged into `COMPONENT_INVENTORY.md`; `design/design.md` merged into `style-guide/UI_FOUNDATIONS.md`.
 - `planning/REPOSITORY_ALIGNMENT_2026-07-23.md` and `planning/MACHINE_CONTRACT_REPAIR_SPEC.md` archived to `history/`.
+
+### Operational surfaces added on 2026-08-06
+
+Seven documents were added for surfaces an audit found either entirely absent from the repository or named without a single number behind them. Each has one owner and none duplicates an existing one:
+
+- `architecture/API_EDGE_CONTRACT.md` — rate-limit quotas, API versioning and deprecation, client retry and backoff. The server API contract keeps the rules; this holds the numbers, and idempotency stays with the authoritative state contract.
+- `security/ORIGIN_AND_LOOPBACK_CONTROLS.md` — origin validation for the public API and for every loopback listener, including the DNS-rebinding defence the local dashboard and the OTLP receiver had no control against.
+- `operations/LOGGING_AND_INSTRUMENTATION.md` — application logging, which the observability privacy policy governed only by implication, and the emitted metric inventory, which nothing stated at all.
+- `operations/ENVIRONMENTS_AND_SECRETS.md` — the mechanism behind the launch contract's one-sentence environment list, and the rotation cadence its secrets paragraph never carried.
+- `engineering/LOCAL_DEVELOPMENT.md` — how the stack comes up.
+- `verification/TEST_STRATEGY.md` and `verification/CONFORMANCE_HARNESS.md` — the method under the engineering system's eight layers, and the fixture and runner contract under `conformance/`.
+
+`operations/SLOS_AND_ALERTS.md` was rewritten rather than added: its seven proposed objectives described an operating posture D-092 had already rejected.
 
 Known duplication that genuinely remains, recorded rather than silently carried. Each cluster needs a single owner chosen and the rest merged or marked:
 
