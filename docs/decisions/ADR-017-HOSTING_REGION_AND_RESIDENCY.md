@@ -2,7 +2,7 @@
 
 Status: accepted
 Date: 2026-08-06
-Decision: D-080, D-093, D-094
+Decision: D-080, D-093, D-094, D-360, D-361, D-362, D-363
 
 ## Context
 
@@ -12,7 +12,7 @@ Two things were conflated in that sentence and this ADR separates them. **Region
 
 The owner is personally the controller for the purposes of the General Data Protection Regulation. There is no legal entity and no engaged counsel. That is not a reason to defer residency; it is a reason to make the residency commitment the conservative one, because a personal controller has no corporate structure absorbing the consequence of a wrong answer, and because retrofitting residency after launch means migrating live personal data across a jurisdictional boundary.
 
-The budget position is fixed by D-093 at under 100 USD per month. The recovery objectives inherited from the operations contract are a PostgreSQL recovery point objective of at most 5 minutes and a recovery time objective of at most 60 minutes, with monthly restore tests and quarterly disaster-recovery exercises. D-094 records that those objectives, that ceiling and the stated 100,000 ranked-identity target do not all hold at once. This ADR does not resolve that conflict and does not pretend to; it makes the conflict a gate in the selection procedure so that a provider cannot be chosen by quietly relaxing one of the three.
+The budget position was fixed by D-093 at under 100 USD per month. **D-093 and D-094 are now superseded.** The owner amended the ceiling — D-360 — which is one of the three amendments step 4 permits, and selected AWS under D-361. The amendment is what unblocked the gate; the owner's credit balance is not, and step 4's refusal to count credits stands unchanged. The rest of this section is retained because it records why the gate existed. The recovery objectives inherited from the operations contract are a PostgreSQL recovery point objective of at most 5 minutes and a recovery time objective of at most 60 minutes, with monthly restore tests and quarterly disaster-recovery exercises. D-094 records that those objectives, that ceiling and the stated 100,000 ranked-identity target do not all hold at once. This ADR does not resolve that conflict and does not pretend to; it makes the conflict a gate in the selection procedure so that a provider cannot be chosen by quietly relaxing one of the three.
 
 ## Decision
 
@@ -90,4 +90,4 @@ This ADR does not resolve that. It refuses to hide it. Step 4 halts the selectio
 - **The D-094 conflict is resolved** by amending the ceiling, the scale target or the recovery objectives, which changes the step 4 gate and can change the surviving candidate set.
 - **A shortlisted provider changes its European Union region availability, its point-in-time recovery granularity, its data processing agreement terms, its sub-processor list or its egress pricing.** Each is an input to a gate, and a changed input reruns the rule rather than grandfathering the previous outcome.
 - **A measured restore-elsewhere exercise fails**, which invalidates the criterion 6 score for the selected provider and reopens the ranking at step 5.
-- **The provider is selected**, at which point this ADR is amended to name it, record the verified inputs to each gate on the date of selection, and state the exit plan concretely rather than as a criterion.
+- **The provider is selected.** It now is: AWS, under D-361, restricted to managed PostgreSQL, containers and object storage by D-362. What this ADR still owes is the *verified* input to each gate on the date of selection — measured steady-state cost, confirmed point-in-time recovery granularity, the executed data processing agreement and its sub-processor list, and a concrete exit plan. None of those has been measured, and the selection rests on the shortlist assessment recorded above rather than on evidence. D-363 records that the measurement falls due before the credits are consumed.
