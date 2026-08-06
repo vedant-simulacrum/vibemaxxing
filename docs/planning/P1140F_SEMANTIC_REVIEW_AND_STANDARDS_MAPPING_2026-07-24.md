@@ -89,7 +89,7 @@ Closure requires atomic compatibility tuples, signed result bundles, exact valid
 
 One public route structurally serves global, friends, rivals, and board leaderboards without viewer or board identity. Stable definition and mutable generation facts are mixed. SQL cannot retain isolated score generations or durable snapshot pagination. Period, season, contribution, correction, movement, overtake, and streak authorities remain incomplete.
 
-ADR-020 adds a requirement none of these artifacts meets: rank is ordered on `credited_token_burn`, and `score` is banned as a field name so the claimed and credited figures can never merge. `RankEntry`, `period_scores`, `minute_scores` and `score_snapshots` all still carry `score`.
+ADR-020 adds a requirement rank ordering had to be rebuilt around: rank is ordered on `credited_token_burn`, and `score` is banned as a field name so the claimed and credited figures can never merge. That half is now met — `RankEntry`, `period_scores`, `minute_scores` and `score_snapshots` carry `token_burn_total`, `confidence_weight_hundredths` and `credited_token_burn` rather than a single merged `score`. What SR-010 still records is the authorization half: the leaderboard route carries no viewer or board identity, and generation state lives in more than one place.
 
 Closure requires separate ranking definition, audience instance, generation, snapshot, authorization, immutable entries, active pointer, exact periods/seasons, contribution ledger, correction/retraction, the ADR-020 credited-burn field set, and PostgreSQL-backed ranking evidence. Historical consolidation follows D-070.
 
@@ -141,7 +141,7 @@ Restated 2026-08-06 as a `specification-gap`. The earlier wording asked for four
 
 The contradiction half is live. Device signatures authenticate a key and bytes; OAuth authenticates provider-account control; adapter certification authenticates an exercised artifact and configuration. None independently proves that an external source event occurred, yet claims assert provider, model, source, adapter and evidence-related fields with no typed provider receipt. One appraisal aggregate is described three ways: `packages/schemas/vibeproof-claim-v1.cddl` carries seven classification dimensions, `packages/schemas/evidence-profile-policy-v1.json` enumerates the same seven as server-verifier authority, and `packages/schemas/planning-schema.sql` persists only provenance, continuity and integrity state with no claim digest, evidence digest, validity interval or supersession.
 
-The design half is carried in `planned_artifacts` against the rows already recorded `planned-missing` in `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`. Closure requires both halves, under D-077 semantics, with explicit machine contracts for:
+The design half no longer sits in `planned_artifacts`: the four schemas it asked for were authored, so the finding carries no `planned_artifacts` field and those paths moved into `conflicting_artifacts`, where a path that exists belongs. Closure still requires both halves under D-077 semantics, and the machine contracts it named are these:
 
 - `SourceReceipt` or server-observation records with issuer/provider subject, audience/resource, event/object identifier, event time, nonce or receipt ID, canonical digest, validity and signature or server-retrieval metadata;
 - `EvidenceBundle` binding the claim to minimized source evidence without content leakage;
