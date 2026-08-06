@@ -1706,6 +1706,118 @@ def validate_certification_contracts() -> None:
             )
 
 
+RELEASE_COMPATIBILITY_EXAMPLES: tuple[tuple[str, str, bool], ...] = (
+    ("tuf-trust-v1.schema.json", "tuf-trust.valid.json", True),
+    ("tuf-trust-v1.schema.json", "tuf-trust.invalid-online-root-key.json", False),
+    ("compatibility-graph-v1.schema.json", "compatibility-graph.valid.json", True),
+    (
+        "compatibility-graph-v1.schema.json",
+        "compatibility-graph.invalid-sunset-without-notice.json",
+        False,
+    ),
+    ("migration-chain-v1.schema.json", "migration-chain.valid.json", True),
+    (
+        "migration-chain-v1.schema.json",
+        "migration-chain.invalid-reversible-with-drop.json",
+        False,
+    ),
+)
+
+# D-239 fixes each TUF role's cadence. The policy registry is where the numbers
+# live and this is the mapping that stops the schema and the registry drifting.
+TUF_EXPIRY_EXPECTATIONS: dict[str, tuple[str, int]] = {
+    "root": ("tuf_root_expiry_days", 365),
+    "timestamp": ("tuf_timestamp_expiry_days", 1),
+    "snapshot": ("tuf_snapshot_expiry_days", 7),
+    "targets": ("tuf_targets_expiry_days", 90),
+}
+
+
+def validate_release_compatibility_contracts() -> None:
+    """Prove the release, compatibility and migration records resolve.
+
+    Four checks. Every TUF role policy names a policy key that exists and
+    resolves to the D-239 cadence. Root and targets keys are offline, which the
+    schema refuses to express otherwise. Every compatibility interface in the
+    graph schema is also a value the DDL admits. And every migration step's
+    rollback class agrees with what it says it did: a binary-reversible step
+    naming an irreversible operation is refused.
+
+    This proves the records agree. No TUF repository exists, no client holds
+    trusted state, and no migration has been applied.
+    """
+    tuf_schema = validate_schema_file(SCHEMAS / "tuf-trust-v1.schema.json")
+    graph_schema = validate_schema_file(SCHEMAS / "compatibility-graph-v1.schema.json")
+    chain_schema = validate_schema_file(SCHEMAS / "migration-chain-v1.schema.json")
+    schemas = {
+        "tuf-trust-v1.schema.json": tuf_schema,
+        "compatibility-graph-v1.schema.json": graph_schema,
+        "migration-chain-v1.schema.json": chain_schema,
+    }
+
+    for filename, example, expect_valid in RELEASE_COMPATIBILITY_EXAMPLES:
+        instance = load_json(SCHEMAS / "examples" / example)
+        if expect_valid:
+            validate_instance(schemas[filename], instance, example)
+        else:
+            expect_invalid(schemas[filename], instance, example)
+
+    policies = load_json(SCHEMAS / "policy-defaults-v1.json")["policies"]
+    roles = load_json(SCHEMAS / "examples" / "tuf-trust.valid.json")["roles"]
+    seen = {role["role"]: role for role in roles}
+    for role, (key, value) in TUF_EXPIRY_EXPECTATIONS.items():
+        if role not in seen:
+            raise ValidationFailure(f"tuf-trust.valid.json declares no {role} role")
+        if seen[role]["expiry_policy_key"] != key:
+            raise ValidationFailure(
+                f"{role} names {seen[role]['expiry_policy_key']}, not {key}"
+            )
+        if key not in policies:
+            raise ValidationFailure(f"{role} names an unknown policy key: {key}")
+        if policies[key]["value"] != value:
+            raise ValidationFailure(
+                f"{key} resolves to {policies[key]['value']}, not the D-239 cadence {value}"
+            )
+
+    bodies = _planning_table_bodies()
+    graph_interfaces = set(
+        graph_schema["$defs"]["edge"]["properties"]["interface"]["enum"]
+    )
+    edge_body = " ".join(bodies["compatibility_edges"].split())
+    for interface in sorted(graph_interfaces):
+        if f"'{interface}'" not in edge_body:
+            raise ValidationFailure(
+                f"compatibility_edges admits no interface {interface!r}"
+            )
+
+    chain_classes = set(
+        chain_schema["$defs"]["step"]["properties"]["rollback_class"]["enum"]
+    )
+    migration_body = " ".join(bodies["storage_migrations"].split())
+    for rollback_class in sorted(chain_classes):
+        if f"'{rollback_class}'" not in migration_body:
+            raise ValidationFailure(
+                f"storage_migrations admits no rollback class {rollback_class!r}"
+            )
+
+    for table, constraint in {
+        # An empty compatibility range is unrepresentable.
+        "compatibility_edges": "check (maximum_exclusive > minimum_supported)",
+        # A snapshot-required migration records the snapshot it required.
+        "storage_migrations": (
+            "check ((rollback_class = 'snapshot-required') = "
+            "(pre_migration_snapshot_digest is not null))"
+        ),
+        # A client never records trusted metadata signed below threshold.
+        "tuf_metadata": "check (signature_count >= threshold)",
+    }.items():
+        body = " ".join(bodies[table].split())
+        if constraint not in body:
+            raise ValidationFailure(
+                f"{table} lacks its required invariant: {constraint}"
+            )
+
+
 def validate_erasure_contract() -> None:
     """Prove the erasure invariants that a check constraint can carry are carried.
 
@@ -2709,6 +2821,10 @@ def main() -> int:
         (
             "compatibility tuple, certification and install-plan contracts",
             validate_certification_contracts,
+        ),
+        (
+            "TUF trust, compatibility graph and migration chain",
+            validate_release_compatibility_contracts,
         ),
         ("decision register table integrity", validate_decision_register),
         ("CDDL grammar parse and required rules", validate_cddl_file),

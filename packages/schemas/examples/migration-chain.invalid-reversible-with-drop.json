@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "interface": "server-schema",
+  "steps": [
+    {
+      "version": "0004_drop_legacy_score",
+      "rollback_class": "binary-reversible",
+      "down_sql_present": true,
+      "minimum_binary_version": 4,
+      "irreversible_operations": ["drop-column"]
+    }
+  ]
+}

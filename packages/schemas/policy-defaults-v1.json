@@ -89,6 +89,91 @@
         "conformance/p1140e/validation-matrix-v1.json"
       ]
     },
+    "tuf_root_expiry_days": {
+      "value": 365,
+      "min": 90,
+      "max": 730,
+      "owner": "release",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-08-06T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "owner-recorded-checklist",
+      "fixture_refs": [
+        "packages/schemas/tuf-trust-v1.schema.json"
+      ]
+    },
+    "tuf_timestamp_expiry_days": {
+      "value": 1,
+      "min": 1,
+      "max": 7,
+      "owner": "release",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-08-06T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "owner-recorded-checklist",
+      "fixture_refs": [
+        "packages/schemas/tuf-trust-v1.schema.json"
+      ]
+    },
+    "tuf_snapshot_expiry_days": {
+      "value": 7,
+      "min": 1,
+      "max": 30,
+      "owner": "release",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-08-06T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "owner-recorded-checklist",
+      "fixture_refs": [
+        "packages/schemas/tuf-trust-v1.schema.json"
+      ]
+    },
+    "tuf_targets_expiry_days": {
+      "value": 90,
+      "min": 7,
+      "max": 365,
+      "owner": "release",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-08-06T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "owner-recorded-checklist",
+      "fixture_refs": [
+        "packages/schemas/tuf-trust-v1.schema.json"
+      ]
+    },
+    "api_deprecation_minimum_days": {
+      "value": 180,
+      "min": 30,
+      "max": 730,
+      "owner": "release",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "days",
+      "effective_at": "2026-08-06T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": true,
+      "emergency_override": "owner-recorded-checklist",
+      "fixture_refs": [
+        "packages/schemas/compatibility-graph-v1.schema.json"
+      ]
+    },
     "presence_heartbeat_seconds": {
       "value": 30,
       "min": 15,

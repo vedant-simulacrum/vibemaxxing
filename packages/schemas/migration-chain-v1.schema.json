@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/migration-chain-v1.schema.json",
+  "title": "Migration chain and rollback class v1",
+  "description": "The ordered chain of storage migrations and, for each, whether a binary rollback is available. docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md is the normative owner and packages/schemas/planning-schema.sql#storage_migrations is the persistence owner. D-074 permits automatic binary rollback only while the previous release stays read/write compatible with every committed local-state and database mutation; this record is where that condition stops being something an operator remembers. The rollback class and the presence of a down section are separate fields on purpose: dropping a column back is syntactically valid and loses everything written into it, so a present down section is not reversibility and conflating the two is how a forward-only migration acquires a rollback plan nobody tested.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "interface", "steps"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "interface": { "enum": ["local-storage", "server-schema"] },
+    "steps": {
+      "description": "Ordered. A chain with a gap is not a chain: D-097 numbers goose migrations sequentially and applies them as a deliberate operator step, so a missing version is an unapplied migration rather than a numbering style.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/step" }
+    }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "rollback_class",
+        "down_sql_present",
+        "minimum_binary_version"
+      ],
+      "properties": {
+        "version": {
+          "description": "The goose migration version, matching a row in schema_migrations.",
+          "type": "string",
+          "pattern": "^[0-9]{4}_[a-z0-9_]+$"
+        },
+        "rollback_class": {
+          "description": "binary-reversible: the previous binary reads and writes the post-migration shape, so a rollback is a binary swap and nothing else. forward-only: it does not, so recovery is roll-forward or restoration of a verified pre-migration snapshot. snapshot-required: forward-only, and a verified snapshot must exist before the migration runs.",
+          "enum": ["binary-reversible", "forward-only", "snapshot-required"]
+        },
+        "down_sql_present": {
+          "description": "Whether the migration file carries an explicit down section, which D-097 requires of every goose migration. It is a fact about the file and not a claim about reversibility.",
+          "type": "boolean"
+        },
+        "pre_migration_snapshot_digest": {
+          "description": "Required exactly when rollback_class is snapshot-required. A snapshot-required step with no recorded snapshot is a migration that has removed its own recovery path.",
+          "$ref": "#/$defs/digest"
+        },
+        "minimum_binary_version": {
+          "description": "The oldest binary that may run against the post-migration shape. ADR-018 makes readiness return success only when the applied migration version is inside the binary's declared range, so this is the number that check reads.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "irreversible_operations": {
+          "description": "What made the step forward-only, named rather than implied. A step that is forward-only for no recorded reason is one nobody can later re-examine.",
+          "type": "array",
+          "items": {
+            "enum": [
+              "drop-column",
+              "drop-table",
+              "narrow-type",
+              "tighten-constraint",
+              "destructive-backfill",
+              "partition-detach",
+              "key-destruction"
+            ]
+          }
+        },
+        "applied_at": { "type": "string", "format": "date-time" },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "rollback_class": { "const": "snapshot-required" }
+            },
+            "required": ["rollback_class"]
+          },
+          "then": { "required": ["pre_migration_snapshot_digest"] },
+          "else": {
+            "not": { "required": ["pre_migration_snapshot_digest"] }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "rollback_class": { "const": "binary-reversible" }
+            },
+            "required": ["rollback_class"]
+          },
+          "then": {
+            "properties": {
+              "down_sql_present": { "const": true },
+              "irreversible_operations": { "maxItems": 0 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "rollback_class": {
+                "enum": ["forward-only", "snapshot-required"]
+              }
+            },
+            "required": ["rollback_class"]
+          },
+          "then": { "required": ["irreversible_operations"] }
+        }
+      ]
+    }
+  }
+}

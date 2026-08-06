@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "graph_id": "planning-baseline-v1",
+  "edges": [
+    {
+      "interface": "vibeproof-protocol",
+      "producer_component": "vibemaxxing-daemon",
+      "consumer_component": "vibemaxxing-api",
+      "minimum_supported": 1,
+      "maximum_exclusive": 2,
+      "breaking": true,
+      "note": "One protocol version exists. D-056 leaves it rewritable before implementation, so no field carries compatibility protection yet."
+    },
+    {
+      "interface": "http-api",
+      "producer_component": "vibemaxxing-api",
+      "consumer_component": "vibemaxxing-web",
+      "minimum_supported": 1,
+      "maximum_exclusive": 2,
+      "breaking": false
+    },
+    {
+      "interface": "local-ipc",
+      "producer_component": "vibemaxxing-daemon",
+      "consumer_component": "vibemaxxing-cli",
+      "minimum_supported": 1,
+      "maximum_exclusive": 2,
+      "breaking": false
+    },
+    {
+      "interface": "local-storage",
+      "producer_component": "vibemaxxing-daemon",
+      "consumer_component": "vibemaxxing-collector",
+      "minimum_supported": 1,
+      "maximum_exclusive": 2,
+      "breaking": false
+    },
+    {
+      "interface": "server-schema",
+      "producer_component": "vibemaxxing-migrations",
+      "consumer_component": "vibemaxxing-api",
+      "minimum_supported": 1,
+      "maximum_exclusive": 2,
+      "breaking": false
+    },
+    {
+      "interface": "platform-profile",
+      "producer_component": "vibemaxxing-release",
+      "consumer_component": "vibemaxxing-daemon",
+      "minimum_supported": 1,
+      "maximum_exclusive": 2,
+      "breaking": false
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "roles": [
+    {
+      "role": "root",
+      "threshold": 1,
+      "key_count": 1,
+      "expiry_policy_key": "tuf_root_expiry_days",
+      "online_key": false
+    },
+    {
+      "role": "timestamp",
+      "threshold": 1,
+      "key_count": 1,
+      "expiry_policy_key": "tuf_timestamp_expiry_days",
+      "online_key": true
+    },
+    {
+      "role": "snapshot",
+      "threshold": 1,
+      "key_count": 1,
+      "expiry_policy_key": "tuf_snapshot_expiry_days",
+      "online_key": true
+    },
+    {
+      "role": "targets",
+      "threshold": 1,
+      "key_count": 1,
+      "expiry_policy_key": "tuf_targets_expiry_days",
+      "online_key": false
+    }
+  ],
+  "trusted_state": {
+    "device_id": "018f2c60-0000-7000-8000-000000000701",
+    "role": "timestamp",
+    "version": 42,
+    "metadata_digest": "1122334455667788990011223344556677889900112233445566778899001122",
+    "previous_version": 41,
+    "previous_metadata_digest": "2233445566778899001122334455667788990011223344556677889900112233",
+    "signature_count": 1,
+    "threshold": 1,
+    "root_version": 1,
+    "expires_at": "2026-08-07T00:00:00Z",
+    "verified_at": "2026-08-06T00:00:00Z"
+  }
+}

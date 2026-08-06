@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "interface": "server-schema",
+  "steps": [
+    {
+      "version": "0001_baseline",
+      "rollback_class": "binary-reversible",
+      "down_sql_present": true,
+      "minimum_binary_version": 1,
+      "irreversible_operations": []
+    },
+    {
+      "version": "0002_erasure_keys",
+      "rollback_class": "snapshot-required",
+      "down_sql_present": true,
+      "pre_migration_snapshot_digest": "3344556677889900112233445566778899001122334455667788990011223344",
+      "minimum_binary_version": 2,
+      "irreversible_operations": ["key-destruction"],
+      "note": "A rollback past this step would restore a key an erasure destroyed, which D-214 makes the one window where a restore can resurrect an identifier."
+    },
+    {
+      "version": "0003_ranking_entries",
+      "rollback_class": "forward-only",
+      "down_sql_present": true,
+      "minimum_binary_version": 3,
+      "irreversible_operations": ["narrow-type", "tighten-constraint"]
+    }
+  ]
+}

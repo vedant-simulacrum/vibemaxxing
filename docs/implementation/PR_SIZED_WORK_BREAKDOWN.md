@@ -2368,6 +2368,8 @@ Depends: N-002, S-002, L-002
 Est: 10-14
 Status: not-started
 
+The unit persists `compatibility_edges`, one row per relation across the six interfaces that version independently, and `storage_migrations`, which carries the D-332 rollback class beside each `schema_migrations` version. `packages/schemas/compatibility-graph-v1.schema.json` and `packages/schemas/migration-chain-v1.schema.json` are the records; neither is loaded by any code.
+
 ### L-005 Health checks and staged activation
 Files: `crates/vibemaxxing-cli/src/update/health.rs` (new), `docs/operations/RELEASE_VERIFICATION.md`
 Acceptance: a failing pre-check aborts before any file is replaced and a failing post-check triggers the recorded recovery path; both are asserted by injected failures, and a run where neither check executes fails the test.

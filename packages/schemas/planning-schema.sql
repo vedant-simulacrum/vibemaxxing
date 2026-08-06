@@ -1017,11 +1017,53 @@ create table social_events (
   created_at timestamptz not null
 );
 
+-- The trusted client state one device holds for one TUF role, which is the
+-- record SR-014 says the repository lacked. TUF is a client-side protocol: the
+-- security property is that a client refuses metadata that is older, expired or
+-- signed below threshold, so what has to be persisted is the client's own view
+-- and not the server's.
+--
+-- `version` is monotonic per role per device and the check that enforces it
+-- lives in the update path rather than here, because PostgreSQL cannot express
+-- "never decreases" on a row that is updated in place. What this table does
+-- carry is the rollback-attack evidence: `previous_version` and
+-- `previous_metadata_digest` are retained, so a client presented with metadata
+-- at or below the version it already trusts can record the refusal rather than
+-- silently discard it.
+--
+-- Expiry is per role and deliberately short for `timestamp` and `snapshot`,
+-- which is the freeze-attack control: a client that has not seen fresh
+-- timestamp metadata inside its window stops trusting the repository rather
+-- than continuing on stale data.
 create table tuf_metadata (
   tuf_metadata_id uuid primary key,
-  subject_id uuid not null,
+  device_id uuid not null references devices(device_id),
+  role text not null check (role in ('root','timestamp','snapshot','targets','delegated-targets')),
+  version bigint not null check (version > 0),
+  metadata_digest bytea not null check (octet_length(metadata_digest) = 32),
+  previous_version bigint check (previous_version > 0),
+  previous_metadata_digest bytea check (octet_length(previous_metadata_digest) = 32),
+  signature_count smallint not null check (signature_count >= 0),
+  threshold smallint not null check (threshold >= 1),
+  root_version bigint not null references tuf_roots(root_version),
+  expires_at timestamptz not null,
+  verified_at timestamptz not null,
+  last_refusal_reason_code text,
+  last_refused_at timestamptz,
   revision integer not null default 1 check (revision > 0),
-  created_at timestamptz not null
+  created_at timestamptz not null,
+  -- One trusted state per role per device. Two would mean the client trusted
+  -- two versions of one role at once, which is the ambiguity the protocol
+  -- exists to remove.
+  unique (device_id, role),
+  check (version > coalesce(previous_version, 0)),
+  check ((previous_version is null) = (previous_metadata_digest is null)),
+  check (previous_metadata_digest is null or metadata_digest <> previous_metadata_digest),
+  -- Trusted metadata was signed at or above threshold. A row that records
+  -- fewer signatures than its threshold is a client that accepted metadata it
+  -- should have refused.
+  check (signature_count >= threshold),
+  check ((last_refusal_reason_code is null) = (last_refused_at is null))
 );
 
 
@@ -1630,6 +1672,88 @@ create table platform_install_operations (
   -- effect cannot be undone. A rollback that discovers the answer at run time
   -- is D-074's failure mode rather than its contract.
   check (irreversible = (reversal_operation is null))
+);
+
+-- ---------------------------------------------------------------------------
+-- Compatibility graph, migrations and rollback classes. D-024, D-068, D-074,
+-- D-097, D-234, SR-014.
+-- ---------------------------------------------------------------------------
+
+-- One row per compatibility relation the product actually has to hold. Six
+-- interfaces move independently and each has its own range, which is the whole
+-- reason a single "version" number was never going to work: a client can be
+-- current on the HTTP API and behind on the local IPC contract at the same
+-- time, and the answer to "may this build run" differs per interface.
+--
+-- The range is closed on the left and open on the right, which removes the
+-- off-by-one that an inclusive upper bound invites, and `minimum_supported`
+-- being strictly less than `maximum_exclusive` makes an empty range
+-- unrepresentable.
+--
+-- `breaking` is not derived from the numbers. D-234 permits only additive
+-- change inside a major version and makes adding a member to a closed state
+-- vocabulary a major change, which no version arithmetic can detect; so the
+-- edge records the judgement and the check makes a breaking edge that did not
+-- move the major version impossible to write.
+create table compatibility_edges (
+  compatibility_edge_id uuid primary key,
+  interface text not null check (interface in (
+    'vibeproof-protocol','http-api','local-ipc','local-storage','server-schema','platform-profile')),
+  producer_component text not null,
+  consumer_component text not null,
+  minimum_supported bigint not null check (minimum_supported >= 1),
+  maximum_exclusive bigint not null,
+  breaking boolean not null default false,
+  deprecated_after timestamptz,
+  sunset_at timestamptz,
+  release_set_id uuid references release_sets(release_set_id),
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null,
+  check (maximum_exclusive > minimum_supported),
+  check (producer_component <> consumer_component),
+  -- A breaking edge starts a new major range, so its lower bound is its own
+  -- upper bound minus one: it supports exactly one major version.
+  check (not breaking or maximum_exclusive = minimum_supported + 1),
+  -- D-234 sets a 180-day minimum deprecation window. A sunset with no
+  -- deprecation notice is the removal that window exists to prevent.
+  check ((sunset_at is null) or (deprecated_after is not null and sunset_at > deprecated_after)),
+  unique (interface, producer_component, consumer_component, minimum_supported)
+);
+
+-- The migration chain, and the rollback class each step belongs to. D-074
+-- permits automatic binary rollback only while the previous release stays
+-- read/write compatible with every committed mutation, and this table is where
+-- that condition becomes checkable rather than remembered.
+--
+-- `rollback_class` is the load-bearing column. `binary-reversible` means the
+-- previous binary can read and write the post-migration shape, so a rollback is
+-- a binary swap. `forward-only` means it cannot, so recovery is roll-forward or
+-- restoration of a verified pre-migration snapshot. `snapshot-required` is
+-- forward-only plus the additional statement that a snapshot must exist before
+-- the migration runs, and the last check makes a `snapshot-required` row
+-- without a recorded snapshot digest unrepresentable.
+--
+-- `down_sql_present` is separate from the rollback class on purpose. D-097
+-- requires every `goose` migration to carry an explicit down section, and a
+-- present down section does not make a migration reversible: dropping a column
+-- back is syntactically fine and loses the data that was written into it. The
+-- two columns say different things and conflating them is how a forward-only
+-- migration acquires a rollback plan nobody tested.
+create table storage_migrations (
+  storage_migration_id uuid primary key,
+  version text not null unique references schema_migrations(version),
+  interface text not null check (interface in ('local-storage','server-schema')),
+  rollback_class text not null check (rollback_class in ('binary-reversible','forward-only','snapshot-required')),
+  down_sql_present boolean not null,
+  pre_migration_snapshot_digest bytea check (octet_length(pre_migration_snapshot_digest) = 32),
+  minimum_binary_version bigint not null check (minimum_binary_version >= 1),
+  applied_at timestamptz,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null,
+  check ((rollback_class = 'snapshot-required') = (pre_migration_snapshot_digest is not null)),
+  -- A binary-reversible migration has a down section. The converse does not
+  -- hold and is not asserted.
+  check (rollback_class <> 'binary-reversible' or down_sql_present)
 );
 
 -- ---------------------------------------------------------------------------
