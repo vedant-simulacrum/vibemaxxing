@@ -22,7 +22,9 @@ Consumer-facing states remain Standard, Hardened and Imported. The server verifi
 
 Evaluation is dimensional: a stronger key cannot compensate for contradictory accounting, and strong source authority cannot bypass privacy, continuity or artifact failures. Fatal conditions reject or quarantine. Failure to satisfy Hardened evaluates Standard; failure to satisfy Standard becomes private analytics. E5 remains Imported/private only.
 
-The policy file carries a single `E1` value in its `source` enum and no marker distinguishing the E1-S and E1-R limbs introduced by D-078, so the availability split below is currently expressed only in prose. Reconciling the machine-readable policy with it is a required follow-up owned by that file.
+`packages/schemas/appraisal-policy-v1.json` is the exact policy an appraisal is produced under. It binds the file above by path and content digest rather than copying its enums, so there is one dimension authority and a change there changes the bundle's identity. What it adds is what evaluating a claim needs and that file does not carry: the wire ordinals, the validity interval, the verifier implementation digest, the supersession chain, the persistence binding for the appraisal aggregate, and the D-078 limb refinement.
+
+The `source` enum in the owning file carries a single `E1` value. The bundle's `dimension_refinements` splits it into E1-S and E1-R with their availability, whether each binds an individual claim, whether each alters raw score, and whether each reaches Hardened — none of which they do. The base enum is untouched; the refinement is what the appraisal record and the wire use. The split is therefore machine-readable rather than prose-only, and the planning validator fails when the refined vocabulary and the appraisal schema's enum disagree.
 
 ## Independent dimensions
 
@@ -39,7 +41,25 @@ Every verifier appraisal records independently:
 9. deterministic integrity-rule result;
 10. anomaly disposition, when applicable.
 
+The first seven are the classification dimensions and carry an enumerated value each. The last three are the evidence those values were read from and are recorded beside them rather than composed into them.
+
 No stronger value in one dimension silently upgrades a failed mandatory requirement in another.
+
+## The appraisal record
+
+`packages/schemas/appraisal-result-v1.schema.json` is the one appraisal record. Before it, three authorities described this aggregate three ways and SR-017 cited the disagreement: `verifier-appraisal-v1` in `packages/schemas/vibeproof-claim-v1.cddl` carried the seven dimensions as unnamed integers, the evidence policy enumerated the same seven as names with no ordinals, and `packages/schemas/planning-schema.sql` stored three states that appear in neither.
+
+The record carries the seven dimensions by name, the evaluated certification bundle, deterministic rule bundle, accounting profile, observer-equivalence rule and anomaly disposition beside them, and four things no previous authority held: the digest of the exact signed claim bytes that were assessed, the digest of the device-local evidence bundle that explains them, a validity interval, and a supersession chain with the trigger that produced it. `appraisal-policy-v1.json` binds each dimension name to the integer the CDDL declares for it, and the planning validator fails when an ordinal leaves the CDDL range, when the ordinals are not dense from zero, or when the JSON enum and the policy vocabulary diverge. The CBOR appraisal and the JSON appraisal are one record rather than two that happen to share a field count.
+
+The SQL half of SR-017 is not closed by this. `appraisal-policy-v1.json` names the three columns no other authority uses as `dropped_columns` and each field the table cannot hold as `unbound_fields`, and both lists are checked against the DDL: the validator fails if a dropped column disappears or an unbound field lands, so the remaining distance is machine-visible and closing it requires moving an entry rather than editing prose.
+
+The appraisal assesses the quality of a self-report. Under D-100 it never records that a provider confirmed a figure, because no provider offers an individual-account path by which one could, and ADR-020's confidence weight rather than source attestation is what carries the integrity load downstream.
+
+## Source receipt and evidence bundle
+
+`packages/schemas/source-receipt-v1.schema.json` is the provenance record for one accounting event: every observation that saw the execution, which single one counted and why the others did not, the profile, arithmetic and equivalence rule it was evaluated under, the certification state of the capture path, and the source evidence class. It is device-local and never crosses the device boundary. It records `attestation` as `none` with a basis of `self-reported-at-source`, so no receipt can be read as a provider-verified figure.
+
+`packages/schemas/evidence-bundle-v1.cddl` binds the signed claim bytes by digest, that receipt by identity and digest, the accounting profile and arithmetic by identity and digest, the provenance chain, the privacy decision and the observer-equivalence record into one at-rest record. It is not a wire format: it adds no field to `packages/schemas/egress-allowlist-v1.json` and carries no COSE envelope. The only thing that crosses the boundary is the fixed-schema aggregate claim that already does. The bundle is what makes an accepted claim explainable later without making it transmissible, which is what an appeal and an export need and what the privacy boundary forbids sending.
 
 ## Source evidence classes
 

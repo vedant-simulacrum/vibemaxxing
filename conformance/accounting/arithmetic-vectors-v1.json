@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "vectors_id": "arithmetic-vectors-v1",
+  "arithmetic_id": "accounting-arithmetic-v1",
+  "profile_registry_id": "accounting-profiles-v1",
+  "vectors": [
+    {
+      "vector_id": "separate-cache-plain-sum",
+      "kind": "token-burn",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "Four mutually exclusive provider-reported fields and no containment edge. Token Burn is the plain checked sum and nothing is subtracted.",
+      "source_fields": {
+        "input-tokens": "100",
+        "output-tokens": "40",
+        "cache-read-tokens": "60",
+        "cache-write-tokens": "10"
+      },
+      "expected_components": {
+        "input_uncached": "100",
+        "output_visible": "40",
+        "cache_read": "60",
+        "cache_write": "10",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "210"
+    },
+    {
+      "vector_id": "inclusive-total-subtract-both-edges",
+      "kind": "token-burn",
+      "profile_id": "cloud-inclusive-total-v1",
+      "note": "Cache is contained in input and reasoning is contained in output. Both members are subtracted from their containers before the seven components are summed, so no token is counted twice.",
+      "source_fields": {
+        "input-total": "100",
+        "cached-input": "60",
+        "output-total": "50",
+        "reasoning-output": "20"
+      },
+      "expected_components": {
+        "input_uncached": "40",
+        "output_visible": "30",
+        "cache_read": "60",
+        "cache_write": "0",
+        "reasoning": "20",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "150"
+    },
+    {
+      "vector_id": "local-exact-token-ids",
+      "kind": "token-burn",
+      "profile_id": "local-exact-tokenizer-v1",
+      "note": "A local runtime that emits token identifiers. The five components the profile does not enable are written zero and read as profile-declared-unavailable.",
+      "source_fields": {
+        "prompt-token-ids": "80",
+        "output-token-ids": "20"
+      },
+      "expected_components": {
+        "input_uncached": "80",
+        "output_visible": "20",
+        "cache_read": "0",
+        "cache_write": "0",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "100"
+    },
+    {
+      "vector_id": "zero-consumption-is-a-number",
+      "kind": "token-burn",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "An execution that consumed nothing sums to zero. Zero here is a reported quantity; the absent-category rule applies to fields the source never carried, which is a different case.",
+      "source_fields": {
+        "input-tokens": "0",
+        "output-tokens": "0",
+        "cache-read-tokens": "0",
+        "cache-write-tokens": "0"
+      },
+      "expected_components": {
+        "input_uncached": "0",
+        "output_visible": "0",
+        "cache_read": "0",
+        "cache_write": "0",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "0"
+    },
+    {
+      "vector_id": "domain-ceiling-exact",
+      "kind": "token-burn",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "The largest total the uint64 wire domain holds. It is accepted exactly; the next vector adds one token to it and rejects.",
+      "source_fields": {
+        "input-tokens": "18446744073709551615",
+        "output-tokens": "0",
+        "cache-read-tokens": "0",
+        "cache-write-tokens": "0"
+      },
+      "expected_components": {
+        "input_uncached": "18446744073709551615",
+        "output_visible": "0",
+        "cache_read": "0",
+        "cache_write": "0",
+        "reasoning": "0",
+        "multimodal_input": "0",
+        "multimodal_output": "0"
+      },
+      "expected_token_burn": "18446744073709551615"
+    },
+    {
+      "vector_id": "sum-overflow-rejects",
+      "kind": "arithmetic-failure",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "One token past the ceiling. A saturating implementation would report the ceiling and a wrapping one would report zero; both are wrong and both look like a total.",
+      "source_fields": {
+        "input-tokens": "18446744073709551615",
+        "output-tokens": "1",
+        "cache-read-tokens": "0",
+        "cache-write-tokens": "0"
+      },
+      "expected_failure": {
+        "condition": "sum-overflow",
+        "disposition": "reject"
+      }
+    },
+    {
+      "vector_id": "containment-underflow-rejects",
+      "kind": "arithmetic-failure",
+      "profile_id": "cloud-inclusive-total-v1",
+      "note": "The source declares cached input inside total input and then reports more cache than total. The containment the profile asserts is denied by the source's own numbers.",
+      "source_fields": {
+        "input-total": "20",
+        "cached-input": "30",
+        "output-total": "5",
+        "reasoning-output": "0"
+      },
+      "expected_failure": {
+        "condition": "containment-underflow",
+        "disposition": "reject"
+      }
+    },
+    {
+      "vector_id": "unmapped-source-field-rejects",
+      "kind": "arithmetic-failure",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "A field the profile does not declare cannot be silently dropped, because dropping it produces a total that looks complete and is not.",
+      "source_fields": {
+        "input-tokens": "10",
+        "output-tokens": "10",
+        "cache-read-tokens": "0",
+        "cache-write-tokens": "0",
+        "tool-tokens": "5"
+      },
+      "expected_failure": {
+        "condition": "unmapped-source-field",
+        "disposition": "reject"
+      }
+    },
+    {
+      "vector_id": "cash-burn-exact-division",
+      "kind": "estimated-cash-burn",
+      "note": "1000 input tokens at 3000 nano-units per token is 3000000 nano-units, which divides exactly into 3000 micro-units.",
+      "priced_components": [
+        {
+          "component": "input_uncached",
+          "units": "1000",
+          "unit_price_nano": "3000"
+        }
+      ],
+      "expected_estimated_cash_burn_micros": "3000"
+    },
+    {
+      "vector_id": "cash-burn-half-even-rounds-down",
+      "kind": "estimated-cash-burn",
+      "note": "2500 nano-units is exactly half a micro-unit. Round-half-even resolves the tie to the even neighbour, which is 2.",
+      "priced_components": [
+        {
+          "component": "output_visible",
+          "units": "5",
+          "unit_price_nano": "500"
+        }
+      ],
+      "expected_estimated_cash_burn_micros": "2"
+    },
+    {
+      "vector_id": "cash-burn-half-even-rounds-up",
+      "kind": "estimated-cash-burn",
+      "note": "3500 nano-units is the same tie with an odd lower neighbour, so it resolves upward to 4. Half-up would give 3 and 4; half-even gives 2 and 4, and the pair is what distinguishes the two rules.",
+      "priced_components": [
+        {
+          "component": "output_visible",
+          "units": "7",
+          "unit_price_nano": "500"
+        }
+      ],
+      "expected_estimated_cash_burn_micros": "4"
+    },
+    {
+      "vector_id": "cash-burn-single-rounding-site",
+      "kind": "estimated-cash-burn",
+      "note": "Three components each carrying a fractional micro-unit. Summing the exact nano products first and dividing once gives 4; rounding each component to 1 before summing would give 3, which is the defect the single-rounding-site rule exists to prevent.",
+      "priced_components": [
+        {
+          "component": "input_uncached",
+          "units": "1",
+          "unit_price_nano": "1400"
+        },
+        {
+          "component": "output_visible",
+          "units": "1",
+          "unit_price_nano": "1400"
+        },
+        {
+          "component": "cache_read",
+          "units": "1",
+          "unit_price_nano": "1400"
+        }
+      ],
+      "expected_estimated_cash_burn_micros": "4"
+    },
+    {
+      "vector_id": "correction-retract-composes",
+      "kind": "correction",
+      "note": "An accepted contribution of 100, a second of 50, and a retraction of 30. No accepted claim is rewritten; the composition is what a later generation reads.",
+      "contributions": [
+        {
+          "direction": "add",
+          "magnitude": "100"
+        },
+        {
+          "direction": "add",
+          "magnitude": "50"
+        },
+        {
+          "direction": "retract",
+          "magnitude": "30"
+        }
+      ],
+      "expected_result": {
+        "disposition": "composed",
+        "composed_total": "120"
+      }
+    },
+    {
+      "vector_id": "correction-past-zero-rejects",
+      "kind": "correction",
+      "note": "Retractions exceeding the additions they correct. Clamping to zero would produce a total that no sequence of contributions explains.",
+      "contributions": [
+        {
+          "direction": "add",
+          "magnitude": "10"
+        },
+        {
+          "direction": "retract",
+          "magnitude": "20"
+        }
+      ],
+      "expected_result": {
+        "disposition": "reject"
+      }
+    }
+  ]
+}

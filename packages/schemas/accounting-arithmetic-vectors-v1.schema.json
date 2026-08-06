@@ -1,0 +1,314 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/accounting-arithmetic-vectors-v1.json",
+  "title": "AccountingArithmeticVectors v1",
+  "description": "Executable vectors for `accounting-arithmetic-v1.json`. Every vector states its source field counts, the profile it is evaluated under, and either the exact canonical components it must produce or the exact disposition it must fail with. `validate_planning_artifacts.py` recomputes each one from the arithmetic record rather than reading the expectation back, so a wrong expectation fails.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "vectors_id",
+    "arithmetic_id",
+    "profile_registry_id",
+    "vectors"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "vectors_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "arithmetic_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "profile_registry_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/token_burn_vector"
+          },
+          {
+            "$ref": "#/$defs/failure_vector"
+          },
+          {
+            "$ref": "#/$defs/cash_burn_vector"
+          },
+          {
+            "$ref": "#/$defs/correction_vector"
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "uint64_decimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "canonical_components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_uncached",
+        "output_visible",
+        "cache_read",
+        "cache_write",
+        "reasoning",
+        "multimodal_input",
+        "multimodal_output"
+      ],
+      "properties": {
+        "input_uncached": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "output_visible": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "cache_read": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "cache_write": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "reasoning": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "multimodal_input": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "multimodal_output": {
+          "$ref": "#/$defs/uint64_decimal"
+        }
+      }
+    },
+    "source_fields": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "$ref": "#/$defs/registered_id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/uint64_decimal"
+      }
+    },
+    "token_burn_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "kind",
+        "profile_id",
+        "source_fields",
+        "expected_components",
+        "expected_token_burn"
+      ],
+      "properties": {
+        "vector_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "kind": {
+          "const": "token-burn"
+        },
+        "profile_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "source_fields": {
+          "$ref": "#/$defs/source_fields"
+        },
+        "expected_components": {
+          "$ref": "#/$defs/canonical_components"
+        },
+        "expected_token_burn": {
+          "$ref": "#/$defs/uint64_decimal"
+        }
+      }
+    },
+    "failure_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "kind",
+        "profile_id",
+        "source_fields",
+        "expected_failure"
+      ],
+      "properties": {
+        "vector_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "kind": {
+          "const": "arithmetic-failure"
+        },
+        "profile_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "source_fields": {
+          "$ref": "#/$defs/source_fields"
+        },
+        "expected_failure": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "condition",
+            "disposition"
+          ],
+          "properties": {
+            "condition": {
+              "enum": [
+                "containment-underflow",
+                "containment-cycle",
+                "multiple-containers",
+                "unmapped-source-field",
+                "sum-overflow"
+              ]
+            },
+            "disposition": {
+              "description": "The arithmetic always rejects. The owning profile's `contradiction_policy` then decides whether the rejected event is dropped, quarantined, or demoted to private analytics.",
+              "const": "reject"
+            }
+          }
+        }
+      }
+    },
+    "cash_burn_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "kind",
+        "priced_components",
+        "expected_estimated_cash_burn_micros"
+      ],
+      "properties": {
+        "vector_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "kind": {
+          "const": "estimated-cash-burn"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "priced_components": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "component",
+              "units",
+              "unit_price_nano"
+            ],
+            "properties": {
+              "component": {
+                "enum": [
+                  "input_uncached",
+                  "output_visible",
+                  "cache_read",
+                  "cache_write",
+                  "reasoning",
+                  "multimodal_input",
+                  "multimodal_output"
+                ]
+              },
+              "units": {
+                "$ref": "#/$defs/uint64_decimal"
+              },
+              "unit_price_nano": {
+                "$ref": "#/$defs/uint64_decimal"
+              }
+            }
+          }
+        },
+        "expected_estimated_cash_burn_micros": {
+          "$ref": "#/$defs/uint64_decimal"
+        }
+      }
+    },
+    "correction_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "kind",
+        "contributions",
+        "expected_result"
+      ],
+      "properties": {
+        "vector_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "kind": {
+          "const": "correction"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "contributions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "direction",
+              "magnitude"
+            ],
+            "properties": {
+              "direction": {
+                "enum": [
+                  "add",
+                  "retract"
+                ]
+              },
+              "magnitude": {
+                "$ref": "#/$defs/uint64_decimal"
+              }
+            }
+          }
+        },
+        "expected_result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "disposition"
+          ],
+          "properties": {
+            "disposition": {
+              "enum": [
+                "composed",
+                "reject"
+              ]
+            },
+            "composed_total": {
+              "$ref": "#/$defs/uint64_decimal"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "policy_bundle_id": "appraisal-policy-fork-v1",
+  "semantic_version": "1.0.0",
+  "content_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "authority": "server-verifier",
+  "client_influence": "none",
+  "attestation": {
+    "class": "none",
+    "basis": "self-reported-at-source",
+    "assesses": "self-report-quality"
+  },
+  "dimension_source": {
+    "path": "packages/schemas/appraisal-dimensions-fork-v1.json",
+    "content_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "dimension_refinements": {
+    "source": [
+      {
+        "base_value": "E1",
+        "limbs": [
+          {
+            "limb": "E1-S",
+            "availability": "available",
+            "binds_individual_claim": "yes",
+            "alters_raw_score": "yes",
+            "reaches_hardened": "yes"
+          },
+          {
+            "limb": "E1-R",
+            "availability": "available",
+            "binds_individual_claim": "yes",
+            "alters_raw_score": "yes",
+            "reaches_hardened": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  "wire_ordinals": {
+    "acceptance_outcome": {
+      "accepted": 0,
+      "rejected": 1
+    },
+    "source_class": {
+      "E1-S": 0,
+      "E1-R": 1
+    },
+    "capture_class": {
+      "certified-structured": 0,
+      "uncertified": 1
+    },
+    "accounting_class": {
+      "authoritative-profile": 0,
+      "contradictory": 1
+    },
+    "device_key_class": {
+      "K1": 0,
+      "KU": 1
+    },
+    "continuity_class": {
+      "C0": 0,
+      "C4": 1
+    },
+    "environment_class": {
+      "A0": 0,
+      "A4": 1
+    },
+    "freshness_class": {
+      "anchored": 0,
+      "contradictory": 1
+    },
+    "ranking_eligibility": {
+      "competitive": 0,
+      "excluded": 1
+    },
+    "anomaly_disposition": {
+      "no-signal": 0,
+      "under-review": 1
+    }
+  },
+  "verifier_implementation_sha256": null,
+  "effective_interval": {
+    "starts_at": "2026-08-06T00:00:00Z",
+    "ends_at": null
+  },
+  "supersedes": null,
+  "appraisal_record": {
+    "aggregate": "verifier-appraisal",
+    "mutability": "immutable-superseded",
+    "revision_model": "append-only-supersession-chain",
+    "sql_binding": {
+      "table": "verifier_appraisals",
+      "bound_columns": [
+        "appraisal_id"
+      ],
+      "unbound_fields": [
+        "source_class"
+      ],
+      "dropped_columns": [
+        "provenance_state"
+      ],
+      "defect_reference": "SR-017"
+    }
+  }
+}

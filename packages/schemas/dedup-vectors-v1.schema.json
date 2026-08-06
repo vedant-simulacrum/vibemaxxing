@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/dedup-vectors-v1.json",
+  "title": "DeduplicationVectors v1",
+  "description": "Multi-observer scenarios and the single counted result each one must produce under `observer-equivalence-v1.json`. Every observation states the facts it carries and the preimage inputs its commitment was built from; the validator derives the commitment, applies the rule, and compares the disposition it reaches with the recorded one. A vector whose observation names a forbidden preimage input must resolve to `rejected`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "vectors_id",
+    "rule_id",
+    "vectors"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "vectors_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "rule_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "vector_id",
+          "observations",
+          "expected"
+        ],
+        "properties": {
+          "vector_id": {
+            "$ref": "#/$defs/registered_id"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 600
+          },
+          "observations": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/observation"
+            }
+          },
+          "expected": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dispositions",
+              "counted_token_burn"
+            ],
+            "properties": {
+              "dispositions": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": {
+                  "enum": [
+                    "counted",
+                    "superseded",
+                    "quarantined",
+                    "private-analytics",
+                    "rejected"
+                  ]
+                }
+              },
+              "counted_token_burn": {
+                "$ref": "#/$defs/uint64_decimal"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "uint64_decimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_id",
+        "mode",
+        "equivalence_class",
+        "collector_instance",
+        "preimage_inputs",
+        "facts",
+        "token_burn"
+      ],
+      "properties": {
+        "observation_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "mode": {
+          "enum": [
+            "native-event",
+            "extension-api",
+            "official-hook",
+            "otel",
+            "acp",
+            "proxy",
+            "wrapper",
+            "live-log",
+            "local-runtime"
+          ]
+        },
+        "equivalence_class": {
+          "enum": [
+            "strong",
+            "source-cursor",
+            "weak"
+          ]
+        },
+        "collector_instance": {
+          "description": "Identifies which collector installation produced the observation. It is a scenario fact used for the tie-break and the exclusivity check, and the rule forbids it inside the commitment preimage.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 64
+        },
+        "preimage_inputs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$",
+            "maxLength": 64
+          }
+        },
+        "facts": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$",
+            "maxLength": 64
+          },
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "token_burn": {
+          "$ref": "#/$defs/uint64_decimal"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,557 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/producer-accounting-binding-v1.json",
+  "title": "ProducerAccountingBinding v1",
+  "description": "What a telemetry producer must pin before its numbers may be read as accounting input. One contract covers OpenTelemetry and ACP producers because the rule that governs both is identical: a generic integration is private analytics until an exact tuple is certified, and a second file restating that rule would be a second authority for it. The binding names the producer's schema and version surface, the attributes it may carry, the accounting profile it resolves to, and the certification state that decides its effective ceiling.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "binding_id",
+    "semantic_version",
+    "content_sha256",
+    "producer_kind",
+    "accounting_profile",
+    "arithmetic",
+    "certification",
+    "capability_ceiling",
+    "effective_ceiling",
+    "attestation",
+    "attribute_policy"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "producer_kind": {
+            "const": "otel"
+          }
+        },
+        "required": [
+          "producer_kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "otel"
+        ],
+        "not": {
+          "required": [
+            "acp"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer_kind": {
+            "const": "acp"
+          }
+        },
+        "required": [
+          "producer_kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "acp"
+        ],
+        "not": {
+          "required": [
+            "otel"
+          ]
+        }
+      }
+    },
+    {
+      "description": "The binding product rule as a schema constraint. Only an active exact certification lifts the effective ceiling above private analytics; every other lifecycle state, including a candidate one, leaves the producer's output as private analytics no matter what it is capable of.",
+      "if": {
+        "properties": {
+          "certification": {
+            "properties": {
+              "state": {
+                "const": "active"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          }
+        },
+        "required": [
+          "certification"
+        ]
+      },
+      "else": {
+        "properties": {
+          "effective_ceiling": {
+            "const": "private-analytics"
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "binding_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "semantic_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "content_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "producer_kind": {
+      "enum": [
+        "otel",
+        "acp"
+      ]
+    },
+    "accounting_profile": {
+      "$ref": "#/$defs/digest_ref"
+    },
+    "arithmetic": {
+      "$ref": "#/$defs/digest_ref"
+    },
+    "certification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "tuple"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "uncertified",
+            "candidate",
+            "active",
+            "degraded",
+            "suspended",
+            "expired",
+            "revoked"
+          ]
+        },
+        "tuple": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_product_id",
+            "source_version_range",
+            "platform_profile_ids",
+            "mode",
+            "suite_version",
+            "bundle_sha256"
+          ],
+          "properties": {
+            "source_product_id": {
+              "$ref": "#/$defs/registered_id"
+            },
+            "source_version_range": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "platform_profile_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/registered_id"
+              }
+            },
+            "mode": {
+              "enum": [
+                "otel",
+                "acp",
+                "proxy",
+                "wrapper",
+                "native-event",
+                "extension-api",
+                "official-hook",
+                "live-log",
+                "local-runtime"
+              ]
+            },
+            "suite_version": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "bundle_sha256": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/sha256"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "capability_ceiling": {
+      "description": "The strongest public profile the mechanism could reach if it were certified. It is a property of the mechanism, never a claim about the current registry.",
+      "$ref": "#/$defs/ceiling"
+    },
+    "effective_ceiling": {
+      "description": "The strongest public profile the mechanism reaches today, given its certification state.",
+      "$ref": "#/$defs/ceiling"
+    },
+    "attestation": {
+      "description": "D-100: no provider offers a usage-attestation path for an individual account, so no producer binding may record anything else here.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class",
+        "basis"
+      ],
+      "properties": {
+        "class": {
+          "const": "none"
+        },
+        "basis": {
+          "const": "self-reported-at-source"
+        }
+      }
+    },
+    "attribute_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default",
+        "unknown_attribute_disposition",
+        "partial_clean_permitted",
+        "entries"
+      ],
+      "properties": {
+        "default": {
+          "const": "deny"
+        },
+        "unknown_attribute_disposition": {
+          "const": "drop-and-flag"
+        },
+        "partial_clean_permitted": {
+          "const": "no"
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "attribute",
+              "disposition"
+            ],
+            "properties": {
+              "attribute": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+                "maxLength": 128
+              },
+              "disposition": {
+                "enum": [
+                  "allow",
+                  "transform",
+                  "drop",
+                  "strip"
+                ]
+              },
+              "use": {
+                "type": "string",
+                "maxLength": 300
+              }
+            }
+          }
+        }
+      }
+    },
+    "otel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_url",
+        "semantic_conventions_version",
+        "instrumentation_scope",
+        "metrics",
+        "discarded_metrics"
+      ],
+      "properties": {
+        "schema_url": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 300
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "semantic_conventions_version": {
+          "oneOf": [
+            {
+              "type": "string",
+              "maxLength": 40
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "instrumentation_scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "version_range"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "version_range": {
+              "type": "string",
+              "maxLength": 120
+            }
+          }
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "instrument_kind",
+              "unit",
+              "temporality",
+              "monotonicity",
+              "reset_detection",
+              "category_attribute",
+              "category_map"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "instrument_kind": {
+                "enum": [
+                  "counter",
+                  "up-down-counter",
+                  "histogram",
+                  "gauge"
+                ]
+              },
+              "unit": {
+                "enum": [
+                  "tokens",
+                  "token-equivalents",
+                  "items"
+                ]
+              },
+              "temporality": {
+                "enum": [
+                  "cumulative",
+                  "delta"
+                ]
+              },
+              "monotonicity": {
+                "enum": [
+                  "monotonic",
+                  "non-monotonic"
+                ]
+              },
+              "reset_detection": {
+                "description": "How a cumulative series restart is recognised. A decrease or a changed datapoint start time is a reset, and a reset increments the runtime generation rather than emitting a negative delta.",
+                "enum": [
+                  "value-decrease-or-start-time-change",
+                  "start-time-change-only",
+                  "not-applicable"
+                ]
+              },
+              "category_attribute": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "category_map": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "attribute_value",
+                    "profile_source_field",
+                    "canonical_component"
+                  ],
+                  "properties": {
+                    "attribute_value": {
+                      "type": "string",
+                      "maxLength": 128
+                    },
+                    "profile_source_field": {
+                      "$ref": "#/$defs/registered_id"
+                    },
+                    "canonical_component": {
+                      "$ref": "#/$defs/canonical_component"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "discarded_metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "reason"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "reason": {
+                "enum": [
+                  "server-owned-pricing",
+                  "carries-no-token-fact",
+                  "carries-content",
+                  "unrecognised-schema"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "acp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version_range",
+        "transport",
+        "usage_message",
+        "usage_fields",
+        "session_identity"
+      ],
+      "properties": {
+        "protocol_version_range": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "transport": {
+          "enum": [
+            "stdio-jsonrpc",
+            "loopback-jsonrpc"
+          ]
+        },
+        "usage_message": {
+          "oneOf": [
+            {
+              "type": "string",
+              "maxLength": 200
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "usage_fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "field",
+              "profile_source_field",
+              "canonical_component"
+            ],
+            "properties": {
+              "field": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "profile_source_field": {
+                "$ref": "#/$defs/registered_id"
+              },
+              "canonical_component": {
+                "$ref": "#/$defs/canonical_component"
+              }
+            }
+          }
+        },
+        "session_identity": {
+          "enum": [
+            "keyed-commitment-over-session-id",
+            "absent"
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "digest_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "content_sha256"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "ceiling": {
+      "enum": [
+        "private-analytics",
+        "standard-competitive",
+        "hardened-source-bound"
+      ]
+    },
+    "canonical_component": {
+      "enum": [
+        "input_uncached",
+        "output_visible",
+        "cache_read",
+        "cache_write",
+        "reasoning",
+        "multimodal_input",
+        "multimodal_output"
+      ]
+    }
+  }
+}

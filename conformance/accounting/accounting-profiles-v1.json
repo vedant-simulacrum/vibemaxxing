@@ -7,7 +7,7 @@
       "schema_version": 1,
       "profile_id": "cloud-separate-cache-v1",
       "semantic_version": "1.0.0",
-      "content_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "content_sha256": "03657889358304190a9d89ba65936e45023799223592ece03908cbe5c7f7edb0",
       "provider_or_runtime_id": "registered-cloud-api",
       "api_mode": "messages",
       "source_version_range": ">=1 <2",
@@ -48,6 +48,24 @@
         }
       ],
       "containment_edges": [],
+      "component_map": [
+        {
+          "source_field": "input-tokens",
+          "canonical_component": "input_uncached"
+        },
+        {
+          "source_field": "output-tokens",
+          "canonical_component": "output_visible"
+        },
+        {
+          "source_field": "cache-read-tokens",
+          "canonical_component": "cache_read"
+        },
+        {
+          "source_field": "cache-write-tokens",
+          "canonical_component": "cache_write"
+        }
+      ],
       "canonical_outputs": [
         "input_uncached",
         "output_visible",
@@ -72,7 +90,7 @@
       "schema_version": 1,
       "profile_id": "cloud-inclusive-total-v1",
       "semantic_version": "1.0.0",
-      "content_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "content_sha256": "c5c33c7f476cbd66a1db5f83474dee17745a0d87ac3f147b2456bea6f235b79e",
       "provider_or_runtime_id": "registered-cloud-api",
       "api_mode": "responses",
       "source_version_range": ">=1 <2",
@@ -122,6 +140,24 @@
           "member": "reasoning-output"
         }
       ],
+      "component_map": [
+        {
+          "source_field": "input-total",
+          "canonical_component": "input_uncached"
+        },
+        {
+          "source_field": "cached-input",
+          "canonical_component": "cache_read"
+        },
+        {
+          "source_field": "output-total",
+          "canonical_component": "output_visible"
+        },
+        {
+          "source_field": "reasoning-output",
+          "canonical_component": "reasoning"
+        }
+      ],
       "canonical_outputs": [
         "input_uncached",
         "output_visible",
@@ -146,7 +182,7 @@
       "schema_version": 1,
       "profile_id": "local-exact-tokenizer-v1",
       "semantic_version": "1.0.0",
-      "content_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "content_sha256": "6ae493c9b2f421842037e9989a0693b7a307dd963d2d50c25f2cf1fa10711ea2",
       "provider_or_runtime_id": "registered-local-runtime",
       "api_mode": "token-id-stream",
       "source_version_range": ">=1 <2",
@@ -176,6 +212,16 @@
         }
       ],
       "containment_edges": [],
+      "component_map": [
+        {
+          "source_field": "prompt-token-ids",
+          "canonical_component": "input_uncached"
+        },
+        {
+          "source_field": "output-token-ids",
+          "canonical_component": "output_visible"
+        }
+      ],
       "canonical_outputs": [
         "input_uncached",
         "output_visible"

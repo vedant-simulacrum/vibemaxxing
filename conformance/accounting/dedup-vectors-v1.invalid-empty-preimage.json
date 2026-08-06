@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "vectors_id": "dedup-vectors-v1-invalid-empty-preimage",
+  "rule_id": "observer-equivalence-v1",
+  "vectors": [
+    {
+      "vector_id": "commitment-over-nothing",
+      "note": "An observation that declares no preimage input at all. Every observer would then produce the same constant commitment, which collapses every execution on the device into one duplicate group and silently discards real consumption. The schema requires at least one input so this cannot be expressed.",
+      "observations": [
+        {
+          "observation_id": "no-preimage",
+          "mode": "otel",
+          "equivalence_class": "source-cursor",
+          "collector_instance": "alpha",
+          "preimage_inputs": [],
+          "facts": {
+            "device_lineage_id": "lineage-eight"
+          },
+          "token_burn": "10"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "no-preimage": "counted"
+        },
+        "counted_token_burn": "10"
+      }
+    }
+  ]
+}

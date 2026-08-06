@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "policy_bundle_id": "appraisal-policy-v1",
+  "semantic_version": "1.0.0",
+  "content_sha256": "b900c3b148efc9b72b5cf8e165b711edae69734410e6a18f097be826b228e6a3",
+  "authority": "server-verifier",
+  "client_influence": "none",
+  "attestation": {
+    "class": "none",
+    "basis": "self-reported-at-source",
+    "assesses": "self-report-quality"
+  },
+  "dimension_source": {
+    "path": "packages/schemas/evidence-profile-policy-v1.json",
+    "content_sha256": "5ca8295d9a85420952a70b202324ad6cfd609d91cb8c4732b7102771b13bd78b"
+  },
+  "dimension_refinements": {
+    "source": [
+      {
+        "base_value": "E1",
+        "limbs": [
+          {
+            "limb": "E1-S",
+            "availability": "unavailable",
+            "binds_individual_claim": "no",
+            "alters_raw_score": "no",
+            "reaches_hardened": "no",
+            "note": "A provider-signed claim receipt binding model, usage, outcome, issuance time and an anti-replay identity. Reserved. No provider issues a qualifying artifact, so no appraisal has ever recorded this limb."
+          },
+          {
+            "limb": "E1-R",
+            "availability": "organization-scope-only",
+            "binds_individual_claim": "no",
+            "alters_raw_score": "no",
+            "reaches_hardened": "no",
+            "note": "An organization aggregate the server retrieves from a provider-operated administrative interface under a credential the enrolled organization's administrator supplied. It corroborates a board at a stated interval and never binds an individual claim."
+          }
+        ]
+      }
+    ]
+  },
+  "wire_ordinals": {
+    "acceptance_outcome": {
+      "accepted": 0,
+      "accepted-with-downgrade": 1,
+      "accepted-private-analytics": 2,
+      "idempotent-replay": 3,
+      "quarantined": 4,
+      "rejected": 5,
+      "superseded": 6,
+      "retracted": 7
+    },
+    "source_class": {
+      "E1-S": 0,
+      "E1-R": 1,
+      "E2": 2,
+      "E3": 3,
+      "E4": 4,
+      "E5": 5
+    },
+    "capture_class": {
+      "certified-structured": 0,
+      "certified-gateway": 1,
+      "certified-reconstruction": 2,
+      "uncertified": 3
+    },
+    "accounting_class": {
+      "authoritative-profile": 0,
+      "exact-reconstruction": 1,
+      "approximate": 2,
+      "contradictory": 3
+    },
+    "device_key_class": {
+      "K1": 0,
+      "K2": 1,
+      "K3": 2,
+      "K4": 3,
+      "K5": 4,
+      "KU": 5
+    },
+    "continuity_class": {
+      "C0": 0,
+      "C1": 1,
+      "C2": 2,
+      "C3": 3,
+      "C4": 4
+    },
+    "environment_class": {
+      "A0": 0,
+      "A1": 1,
+      "A2": 2,
+      "A3": 3,
+      "A4": 4
+    },
+    "freshness_class": {
+      "anchored": 0,
+      "bounded-delayed": 1,
+      "unbounded": 2,
+      "contradictory": 3
+    },
+    "ranking_eligibility": {
+      "competitive": 0,
+      "competitive-pending-finalization": 1,
+      "private-analytics": 2,
+      "quarantined": 3,
+      "excluded": 4,
+      "retracted": 5
+    },
+    "anomaly_disposition": {
+      "not-evaluated": 0,
+      "no-signal": 1,
+      "advisory-signal": 2,
+      "under-review": 3,
+      "shadow-only": 4
+    }
+  },
+  "verifier_implementation_sha256": null,
+  "effective_interval": {
+    "starts_at": "2026-08-06T00:00:00Z",
+    "ends_at": null
+  },
+  "supersedes": null,
+  "appraisal_record": {
+    "aggregate": "verifier-appraisal",
+    "mutability": "immutable-superseded",
+    "revision_model": "append-only-supersession-chain",
+    "sql_binding": {
+      "table": "verifier_appraisals",
+      "bound_columns": [
+        "appraisal_id",
+        "claim_id",
+        "created_at",
+        "evidence_profile_id",
+        "policy_digest",
+        "reason_codes"
+      ],
+      "unbound_fields": [
+        "acceptance_outcome",
+        "accounting_class",
+        "anomaly_disposition",
+        "canonical_claim_sha256",
+        "capture_class",
+        "certification_bundle_sha256",
+        "continuity_class",
+        "device_key_class",
+        "effective_from",
+        "effective_until",
+        "environment_class",
+        "evidence_bundle_sha256",
+        "freshness_class",
+        "ranking_eligibility",
+        "re_evaluation_trigger",
+        "source_class",
+        "source_limb",
+        "superseded_by_appraisal_id",
+        "supersedes_appraisal_id",
+        "verifier_implementation_sha256"
+      ],
+      "dropped_columns": [
+        "continuity_state",
+        "integrity_state",
+        "provenance_state"
+      ],
+      "defect_reference": "SR-017"
+    }
+  }
+}

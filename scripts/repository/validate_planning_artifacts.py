@@ -980,6 +980,26 @@ def validate_cddl_file() -> None:
                 f"VibeProof CDDL reintroduced forbidden client authority: {forbidden}"
             )
 
+    bundle = (SCHEMAS / "evidence-bundle-v1.cddl").read_text(encoding="utf-8")
+    parse_cddl(bundle)
+    for required_rule in (
+        "evidence-bundle-v1",
+        "provenance-record-v1",
+        "privacy-record-v1",
+        "equivalence-record-v1",
+        "observation-record-v1",
+    ):
+        if f"{required_rule} =" not in bundle:
+            raise ValidationFailure(
+                f"evidence bundle CDDL missing rule: {required_rule}"
+            )
+    for forbidden in ("cose-sign1", "verifier-api", "attestation-class = 1"):
+        if forbidden in bundle:
+            raise ValidationFailure(
+                "the evidence bundle is a device-local at-rest record and acquired a "
+                f"wire or attestation affordance: {forbidden}"
+            )
+
 
 def validate_vector_reproducibility() -> None:
     """The signed vectors must regenerate byte-identically from the recorded seed.
@@ -1202,6 +1222,878 @@ def validate_postgres_ddl(database_url: str) -> None:
         raise ValidationFailure(f"PostgreSQL DDL validation failed: {exc}") from exc
 
 
+# ---------------------------------------------------------------------------
+# Accounting arithmetic, producer bindings, observer equivalence, evidence chain
+# ---------------------------------------------------------------------------
+
+UINT64_MAX = 18446744073709551615
+
+CANONICAL_COMPONENTS = (
+    "input_uncached",
+    "output_visible",
+    "cache_read",
+    "cache_write",
+    "reasoning",
+    "multimodal_input",
+    "multimodal_output",
+)
+
+
+def canonical_cbor(value: Any) -> bytes:
+    """Encode a planning record under the digest profile the arithmetic record states.
+
+    RFC 8949 core deterministic encoding, restricted to what a signed planning record
+    may contain: unsigned and negative integers, text strings, arrays, maps and the
+    simple value `null`. Floats are refused because RFC 8949 Section 4.2.2 leaves their
+    determinism to the protocol and D-193 declines to define one. Booleans are refused
+    because a two-valued field written as a named enum stays legible inside the digest
+    preimage, and refusing them keeps this encoder and the claim encoder agreeing on
+    what a record may hold.
+    """
+    if isinstance(value, bool):  # before int; bool is an int subclass
+        raise ValidationFailure(
+            "digested planning records encode no boolean; use a named enum"
+        )
+    if value is None:
+        return b"\xf6"
+    if isinstance(value, int):
+        if value >= 0:
+            return vibeproof_vectors.encode_head(0, value)
+        return vibeproof_vectors.encode_head(1, -value - 1)
+    if isinstance(value, float):
+        raise ValidationFailure("digested planning records encode no float (D-193)")
+    if isinstance(value, str):
+        encoded = value.encode("utf-8")
+        return vibeproof_vectors.encode_head(3, len(encoded)) + encoded
+    if isinstance(value, list):
+        return vibeproof_vectors.encode_head(4, len(value)) + b"".join(
+            canonical_cbor(item) for item in value
+        )
+    if isinstance(value, dict):
+        items = sorted(
+            (
+                (canonical_cbor(key), canonical_cbor(item))
+                for key, item in value.items()
+            ),
+            key=lambda pair: pair[0],
+        )
+        return vibeproof_vectors.encode_head(5, len(items)) + b"".join(
+            key + item for key, item in items
+        )
+    raise ValidationFailure(f"unencodable planning type: {type(value).__name__}")
+
+
+def record_digest(record: dict[str, Any]) -> str:
+    body = {key: item for key, item in record.items() if key != "content_sha256"}
+    return hashlib.sha256(canonical_cbor(body)).hexdigest()
+
+
+def assert_record_digest(record: dict[str, Any], label: str) -> None:
+    expected = record_digest(record)
+    if record["content_sha256"] != expected:
+        raise ValidationFailure(
+            f"{label} content_sha256 does not match its canonical encoding: "
+            f"recorded {record['content_sha256']}, computed {expected}"
+        )
+
+
+def evaluate_token_burn(
+    profile: dict[str, Any], source_fields: dict[str, str]
+) -> tuple[str, Any]:
+    """Reproduce Token Burn from a profile and a source reading.
+
+    This is a second implementation of the arithmetic, independent of the fixture that
+    records the answer. A vector whose recorded expectation disagrees with this fails.
+    """
+    declared = {field["field_id"] for field in profile["source_fields"]}
+    component_of = {
+        entry["source_field"]: entry["canonical_component"]
+        for entry in profile["component_map"]
+    }
+
+    values: dict[str, int] = {}
+    for field_id, raw in source_fields.items():
+        if field_id not in declared:
+            return ("reject", "unmapped-source-field")
+        values[field_id] = int(raw)
+
+    containers: dict[str, list[str]] = {}
+    for edge in profile["containment_edges"]:
+        if edge["container"] not in declared or edge["member"] not in declared:
+            return ("reject", "unmapped-source-field")
+        containers.setdefault(edge["member"], []).append(edge["container"])
+    for members in containers.values():
+        if len(members) > 1:
+            return ("reject", "multiple-containers")
+    for member in containers:
+        seen = {member}
+        cursor = member
+        while cursor in containers:
+            cursor = containers[cursor][0]
+            if cursor in seen:
+                return ("reject", "containment-cycle")
+            seen.add(cursor)
+
+    for member, parents in containers.items():
+        container = parents[0]
+        if member in values and container in values:
+            if values[container] < values[member]:
+                return ("reject", "containment-underflow")
+            values[container] -= values[member]
+
+    components = {name: 0 for name in CANONICAL_COMPONENTS}
+    for field_id, value in values.items():
+        components[component_of[field_id]] += value
+        if components[component_of[field_id]] > UINT64_MAX:
+            return ("reject", "sum-overflow")
+
+    total = 0
+    for name in CANONICAL_COMPONENTS:
+        total += components[name]
+        if total > UINT64_MAX:
+            return ("reject", "sum-overflow")
+    return ("ok", (components, total))
+
+
+def evaluate_cash_burn(priced: list[dict[str, str]]) -> int:
+    """Exact integer products, one summation, one round-half-even division."""
+    nano = 0
+    for entry in priced:
+        nano += int(entry["units"]) * int(entry["unit_price_nano"])
+    quotient, remainder = divmod(nano, 1000)
+    if remainder * 2 > 1000:
+        quotient += 1
+    elif remainder * 2 == 1000:
+        quotient += quotient % 2
+    return quotient
+
+
+def evaluate_correction(contributions: list[dict[str, str]]) -> tuple[str, int]:
+    total = 0
+    for contribution in contributions:
+        magnitude = int(contribution["magnitude"])
+        if contribution["direction"] == "add":
+            total += magnitude
+            if total > UINT64_MAX:
+                return ("reject", 0)
+        else:
+            if magnitude > total:
+                return ("reject", 0)
+            total -= magnitude
+    return ("composed", total)
+
+
+def validate_accounting_arithmetic() -> None:
+    arithmetic_schema = validate_schema_file(
+        SCHEMAS / "accounting-arithmetic-v1.schema.json"
+    )
+    vectors_schema = validate_schema_file(
+        SCHEMAS / "accounting-arithmetic-vectors-v1.schema.json"
+    )
+    profile_schema = validate_schema_file(SCHEMAS / "accounting-profile.schema.json")
+
+    arithmetic = load_json(SCHEMAS / "accounting-arithmetic-v1.json")
+    validate_instance(arithmetic_schema, arithmetic, "accounting arithmetic record")
+    assert_record_digest(arithmetic, "accounting-arithmetic-v1")
+    if tuple(arithmetic["canonical_component_order"]) != CANONICAL_COMPONENTS:
+        raise ValidationFailure(
+            "the arithmetic record's component order no longer matches the canonical "
+            "component set the claim encodes"
+        )
+
+    registry = load_json(CONFORMANCE / "accounting" / "accounting-profiles-v1.json")
+    profiles = {profile["profile_id"]: profile for profile in registry["profiles"]}
+    for profile_id, profile in profiles.items():
+        validate_instance(profile_schema, profile, f"accounting profile {profile_id}")
+        assert_record_digest(profile, f"accounting profile {profile_id}")
+        declared = [field["field_id"] for field in profile["source_fields"]]
+        mapped = [entry["source_field"] for entry in profile["component_map"]]
+        if sorted(declared) != sorted(mapped):
+            raise ValidationFailure(
+                f"accounting profile {profile_id} maps {sorted(mapped)} but declares "
+                f"{sorted(declared)}; every source field resolves to exactly one component"
+            )
+        outputs = set(profile["canonical_outputs"])
+        for entry in profile["component_map"]:
+            if entry["canonical_component"] not in outputs:
+                raise ValidationFailure(
+                    f"accounting profile {profile_id} maps a source field to "
+                    f"{entry['canonical_component']}, which it does not enable"
+                )
+
+    vectors = load_json(CONFORMANCE / "accounting" / "arithmetic-vectors-v1.json")
+    validate_instance(vectors_schema, vectors, "accounting arithmetic vectors")
+    assert_unique(
+        [vector["vector_id"] for vector in vectors["vectors"]], "arithmetic vector IDs"
+    )
+    expect_invalid(
+        vectors_schema,
+        load_json(
+            CONFORMANCE
+            / "accounting"
+            / "arithmetic-vectors-v1.invalid-float-quantity.json"
+        ),
+        "arithmetic vectors carrying a fractional quantity",
+    )
+
+    kinds: set[str] = set()
+    for vector in vectors["vectors"]:
+        vector_id = vector["vector_id"]
+        kinds.add(vector["kind"])
+        if vector["kind"] in {"token-burn", "arithmetic-failure"}:
+            profile = profiles.get(vector["profile_id"])
+            if profile is None:
+                raise ValidationFailure(
+                    f"arithmetic vector {vector_id} names an unregistered profile"
+                )
+            outcome, detail = evaluate_token_burn(profile, vector["source_fields"])
+            if vector["kind"] == "arithmetic-failure":
+                if outcome != "reject":
+                    raise ValidationFailure(
+                        f"arithmetic vector {vector_id} was expected to reject and did not"
+                    )
+                if detail != vector["expected_failure"]["condition"]:
+                    raise ValidationFailure(
+                        f"arithmetic vector {vector_id} rejected for {detail}, "
+                        f"not {vector['expected_failure']['condition']}"
+                    )
+                continue
+            if outcome != "ok":
+                raise ValidationFailure(
+                    f"arithmetic vector {vector_id} rejected unexpectedly: {detail}"
+                )
+            components, total = detail
+            recorded = {
+                name: int(vector["expected_components"][name])
+                for name in CANONICAL_COMPONENTS
+            }
+            if components != recorded:
+                raise ValidationFailure(
+                    f"arithmetic vector {vector_id} components disagree: "
+                    f"computed {components}, recorded {recorded}"
+                )
+            if total != int(vector["expected_token_burn"]):
+                raise ValidationFailure(
+                    f"arithmetic vector {vector_id} total disagrees: computed {total}, "
+                    f"recorded {vector['expected_token_burn']}"
+                )
+        elif vector["kind"] == "estimated-cash-burn":
+            computed = evaluate_cash_burn(vector["priced_components"])
+            if computed != int(vector["expected_estimated_cash_burn_micros"]):
+                raise ValidationFailure(
+                    f"cash-burn vector {vector_id} disagrees: computed {computed}, "
+                    f"recorded {vector['expected_estimated_cash_burn_micros']}"
+                )
+        else:
+            disposition, total = evaluate_correction(vector["contributions"])
+            expected = vector["expected_result"]
+            if disposition != expected["disposition"]:
+                raise ValidationFailure(
+                    f"correction vector {vector_id} reached {disposition}, "
+                    f"not {expected['disposition']}"
+                )
+            if disposition == "composed" and total != int(expected["composed_total"]):
+                raise ValidationFailure(
+                    f"correction vector {vector_id} composed {total}, "
+                    f"not {expected['composed_total']}"
+                )
+
+    required_kinds = {
+        "token-burn",
+        "arithmetic-failure",
+        "estimated-cash-burn",
+        "correction",
+    }
+    if kinds != required_kinds:
+        raise ValidationFailure(
+            f"arithmetic vector coverage mismatch: missing {sorted(required_kinds - kinds)}"
+        )
+
+
+def evaluate_otel_series(
+    binding: dict[str, Any], series: list[dict[str, Any]]
+) -> tuple[str, Any]:
+    policy = binding["attribute_policy"]
+    allowed = {
+        entry["attribute"]
+        for entry in policy["entries"]
+        if entry["disposition"] in {"allow", "transform"}
+    }
+    stripped = {
+        entry["attribute"]
+        for entry in policy["entries"]
+        if entry["disposition"] == "strip"
+    }
+    dropped = {
+        entry["attribute"]
+        for entry in policy["entries"]
+        if entry["disposition"] == "drop"
+    }
+    metric = binding["otel"]["metrics"][0]
+    category_attribute = metric["category_attribute"]
+    category_map = {
+        entry["attribute_value"]: entry["canonical_component"]
+        for entry in metric["category_map"]
+    }
+
+    state: dict[tuple, tuple[str, int]] = {}
+    generation = 0
+    components = {name: 0 for name in CANONICAL_COMPONENTS}
+    for datapoint in series:
+        attributes = datapoint["attributes"]
+        if any(name in stripped for name in attributes):
+            return ("rejected", ("identity-attribute-present", "reject-whole"))
+        unknown = [
+            name
+            for name in attributes
+            if name not in allowed and name not in stripped and name not in dropped
+        ]
+        if unknown:
+            return ("rejected", ("unknown-attribute", "drop-and-flag"))
+        category = attributes.get(category_attribute)
+        if category not in category_map:
+            return ("rejected", ("unmapped-category-value", "reject-whole"))
+
+        key = tuple(sorted(item for item in attributes.items() if item[0] in allowed))
+        value = int(datapoint["cumulative_value"])
+        start = datapoint["start_time_unix_nano"]
+        previous = state.get(key)
+        if previous is None:
+            delta = value
+        elif previous[0] != start or value < previous[1]:
+            generation += 1
+            delta = value
+        else:
+            delta = value - previous[1]
+        state[key] = (start, value)
+        components[category_map[category]] += delta
+
+    total = 0
+    for name in CANONICAL_COMPONENTS:
+        total += components[name]
+    return ("ok", (components, total, generation))
+
+
+def validate_producer_bindings() -> None:
+    binding_schema = validate_schema_file(
+        SCHEMAS / "producer-accounting-binding-v1.schema.json"
+    )
+    capture_schema = validate_schema_file(
+        SCHEMAS / "otel-capture-vectors-v1.schema.json"
+    )
+
+    registry = load_json(CONFORMANCE / "accounting" / "producer-bindings-v1.json")
+    bindings = {entry["binding_id"]: entry for entry in registry["bindings"]}
+    assert_unique(list(bindings), "producer binding IDs")
+
+    arithmetic = load_json(SCHEMAS / "accounting-arithmetic-v1.json")
+    profiles = {
+        profile["profile_id"]: profile
+        for profile in load_json(
+            CONFORMANCE / "accounting" / "accounting-profiles-v1.json"
+        )["profiles"]
+    }
+
+    for binding_id, binding in bindings.items():
+        validate_instance(binding_schema, binding, f"producer binding {binding_id}")
+        assert_record_digest(binding, f"producer binding {binding_id}")
+        if binding["arithmetic"]["content_sha256"] != arithmetic["content_sha256"]:
+            raise ValidationFailure(
+                f"producer binding {binding_id} pins a stale arithmetic digest"
+            )
+        profile = profiles.get(binding["accounting_profile"]["id"])
+        if profile is None:
+            raise ValidationFailure(
+                f"producer binding {binding_id} names an unregistered accounting profile"
+            )
+        if binding["accounting_profile"]["content_sha256"] != profile["content_sha256"]:
+            raise ValidationFailure(
+                f"producer binding {binding_id} pins a stale accounting profile digest"
+            )
+        if binding["certification"]["state"] == "active":
+            raise ValidationFailure(
+                f"producer binding {binding_id} advertises an active certification; "
+                "no exercised certification result exists in this repository"
+            )
+        if binding["effective_ceiling"] != "private-analytics":
+            raise ValidationFailure(
+                f"producer binding {binding_id} claims a competitive ceiling without an "
+                "active certification"
+            )
+        component_of = {
+            entry["source_field"]: entry["canonical_component"]
+            for entry in profile["component_map"]
+        }
+        mapped_entries = []
+        if binding["producer_kind"] == "otel":
+            for metric in binding["otel"]["metrics"]:
+                mapped_entries.extend(metric["category_map"])
+        else:
+            mapped_entries.extend(binding["acp"]["usage_fields"])
+        for entry in mapped_entries:
+            field = entry["profile_source_field"]
+            if field not in component_of:
+                raise ValidationFailure(
+                    f"producer binding {binding_id} maps to source field {field}, "
+                    "which its accounting profile does not declare"
+                )
+            if component_of[field] != entry["canonical_component"]:
+                raise ValidationFailure(
+                    f"producer binding {binding_id} places {field} in "
+                    f"{entry['canonical_component']} while its profile places it in "
+                    f"{component_of[field]}"
+                )
+
+    adapter_one = bindings["claude-code-otel-v1"]
+    stripped = tuple(
+        sorted(
+            entry["attribute"]
+            for entry in adapter_one["attribute_policy"]["entries"]
+            if entry["disposition"] == "strip"
+        )
+    )
+    if stripped != ADAPTER_ONE_STRIP_LIST:
+        raise ValidationFailure(
+            f"the OTel producer binding's strip list drifted from D-099: {list(stripped)}"
+        )
+
+    expect_invalid(
+        binding_schema,
+        load_json(
+            CONFORMANCE
+            / "accounting"
+            / "producer-bindings-v1.invalid-uncertified-competitive.json"
+        ),
+        "uncertified producer binding claiming a competitive ceiling",
+    )
+
+    capture = load_json(CONFORMANCE / "accounting" / "otel-capture-vectors-v1.json")
+    validate_instance(capture_schema, capture, "OTel capture vectors")
+    assert_unique(
+        [vector["vector_id"] for vector in capture["vectors"]],
+        "OTel capture vector IDs",
+    )
+    binding = bindings[capture["binding_id"]]
+    if capture["metric"] != binding["otel"]["metrics"][0]["name"]:
+        raise ValidationFailure("OTel capture vectors name a metric the binding omits")
+
+    conditions: set[str] = set()
+    for vector in capture["vectors"]:
+        outcome, detail = evaluate_otel_series(binding, vector["series"])
+        vector_id = vector["vector_id"]
+        if vector["kind"] == "rejection":
+            if outcome != "rejected":
+                raise ValidationFailure(
+                    f"OTel capture vector {vector_id} was expected to be refused and was not"
+                )
+            expected = (
+                vector["expected_rejection"]["condition"],
+                vector["expected_rejection"]["disposition"],
+            )
+            if detail != expected:
+                raise ValidationFailure(
+                    f"OTel capture vector {vector_id} produced {detail}, not {expected}"
+                )
+            conditions.add(expected[0])
+            continue
+        if outcome != "rejected":
+            components, total, generation = detail
+        else:
+            raise ValidationFailure(
+                f"OTel capture vector {vector_id} was refused for {detail}"
+            )
+        recorded = {
+            name: int(vector["expected_components"][name])
+            for name in CANONICAL_COMPONENTS
+        }
+        if components != recorded:
+            raise ValidationFailure(
+                f"OTel capture vector {vector_id} components disagree: "
+                f"computed {components}, recorded {recorded}"
+            )
+        if total != int(vector["expected_token_burn"]):
+            raise ValidationFailure(
+                f"OTel capture vector {vector_id} total disagrees: computed {total}"
+            )
+        if generation != int(vector["expected_final_runtime_generation"]):
+            raise ValidationFailure(
+                f"OTel capture vector {vector_id} runtime generation disagrees: "
+                f"computed {generation}"
+            )
+
+    required_conditions = {
+        "identity-attribute-present",
+        "unknown-attribute",
+        "unmapped-category-value",
+    }
+    if conditions != required_conditions:
+        raise ValidationFailure(
+            "OTel capture vectors do not cover every refusal condition: "
+            f"missing {sorted(required_conditions - conditions)}"
+        )
+
+
+def resolve_observations(
+    rule: dict[str, Any], observations: list[dict[str, Any]]
+) -> dict[str, str]:
+    """Apply the observer-equivalence rule and return one disposition per observation."""
+    rank = {mode["mode"]: mode["precedence_rank"] for mode in rule["observation_modes"]}
+    forbidden = set(rule["forbidden"]["preimage_inputs"])
+    class_inputs = {
+        item["class"]: set(item["preimage_inputs"])
+        for item in rule["equivalence_classes"]
+    }
+
+    result: dict[str, str] = {}
+    active: list[dict[str, Any]] = []
+    for observation in observations:
+        identifier = observation["observation_id"]
+        inputs = set(observation["preimage_inputs"])
+        if inputs & forbidden:
+            result[identifier] = "rejected"
+            continue
+        if inputs != class_inputs[observation["equivalence_class"]]:
+            result[identifier] = "rejected"
+            continue
+        missing = inputs - set(observation["facts"])
+        if missing:
+            result[identifier] = "rejected"
+            continue
+        if observation["equivalence_class"] == "weak":
+            result[identifier] = "private-analytics"
+            continue
+        active.append(observation)
+
+    def commitment(observation: dict[str, Any]) -> tuple:
+        return tuple(
+            observation["facts"][name]
+            for name in sorted(observation["preimage_inputs"])
+        )
+
+    def unit_of(observation: dict[str, Any]) -> tuple:
+        facts = observation["facts"]
+        return tuple(facts[name] for name in rule["exclusivity"]["unit"])
+
+    units: dict[tuple, list[dict[str, Any]]] = {}
+    for observation in active:
+        units.setdefault(unit_of(observation), []).append(observation)
+
+    for members in units.values():
+        if all(item["equivalence_class"] == "strong" for item in members):
+            survivors = members
+        else:
+            channels: dict[tuple, list[dict[str, Any]]] = {}
+            for item in members:
+                channels.setdefault(
+                    (item["mode"], item["collector_instance"]), []
+                ).append(item)
+            if len(channels) == 1:
+                survivors = members
+            else:
+                best = min(rank[mode] for mode, _ in channels)
+                tied = [channel for channel in channels if rank[channel[0]] == best]
+                if len(tied) == 1:
+                    survivors = channels[tied[0]]
+                else:
+                    sets = [
+                        sorted(commitment(item) for item in channels[channel])
+                        for channel in tied
+                    ]
+                    if any(entry != sets[0] for entry in sets[1:]):
+                        for item in members:
+                            result[item["observation_id"]] = "quarantined"
+                        continue
+                    survivors = [item for channel in tied for item in channels[channel]]
+                for item in members:
+                    if item not in survivors:
+                        result[item["observation_id"]] = "superseded"
+
+        groups: dict[tuple, list[dict[str, Any]]] = {}
+        for item in survivors:
+            groups.setdefault(commitment(item), []).append(item)
+        for group in groups.values():
+            group.sort(
+                key=lambda item: (
+                    rank[item["mode"]],
+                    item["collector_instance"],
+                    item["observation_id"],
+                )
+            )
+            result[group[0]["observation_id"]] = "counted"
+            for item in group[1:]:
+                result[item["observation_id"]] = "superseded"
+    return result
+
+
+def validate_observer_equivalence() -> None:
+    rule_schema = validate_schema_file(SCHEMAS / "observer-equivalence-v1.schema.json")
+    vectors_schema = validate_schema_file(SCHEMAS / "dedup-vectors-v1.schema.json")
+
+    rule = load_json(SCHEMAS / "observer-equivalence-v1.json")
+    validate_instance(rule_schema, rule, "observer equivalence rule")
+    assert_record_digest(rule, "observer-equivalence-v1")
+
+    ranks = [mode["precedence_rank"] for mode in rule["observation_modes"]]
+    assert_unique([str(value) for value in ranks], "observation mode precedence ranks")
+
+    overlap = set(rule["forbidden"]["preimage_inputs"]) & {
+        name for item in rule["equivalence_classes"] for name in item["preimage_inputs"]
+    }
+    if overlap:
+        raise ValidationFailure(
+            f"observer-derived inputs appear in an equivalence preimage: {sorted(overlap)}"
+        )
+    if rule["wire_binding"]["new_egress_fields"]:
+        raise ValidationFailure(
+            "the observer-equivalence rule proposes a new egress field; the preimage is "
+            "constrained, the wire is not extended"
+        )
+    egress_fields = {
+        field["field_id"]
+        for field in load_json(SCHEMAS / "egress-allowlist-v1.json")["fields"]
+    }
+    if rule["wire_binding"]["egress_field_id"] not in egress_fields:
+        raise ValidationFailure(
+            "the observer-equivalence commitment is not admissible in the egress allowlist"
+        )
+
+    vectors = load_json(CONFORMANCE / "accounting" / "dedup-vectors-v1.json")
+    validate_instance(vectors_schema, vectors, "deduplication vectors")
+    assert_unique(
+        [vector["vector_id"] for vector in vectors["vectors"]],
+        "deduplication vector IDs",
+    )
+    expect_invalid(
+        vectors_schema,
+        load_json(
+            CONFORMANCE / "accounting" / "dedup-vectors-v1.invalid-empty-preimage.json"
+        ),
+        "deduplication vector with an empty commitment preimage",
+    )
+
+    dispositions: set[str] = set()
+    for vector in vectors["vectors"]:
+        computed = resolve_observations(rule, vector["observations"])
+        recorded = vector["expected"]["dispositions"]
+        if computed != recorded:
+            raise ValidationFailure(
+                f"deduplication vector {vector['vector_id']} disagrees: "
+                f"computed {computed}, recorded {recorded}"
+            )
+        dispositions |= set(recorded.values())
+        counted = sum(
+            int(observation["token_burn"])
+            for observation in vector["observations"]
+            if computed[observation["observation_id"]] == "counted"
+        )
+        if counted != int(vector["expected"]["counted_token_burn"]):
+            raise ValidationFailure(
+                f"deduplication vector {vector['vector_id']} counted {counted} tokens, "
+                f"not {vector['expected']['counted_token_burn']}"
+            )
+
+    required_dispositions = {
+        "counted",
+        "superseded",
+        "quarantined",
+        "private-analytics",
+        "rejected",
+    }
+    if dispositions != required_dispositions:
+        raise ValidationFailure(
+            "deduplication vectors do not exercise every disposition: "
+            f"missing {sorted(required_dispositions - dispositions)}"
+        )
+
+
+APPRAISAL_RANGE_RE = re.compile(r"^\s*\d+:\s*0\.\.(\d+),?\s*;\s*([a-z_ ]+?)\s*$")
+
+
+def appraisal_wire_ranges() -> dict[str, int]:
+    """Read the integer ceiling the CDDL declares for each appraisal dimension."""
+    text = (SCHEMAS / "vibeproof-claim-v1.cddl").read_text(encoding="utf-8")
+    start = text.index("verifier-appraisal-v1 = {")
+    body = text[start : text.index("\n}", start)]
+    ranges: dict[str, int] = {}
+    for line in body.splitlines():
+        match = APPRAISAL_RANGE_RE.match(line)
+        if match:
+            ranges[match.group(2).replace(" ", "_")] = int(match.group(1))
+    return ranges
+
+
+def validate_evidence_chain() -> None:
+    receipt_schema = validate_schema_file(SCHEMAS / "source-receipt-v1.schema.json")
+    result_schema = validate_schema_file(SCHEMAS / "appraisal-result-v1.schema.json")
+    policy_schema = validate_schema_file(SCHEMAS / "appraisal-policy-v1.schema.json")
+
+    evidence_policy = load_json(SCHEMAS / "evidence-profile-policy-v1.json")
+    bundle = load_json(SCHEMAS / "appraisal-policy-v1.json")
+    validate_instance(policy_schema, bundle, "appraisal policy bundle")
+    assert_record_digest(bundle, "appraisal-policy-v1")
+
+    source_digest = hashlib.sha256(canonical_cbor(evidence_policy)).hexdigest()
+    if bundle["dimension_source"]["content_sha256"] != source_digest:
+        raise ValidationFailure(
+            "the appraisal policy bundle pins a stale digest of "
+            "packages/schemas/evidence-profile-policy-v1.json; the dimension enums it "
+            "binds are not the ones that file now carries"
+        )
+
+    # The refined source vocabulary: the owning file's enum with E1 replaced by its limbs.
+    refinements = {
+        entry["base_value"]: [limb["limb"] for limb in entry["limbs"]]
+        for entry in bundle["dimension_refinements"]["source"]
+    }
+    refined_source: list[str] = []
+    for value in evidence_policy["dimensions"]["source"]:
+        refined_source.extend(refinements.get(value, [value]))
+
+    expected_vocabularies = {
+        "source_class": refined_source,
+        "capture_class": evidence_policy["dimensions"]["capture"],
+        "accounting_class": evidence_policy["dimensions"]["accounting"],
+        "device_key_class": evidence_policy["dimensions"]["device_key"],
+        "continuity_class": evidence_policy["dimensions"]["continuity"],
+        "environment_class": evidence_policy["dimensions"]["environment"],
+        "freshness_class": evidence_policy["dimensions"]["freshness"],
+    }
+
+    ordinals = bundle["wire_ordinals"]
+    ranges = appraisal_wire_ranges()
+    missing_ranges = set(ordinals) - set(ranges)
+    if missing_ranges:
+        raise ValidationFailure(
+            f"the appraisal CDDL declares no range for: {sorted(missing_ranges)}"
+        )
+    for name, table in ordinals.items():
+        values = sorted(table.values())
+        if values != list(range(len(values))):
+            raise ValidationFailure(
+                f"appraisal wire ordinals for {name} are not dense from zero: {values}"
+            )
+        if values[-1] > ranges[name]:
+            raise ValidationFailure(
+                f"appraisal wire ordinal for {name} reaches {values[-1]}, outside the "
+                f"CDDL range 0..{ranges[name]}"
+            )
+    for name, vocabulary in expected_vocabularies.items():
+        if sorted(ordinals[name]) != sorted(vocabulary):
+            raise ValidationFailure(
+                f"the appraisal {name} vocabulary disagrees with "
+                "packages/schemas/evidence-profile-policy-v1.json: "
+                f"bundle {sorted(ordinals[name])}, policy {sorted(vocabulary)}"
+            )
+        schema_enum = result_schema["properties"]["dimensions"]["properties"][name][
+            "enum"
+        ]
+        if sorted(schema_enum) != sorted(vocabulary):
+            raise ValidationFailure(
+                f"packages/schemas/appraisal-result-v1.schema.json enumerates {name} as "
+                f"{sorted(schema_enum)}, which is not the policy vocabulary"
+            )
+    for name in ("acceptance_outcome", "ranking_eligibility"):
+        schema_enum = result_schema["properties"][name]["enum"]
+        if sorted(schema_enum) != sorted(ordinals[name]):
+            raise ValidationFailure(
+                f"the appraisal result and the policy bundle disagree on {name}"
+            )
+    anomaly_enum = result_schema["properties"]["evaluated"]["properties"][
+        "anomaly_disposition"
+    ]["enum"]
+    if sorted(anomaly_enum) != sorted(ordinals["anomaly_disposition"]):
+        raise ValidationFailure(
+            "the appraisal result and the policy bundle disagree on anomaly_disposition"
+        )
+
+    awarded = result_schema["properties"]["awarded_profile_id"]["oneOf"][0]["enum"]
+    registered_profiles = [
+        profile["profile_id"] for profile in evidence_policy["profiles"]
+    ]
+    if sorted(awarded) != sorted(registered_profiles):
+        raise ValidationFailure(
+            "the appraisal result awards profiles the evidence policy does not define"
+        )
+
+    binding = bundle["appraisal_record"]["sql_binding"]
+    ddl = (SCHEMAS / "planning-schema.sql").read_text(encoding="utf-8")
+    marker = f"create table {binding['table']} ("
+    if marker not in ddl:
+        raise ValidationFailure(
+            f"the appraisal persistence owner {binding['table']} is not defined in the DDL"
+        )
+    block_start = ddl.index(marker)
+    block = ddl[block_start : ddl.index("\n);", block_start)]
+    columns = set(re.findall(r"^\s{2}([a-z0-9_]+)\s", block, flags=re.MULTILINE))
+    for column in binding["bound_columns"] + binding["dropped_columns"]:
+        if column not in columns:
+            raise ValidationFailure(
+                f"the appraisal SQL binding names column {column}, which "
+                f"{binding['table']} does not define"
+            )
+    landed = [field for field in binding["unbound_fields"] if field in columns]
+    if landed:
+        raise ValidationFailure(
+            f"{sorted(landed)} now exist as columns on {binding['table']}. The SQL half "
+            f"of {binding['defect_reference']} has moved; move these entries from "
+            "unbound_fields to bound_columns in packages/schemas/appraisal-policy-v1.json"
+        )
+
+    validate_instance(
+        receipt_schema,
+        load_json(CONFORMANCE / "evidence" / "source-receipt.valid.json"),
+        "source receipt",
+    )
+    for name, label in (
+        (
+            "source-receipt.invalid-two-counted-observations.json",
+            "two counted observations",
+        ),
+        ("source-receipt.invalid-provider-attested.json", "a provider-attested figure"),
+        ("source-receipt.invalid-network-eligible.json", "a network-eligible receipt"),
+        ("source-receipt.invalid-content-field.json", "a content field"),
+    ):
+        expect_invalid(
+            receipt_schema,
+            load_json(CONFORMANCE / "evidence" / name),
+            f"source receipt carrying {label}",
+        )
+
+    for name in (
+        "appraisal-result.valid-standard.json",
+        "appraisal-result.valid-superseded.json",
+    ):
+        instance = load_json(CONFORMANCE / "evidence" / name)
+        validate_instance(result_schema, instance, name)
+        if instance["policy"]["content_sha256"] != bundle["content_sha256"]:
+            raise ValidationFailure(f"{name} pins a stale appraisal policy digest")
+    for name, label in (
+        ("appraisal-result.invalid-e1r-hardened.json", "E1-R reaching Hardened"),
+        (
+            "appraisal-result.invalid-imported-competitive.json",
+            "an imported source ranked competitively",
+        ),
+        (
+            "appraisal-result.invalid-client-selected-state.json",
+            "a client-selected public state",
+        ),
+    ):
+        expect_invalid(
+            result_schema,
+            load_json(CONFORMANCE / "evidence" / name),
+            f"appraisal result with {label}",
+        )
+    expect_invalid(
+        policy_schema,
+        load_json(
+            CONFORMANCE
+            / "evidence"
+            / "appraisal-policy.invalid-second-dimension-authority.json"
+        ),
+        "appraisal policy bundle with a second dimension authority",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -1217,6 +2109,16 @@ def main() -> int:
         ("OpenAPI", validate_openapi_file),
         ("API error matrix and operation classes", validate_api_error_matrix),
         ("P-1140D state and platform contracts", validate_p1140d_contracts),
+        ("accounting arithmetic vectors", validate_accounting_arithmetic),
+        ("producer bindings and OTel capture vectors", validate_producer_bindings),
+        (
+            "observer equivalence and deduplication vectors",
+            validate_observer_equivalence,
+        ),
+        (
+            "source receipt, appraisal policy and appraisal result",
+            validate_evidence_chain,
+        ),
         ("CDDL grammar parse and required rules", validate_cddl_file),
         ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),
         ("VibeProof vector reproducibility", validate_vector_reproducibility),

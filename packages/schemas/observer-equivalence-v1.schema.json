@@ -1,0 +1,367 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/observer-equivalence-v1.json",
+  "title": "ObserverEquivalenceRule v1",
+  "description": "When two observations are observations of one model execution. The wire field that carries the answer, `duplicate_domain_commitment`, is a digest the collector computes, and until this rule existed the collector also chose what went into it — which let a client decide what counted as a duplicate by choosing a preimage that would not collide. This rule fixes the preimage to source-derived facts, forbids every observer-derived input, and gives the server the scope, the survivor order and the disposition. The client contributes facts and no verdict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "rule_id",
+    "semantic_version",
+    "content_sha256",
+    "authority",
+    "client_authority",
+    "server_decides",
+    "wire_binding",
+    "key_derivation",
+    "equivalence_classes",
+    "observation_modes",
+    "exclusivity",
+    "survivor_selection",
+    "forbidden"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "rule_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "semantic_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "content_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "authority": {
+      "const": "server-verifier"
+    },
+    "client_authority": {
+      "const": "facts-only"
+    },
+    "server_decides": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "commitment-preimage",
+          "equivalence-scope",
+          "equivalence-class",
+          "survivor-selection",
+          "overlap-disposition"
+        ]
+      }
+    },
+    "wire_binding": {
+      "description": "This rule adds no field to the device boundary. It constrains the preimage of a field that already crosses it and is already admissible in packages/schemas/egress-allowlist-v1.json.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim_field",
+        "egress_field_id",
+        "new_egress_fields"
+      ],
+      "properties": {
+        "claim_field": {
+          "const": "duplicate_domain_commitment"
+        },
+        "egress_field_id": {
+          "const": "duplicate-domain-commitment"
+        },
+        "new_egress_fields": {
+          "type": "array",
+          "maxItems": 0,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "key_derivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "function",
+        "key_scope",
+        "info_label",
+        "preimage_encoding",
+        "output"
+      ],
+      "properties": {
+        "function": {
+          "const": "hkdf-sha256"
+        },
+        "key_scope": {
+          "description": "Lineage-scoped, so two collector installations on one device lineage derive the same commitment from the same facts. An installation-scoped key would make every observer's commitment unique, which is the failure this rule removes.",
+          "const": "device-lineage"
+        },
+        "info_label": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "preimage_encoding": {
+          "const": "cbor-core-deterministic"
+        },
+        "output": {
+          "const": "digest32"
+        }
+      }
+    },
+    "equivalence_classes": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "class",
+          "preimage_inputs",
+          "decided_by",
+          "competitive"
+        ],
+        "properties": {
+          "class": {
+            "enum": [
+              "strong",
+              "source-cursor",
+              "weak"
+            ]
+          },
+          "preimage_inputs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/preimage_input"
+            }
+          },
+          "decided_by": {
+            "enum": [
+              "commitment-collision",
+              "exclusivity-enforcement",
+              "none"
+            ]
+          },
+          "competitive": {
+            "enum": [
+              "yes",
+              "no"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "observation_modes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode",
+          "execution_identity_observable",
+          "achievable_class",
+          "precedence_rank"
+        ],
+        "properties": {
+          "mode": {
+            "enum": [
+              "native-event",
+              "extension-api",
+              "official-hook",
+              "otel",
+              "acp",
+              "proxy",
+              "wrapper",
+              "live-log",
+              "local-runtime"
+            ]
+          },
+          "execution_identity_observable": {
+            "enum": [
+              "yes",
+              "no",
+              "sometimes"
+            ]
+          },
+          "achievable_class": {
+            "enum": [
+              "strong",
+              "source-cursor",
+              "weak"
+            ]
+          },
+          "precedence_rank": {
+            "description": "Lower is stronger. Ranks are dense and unique; two modes never share a rank, because a shared rank would leave an overlap with no deterministic survivor.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 400
+          }
+        }
+      }
+    },
+    "exclusivity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit",
+        "channel_identity",
+        "multiple_channel_disposition",
+        "tied_channel_resolution",
+        "strong_class_exception",
+        "detection"
+      ],
+      "properties": {
+        "unit": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "device_lineage_id",
+              "source_runtime_id",
+              "runtime_generation"
+            ]
+          }
+        },
+        "channel_identity": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "observation_mode",
+              "collector_instance"
+            ]
+          }
+        },
+        "multiple_channel_disposition": {
+          "description": "Two channels covering one exclusivity unit resolve by precedence when their ranks differ: the stronger mode survives and the weaker is discarded rather than added.",
+          "enum": [
+            "precedence-then-collision-then-quarantine",
+            "quarantine"
+          ]
+        },
+        "tied_channel_resolution": {
+          "description": "Two collector instances in one mode share a precedence rank, so precedence decides nothing. If they produced the same commitment set they observed the same executions and collision deduplicates them to one counted event. If they did not, no fact distinguishes a duplicate from a distinct execution, and the unit quarantines rather than summing — a wrong quarantine is recoverable and a double count is a scoring defect.",
+          "enum": [
+            "identical-commitment-set-deduplicates",
+            "quarantine"
+          ]
+        },
+        "strong_class_exception": {
+          "description": "The one case where two channels in one mode are safe: both carry a strong-class commitment, so equivalence is decided by collision and no exclusivity judgement is needed.",
+          "enum": [
+            "collision-decides",
+            "none"
+          ]
+        },
+        "detection": {
+          "enum": [
+            "server-side-over-accepted-claims",
+            "client-declared"
+          ]
+        }
+      }
+    },
+    "survivor_selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary",
+        "tie_break",
+        "loser_disposition",
+        "summation"
+      ],
+      "properties": {
+        "primary": {
+          "const": "lowest-precedence-rank"
+        },
+        "tie_break": {
+          "const": "lowest-collector-instance-commitment"
+        },
+        "loser_disposition": {
+          "enum": [
+            "superseded-and-discarded",
+            "retained-alongside"
+          ]
+        },
+        "summation": {
+          "description": "Equivalent observations are never added together. The whole point of deciding equivalence is that exactly one of them counts.",
+          "const": "forbidden"
+        }
+      }
+    },
+    "forbidden": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preimage_inputs",
+        "client_selected_scope",
+        "client_selected_class"
+      ],
+      "properties": {
+        "preimage_inputs": {
+          "description": "Anything derived from the observer rather than the observed. Each of these is unique per observer, so including one guarantees that two observers of one execution produce different commitments — which is how a client currently decides for itself what counts as a duplicate.",
+          "type": "array",
+          "minItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "collector_artifact_sha256",
+              "collector_instance_id",
+              "adapter_instance_id",
+              "observer_process_id",
+              "device_local_random",
+              "wall_clock_receive_time",
+              "installation_nonce"
+            ]
+          }
+        },
+        "client_selected_scope": {
+          "const": "forbidden"
+        },
+        "client_selected_class": {
+          "const": "forbidden"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "preimage_input": {
+      "enum": [
+        "device_lineage_id",
+        "source_id",
+        "provider_id",
+        "model_id",
+        "accounting_profile_id",
+        "source_runtime_id",
+        "runtime_generation",
+        "source_execution_identity",
+        "source_cursor_domain",
+        "source_cursor_ordinal",
+        "retry_scope",
+        "retry_ordinal"
+      ]
+    }
+  }
+}

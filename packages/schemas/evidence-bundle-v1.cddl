@@ -1,0 +1,96 @@
+; evidence-bundle-v1 - normative planning CDDL for the device-local evidence bundle.
+;
+; The bundle is what a device retains so that a claim it already submitted can be
+; explained later: which claim bytes were signed, which source receipt produced them,
+; which privacy decision let them leave the accounting stage, and what the collector
+; and adapter were at the time. It is at-rest and device-local. It is not a wire
+; format and it has no server-facing encoding: only the fixed-schema aggregate claim
+; in packages/schemas/vibeproof-claim-v1.cddl crosses the device boundary, and
+; nothing here is admissible in packages/schemas/egress-allowlist-v1.json.
+;
+; Maps are closed: integer labels not listed here are invalid.
+; Encoding is RFC 8949 core deterministic encoding, the same profile the signed claim
+; uses, so a bundle digest is reproducible by any implementation that already has the
+; claim encoder. Booleans and floats are absent for the same reason they are absent
+; from the claim: the canonical encoder refuses both rather than choosing a
+; representation, so two-valued fields are small unsigned enums with a stated meaning.
+
+uint64 = 0..18446744073709551615
+epoch-ms = 0..253402300799999
+uuid7 = bytes .size 16
+digest32 = bytes .size 32
+registered-id = uint32
+reason-code = uint32
+
+; 0 = none. D-100 admits no other value: no provider offers a usage-attestation path
+; for an individual account, so no bundle asserts a provider-verified figure.
+attestation-class = 0
+
+; 0 = denied. The bundle never crosses the device boundary.
+egress-class = 0
+
+; 0 = strong, 1 = source-cursor, 2 = weak. Defined by
+; packages/schemas/observer-equivalence-v1.json; the server owns the rule and the
+; bundle records which class the collector's facts supported.
+equivalence-class = 0..2
+
+; 0 = counted, 1 = superseded, 2 = quarantined, 3 = private-analytics.
+observation-disposition = 0..3
+
+evidence-bundle-v1 = {
+  0: 1,                          ; bundle_major
+  1: uuid7,                      ; bundle_id
+  2: uuid7,                      ; claim_id
+  3: digest32,                   ; canonical_claim_sha256 over the signed claim bytes
+  4: uuid7,                      ; event_id of the normalized accounting event
+  5: uuid7,                      ; source_receipt_id
+  6: digest32,                   ; source_receipt_sha256
+  7: registered-id,              ; accounting_profile_id
+  8: digest32,                   ; accounting_profile_sha256
+  9: registered-id,              ; accounting_arithmetic_id
+  10: digest32,                  ; accounting_arithmetic_sha256
+  11: provenance-record-v1,
+  12: privacy-record-v1,
+  13: equivalence-record-v1,
+  14: epoch-ms,                  ; assembled_at
+  15: egress-class,
+  16: attestation-class
+}
+
+provenance-record-v1 = {
+  0: digest32,                   ; adapter_artifact_sha256
+  1: digest32,                   ; adapter_manifest_sha256
+  2: digest32,                   ; collector_artifact_sha256
+  3: digest32 / nil,             ; certification_bundle_sha256, nil while uncertified
+  4: registered-id,              ; platform_profile_id
+  5: registered-id,              ; capture_mode
+  6: registered-id,              ; source_id
+  7: registered-id,              ; source_version_id
+  8: [+ observation-record-v1]
+}
+
+observation-record-v1 = {
+  0: registered-id,              ; adapter_id
+  1: registered-id,              ; source_cursor_domain
+  2: uint64,                     ; source_cursor_generation
+  3: uint64,                     ; source_cursor_ordinal
+  4: observation-disposition,
+  5: [* reason-code]             ; why this observation did not count, when it did not
+}
+
+privacy-record-v1 = {
+  0: registered-id,              ; privacy_policy_id
+  1: 1,                          ; result: 1 = pass; a failing scan never assembles
+  2: registered-id,              ; retention_policy_id
+  3: digest32 / nil              ; local detector result commitment, nil when absent
+}
+
+equivalence-record-v1 = {
+  0: registered-id,              ; observer_equivalence_rule_id
+  1: digest32,                   ; observer_equivalence_rule_sha256
+  2: equivalence-class,
+  3: digest32,                   ; duplicate_domain_commitment, the value the claim carries
+  4: uuid7,                      ; device_lineage_id
+  5: digest32,                   ; source_runtime_commitment
+  6: uint64                      ; runtime_generation
+}
