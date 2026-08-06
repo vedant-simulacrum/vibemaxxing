@@ -505,12 +505,17 @@ def validate_openapi_file() -> None:
     problem_details = schemas["Problem"]["properties"]["details"]
     if problem_details.get("type") != "array":
         raise ValidationFailure("Problem details must be a typed array")
+    # Mutating operations that carry no `Idempotency-Key`, because the credential the
+    # request already presents is itself single-use. `/auth/session/refresh` joins the
+    # set under D-221: ADR-015 makes every refresh handle one-time-use with no grace
+    # window, so a repeated refresh is a replay incident rather than a retry.
     exceptions = {
         ("/auth/github/start", "post"),
         ("/auth/x/start", "post"),
         ("/auth/device/start", "post"),
         ("/auth/device/poll", "post"),
         ("/auth/device/exchange", "post"),
+        ("/auth/session/refresh", "post"),
         ("/claim-challenges", "post"),
     }
     for path, operations in spec["paths"].items():
@@ -548,11 +553,217 @@ def validate_openapi_file() -> None:
                     raise ValidationFailure(
                         f"mutating operation lacks durable idempotency key: {method.upper()} {path}"
                     )
+    # PF-044: one pagination style, applied to every operation that returns a page.
+    page_refs = {
+        f"#/components/schemas/{name}" for name in schemas if name.endswith("Page")
+    }
+    for path, operations in spec["paths"].items():
+        for method, operation in operations.items():
+            if method.lower() not in {"get", "post", "put", "patch", "delete"}:
+                continue
+            returns_page = False
+            for status, response in operation["responses"].items():
+                if status == "default" or not str(status).startswith("2"):
+                    continue
+                for media in (response.get("content") or {}).values():
+                    if (media.get("schema") or {}).get("$ref") in page_refs:
+                        returns_page = True
+            if not returns_page:
+                continue
+            refs = {
+                item.get("$ref")
+                for item in operation.get("parameters", [])
+                if isinstance(item, dict)
+            }
+            missing = {
+                "#/components/parameters/Cursor",
+                "#/components/parameters/Limit",
+            } - refs
+            if missing:
+                raise ValidationFailure(
+                    f"collection operation lacks pagination: {operation['operationId']}: {sorted(missing)}"
+                )
+
     batch_content = spec["paths"]["/claim-batches"]["post"]["requestBody"]["content"]
     if set(batch_content) != {"application/vibemaxxing-claim-batch+cbor"}:
         raise ValidationFailure(
             "claim-batches must accept only the registered bounded CBOR media type"
         )
+
+
+OPERATION_CLASS_RULES = (
+    "all",
+    "public",
+    "authenticated",
+    "native-bound",
+    "mutating",
+    "mutating-authenticated",
+    "recent-auth",
+    "idempotent-durable",
+    "collection",
+    "path-addressed",
+    "request-body",
+)
+
+# Status codes the reason registry may bind to an operation. 5xx is deliberately absent:
+# every operation answers it through the `default` response, so requiring an explicit
+# declaration would say the server enumerated its own failures, which it has not.
+MATRIX_STATUS_RESPONSES = {
+    400: "BadRequest",
+    401: "Unauthenticated",
+    403: "Forbidden",
+    404: "NotFound",
+    409: "Conflict",
+    410: "Gone",
+    415: "UnsupportedMediaType",
+    422: "UnprocessableContent",
+    429: "RateLimited",
+}
+
+
+def derive_operation_classes(spec: dict) -> dict[str, set[str]]:
+    """Read the eleven operation classes out of the OpenAPI document itself.
+
+    The registry records its own copy so a reader can see the matrix without an OpenAPI
+    parser. Deriving them here is what stops the two from drifting: a hand-maintained
+    class list would keep passing after the operation it describes changed shape.
+    """
+    parameters = spec["components"]["parameters"]
+
+    def resolve(node: dict) -> dict:
+        ref = node.get("$ref")
+        return parameters[ref.rsplit("/", 1)[1]] if ref else node
+
+    classes: dict[str, set[str]] = {name: set() for name in OPERATION_CLASS_RULES}
+    for path, item in spec["paths"].items():
+        for method, operation in item.items():
+            method = method.lower()
+            if method not in {"get", "post", "put", "patch", "delete"}:
+                continue
+            operation_id = operation["operationId"]
+            security = operation.get("security")
+            if security is None:
+                raise ValidationFailure(
+                    f"operation inherits a document-level security requirement: {operation_id}"
+                )
+            classes["all"].add(operation_id)
+            if security == []:
+                classes["public"].add(operation_id)
+            else:
+                classes["authenticated"].add(operation_id)
+                if all("deviceProof" in alternative for alternative in security):
+                    classes["native-bound"].add(operation_id)
+            if method in {"post", "put", "patch", "delete"}:
+                classes["mutating"].add(operation_id)
+                if security != []:
+                    classes["mutating-authenticated"].add(operation_id)
+            if operation.get("x-recent-auth") == "required":
+                classes["recent-auth"].add(operation_id)
+            if operation.get("x-idempotency") == "required-durable-request-hash":
+                classes["idempotent-durable"].add(operation_id)
+            declared = [resolve(item) for item in operation.get("parameters", [])]
+            names = {item["name"] for item in declared}
+            if {"cursor", "limit"} <= names:
+                classes["collection"].add(operation_id)
+            if any(item.get("in") == "path" for item in declared):
+                classes["path-addressed"].add(operation_id)
+            if operation.get("requestBody"):
+                classes["request-body"].add(operation_id)
+    return classes
+
+
+def validate_api_error_matrix() -> None:
+    """Prove the D-141 and D-223 matrix resolves in both directions.
+
+    This proves that the registry and the OpenAPI document agree about which operation
+    answers which status with which reason code. It is not evidence that any handler
+    returns any of them.
+    """
+    spec = load_yaml(SCHEMAS / "openapi-v1.yaml")
+    registry = load_json(SCHEMAS / "reason-codes-v1.json")
+
+    for key in ("transports", "operation_class_definitions", "operation_classes"):
+        if key not in registry:
+            raise ValidationFailure(f"reason registry lacks {key}")
+    if tuple(registry["operation_class_definitions"]) != OPERATION_CLASS_RULES:
+        raise ValidationFailure("reason registry class definitions differ from the rules")
+
+    derived = derive_operation_classes(spec)
+    for name in OPERATION_CLASS_RULES:
+        recorded = set(registry["operation_classes"].get(name, []))
+        if recorded != derived[name]:
+            raise ValidationFailure(
+                f"operation class {name} differs from the OpenAPI document: "
+                f"only-in-registry={sorted(recorded - derived[name])} "
+                f"only-in-openapi={sorted(derived[name] - recorded)}"
+            )
+
+    transports = set(registry["transports"])
+    expected: dict[str, set[int]] = {name: set() for name in derived["all"]}
+    for code in registry["codes"]:
+        if code["transport"] not in transports:
+            raise ValidationFailure(f"reason code names an unknown transport: {code['code']}")
+        status = code["http_status"]
+        if code["transport"] == "problem":
+            if status is None:
+                raise ValidationFailure(f"problem-transport code lacks a status: {code['code']}")
+        elif status is not None:
+            raise ValidationFailure(
+                f"code carries a status but never reaches the wire: {code['code']}"
+            )
+        targets = set(code["operations"])
+        for name in code["operation_classes"]:
+            if name not in derived:
+                raise ValidationFailure(
+                    f"reason code names an unknown operation class: {code['code']}: {name}"
+                )
+            targets |= derived[name]
+        unknown = sorted(targets - derived["all"])
+        if unknown:
+            raise ValidationFailure(
+                f"reason code names operations the API does not declare: {code['code']}: {unknown}"
+            )
+        if status is None:
+            continue
+        if status >= 500:
+            continue
+        if status not in MATRIX_STATUS_RESPONSES:
+            raise ValidationFailure(f"reason code binds an unmapped status: {code['code']}")
+        if not targets:
+            raise ValidationFailure(
+                f"wire-visible reason code binds to no operation: {code['code']}"
+            )
+        for operation_id in targets:
+            expected[operation_id].add(status)
+
+    responses = spec["components"]["responses"]
+    for status, component in MATRIX_STATUS_RESPONSES.items():
+        if component not in responses:
+            raise ValidationFailure(f"OpenAPI lacks the {status} response component {component}")
+
+    for path, item in spec["paths"].items():
+        for method, operation in item.items():
+            if method.lower() not in {"get", "post", "put", "patch", "delete"}:
+                continue
+            operation_id = operation["operationId"]
+            declared = {
+                int(status)
+                for status in operation["responses"]
+                if status != "default" and 400 <= int(status) < 500
+            }
+            if declared != expected[operation_id]:
+                raise ValidationFailure(
+                    f"4xx declaration differs from the reason matrix: {operation_id}: "
+                    f"only-in-openapi={sorted(declared - expected[operation_id])} "
+                    f"only-in-registry={sorted(expected[operation_id] - declared)}"
+                )
+            for status in declared:
+                reference = operation["responses"][str(status)].get("$ref")
+                component = f"#/components/responses/{MATRIX_STATUS_RESPONSES[status]}"
+                if reference != component:
+                    raise ValidationFailure(
+                        f"{operation_id} answers {status} with an inline response instead of {component}"
+                    )
 
 
 def validate_p1140d_contracts() -> None:
@@ -1004,6 +1215,7 @@ def main() -> int:
         ("adapter-one OTLP identity boundary", validate_adapter_one_boundary),
         ("policy and observability artifacts", validate_policy_and_observability),
         ("OpenAPI", validate_openapi_file),
+        ("API error matrix and operation classes", validate_api_error_matrix),
         ("P-1140D state and platform contracts", validate_p1140d_contracts),
         ("CDDL grammar parse and required rules", validate_cddl_file),
         ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),
