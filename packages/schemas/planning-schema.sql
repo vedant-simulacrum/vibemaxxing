@@ -418,9 +418,21 @@ create table presence_leases (
   check (state not in ('active','idle') or last_qualifying_pulse_at is not null)
 );
 
+-- The recipient inbox projection, and the notification authority: an item exists
+-- for the recipient exactly when a row is here. Push and email are hints about
+-- this row and are recorded in `notification_deliveries`; neither can create an
+-- item, mark one read, or keep one alive.
+--
 -- Partitioned by creation month: retention is 90 days, no foreign key points
 -- at it, and its only uniqueness is its own identity, so the partition key can
 -- join the primary key without weakening any invariant.
+--
+-- The row carries references and no rendered text. There is no title, body or
+-- summary column, and D-421 records why: a stored sentence would freeze a handle,
+-- a figure and an authorization decision at write time, so a rename would be
+-- wrong, a block would leak, and a retraction would arrive after the recipient
+-- had already read the claim it withdraws. The surface renders from current state
+-- at read time or renders nothing.
 create table notifications (
   notification_id uuid not null,
   account_id uuid not null references accounts(account_id),
@@ -429,12 +441,47 @@ create table notifications (
   actor_account_id uuid references accounts(account_id),
   scope_id uuid,
   grouping_digest bytea not null check (octet_length(grouping_digest) = 32),
+  -- How many source events this one item stands for. A group is one item with a
+  -- count, never n items, so grouping cannot be undone into the flood it collapsed.
+  group_count integer not null default 1 check (group_count >= 1),
+  -- The D-386 authorization revision the item was generated under. It is recorded
+  -- rather than trusted: the read path rechecks current authorization and refuses
+  -- to render an item whose recorded revision is stale, so a board removal or a
+  -- block between generation and read cannot be served out of the inbox.
+  authorization_revision bigint not null check (authorization_revision >= 0),
   created_at timestamptz not null,
-  primary key (notification_id, created_at)
+  delivered_at timestamptz,
+  read_at timestamptz,
+  retracted_at timestamptz,
+  retraction_reason_code text,
+  primary key (notification_id, created_at),
+  -- `delivered_at` is set exactly when the item reached the inbox, which is what
+  -- makes a read impossible to fake: a `read` row with no delivery time is the
+  -- shape a push acknowledgement would produce if acknowledgement were allowed to
+  -- stand in for a read, and it cannot exist. Retraction and expiry are reachable
+  -- from before delivery as well as after, so they constrain the time in one
+  -- direction only.
+  check (state not in ('delivered','read') or delivered_at is not null),
+  check (delivered_at is null or state in ('delivered','read','retracted','expired')),
+  check ((state = 'read') = (read_at is not null)),
+  check ((state = 'retracted') = (retracted_at is not null)),
+  check ((retraction_reason_code is not null) = (state = 'retracted')),
+  check (read_at is null or read_at >= delivered_at),
+  check (retracted_at is null or delivered_at is null or retracted_at >= delivered_at)
 ) partition by range (created_at);
 
 create table notifications_default partition of notifications default;
 
+-- Preferences gate two different things and the columns say which. The four
+-- category booleans decide whether an inbox item is created at all. Quiet hours
+-- and the two opt-in timestamps decide only whether a best-effort transport
+-- carries a hint about an item that exists either way: D-422 records that quiet
+-- hours never withhold an inbox item, because the inbox is the authority and a
+-- silenced authority is a lost notification rather than a deferred one.
+--
+-- `security_enabled` is constrained true. Security and recovery notices cannot be
+-- muted, and a preferences row that claims otherwise is unrepresentable rather
+-- than overridden in application code.
 create table notification_preferences (
   account_id uuid primary key references accounts(account_id),
   social_enabled boolean not null,
@@ -443,7 +490,12 @@ create table notification_preferences (
   security_enabled boolean not null check (security_enabled),
   quiet_hours_start_minute smallint check (quiet_hours_start_minute between 0 and 1439),
   quiet_hours_end_minute smallint check (quiet_hours_end_minute between 0 and 1439),
-  timezone_name text not null
+  timezone_name text not null,
+  -- Null until the participant opts in. No transport other than the inbox ships
+  -- at launch under D-086, so both stay null and the constraint on
+  -- `notification_deliveries` makes a push or email row unwritable.
+  push_opt_in_at timestamptz,
+  email_opt_in_at timestamptz
 );
 
 create table outbox_events (
@@ -694,19 +746,94 @@ create table deletion_effects (
   primary key (deletion_job_id, subsystem)
 );
 
+-- One command per enrolled device per deletion job. The state column is the
+-- device-reported lifecycle and the `local-deletion-command` machine owns it; the
+-- disposition column is what the participant is shown, and it is the state
+-- coarsened by two facts the state alone cannot carry.
+--
+-- `unreachable` and `expired` are the same machine state and are not the same
+-- answer. A command that expired without ever being acknowledged reached no
+-- device; one that expired after acknowledgement reached a device that then
+-- stopped. Telling a participant "expired" for both hides which of their devices
+-- never heard the request at all, and D-076 requires each device to be reported
+-- independently.
+--
+-- `waived` is not derivable from the machine, because a waiver is the
+-- participant's act rather than the device's. It is recorded and it is not
+-- terminal: a waived device that later returns and completes reports `complete`,
+-- which is why the disposition expression tests completion first.
+--
+-- The disposition is not a second opinion about the row. The check makes it equal
+-- the coarsening by construction, so it cannot drift from the state it summarizes.
+--
+-- `device_id` carries no foreign key. D-425 records why: `packages/schemas/data-disposition-v1.json`
+-- classifies this table `retain-unlinked` and `devices` `delete`, so an erasure
+-- deletes the device row while this row survives as proof the request was
+-- honoured. A foreign key makes that transaction fail, which is the opposite of
+-- what a retained-unlinked identifier means.
 create table local_deletion_commands (
   command_id uuid primary key,
   deletion_job_id uuid not null references deletion_jobs(deletion_job_id),
-  device_id uuid not null references devices(device_id),
+  device_id uuid not null,
+  scope text not null check (scope in ('local-store','everything')),
   command_digest bytea not null check (octet_length(command_digest) = 32),
   state text not null check (state in ('issued','acknowledged','executing','complete','expired','failed')),
-  expires_at timestamptz not null
+  disposition text not null check (disposition in ('pending','complete','failed','expired','unreachable','waived')),
+  issued_at timestamptz not null,
+  acknowledged_at timestamptz,
+  waived_at timestamptz,
+  expires_at timestamptz not null,
+  unique (deletion_job_id, device_id),
+  check (expires_at > issued_at),
+  check (state <> 'issued' or acknowledged_at is null),
+  check (state not in ('acknowledged','executing','complete','failed') or acknowledged_at is not null),
+  check (
+    disposition = case
+      when state = 'complete' then 'complete'
+      when state = 'failed' then 'failed'
+      when waived_at is not null then 'waived'
+      when state = 'expired' and acknowledged_at is null then 'unreachable'
+      when state = 'expired' then 'expired'
+      else 'pending'
+    end
+  )
 );
 
+-- What the device signed. The receipt attests that the daemon holding that device
+-- key ran the delete operations the command named, over the paths that daemon
+-- controls, at the time stated.
+--
+-- It attests nothing else, and the columns are chosen so that it cannot be read as
+-- attesting more. There is no column for unrecoverability, sanitization, media
+-- wiping or verification of free space, because a user-space process cannot
+-- observe any of them: an operating-system backup, a filesystem snapshot, a
+-- cloud-synced home directory, a copy the participant made, and the physical
+-- residue that block remapping leaves on flash storage are all outside the
+-- receipt and outside the product. D-424 records that ceiling.
+--
+-- `outcome`, `tables_cleared`, `keystore_entries_destroyed` and `residual_risk`
+-- are the four columns `packages/schemas/local-store-v1.sql` already declares on
+-- the device's own receipt row, with the same spellings. The server record is the
+-- transported form of the device record and not a second vocabulary for the same
+-- fact; inventing one here is the duplication SR-009 exists to remove.
+--
+-- `partial` is a first-class outcome rather than a rounded success or a rounded
+-- failure: the claim outbox emptied and one locked adapter store refused is a real
+-- result, and a single boolean would have to lie in one direction about it.
+--
+-- `residual_risk` is the honest ceiling stated in the row rather than in a
+-- footnote. `none-observed` is the strongest value available and it says observed,
+-- not none.
 create table local_deletion_receipts (
   command_id uuid primary key references local_deletion_commands(command_id),
-  device_id uuid not null references devices(device_id),
+  device_id uuid not null,
   receipt_digest bytea not null check (octet_length(receipt_digest) = 32),
+  outcome text not null check (outcome in ('complete','partial','refused','expired')),
+  tables_cleared integer not null check (tables_cleared >= 0),
+  keystore_entries_destroyed integer not null check (keystore_entries_destroyed >= 0),
+  residual_risk text not null check (residual_risk in ('filesystem-snapshot-possible','backup-copy-possible','none-observed')),
+  cose_sign1 bytea not null,
+  signing_device_key_id text not null,
   completed_at timestamptz not null
 );
 
@@ -781,11 +908,47 @@ create index social_integrity_events_aggregate_idx on social_integrity_events (a
 -- that does not exist has none. validate_state_vocabularies.py now fails
 -- when a persistence_owner does not resolve here.
 
+-- The source event: what a changed aggregate appends when something happened that
+-- a recipient may need to know. It is not the inbox item. One event may be
+-- discarded as a duplicate, collapsed into a group, or suppressed by preference,
+-- and only an event that survives all three produces a `notifications` row.
+--
+-- Deduplication is a database constraint and not worker logic. `source_aggregate`
+-- and `source_revision` are the same pair `outbox_events` uses, so the unique
+-- index below makes an at-least-once outbox exactly-once for the recipient: a
+-- redelivered outbox record cannot produce a second event, and no worker has to
+-- get that right.
+--
+-- Grouping is separate and is a digest rather than a decision. `grouping_digest`
+-- is SHA-256 over the deterministic CBOR encoding of the recipient, the event
+-- type, the scope and the group window under D-191, so two workers presented with
+-- the same facts compute the same group without coordinating.
 create table notification_events (
   notification_event_id uuid primary key,
+  event_type text not null check (event_type in ('friend_request','board_invitation','rank_overtake','moderation','appeal','security','compatibility','release')),
+  recipient_account_id uuid not null references accounts(account_id),
+  source_aggregate_id uuid not null,
+  source_revision bigint not null check (source_revision >= 0),
+  actor_account_id uuid references accounts(account_id),
+  scope_id uuid,
+  grouping_digest bytea not null check (octet_length(grouping_digest) = 32),
+  authorization_revision bigint not null check (authorization_revision >= 0),
+  suppression_cause text check (suppression_cause in ('category-disabled','overtake-below-material-lead','overtake-within-hysteresis-window','recipient-blocked-actor','viewer-authorization-withdrawn')),
   state text not null check (state in ('created','grouped','suppressed','ready','delivered','read','retracted','expired')),
   revision integer not null default 1 check (revision > 0),
-  created_at timestamptz not null
+  occurred_at timestamptz not null,
+  created_at timestamptz not null,
+  -- Exact deduplication. One recipient learns about one revision of one aggregate
+  -- once, whatever the outbox does.
+  unique (recipient_account_id, event_type, source_aggregate_id, source_revision),
+  -- A suppressed event says why it was suppressed, and no other state may claim a
+  -- cause. Without this the suppression register would be a set of events that
+  -- silently produced nothing, which is indistinguishable from a lost event.
+  check ((suppression_cause is not null) = (state = 'suppressed')),
+  -- A security event has no suppression path at all: `security_enabled` is
+  -- constrained true on the preferences row, so `category-disabled` cannot apply
+  -- to it, and the other four causes are social and ranking causes.
+  check (state <> 'suppressed' or event_type <> 'security')
 );
 
 create table privileged_supervisor_instances (
@@ -940,11 +1103,43 @@ create table export_download_grants (
   created_at timestamptz not null
 );
 
+-- One row per transport attempt. This table exists at launch and holds only
+-- `server-inbox` rows, because D-086 ships no push and no email. It is specified
+-- now so that shipping one later adds rows rather than columns.
+--
+-- Three constraints carry the binding rule that the server inbox is notification
+-- authority and every other transport is a best-effort hint.
+--
+-- First, an inbox attempt is written in the same transaction as the
+-- `notifications` row and therefore has exactly one outcome, `accepted`. It
+-- cannot queue, defer, fail or expire, because there is nothing between the write
+-- and the authority — they are the same write.
+--
+-- Second, a non-inbox attempt requires the opt-in timestamp that authorized it,
+-- copied from the preferences row at send time. So the row records which consent
+-- permitted the send rather than asserting that consent existed; and at launch,
+-- with no opt-in reachable, a push or email row cannot be written at all.
+--
+-- Third, there is no read column and there never may be. `accepted` means a
+-- provider took the message; `acknowledged` means a device confirmed receipt.
+-- Neither is a read, a read lives only on `notifications.read_at`, and D-423
+-- records that a transport that could mark an item read would make the inbox stop
+-- being the authority.
 create table notification_deliveries (
   notification_delivery_id uuid primary key,
-  subject_id uuid not null,
+  notification_id uuid not null,
+  transport text not null check (transport in ('server-inbox','push','email')),
+  attempt integer not null check (attempt >= 1),
+  state text not null check (state in ('queued','deferred','accepted','acknowledged','failed','expired')),
+  failure_reason_code text,
+  preference_opt_in_at timestamptz,
   revision integer not null default 1 check (revision > 0),
-  created_at timestamptz not null
+  created_at timestamptz not null,
+  unique (notification_id, transport, attempt),
+  check (transport <> 'server-inbox' or state = 'accepted'),
+  check (transport <> 'server-inbox' or attempt = 1),
+  check (transport = 'server-inbox' or preference_opt_in_at is not null),
+  check ((failure_reason_code is not null) = (state = 'failed'))
 );
 
 create table oauth_authorization_events (

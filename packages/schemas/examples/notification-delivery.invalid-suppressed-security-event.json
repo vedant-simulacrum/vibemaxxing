@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "policy_keys": {
+    "retention_policy_key": "notification_retention_days",
+    "overtake_hysteresis_policy_key": "overtake_notification_hysteresis_hours",
+    "overtake_material_lead_policy_key": "overtake_material_lead_tokens"
+  },
+  "source_event": {
+    "notification_event_id": "018f2c60-0000-7000-8000-000000000902",
+    "event_type": "security",
+    "recipient_account_id": "018f2c60-0000-7000-8000-000000000001",
+    "source_aggregate_id": "018f2c60-0000-7000-8000-000000000701",
+    "source_revision": 3,
+    "actor_account_id": null,
+    "scope_id": null,
+    "grouping_digest": "a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00",
+    "authorization_revision": 12,
+    "state": "suppressed",
+    "suppression_cause": "category-disabled",
+    "occurred_at": "2026-08-06T02:14:00Z"
+  }
+}

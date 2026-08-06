@@ -1818,6 +1818,280 @@ def validate_release_compatibility_contracts() -> None:
             )
 
 
+NOTIFICATION_DELETION_EXAMPLES: tuple[tuple[str, str, bool], ...] = (
+    ("notification-delivery-v1.schema.json", "notification-delivery.valid.json", True),
+    (
+        "notification-delivery-v1.schema.json",
+        "notification-delivery.invalid-inbox-attempt-deferred.json",
+        False,
+    ),
+    (
+        "notification-delivery-v1.schema.json",
+        "notification-delivery.invalid-suppressed-security-event.json",
+        False,
+    ),
+    ("local-deletion-v1.schema.json", "local-deletion.valid.json", True),
+    (
+        "local-deletion-v1.schema.json",
+        "local-deletion.invalid-complete-without-receipt.json",
+        False,
+    ),
+    (
+        "local-deletion-v1.schema.json",
+        "local-deletion.invalid-unreachable-after-acknowledgement.json",
+        False,
+    ),
+    (
+        "local-deletion-v1.schema.json",
+        "local-deletion.invalid-partial-receipt-on-complete-command.json",
+        False,
+    ),
+)
+
+# A notification carries references and never a rendered sentence. Each name below
+# would be that sentence, and the reason it is refused is that a stored sentence
+# freezes a handle, a figure and an authorization decision at write time — so a
+# rename becomes wrong, a block leaks, and a retraction arrives after the recipient
+# has already read the claim it withdraws.
+NOTIFICATION_BANNED_FIELDS: tuple[str, ...] = (
+    "title",
+    "body",
+    "message",
+    "summary",
+    "preview",
+    "rendered_text",
+    "subject_line",
+)
+
+# Names a per-device deletion receipt may not carry, because a user-space daemon
+# cannot observe any of them and D-076 forbids claiming an erasure the product
+# cannot observe.
+DELETION_BANNED_FIELDS: tuple[str, ...] = (
+    "unrecoverable",
+    "irrecoverable",
+    "forensic",
+    "sanitized",
+    "shredded",
+    "wiped",
+    "destroyed_permanently",
+    "guaranteed_erased",
+)
+
+# Retained rows whose subject row an erasure deletes. Each is a NOT NULL foreign
+# key into a table `packages/schemas/data-disposition-v1.json` classifies
+# `delete`, so the erasure transaction that deletes the parent cannot commit while
+# the child survives — which is exactly what its own `retain-unlinked`
+# classification says it must do. D-425 records the class. The two per-device rows
+# are repaired by this change; the six below are the same defect in aggregates
+# this change does not own, and they are enumerated so a new one cannot be added
+# silently.
+ERASURE_FK_EXCEPTIONS: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("appeals", "account_id"),
+        ("ranking_corrections", "correction_id"),
+        ("organizations", "owner_account_id"),
+        ("communities", "owner_account_id"),
+        ("deletion_jobs", "account_id"),
+        ("invite_codes", "issued_by_account_id"),
+    }
+)
+
+_NOT_NULL_FK_RE = re.compile(
+    r"^\s*([a-z_][a-z0-9_]*)\s+uuid\s+not\s+null\s+references\s+([a-z_][a-z0-9_]*)\s*\(",
+    re.MULTILINE,
+)
+
+
+def _declared_property_names(node: Any) -> set[str]:
+    """Every property name a JSON Schema declares, at any depth.
+
+    Scanning names rather than the serialized document is what keeps `title` in the
+    banned list usable: the schema's own annotation keyword is not a field the
+    record carries.
+    """
+    names: set[str] = set()
+    if isinstance(node, dict):
+        properties = node.get("properties")
+        if isinstance(properties, dict):
+            names |= set(properties)
+        for value in node.values():
+            names |= _declared_property_names(value)
+    elif isinstance(node, list):
+        for value in node:
+            names |= _declared_property_names(value)
+    return names
+
+
+def _schema_enum(schema: dict[str, Any], definition: str, prop: str) -> set[str]:
+    return set(schema["$defs"][definition]["properties"][prop]["enum"])
+
+
+def _sql_check_vocabulary(body: str, column: str) -> set[str]:
+    match = re.search(
+        rf"check\s*\(\s*{re.escape(column)}\s+in\s*\(([^)]*)\)\s*\)",
+        body,
+        re.IGNORECASE,
+    )
+    if not match:
+        raise ValidationFailure(f"planning DDL declares no vocabulary for {column}")
+    return set(re.findall(r"'([^']*)'", match.group(1)))
+
+
+def validate_notification_and_local_deletion_contracts() -> None:
+    """Prove the notification and per-device deletion records resolve.
+
+    Seven checks, none of which is behaviour. The notification source event's state
+    vocabulary equals the registered machine's, and the inbox item's is exactly the
+    subset the binding table publishes, so the internal states cannot leak back onto
+    the API through a second surface. Every policy key the notification model names
+    resolves in the policy registry. Every retraction reason code resolves in the
+    reason registry and is carried on the notification transport rather than as a
+    Problem body. The per-device disposition, receipt outcome and residual-risk
+    vocabularies equal the SQL and the device-side store that already declare them.
+    No notification schema declares a rendered-message field and no deletion schema
+    declares a field that would assert an erasure the product cannot observe. And no
+    retained-unlinked table gains a NOT NULL foreign key into a table an erasure
+    deletes outright, beyond the six that already carry one.
+
+    This proves reference agreement. No worker groups an event, no transport carries
+    a hint, no device executes a command, and this validator would pass identically
+    if none ever did.
+    """
+    notification = validate_schema_file(
+        SCHEMAS / "notification-delivery-v1.schema.json"
+    )
+    deletion = validate_schema_file(SCHEMAS / "local-deletion-v1.schema.json")
+
+    registry = load_json(SCHEMAS / "state-machine-registry-v1.json")
+    machines = {item["machine_id"]: item for item in registry["machines"]}
+
+    machine_states = set(machines["notification-delivery"]["states"])
+    event_states = _schema_enum(notification, "source_event", "state")
+    if event_states != machine_states:
+        raise ValidationFailure(
+            "notification-delivery-v1.schema.json source_event.state differs from "
+            f"notification-delivery: only-in-schema={sorted(event_states - machine_states)} "
+            f"only-in-registry={sorted(machine_states - event_states)}"
+        )
+
+    # The four states before the inbox are worker state. The rule is stated once,
+    # here and in the binding table, rather than left to two enums agreeing by luck.
+    inbox_states = _schema_enum(notification, "inbox_item", "state")
+    expected_inbox = machine_states - {"created", "grouped", "ready", "suppressed"}
+    if inbox_states != expected_inbox:
+        raise ValidationFailure(
+            "notification-delivery-v1.schema.json inbox_item.state is not the "
+            f"post-delivery subset: only-in-schema={sorted(inbox_states - expected_inbox)} "
+            f"only-in-expected={sorted(expected_inbox - inbox_states)}"
+        )
+
+    command_states = _schema_enum(deletion, "command", "state")
+    local_states = set(machines["local-deletion-command"]["states"])
+    if command_states != local_states:
+        raise ValidationFailure(
+            "local-deletion-v1.schema.json command.state differs from "
+            f"local-deletion-command: only-in-schema={sorted(command_states - local_states)} "
+            f"only-in-registry={sorted(local_states - command_states)}"
+        )
+
+    policies = load_json(SCHEMAS / "policy-defaults-v1.json")["policies"]
+    keys = notification["$defs"]["policy_keys"]["properties"]
+    for field, node in keys.items():
+        key = node["const"]
+        if key not in policies:
+            raise ValidationFailure(
+                f"notification {field} names an unknown policy key: {key}"
+            )
+
+    codes = {
+        item["code"]: item
+        for item in load_json(SCHEMAS / "reason-codes-v1.json")["codes"]
+    }
+    for code in _schema_enum(notification, "retraction", "reason_code"):
+        if code not in codes:
+            raise ValidationFailure(
+                f"retraction names an unregistered reason code: {code}"
+            )
+        if codes[code]["transport"] != "notification":
+            raise ValidationFailure(
+                f"retraction reason {code} is not carried on the notification transport"
+            )
+
+    bodies = _planning_table_bodies()
+    for table, column, definition, prop in (
+        ("local_deletion_commands", "disposition", "device_disposition", "disposition"),
+        ("local_deletion_receipts", "outcome", "receipt", "outcome"),
+        ("local_deletion_receipts", "residual_risk", "receipt", "residual_risk"),
+        ("notification_deliveries", "state", "delivery_attempt", "state"),
+        ("notification_deliveries", "transport", "delivery_attempt", "transport"),
+    ):
+        sql_values = _sql_check_vocabulary(bodies[table], column)
+        schema_values = _schema_enum(
+            deletion if table.startswith("local") else notification, definition, prop
+        )
+        if sql_values != schema_values:
+            raise ValidationFailure(
+                f"{table}.{column} differs from the schema: "
+                f"only-in-sql={sorted(sql_values - schema_values)} "
+                f"only-in-schema={sorted(schema_values - sql_values)}"
+            )
+
+    # The server receipt is the transported form of the device receipt, so the two
+    # carry one vocabulary rather than two spellings of the same fact.
+    local_store = (SCHEMAS / "local-store-v1.sql").read_text(encoding="utf-8")
+    store_receipt = local_store.split("create table local_deletion_receipts (", 1)[1]
+    for column in ("outcome", "residual_risk"):
+        if _sql_check_vocabulary(store_receipt, column) != _sql_check_vocabulary(
+            bodies["local_deletion_receipts"], column
+        ):
+            raise ValidationFailure(
+                f"local_deletion_receipts.{column} differs between the device store "
+                "and the server contract"
+            )
+
+    declared = _declared_property_names(notification)
+    for banned in NOTIFICATION_BANNED_FIELDS:
+        if banned in declared:
+            raise ValidationFailure(
+                f"notification-delivery-v1.schema.json declares {banned}: a "
+                "notification carries references, never a rendered sentence"
+            )
+    declared = _declared_property_names(deletion)
+    for banned in DELETION_BANNED_FIELDS:
+        if banned in declared:
+            raise ValidationFailure(
+                f"local-deletion-v1.schema.json declares {banned}: no field may "
+                "assert an erasure the product cannot observe"
+            )
+
+    disposition = load_json(SCHEMAS / "data-disposition-v1.json")
+    actions = {
+        entry["table"]: entry["erasure_action"] for entry in disposition["entries"]
+    }
+    for table, body in bodies.items():
+        if actions.get(table) not in {"retain-unlinked", "retain-pseudonymous"}:
+            continue
+        for match in _NOT_NULL_FK_RE.finditer(body):
+            column, target = match.group(1), match.group(2)
+            if actions.get(target) != "delete":
+                continue
+            if (table, column) in ERASURE_FK_EXCEPTIONS:
+                continue
+            raise ValidationFailure(
+                f"{table}.{column} is a NOT NULL foreign key into {target}, which an "
+                f"erasure deletes, while {table} is classified {actions[table]}: the "
+                "erasure transaction cannot commit and the retained row cannot survive"
+            )
+
+    for filename, example, expect_valid in NOTIFICATION_DELETION_EXAMPLES:
+        schema = notification if filename.startswith("notification") else deletion
+        instance = load_json(SCHEMAS / "examples" / example)
+        if expect_valid:
+            validate_instance(schema, instance, example)
+        else:
+            expect_invalid(schema, instance, example)
+
+
 AUDIENCE_WIDTH = {"self": 0, "authorized-viewer": 1, "public": 2}
 
 
@@ -2963,6 +3237,10 @@ def main() -> int:
         (
             "TUF trust, compatibility graph and migration chain",
             validate_release_compatibility_contracts,
+        ),
+        (
+            "notification model and per-device deletion contracts",
+            validate_notification_and_local_deletion_contracts,
         ),
         (
             "disclosure projections and exceptional surface states",

@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/local-deletion-v1.schema.json",
+  "title": "Per-device deletion command, execution receipt and disposition v1",
+  "description": "The two records the inventory recorded as proposed and the repository lacked — the command the server issues to one device and the receipt that device signs — plus the disposition, which is the only per-device answer a participant is shown. docs/privacy/PRIVACY_CONTRACT.md is the normative owner, docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md and ADR-022 own the hosted half this composes with, packages/schemas/planning-schema.sql#local_deletion_commands and #local_deletion_receipts are the persistence owners, and the local-deletion-command machine owns the lifecycle.\n\nTwo constraints from D-076 shape every field. Each device is reported independently, so there is no aggregate success anywhere in this file. And nothing here claims an erasure the product can observe: a receipt attests that a daemon ran delete operations over the paths it controls, and nothing more.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "composition"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "composition": { "$ref": "#/$defs/composition" },
+    "command": { "$ref": "#/$defs/command" },
+    "receipt": { "$ref": "#/$defs/receipt" },
+    "device_disposition": { "$ref": "#/$defs/device_disposition" }
+  },
+  "allOf": [
+    {
+      "description": "A command reaches complete only against a receipt that reports complete. A device that answered with partial or refused answered, and answering is not finishing: its command reaches failed, so the disposition the participant reads says failed rather than rounding a partial deletion up to a success. This is the one rule the DDL cannot hold, because it spans two tables, so it is held here and checked on the fixtures.",
+      "if": {
+        "properties": { "command": { "properties": { "state": { "const": "complete" } } } },
+        "required": ["command"]
+      },
+      "then": {
+        "properties": {
+          "receipt": { "properties": { "outcome": { "const": "complete" } } }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "receipt": {
+            "properties": { "outcome": { "enum": ["partial", "refused"] } },
+            "required": ["outcome"]
+          }
+        },
+        "required": ["receipt"]
+      },
+      "then": {
+        "properties": {
+          "command": { "properties": { "state": { "const": "failed" } } }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "composition": {
+      "description": "How per-device deletion sits beside the hosted erasure, stated as fixed values rather than left to a reader's inference, because the two mechanisms answer different questions and conflating them is the failure mode.\n\nThe hosted erasure destroys the domain key under ADR-022 and appends a signed record. That record proves which key was destroyed. It says nothing whatever about any device, and the device receipt says nothing whatever about the server: they share a deletion job and nothing else.\n\nThe hosted side does not wait. A device that is offline, wiped, sold or simply never opened again is the normal case, and the server-deletion machine reaches complete from awaiting-local-receipt precisely so that one silent device cannot hold an Article 17 erasure open indefinitely. What the participant is shown instead is every device's disposition, forever separate from the hosted outcome.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hosted_mechanism",
+        "hosted_owner",
+        "local_mechanism",
+        "hosted_completion_waits_for_devices",
+        "receipt_absence_meaning"
+      ],
+      "properties": {
+        "hosted_mechanism": { "const": "cryptographic-tombstone-and-key-destruction" },
+        "hosted_owner": { "const": "docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md" },
+        "local_mechanism": { "const": "device-executed-delete-with-signed-receipt" },
+        "hosted_completion_waits_for_devices": {
+          "description": "False, and it is a decision rather than a limitation. Blocking a legal erasure on a device the participant may have thrown away would make the right unexercisable.",
+          "const": false
+        },
+        "receipt_absence_meaning": {
+          "description": "What the product may say when no receipt ever arrives. It may say the command expired unanswered. It may not say the device was cleared, and it may not say it was not: the product observed nothing, and reporting an absence of evidence as either outcome is the claim D-076 forbids.",
+          "const": "command-expired-unanswered-device-state-unobserved"
+        }
+      }
+    },
+    "command": {
+      "description": "One command, for one device, under one deletion job. It names identifiers and a scope and carries no content: a command that had to say which files to delete would have to carry filenames, and filenames do not cross the device boundary in either direction.\n\nThe expiry is what makes unreachable a bounded answer instead of an open one. A command that is never acknowledged stops waiting, and the participant is told which of their devices never heard the request rather than being left with a spinner.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_id",
+        "deletion_job_id",
+        "device_id",
+        "scope",
+        "command_digest",
+        "state",
+        "issued_at",
+        "expires_at"
+      ],
+      "properties": {
+        "command_id": { "type": "string", "format": "uuid" },
+        "deletion_job_id": { "type": "string", "format": "uuid" },
+        "device_id": { "type": "string", "format": "uuid" },
+        "scope": {
+          "description": "local-store deletes the participant-derived stores in packages/schemas/local-store-v1.sql and leaves the installation enrolled. everything additionally destroys the device key material and unenrolls, which is the local half of a delete-everything request.",
+          "enum": ["local-store", "everything"]
+        },
+        "command_digest": {
+          "description": "SHA-256 over the deterministic CBOR encoding of the command body under D-191. The receipt names the same digest, so a receipt cannot be produced for a command the device did not receive.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "state": {
+          "enum": [
+            "issued",
+            "acknowledged",
+            "executing",
+            "complete",
+            "expired",
+            "failed"
+          ]
+        },
+        "issued_at": { "type": "string", "format": "date-time" },
+        "acknowledged_at": { "type": "string", "format": "date-time" },
+        "waived_at": {
+          "description": "When the participant chose to proceed without this device. A waiver is the participant's act and not the device's, which is why it cannot be derived from the machine state. It is not final: a waived device that later returns and completes reports complete.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "const": "issued" } },
+            "required": ["state"]
+          },
+          "then": { "properties": { "acknowledged_at": false } }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": ["acknowledged", "executing", "complete", "failed"]
+              }
+            },
+            "required": ["state"]
+          },
+          "then": { "required": ["acknowledged_at"] }
+        }
+      ]
+    },
+    "receipt": {
+      "description": "What the device signed, and the exact extent of what it attests.\n\nIt attests that the daemon holding the named device key ran the delete operations the command named, over the stores that daemon controls, at the stated time, and that it counted the rows and keystore entries reported.\n\nIt attests nothing else. It is not evidence that the bytes are unrecoverable, that no operating-system backup or filesystem snapshot holds a copy, that a cloud-synced home directory has not replicated one, that the participant did not make one, or that the physical residue block remapping leaves on flash storage has been reached. A user-space process cannot observe any of those, so no field here reports on them, and residual_risk reports what could not be ruled out rather than certifying what was.\n\nThe signature is COSE_Sign1 with Ed25519 under algorithm identifier −19 per D-190, verified under the ZIP-215 rules D-192 pins — the same profile as the evidence protocol and the erasure log, so one verifier covers all three.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_id",
+        "device_id",
+        "command_digest",
+        "receipt_digest",
+        "outcome",
+        "tables_cleared",
+        "keystore_entries_destroyed",
+        "residual_risk",
+        "signing_device_key_id",
+        "completed_at",
+        "attests"
+      ],
+      "properties": {
+        "command_id": { "type": "string", "format": "uuid" },
+        "device_id": { "type": "string", "format": "uuid" },
+        "command_digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "receipt_digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "outcome": {
+          "description": "The same four values packages/schemas/local-store-v1.sql already declares on the device's own receipt row. The server record is the transported form of the device record and not a second vocabulary for the same fact. partial is first-class: the claim outbox emptied and one locked adapter store refused is a real result, and a boolean would have to round it to a lie in one direction.",
+          "enum": ["complete", "partial", "refused", "expired"]
+        },
+        "tables_cleared": { "type": "integer", "minimum": 0 },
+        "keystore_entries_destroyed": { "type": "integer", "minimum": 0 },
+        "residual_risk": {
+          "description": "What the daemon could not rule out. none-observed is the strongest value available and it says observed, not none.",
+          "enum": [
+            "filesystem-snapshot-possible",
+            "backup-copy-possible",
+            "none-observed"
+          ]
+        },
+        "signing_device_key_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "attests": {
+          "description": "The ceiling, carried in the record rather than in a document beside it, so that a consumer of this schema cannot read the receipt without reading what it means.",
+          "const": "daemon-executed-named-deletes-over-controlled-stores"
+        }
+      },
+      "allOf": [
+        {
+          "description": "A scope of everything destroys the device key material, so a complete receipt for it must report at least one keystore entry destroyed. A complete receipt that destroyed nothing is the shape a stub would produce.",
+          "if": {
+            "properties": { "outcome": { "const": "complete" } },
+            "required": ["outcome"]
+          },
+          "then": {
+            "properties": { "tables_cleared": { "minimum": 1 } }
+          }
+        }
+      ]
+    },
+    "device_disposition": {
+      "description": "The per-device answer, and the only one a participant or a surface reads. It is the local-deletion-command machine coarsened by two facts the machine cannot hold, and packages/schemas/planning-schema.sql makes the stored column equal that coarsening by check constraint, so it cannot become a second opinion about the row.\n\nunreachable and expired are the same machine state and are not the same answer: a command that expired unacknowledged reached no device, and one that expired after acknowledgement reached a device that then stopped. Reporting both as expired hides which of a participant's devices never heard the request at all.\n\nPrecedence runs completion, failure, waiver, expiry, pending — completion first, so that a device which returns after a waiver reports what it actually did.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_id", "disposition", "issued_at", "expires_at"],
+      "properties": {
+        "device_id": { "type": "string", "format": "uuid" },
+        "disposition": {
+          "enum": [
+            "pending",
+            "complete",
+            "failed",
+            "expired",
+            "unreachable",
+            "waived"
+          ]
+        },
+        "issued_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "acknowledged_at": { "type": "string", "format": "date-time" },
+        "receipt_received_at": { "type": "string", "format": "date-time" },
+        "residual_risk": {
+          "enum": [
+            "filesystem-snapshot-possible",
+            "backup-copy-possible",
+            "none-observed"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "description": "unreachable means the command was never acknowledged. A device that answered and then stopped is expired, and calling it unreachable would misreport which devices heard the request.",
+          "if": {
+            "properties": { "disposition": { "const": "unreachable" } },
+            "required": ["disposition"]
+          },
+          "then": {
+            "properties": {
+              "acknowledged_at": false,
+              "receipt_received_at": false,
+              "residual_risk": false
+            }
+          }
+        },
+        {
+          "description": "complete is claimable only against a receipt that arrived. The server never asserts it on a device's behalf, which is the whole reason the receipt is signed.",
+          "if": {
+            "properties": { "disposition": { "const": "complete" } },
+            "required": ["disposition"]
+          },
+          "then": {
+            "required": ["receipt_received_at", "residual_risk", "acknowledged_at"]
+          }
+        },
+        {
+          "description": "A residual risk is reported only when a receipt reported one. Its absence is silence, never a clean result.",
+          "if": { "required": ["residual_risk"] },
+          "then": { "required": ["receipt_received_at"] }
+        }
+      ]
+    }
+  }
+}

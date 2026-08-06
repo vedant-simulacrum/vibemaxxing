@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "composition": {
+    "hosted_mechanism": "cryptographic-tombstone-and-key-destruction",
+    "hosted_owner": "docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md",
+    "local_mechanism": "device-executed-delete-with-signed-receipt",
+    "hosted_completion_waits_for_devices": false,
+    "receipt_absence_meaning": "command-expired-unanswered-device-state-unobserved"
+  },
+  "device_disposition": {
+    "device_id": "018f2c60-0000-7000-8000-000000000704",
+    "disposition": "unreachable",
+    "issued_at": "2026-08-06T10:00:00Z",
+    "expires_at": "2026-08-13T10:00:00Z",
+    "acknowledged_at": "2026-08-06T10:00:41Z"
+  }
+}

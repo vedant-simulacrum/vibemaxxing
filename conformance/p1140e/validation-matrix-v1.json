@@ -730,6 +730,7 @@
     "listPricingDatasets",
     "listRivals",
     "listSessions",
+    "markNotificationRead",
     "pollDeviceAuth",
     "redeemInvite",
     "refreshSession",

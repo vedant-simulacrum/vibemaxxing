@@ -1705,6 +1705,62 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
+  /notifications/{notification_id}/read:
+    post:
+      operationId: markNotificationRead
+      description: >-
+        Mark one inbox item read. This is the only route to the `notification-read`
+        transition, and it exists because the server inbox is the notification
+        authority: without it the transition had no actor, and a read could only
+        have been inferred from a transport signal, which is exactly what
+        `notification_deliveries` is forbidden to carry. A second call on an
+        already-read item replays the first response rather than moving the read
+        time forward.
+      x-authorization: authenticated-account
+      x-recent-auth: not-required
+      x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: Notification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
   /moderation/cases:
     get:
       operationId: listModerationCases
@@ -3410,6 +3466,15 @@ components:
           type: integer
           minimum: 0
     Notification:
+      description: >-
+        One inbox item. It carries references and no rendered sentence: there is no
+        title, body or summary, because a stored sentence would freeze a handle, a
+        figure and an authorization decision at write time. The surface renders from
+        current state at read time, which is what lets a rename be correct, a block
+        take effect, and a retraction reach a participant who has not looked yet.
+        The state vocabulary is exactly the states that reached the inbox; the four
+        worker states before delivery are internal under D-420 and no client is ever
+        shown one.
       type: object
       additionalProperties: false
       required:
@@ -3417,6 +3482,8 @@ components:
         - type
         - state
         - created_at
+        - delivered_at
+        - group_count
         - actor_account_id
         - scope_id
       properties:
@@ -3435,8 +3502,6 @@ components:
             - release
         state:
           enum:
-            - created
-            - suppressed
             - delivered
             - read
             - retracted
@@ -3444,6 +3509,41 @@ components:
         created_at:
           type: string
           format: date-time
+        delivered_at:
+          description: >-
+            When the item reached the server inbox. It is the only delivery time a
+            client sees, and no transport can set it: a push acceptance or a device
+            acknowledgement is a hint about this item, never evidence that it was
+            delivered or read.
+          type: string
+          format: date-time
+        group_count:
+          description: >-
+            How many source events this item stands for. One item with a count of
+            twelve, never twelve items.
+          type: integer
+          minimum: 1
+        read_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        retracted_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        retraction_reason_code:
+          description: >-
+            Why the item was withdrawn, from packages/schemas/reason-codes-v1.json.
+            A retracted item stays in the inbox and stays addressable. Deleting it
+            would leave the participant holding a fact the product has withdrawn and
+            no way to learn that it withdrew it.
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 128
+            - type: 'null'
         actor_account_id:
           oneOf:
             - type: string
@@ -3695,6 +3795,7 @@ components:
         - state
         - requested_at
         - effective_after
+        - device_outcomes
       properties:
         deletion_job_id:
           type: string
@@ -3714,6 +3815,65 @@ components:
         effective_after:
           type: string
           format: date-time
+        device_outcomes:
+          description: >-
+            One entry per enrolled device, always. D-076 requires each device to be
+            reported independently, and a job whose state is `complete` may still
+            carry devices that are `pending`, `unreachable` or `waived`: the hosted
+            erasure does not wait for a device that may never return. The array is
+            required rather than optional so that a client cannot render a single
+            success by omitting it.
+          type: array
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/LocalDeletionOutcome'
+    LocalDeletionOutcome:
+      description: >-
+        What one device did with one deletion command. `disposition` is the whole
+        answer and is derived from the command row rather than chosen: see
+        `local_deletion_commands` in packages/schemas/planning-schema.sql. The
+        receipt fields are present exactly when a signed receipt arrived, and
+        `residual_risk` is reported rather than resolved — the strongest value it
+        offers is `none-observed`, which says observed and not none.
+      type: object
+      additionalProperties: false
+      required:
+        - device_id
+        - disposition
+        - issued_at
+        - expires_at
+      properties:
+        device_id:
+          type: string
+          format: uuid
+        disposition:
+          enum:
+            - pending
+            - complete
+            - failed
+            - expired
+            - unreachable
+            - waived
+        issued_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        receipt_received_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        residual_risk:
+          description: >-
+            Absent until a receipt arrives, and never inferred from its absence. A
+            device that never answers reports no residual risk because the product
+            observed nothing, not because there is none.
+          enum:
+            - filesystem-snapshot-possible
+            - backup-copy-possible
+            - none-observed
     PricingDataset:
       type: object
       additionalProperties: false
