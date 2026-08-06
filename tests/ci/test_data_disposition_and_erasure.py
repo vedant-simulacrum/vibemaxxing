@@ -122,6 +122,53 @@ class DispositionAndErasureTests(unittest.TestCase):
             policies["backup_retention_days"]["value"] + 1,
         )
 
+    # -- inventory table integrity ------------------------------------------
+
+    def test_a_duplicated_specification_family_fails(self) -> None:
+        """The defect a rebase introduced twice, found by hand both times.
+
+        The decision register grew a duplicate-id check after the same thing
+        happened there. The inventory had none, so a replayed rebase duplicated
+        a family four times and left a stale `planned-missing` row beside the
+        current one that superseded it. The completeness count is read off this
+        table, so a duplicate makes that count wrong.
+        """
+        inventory = ROOT / "docs" / "planning" / "SCHEMA_AND_INTERFACE_INVENTORY.md"
+        original = inventory.read_text(encoding="utf-8")
+        row = next(
+            line
+            for line in original.split("\n")
+            if line.startswith("| Conformance harness |")
+        )
+        # The file has no trailing newline, so a bare append would concatenate
+        # the row onto the last line and the check would never see it.
+        inventory.write_text(original + "\n" + row + "\n", encoding="utf-8")
+        try:
+            with self.assertRaises(self.validator.ValidationFailure) as raised:
+                self.validator.validate_inventory_register()
+        finally:
+            inventory.write_text(original, encoding="utf-8")
+        self.assertIn("repeats the specification family", str(raised.exception))
+
+    def test_an_undeclared_inventory_status_fails(self) -> None:
+        """The vocabulary is read from the document's own definition list.
+
+        Hard-coding it here would let the two drift apart, which is the defect
+        rather than the check.
+        """
+        inventory = ROOT / "docs" / "planning" / "SCHEMA_AND_INTERFACE_INVENTORY.md"
+        original = inventory.read_text(encoding="utf-8")
+        inventory.write_text(
+            original.replace("| present-provisional | D-441", "| done | D-441", 1),
+            encoding="utf-8",
+        )
+        try:
+            with self.assertRaises(self.validator.ValidationFailure) as raised:
+                self.validator.validate_inventory_register()
+        finally:
+            inventory.write_text(original, encoding="utf-8")
+        self.assertIn("not one of", str(raised.exception))
+
     # -- erasure invariants -------------------------------------------------
 
     def test_a_nullable_reference_into_an_erased_table_fails(self) -> None:
