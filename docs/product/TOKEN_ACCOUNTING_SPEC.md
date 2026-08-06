@@ -81,7 +81,7 @@ A component the profile does not enable is written `0` and read as *the profile 
 
 ### Profile digest
 
-`accounting_profile_sha256` is a signed claim field. Under D-241 its preimage is the profile object with `content_sha256` omitted, encoded as RFC 8949 core deterministic CBOR — the same profile the signed claim uses — and hashed with SHA-256. The preimage admits integers, text strings, arrays, maps and `null`; it refuses floats under D-193 and refuses booleans, so a two-valued field is a named enum and stays legible inside the digest.
+`accounting_profile_sha256` is a signed claim field. Under D-261 its preimage is the profile object with `content_sha256` omitted, encoded as RFC 8949 core deterministic CBOR — the same profile the signed claim uses — and hashed with SHA-256. The preimage admits integers, text strings, arrays, maps and `null`; it refuses floats under D-193 and refuses booleans, so a two-valued field is a named enum and stays legible inside the digest.
 
 ### Estimated Cash Burn
 
@@ -89,7 +89,7 @@ Unit prices are integers in pricing-currency nano-units per token. `units × uni
 
 ### Retries, cancellation and nested execution
 
-`retry_policy`, `cancellation_policy` and `nested_execution_policy` in `packages/schemas/accounting-profile.schema.json` are enums whose behaviour D-242 defines in the arithmetic record. Each retry value names which attempts count, whether a distinct model execution is required, what identifies an attempt, and which control prevents the double count. Each cancellation value names the counted quantity and the treatment of an unknown remainder, which is absent and never zero. Each nested-execution value names child attribution, whether a parent total contains its children, and which control deduplicates.
+`retry_policy`, `cancellation_policy` and `nested_execution_policy` in `packages/schemas/accounting-profile.schema.json` are enums whose behaviour D-262 defines in the arithmetic record. Each retry value names which attempts count, whether a distinct model execution is required, what identifies an attempt, and which control prevents the double count. Each cancellation value names the counted quantity and the treatment of an unknown remainder, which is absent and never zero. Each nested-execution value names child attribution, whether a parent total contains its children, and which control deduplicates.
 
 ### Corrections
 
@@ -110,7 +110,7 @@ Context compaction is not itself a token event. The resulting model operation co
 
 Every provider operation may count, including subagents, but one provider operation counts once. `packages/schemas/observer-equivalence-v1.json` is the machine owner of when two observations are observations of one execution, and `conformance/accounting/dedup-vectors-v1.json` is its executable form.
 
-The server decides. Under D-249 the client contributes facts and no verdict: it does not choose the commitment preimage, the equivalence scope, the equivalence class, the survivor, or the disposition.
+The server decides. Under D-269 the client contributes facts and no verdict: it does not choose the commitment preimage, the equivalence scope, the equivalence class, the survivor, or the disposition.
 
 ### The preimage carries source-derived facts only
 

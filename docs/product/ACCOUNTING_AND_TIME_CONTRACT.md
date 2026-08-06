@@ -13,7 +13,7 @@ Source totals and provider categories are observations, not universal addends. T
 
 The machine contract is `packages/schemas/accounting-profile.schema.json`; registered planning profiles and representative no-double-count fixtures live under `conformance/accounting/`. A profile states which fields exist, how they contain one another, and through `component_map` which canonical component each field resolves to. It does not state the arithmetic those declarations are evaluated under: `packages/schemas/accounting-arithmetic-v1.json` owns that, and `docs/product/TOKEN_ACCOUNTING_SPEC.md` is its prose owner. The two together are what two independent implementations need in order to reach the same total.
 
-Under D-241 a profile's `content_sha256`, which the signed claim carries as `accounting_profile_sha256`, is SHA-256 over the profile's RFC 8949 core deterministic CBOR encoding with that field omitted.
+Under D-261 a profile's `content_sha256`, which the signed claim carries as `accounting_profile_sha256`, is SHA-256 over the profile's RFC 8949 core deterministic CBOR encoding with that field omitted.
 
 Tool calls are not a separate token category. Tokens consumed by tool definitions, arguments, results, context, compaction, summaries, retries, and subagents are counted in the provider-reported categories that incurred them.
 
@@ -131,7 +131,7 @@ All integer additions use checked arithmetic. Negative, overflowed, internally i
 
 Each accepted event has exactly one `packages/schemas/source-receipt-v1.schema.json` receipt, which is device-local, records every observation that saw the execution and which single one counted, and asserts no provider attestation under D-100. `packages/schemas/evidence-bundle-v1.cddl` binds the signed claim bytes, that receipt, the profile and arithmetic digests, the provenance chain, the privacy decision and the equivalence record into one at-rest record that never crosses the device boundary.
 
-Corrections do not rewrite accepted totals. Under D-243 they are append-only contributions with a direction and an unsigned magnitude, composed as the checked sum of additions minus the checked sum of retractions, rejecting rather than clamping when retractions exceed what they correct.
+Corrections do not rewrite accepted totals. Under D-263 they are append-only contributions with a direction and an unsigned magnitude, composed as the checked sum of additions minus the checked sum of retractions, rejecting rather than clamping when retractions exceed what they correct.
 
 ## Required tests
 
