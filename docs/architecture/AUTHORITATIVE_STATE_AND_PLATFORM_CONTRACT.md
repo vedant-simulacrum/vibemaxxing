@@ -38,7 +38,7 @@ An internal state is one a client must never be shown. Every omission from an AP
 | `web-session-family` | `web-session-family` | `session_families.state` | — | — |
 | `native-session-family` | `native-session-family` | `session_families.state` | — | — |
 | `session-member` | — | `native_sessions.state`, `web_sessions.state` | `Session.state` | — |
-| `ranked-identity-eligibility` | `ranked-identity-eligibility` | — | `AccountProfile.ranked_state`, `PublicProfile.ranked_state` | `appealed`, `consolidating`, `investigating`, `reversed` |
+| `ranked-identity-eligibility` | `ranked-identity-eligibility` | `ranked_identities.state` | `AccountProfile.ranked_state`, `PublicProfile.ranked_state` | `appealed`, `consolidating`, `investigating`, `reversed` |
 | `idempotency-ledger` | `idempotency-ledger` | `idempotency_records.state` | — | — |
 | `ranking-projection` | `ranking-projection` | `ranking_projection_generations.state` | — | — |
 | `model-alias-resolution` | `model-alias-resolution` | `cost_interpretations.state`, `pricing_datasets.state` | `PricingDataset.state` | — |
@@ -48,16 +48,16 @@ An internal state is one a client must never be shown. Every omission from an AP
 | `board-invitation` | `board-invitation` | `board_invites.state` | — | — |
 | `board-container` | — | `boards.state`, `communities.state`, `organizations.state` | `Board.state`, `Community.state`, `Organization.state` | — |
 | `presence-lease` | `presence-lease` | `presence_leases.state` | — | — |
-| `notification-delivery` | `notification-delivery` | `notifications.state` | `Notification.state` | `grouped`, `ready` |
+| `notification-delivery` | `notification-delivery` | `notification_events.state`, `notifications.state` | `Notification.state` | `grouped`, `ready` |
 | `moderation-case` | `moderation-case` | `moderation_cases.state` | `ModerationCase.state` | — |
 | `appeal` | `appeal` | `appeals.state` | `Appeal.state` | `screening` |
 | `export-job` | `export-job` | `exports.state` | `ExportJob.state` | — |
 | `server-deletion` | `server-deletion` | `deletion_jobs.state` | `DeletionJob.state` | `rebuilding-projections` |
 | `local-deletion-command` | `local-deletion-command` | `local_deletion_commands.state` | — | — |
-| `daemon-lifecycle` | `daemon-lifecycle` | — | — | — |
-| `privileged-supervisor` | `privileged-supervisor` | — | — | — |
-| `interactive-shell` | `interactive-shell` | — | — | — |
-| `update-lifecycle` | `update-lifecycle` | `update_installations.state` | — | — |
+| `daemon-lifecycle` | `daemon-lifecycle` | `service_instances.state` | — | — |
+| `privileged-supervisor` | `privileged-supervisor` | `privileged_supervisor_instances.state` | — | — |
+| `interactive-shell` | `interactive-shell` | `shell_sessions.state` | — | — |
+| `update-lifecycle` | `update-lifecycle` | `update_installations.state`, `update_policies.state` | — | — |
 | `release-trust` | `release-trust` | `release_sets.state` | — | — |
 | `platform-certification` | `platform-certification` | `platform_profiles.validation_state` | `CompatibilityProfile.validation_state` | — |
 | `account-lifecycle` | `account-lifecycle` | `accounts.state` | — | — |
@@ -92,7 +92,7 @@ An internal state is one a client must never be shown. Every omission from an AP
 
 - **No registry machine for board or claim, by design.** `claim-record` does not need one: claims are immutable facts, and the registry indexes mutable concepts. `board-container` does not need one: it is a two-value archive flag whose mutable concepts (`board-membership`, `board-invitation`) already have machines. `device-authorization-grant` and `identity-link` remain open: both are genuinely mutable, but their transitions are owned by the OAuth and enrollment flows and are not yet specified to the level the registry requires.
 - **Cancelling a deletion requested from `restricted` returns the account to `active`.** `account-lifecycle` allows `account-request-deletion` from both `active` and `restricted`, because a restricted account keeps its deletion rights, but one state column cannot hold "pending deletion" and "restricted" at once. `account-cancel-deletion` therefore targets `active`, and the restriction must be re-applied from the append-only moderation effects. Modelling restriction as a flag independent of lifecycle would remove this.
-- **`ranked-identity-eligibility` has no persistence.** The machine names `ranked-identities`, `identity-investigations` and `identity-events`; none of those tables exist in `planning-schema.sql`. The vocabulary is fixed but nothing can store it.
+- **`ranked-identity-eligibility` now has persistence.** The machine names `ranked-identities`, `identity-investigations` and `identity-events`, and all three are defined in `planning-schema.sql`. This was one of nineteen machines naming a table the DDL did not define; `validate_state_vocabularies.py` now fails when any declared persistence owner does not resolve, so the class of defect cannot return. The registry stores owners in kebab-case and the DDL declares them in snake_case, which is why a naive comparison had found nothing wrong.
 - **`certification_state` in the platform profile registry.** `platform-profile-registry-v1.schema.json` pins it to the constant `planned-validation-required`, which is the machine's `planned` state under an older spelling. `platform_profiles.validation_state` and `CompatibilityProfile.validation_state` now use `planned`; the frozen constant, its 34 uses in `platform-profile-registry-v1.json` and its uses in `conformance/p1140e/platform-validation-plan-v1.json` remain to be renamed.
 - **`deletion_state_at_generation` in the export manifest.** `export-manifest-v1.schema.json` carries a fifth deletion vocabulary — `none`, `cooling_off`, `executing`, `completed` — that must become `none`, `cooling-off`, `processing`, `complete` to match the `server-deletion` machine.
 - **Cancellation during deletion cooling-off is unmodelled.** `cooling-off` exists so a deletion is reversible, but the machine has no `cancelled` state and no transition out of it other than forward.
