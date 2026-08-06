@@ -5,3 +5,4 @@ grpcio-tools==1.83.0
 cddlparser==0.6.0
 psycopg[binary]==3.3.4
 cryptography==50.0.0
+coverage==7.13.0

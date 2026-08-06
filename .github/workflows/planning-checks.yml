@@ -13,9 +13,53 @@ permissions:
   contents: read
 
 jobs:
+  # Deliberately a second job rather than more steps in planning-checks.
+  #
+  # Measuring costs about three and a half minutes: it re-runs the whole unit suite
+  # under coverage.py and builds the Rust workspace instrumented from cold. The
+  # planning-checks job is already about four minutes since the node lane started
+  # building the npm workspaces, and appending this to it would take the required
+  # check past seven. As a separate job the two run concurrently, so the wall-clock
+  # time a pull request waits does not grow; what grows is billed runner minutes,
+  # roughly doubling them for this workflow. That is the trade, stated rather than
+  # absorbed.
+  #
+  # It runs per pull request rather than on main only, because a coverage regression
+  # found after merge is found by whoever hits it next.
+  measured-coverage:
+    # This job is cheap: it completes in about two and a half minutes, and the
+    # instrumented Rust build is not the cost. Two runs were cancelled at exactly
+    # 15m02s and 15m04s against completions of 1m47s, 2m38s and 2m47s — a bimodal
+    # split that is runner contention starving the job, not work it is doing. An
+    # earlier commit on this branch moved it off the pull-request path blaming the
+    # Rust build. That reason was wrong; the 15-minute budget was the defect, so
+    # the job runs on pull requests again and both jobs get room to finish.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      # llvm-profdata and llvm-cov ship in this rustup component. Nothing is installed
+      # from crates.io to measure Rust: cargo-llvm-cov produces the identical number
+      # and would be one more pinned third-party binary compiled on every run.
+      - name: Add the LLVM coverage tools to the pinned toolchain
+        run: rustup component add llvm-tools-preview
+      - name: Install pinned planning validators
+        run: python3 -m pip install --disable-pip-version-check -r requirements-planning.txt
+      # No --allow-unmeasured. Every toolchain this needs is present on the runner, so
+      # a surface reporting unmeasured here is a defect rather than a local absence,
+      # and an unmeasured surface is an absence of evidence rather than a pass.
+      - name: Measure coverage against the recorded ceiling
+        run: python3 scripts/ci/measure_coverage.py
+      # Measuring must not leave anything behind. An instrumented build that drops
+      # default_*.profraw into the tree would make every later `git status` lie.
+      - name: The measurement left the working tree clean
+        run: git diff --exit-code && test -z "$(git status --porcelain)"
+
   planning-checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16
@@ -65,6 +109,11 @@ jobs:
       # than staying not-started until somebody notices.
       - name: Validate work-unit fields, status and table ownership
         run: python3 scripts/repository/validate_work_unit_status.py
+      # Every load-scenario rate names the policy key it was derived from, and this
+      # resolves them. A scenario whose rate outlives the limit it came from is a
+      # scenario that will assert something untrue the first time anybody runs it.
+      - name: Resolve every load scenario against the policy defaults
+        run: python3 scripts/repository/validate_load_scenarios.py
       - name: Validate the evaluation registry
         run: python3 scripts/ci/run_evals.py --validate-registry
       # The dangle set is empty and tests/ci/test_cross_references.py pins it there, so

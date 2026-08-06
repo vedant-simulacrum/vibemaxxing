@@ -1,9 +1,9 @@
 # Test Strategy
 
 Status: normative planning contract
-Version: 1
+Version: 2
 Updated: 2026-08-06
-Decisions: D-240, D-241
+Decisions: D-240, D-241, D-460, D-461, D-462
 
 ## What was missing
 
@@ -72,11 +72,40 @@ Coverage is a floor with a non-regression rule, not a target to be met. The rule
 | Go handlers, middleware and repositories | 75% statement | boundary code where the last quarter is error paths that cost more to reach than they return |
 | `packages/ui` | 70% statement | component logic; visual correctness is covered by regression baselines rather than by coverage |
 | `apps/web` route and page code | 60% statement | thin composition over the two above |
+| `scripts/ci` and `scripts/repository` | 54% line-and-branch | D-460. The planning validators, which are the only code in this repository that executes on every pull request. Line-and-branch because a validator is mostly branches and a line-only number over one flatters it. **This is the first measurement rounded down, not a considered target**, and it is stated with the intent to raise it; see the measured numbers below for why it starts where it does |
 | generated bindings, `main` packages, migrations | excluded | measuring generated code measures the generator |
 
 The non-regression rule: a pull request may not lower a scope's measured coverage by more than **1.0 percentage point** below its recorded baseline. The one-point band exists so that deleting a well-covered file does not fail an unrelated change; a deliberate reduction is a baseline edit, which leaves a reviewable diff, exactly as the eval status baseline does.
 
 Coverage says a line executed. It does not say an assertion was made about it, which is why the floors above are floors and why the mutation check below exists.
+
+### What the floors were measured against
+
+Every floor above was written before anything had been measured, which made each one a threshold with nothing on the other side of it. D-460 records the first measurement. `scripts/ci/measure_coverage.py` produces it, `scripts/ci/measured-coverage-baseline-v1.json` records it, and the `measured-coverage` job runs it per pull request.
+
+| Surface | Measured | Metric | Against its floor |
+|---|---:|---|---|
+| `crates/vibeproof-core` | **90.97%** | line, 292 of 321 | clears 90% by 0.97 points |
+| `apps/api` | **72.86%** | statement, 51 of 70 | no floor applies |
+| `scripts/ci` + `scripts/repository` | **54.86%** | line-and-branch, 3,976 of 7,248 | the floor is this number rounded down |
+
+Three findings sit behind those three numbers, and none of them is resolved by having measured.
+
+**Rust clears its floor by less than the non-regression band.** 90.97% against a 90% floor means a single uncovered branch added to `vibeproof-core` breaches the floor. That is the floor working as intended — this is the crate where a gap is a security defect — but it means the crate has no room, and a change that adds an error path adds a test with it or fails.
+
+**Neither Go floor has a subject.** `apps/api` contains exactly one package and it is `main`, which the table above excludes. So 72.86% is recorded to stop it rotting unobserved and is compared against nothing; the 85% and 75% floors are waiting for the first non-`main` package. The measurer fails the moment one appears without a floor recorded for it, so the absence expires by itself rather than by somebody remembering.
+
+**The Python floor is being written for the first time, not lowered.** This table had no Python row until now: it named Rust, Go, `packages/ui` and `apps/web`, and omitted the only code here that runs on every pull request. Ten of the twenty-two modules under `scripts/ci` and `scripts/repository` measure 0% — `generate_gate_ledger.py`, `repository_policy.py`, `run_evals.py`, `run_phase1_evidence.py`, `generate_issue_plan.py`, `generate_repository_metadata.py`, `run_ed25519_oracles.py`, `validate_p1140e_contracts.py`, `validate_planning_coverage.py` and `validate_t20_contract.py`. Every one of them runs in CI under `make validate`. Raising this floor means writing tests for those, not adjusting the number.
+
+The Python figure is a **lower bound rather than an estimate**. Measurement is in-process only, and two of the ten modules above are in fact exercised by tests that invoke them as a child process. Child-process capture was tried and rejected: it reported about six points higher on one run and nothing on the next depending on whether a `.pth` file fired, and a ceiling that moves for that reason measures the environment rather than the tests. The undercount is stable and named; an unstable number that flattered would be worse.
+
+**The gate fired the first time it met code it had not been recorded against**, which is the only evidence that matters about it. The Python number was 55.87% at the commit this work branched from and 54.86% after rebasing onto current `main`: a 1.01-point fall that breached both the one-point band and the floor recorded a moment earlier. The measurer attributed it without being asked — total units grew from 7,100 to 7,248, so uncovered code arrived rather than a file moving — and the code is real, 278 lines added to `validate_planning_artifacts.py` which already sat at 41%, plus 42 to `validate_state_vocabularies.py`, merged before any coverage gate existed to notice. The floor is recorded at 54% rather than 55% for that reason: a floor established for the first time is established against the tree it will guard, and 55% was an artifact of a branch point rather than a number `main` ever held. That is the single floor adjustment in this change and it is stated rather than absorbed.
+
+**Distinguishing a real regression from a moved file.** A percentage falls for two very different reasons, so every scope records its denominator beside its percentage and the measurer classifies each fall by comparing denominators: grown means new uncovered code arrived, which is the signal; shrunk means covered code was deleted or moved out, which is usually noise; unchanged means a test was removed, skipped or weakened. A file moving *within* a scope is invisible, because a scope is a directory rather than a file list. A file moving *between* scopes appears as two opposite-signed denominator deltas, which the failure message names and a human resolves. That residual is accepted rather than solved.
+
+Editing `scripts/ci/measured-coverage-baseline-v1.json` is the only sanctioned way to record a worse number. `--write` re-records the measurements and keeps every floor and note already written, so a deliberate reduction leaves a reviewable diff and a silent one turns the check red. A missing or malformed baseline fails closed, and a surface the toolchain could not measure fails rather than passing, because an unmeasured surface is an absence of evidence.
+
+The `measured-coverage` job is separate from `planning-checks` on purpose. It costs about three and a half minutes — it re-runs the unit suite under `coverage.py` and builds the Rust workspace instrumented from cold — and `planning-checks` is already about four minutes since the node lane started building the npm workspaces. Running them concurrently keeps the wall-clock wait flat and roughly doubles billed runner minutes for the workflow. Rust is measured with the `llvm-profdata` and `llvm-cov` that ship in rustup's `llvm-tools-preview` component, so no third-party coverage runner is compiled on any run; `cargo-llvm-cov` produces the identical number and would be one more pinned dependency for it.
 
 **A mutation-testing pass runs on the protocol and accounting crates before each ring expansion of the private beta**, not per pull request, because it is slow. A surviving mutant in canonical encoding or in score arithmetic is a defect in the test suite and is fixed before the ring expands.
 
@@ -125,11 +154,15 @@ Ten minutes is set by attention rather than by cost: a check that outlives the e
 
 ### Why it is separate
 
-Load tests are not run per pull request. They cost runner minutes against the free tier and they require a deployed target, and under D-093 the deployed target is production. They run **before each ring expansion of the private beta and before public launch**, on a manually dispatched workflow, against a `ci`-provisioned ephemeral stack sized to match production rather than against production itself.
+Load tests are not run per pull request. They cost runner minutes against the free tier and they require a deployed target, and under D-238 no standing pre-production environment is provisioned. They run **before each ring expansion of the private beta and before public launch**, on a manually dispatched workflow, against a `ci`-provisioned ephemeral stack sized to match the configuration selected under D-361 rather than against production itself.
 
 ### The scenarios
 
 Each names a load derived from the product, a duration, and a pass condition that can be read off a result rather than judged.
+
+`evals/load/load-scenarios-v1.json` is the machine owner of the set: it writes each scenario out operation by operation, and every rate in it names the `policy_ref` it was derived from. `scripts/repository/validate_load_scenarios.py` resolves those against `packages/schemas/policy-defaults-v1.json` and cross-checks the scenario names against the table below, so a rate cannot drift away from the limit it claims to come from and the two files cannot hold different sets. D-461 records that binding.
+
+The population is 200 participants with one device each. That is not a round number: D-180 bounds the private beta by the invite codes the owner issues by hand, `invite_outstanding_max` holds that quota at 200, and `docs/architecture/API_EDGE_CONTRACT.md` derives every rate limit from the same figure. The validator fails if the scenario population and the quota stop agreeing.
 
 | Scenario | Load | Duration | Passes when |
 |---|---|---|---|
@@ -148,15 +181,22 @@ Every run records what `docs/verification/BENCHMARK_AND_EVIDENCE_PROTOCOLS.md` a
 
 ### The honest limit
 
-**These scenarios say nothing about the 100,000 ranked-identity scale target.** They are sized at 200 participants because that is the private beta, and a system that passes at 200 has demonstrated nothing at 100,000. D-094 records that the 100,000 target, the sub-100-USD ceiling and the 5-minute recovery point objective cannot all hold; a load test is not the instrument that resolves that, and passing every scenario above must never be cited as evidence that the scale target is reachable.
+**These scenarios say nothing about the 100,000 ranked-identity scale target.** They are sized at 200 participants because that is the private beta, and a system that passes at 200 has demonstrated nothing at 100,000. Passing every scenario above must never be cited as evidence that the scale target is reachable.
 
-A scenario set for the 100,000 target would need a production-shaped environment at production-shaped cost. It is not specified here because specifying it would imply a plan to run it, and there is no budget line for one.
+The reason for that has changed, and the conclusion has not. D-094 used to record the 100,000 target, the sub-100-USD ceiling of D-093 and the 5-minute recovery point objective as a three-way conflict that could not all hold. **D-360 resolved it by amending the ceiling** to the measured steady-state monthly cost of the configuration selected under D-361, which is one of the three amendments ADR-017 step 4 permits; the scale target and the recovery objectives are unchanged, and D-093 and D-094 are both superseded. So the scenarios above are no longer in tension with a fixed budget figure.
+
+That removes the reason not to specify a larger scenario set and leaves a better one: **nothing has measured the 100,000 figure.** A scenario asserting it would be this repository inventing a number and then testing against its own invention, which is the pattern the eval registry and the coverage floors were both repaired for. A scale scenario becomes specifiable when there is a measured steady-state cost curve for the selected configuration to size it against, and not before. D-462 records that condition so the absence expires against evidence rather than against somebody's memory.
+
+**Nothing below has been run.** None of these scenarios has been written as a k6 script, no ephemeral stack has been provisioned to run one against, and `evals/load/load-scenarios-v1.json` carries `claim_scope: specification-only` to say so. One of them, `offline-drain`, is expected to fail when it is first run: SR-012 is open, the persistence half of exact idempotent replay is unrepaired, and the scenario asserts exactly what that gap breaks. Writing down a scenario that is known to fail is the point of writing it down.
 
 ## Where this connects
 
 | Concern | Owner |
 |---|---|
 | eval suites, statuses, result schema, verification matrix | `docs/verification/EVAL_SYSTEM.md` |
+| the measured coverage ceiling and the non-regression gate | `scripts/ci/measured-coverage-baseline-v1.json`, measured by `scripts/ci/measure_coverage.py` |
+| the load scenarios operation by operation | `evals/load/load-scenarios-v1.json`, validated by `scripts/repository/validate_load_scenarios.py` |
+| rate-limit classes and the quotas the scenarios are derived from | `docs/architecture/API_EDGE_CONTRACT.md`, `packages/schemas/policy-defaults-v1.json` |
 | conformance fixture and runner design | `docs/verification/CONFORMANCE_HARNESS.md` |
 | acceptance gates per milestone | `docs/verification/ACCEPTANCE_GATES.md` |
 | performance budgets and benchmark metadata | `docs/engineering/PERFORMANCE_BUDGETS.md`, `docs/verification/BENCHMARK_AND_EVIDENCE_PROTOCOLS.md` |
@@ -165,6 +205,12 @@ A scenario set for the 100,000 target would need a production-shaped environment
 
 ## Evidence
 
-Almost none of this runs. `make test` runs nine Python validator test files. Go, Rust and node lanes exist in the verification matrix; the node lane is recorded `uncovered` because no root `package.json` exists, and 24 of 27 eval suites execute nothing. No coverage number has ever been measured, so every floor above is a target with no baseline behind it and the non-regression rule has nothing to regress against until the first measurement. No load test has been written or run.
+Most of this still does not run, and the parts that do are now measured rather than asserted.
 
-The first measurement — a real coverage number per scope, recorded as a baseline — is what converts the floors from intentions into a check.
+**Measured.** `make test` runs 16 Python validator test files. Three surfaces carry a real coverage number, recorded in `scripts/ci/measured-coverage-baseline-v1.json` and re-measured per pull request by the `measured-coverage` job: Rust at 90.97% line, Go at 72.86% statement, Python at 54.86% line-and-branch. The non-regression rule has something to regress against for the first time, and `tests/ci/test_measure_coverage.py` drives each direction of the comparison — worse fails with the fall attributed, the same passes, better passes and is reported, and a missing, malformed or unmeasurable input fails closed — because a gate that cannot be shown to fire is not evidence either.
+
+**Still not measured, and not claimed.** `packages/ui` and `apps/web` build under the node lane and have no coverage number, so their 70% and 60% floors remain thresholds with nothing on the other side of them; that is the same defect this section previously recorded for all five scopes, now reduced to two. Both Go floors have no subject, because `apps/api` holds one `main` package. 24 of 27 eval suites still execute nothing. No mutation pass has run.
+
+**No load test has been written or run.** The six scenarios are specified in `evals/load/load-scenarios-v1.json` and validated for internal consistency against the policy defaults, which is a specification being checkable rather than a system being tested. `claim_scope: specification-only` says so in the file itself, and the validator fails if it stops saying so.
+
+What converted the coverage floors from intentions into a check was the first measurement. What would convert the load scenarios is a run, and there has not been one.

@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-08-06",
+  "owner": "docs/verification/TEST_STRATEGY.md",
+  "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/52",
+  "note": "The six load scenarios TEST_STRATEGY.md names, written out concretely: what is driven, at what rate, against what, and what result fails. Every rate here is derived from a policy default or from the private-beta population rather than chosen, and scripts/repository/validate_load_scenarios.py resolves each derivation against packages/schemas/policy-defaults-v1.json so a scenario cannot drift away from the contract it claims to come from.",
+  "claim_scope": "specification-only",
+  "claim_note": "No scenario has been written as a k6 script and none has been run. This file is the specification, not evidence. A scenario listed here is a scenario somebody has to build, and an unrun scenario proves nothing about the system.",
+  "population": {
+    "participants": 200,
+    "devices_per_participant": 1,
+    "derivation": "D-180 bounds the private beta by the number of invite codes the owner issues by hand, and packages/schemas/policy-defaults-v1.json sets invite_outstanding_max to 200. The ring size is therefore a row count rather than a chosen figure, and docs/architecture/API_EDGE_CONTRACT.md derives every rate limit from the same 200.",
+    "policy_ref": "invite_outstanding_max"
+  },
+  "scale_target_note": "None of these scenarios says anything about the 100,000 ranked-identity scale target. They are sized at 200 because that is the private beta, and passing at 200 demonstrates nothing at 100,000. D-094 recorded the ceiling, the scale target and the recovery objectives as an unresolved three-way conflict; D-360 resolved it by amending the ceiling to the measured steady-state cost of the selected configuration, leaving the scale target and the recovery objectives unchanged. So the tension a load test would have had to navigate is gone, and the reason not to write a 100,000-participant scenario is unchanged and simpler: nothing has measured that figure, and a scenario asserting it would be a number this repository invented.",
+  "execution": {
+    "driver": "k6",
+    "driver_licence": "AGPL-3.0, invoked as a separate process and never linked into a distributed artifact; see docs/verification/TEST_STRATEGY.md",
+    "target": "a ci-provisioned ephemeral stack sized to match the production configuration selected under D-361, never production itself",
+    "cadence": "manually dispatched before each ring expansion of the private beta and before public launch; never per pull request",
+    "recording": "docs/verification/BENCHMARK_AND_EVIDENCE_PROTOCOLS.md metadata is mandatory: runner class, operating system, toolchain versions, dataset version, warmup policy, sample count, statistical summary and commit SHA. A result without it is not evidence.",
+    "data": "synthetic only, from evals/fixtures/ and conformance/, with no exception in any environment"
+  },
+  "scenarios": {
+    "beta-steady": {
+      "intent": "the load the private beta actually generates, held long enough for aggregate freshness to matter",
+      "duration_seconds": 1800,
+      "virtual_users": 200,
+      "operations": [
+        {
+          "name": "claim-batch-submit",
+          "operation_class": "claim-ingest",
+          "per_user_period_seconds": 60,
+          "requests_per_second": 3.3,
+          "derivation": "200 devices x 1 batch per 60 s, the steady rate rate_limit_claim_ingest_per_minute is set at six times",
+          "policy_ref": "rate_limit_claim_ingest_per_minute"
+        },
+        {
+          "name": "presence-heartbeat",
+          "operation_class": "presence",
+          "per_user_period_seconds": 30,
+          "requests_per_second": 6.7,
+          "derivation": "200 devices x 1 per presence_heartbeat_seconds",
+          "policy_ref": "presence_heartbeat_seconds"
+        },
+        {
+          "name": "leaderboard-read",
+          "operation_class": "public-read",
+          "per_user_period_seconds": 60,
+          "requests_per_second": 3.3,
+          "derivation": "200 clients x 1 per public_cache_stale_seconds, because anything faster is a cache hit and never reaches the origin",
+          "policy_ref": "public_cache_stale_seconds"
+        },
+        {
+          "name": "authenticated-read",
+          "operation_class": "authenticated-read",
+          "per_user_period_seconds": 30,
+          "requests_per_second": 6.7,
+          "derivation": "200 clients x 2 per 60 s",
+          "policy_ref": "rate_limit_authenticated_read_per_minute"
+        }
+      ],
+      "aggregate_requests_per_second": 20,
+      "pass_conditions": [
+        {"metric": "claim_ingest_latency_p95_ms", "comparison": "<=", "value": 500},
+        {"metric": "read_latency_p95_ms", "comparison": "<=", "value": 300},
+        {"metric": "http_5xx_count", "comparison": "==", "value": 0},
+        {"metric": "aggregate_freshness_max_seconds", "comparison": "<=", "value": 90}
+      ],
+      "fails_when": "any p95 exceeds its bound, any 5xx is returned, or aggregate freshness exceeds 90 s at any point during the run rather than only at the end"
+    },
+    "beta-peak": {
+      "intent": "the aggregate admission ceiling, driven deliberately, to see what the edge does at its own limit",
+      "duration_seconds": 300,
+      "virtual_users": 2000,
+      "operations": [
+        {
+          "name": "beta-steady-mix-at-10x",
+          "operation_class": "mixed",
+          "requests_per_second": 200,
+          "derivation": "10 x beta-steady, which is exactly aggregate_admission_ceiling_rps",
+          "policy_ref": "aggregate_admission_ceiling_rps"
+        }
+      ],
+      "aggregate_requests_per_second": 200,
+      "pass_conditions": [
+        {"metric": "http_5xx_count", "comparison": "==", "value": 0},
+        {"metric": "rate_limited_responses_without_retry_after", "comparison": "==", "value": 0},
+        {"metric": "freshness_recovery_seconds_after_peak", "comparison": "<=", "value": 300}
+      ],
+      "fails_when": "a request is refused with anything other than 429 plus Retry-After, a 5xx appears below the ceiling, or aggregate freshness has not returned to the beta-steady bound within 5 minutes of the peak ending. Requests refused at the ceiling itself return 503 with Retry-After, which is a statement about the service rather than about the client, and are counted separately from the 429s."
+    },
+    "offline-drain": {
+      "intent": "the case where duplicate admission and exact idempotent replay are actually exercised at scale",
+      "duration_seconds": 600,
+      "virtual_users": 50,
+      "operations": [
+        {
+          "name": "queued-backlog-drain",
+          "operation_class": "claim-ingest",
+          "requests_per_second": 5,
+          "derivation": "50 devices reconnecting at once, each carrying 24 h of queued minutes: 1,440 rows in three batches under batch_max_claims = 500. rate_limit_claim_ingest_per_minute permits 6 batches per minute per device, so a legitimate reconnect is never delayed by the limit.",
+          "policy_ref": "batch_max_claims"
+        },
+        {
+          "name": "replayed-batches",
+          "operation_class": "claim-ingest",
+          "requests_per_second": 1,
+          "derivation": "one in five batches is re-sent with an identical Idempotency-Key and identical bytes, and one in twenty with the same key and different bytes, per the idempotency contract in docs/architecture/API_EDGE_CONTRACT.md",
+          "policy_ref": "batch_max_claims"
+        }
+      ],
+      "aggregate_requests_per_second": 6,
+      "pass_conditions": [
+        {"metric": "claims_admitted_more_than_once", "comparison": "==", "value": 0},
+        {"metric": "identical_replay_non_identical_responses", "comparison": "==", "value": 0},
+        {"metric": "same_key_different_bytes_not_rejected", "comparison": "==", "value": 0},
+        {"metric": "drain_completion_seconds", "comparison": "<=", "value": 600},
+        {"metric": "other_principal_latency_degradation_percent", "comparison": "<=", "value": 50}
+      ],
+      "fails_when": "any claim is admitted twice, a byte-identical replay returns a non-identical response, a same-key-different-bytes request is accepted instead of refused, the drain exceeds 10 minutes, or a principal not participating in the drain sees latency degrade by more than half. SR-012 is open and the persistence half of exact replay is unrepaired, so this scenario is expected to fail until that closes; that expected failure is the point of writing it down."
+    },
+    "leaderboard-thunder": {
+      "intent": "the shape of an announcement, which is the only load event that arrives without any enrolled device behind it",
+      "duration_seconds": 600,
+      "virtual_users": 2000,
+      "operations": [
+        {
+          "name": "unauthenticated-global-board-read",
+          "operation_class": "public-read",
+          "arrival_window_seconds": 60,
+          "requests_per_second": 33,
+          "derivation": "2,000 unauthenticated readers arriving within 60 s against the global board, which is the only view universally public by default",
+          "policy_ref": "rate_limit_public_read_per_minute"
+        }
+      ],
+      "aggregate_requests_per_second": 33,
+      "pass_conditions": [
+        {"metric": "origin_requests_per_second", "comparison": "<=", "value": 60},
+        {"metric": "read_latency_p95_ms", "comparison": "<=", "value": 300},
+        {"metric": "database_connection_exhaustion_events", "comparison": "==", "value": 0}
+      ],
+      "fails_when": "origin request rate exceeds 60 per second, which would mean the public_cache_stale_seconds cache is not absorbing what it is sized to absorb; or read p95 exceeds 300 ms; or the connection pool is exhausted at any point"
+    },
+    "ratelimit-breach": {
+      "intent": "the only scenario that asserts a limit protects the people it exists for, rather than merely refusing someone",
+      "duration_seconds": 600,
+      "virtual_users": 201,
+      "operations": [
+        {
+          "name": "breaching-principal",
+          "operation_class": "authenticated-read",
+          "requests_per_second": 20,
+          "derivation": "one principal at 10 x rate_limit_authenticated_read_per_minute, which is 1,200 per minute against a quota of 120",
+          "policy_ref": "rate_limit_authenticated_read_per_minute"
+        },
+        {
+          "name": "beta-steady-background",
+          "operation_class": "mixed",
+          "requests_per_second": 20,
+          "derivation": "beta-steady, unchanged, running concurrently so there is something to protect",
+          "policy_ref": "aggregate_admission_ceiling_rps"
+        }
+      ],
+      "aggregate_requests_per_second": 40,
+      "pass_conditions": [
+        {"metric": "breaching_principal_non_429_refusals", "comparison": "==", "value": 0},
+        {"metric": "retry_after_absent_on_429_count", "comparison": "==", "value": 0},
+        {"metric": "other_principal_latency_degradation_percent", "comparison": "<=", "value": 5},
+        {"metric": "other_principal_error_rate_increase_percent", "comparison": "<=", "value": 0},
+        {"metric": "http_5xx_count", "comparison": "==", "value": 0}
+      ],
+      "fails_when": "the breaching principal is refused by anything other than 429 with a correct Retry-After, or any other principal's latency or error rate moves measurably. A limiter that sheds load onto bystanders has failed even when it correctly refused the abuser."
+    },
+    "soak": {
+      "intent": "the failures that only appear on the time axis, which no throughput number finds",
+      "duration_seconds": 43200,
+      "virtual_users": 200,
+      "operations": [
+        {
+          "name": "beta-steady-mix",
+          "operation_class": "mixed",
+          "requests_per_second": 20,
+          "derivation": "beta-steady, unchanged, for 12 hours",
+          "policy_ref": "aggregate_admission_ceiling_rps"
+        }
+      ],
+      "aggregate_requests_per_second": 20,
+      "pass_conditions": [
+        {"metric": "resident_memory_growth_percent", "comparison": "<=", "value": 10},
+        {"metric": "goroutine_count_growth", "comparison": "==", "value": 0},
+        {"metric": "connection_pool_growth", "comparison": "==", "value": 0},
+        {"metric": "unbounded_table_growth_outside_append_only_ledger", "comparison": "==", "value": 0}
+      ],
+      "fails_when": "resident memory grows by more than a tenth, goroutines or pooled connections grow monotonically, or any table outside the append-only claim ledger grows without bound. Growth in the ledger is the product working; growth anywhere else is a leak."
+    }
+  }
+}
