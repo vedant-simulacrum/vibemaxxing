@@ -70,7 +70,7 @@ An upload-time challenge does not prove an offline event existed before the chal
 
 ### Fork and clone resolution
 
-A lineage fork is the case where two device installations present continuations of one lineage generation. D-072 states the outcome and D-323 records the aggregate that carries it.
+A lineage fork is the case where two device installations present continuations of one lineage generation. D-072 states the outcome and D-383 records the aggregate that carries it.
 
 | Concern | Owner |
 |---|---|

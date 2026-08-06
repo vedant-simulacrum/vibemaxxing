@@ -102,7 +102,7 @@ Required controls:
 
 ### The recovery case aggregate
 
-The controls above are requirements. The aggregate that carries them is the recovery case, and D-320 records the choices inside it.
+The controls above are requirements. The aggregate that carries them is the recovery case, and D-380 records the choices inside it.
 
 | Concern | Owner |
 |---|---|

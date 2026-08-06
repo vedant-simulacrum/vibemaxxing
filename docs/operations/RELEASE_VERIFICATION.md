@@ -30,7 +30,7 @@ Generating attestations without this verification job is not sufficient.
 
 ## TUF roles and trusted client state
 
-Step 3 above names the rollback and freeze protections. `packages/schemas/tuf-trust-v1.schema.json` is what they are, and D-330 records the choices.
+Step 3 above names the rollback and freeze protections. `packages/schemas/tuf-trust-v1.schema.json` is what they are, and D-390 records the choices.
 
 The security properties of TUF are client-side, so the record that matters is the client's own view rather than the repository's. `tuf_metadata` holds one row per device per role: the trusted version, its digest, the version and digest it replaced, the signature count, the threshold and the expiry.
 
@@ -50,6 +50,6 @@ Two limits are recorded rather than absorbed. D-091 leaves the project with one 
 
 ## Compatibility graph
 
-`packages/schemas/compatibility-graph-v1.schema.json` and `compatibility_edges` answer which build may talk to which, per interface. D-331 records why there are six of them rather than one version number: a client can be current on the HTTP API and behind on the local IPC contract at the same moment.
+`packages/schemas/compatibility-graph-v1.schema.json` and `compatibility_edges` answer which build may talk to which, per interface. D-391 records why there are six of them rather than one version number: a client can be current on the HTTP API and behind on the local IPC contract at the same moment.
 
 Ranges are closed on the left and open on the right, so an empty range cannot be written. `breaking` is recorded and never derived, because D-234 makes adding a member to a closed state vocabulary a major-version change and no arithmetic over two numbers can detect that. A sunset without a deprecation notice is refused unless it names one of D-234's three carve-outs, which turns the 180-day window into a constraint rather than an intention.

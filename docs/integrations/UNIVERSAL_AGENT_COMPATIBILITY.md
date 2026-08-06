@@ -41,7 +41,7 @@ The registry must classify CLI agents, IDE extensions, desktop agents, browser/c
 
 ## The atomic compatibility tuple
 
-The registry fields above describe an adapter. The tuple describes the exact thing a certification is about, and `packages/schemas/compatibility-tuple-v1.schema.json` is its machine-readable form. D-327 records why each dimension is inside it.
+The registry fields above describe an adapter. The tuple describes the exact thing a certification is about, and `packages/schemas/compatibility-tuple-v1.schema.json` is its machine-readable form. D-387 records why each dimension is inside it.
 
 | Dimension | Why changing it changes the tuple |
 |---|---|

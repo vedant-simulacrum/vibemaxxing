@@ -138,7 +138,7 @@ Every migration is transactional, forward-tested from all supported versions, pr
 
 ### The executable local schema
 
-The domain list above is a list of names. `packages/schemas/local-store-v1.sql` is the executable form of the ones the evidence chain depends on, and D-324 records the choices. It is a separate file from `packages/schemas/planning-schema.sql` on purpose: one is SQLite on the participant's machine and the other is PostgreSQL on the server, and a single file would invite one to be read as the other.
+The domain list above is a list of names. `packages/schemas/local-store-v1.sql` is the executable form of the ones the evidence chain depends on, and D-384 records the choices. It is a separate file from `packages/schemas/planning-schema.sql` on purpose: one is SQLite on the participant's machine and the other is PostgreSQL on the server, and a single file would invite one to be read as the other.
 
 | Concern | Owner |
 |---|---|

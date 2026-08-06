@@ -113,7 +113,7 @@ The hosted product owns leaderboards, profiles, social graph, boards, organizati
 
 ### Exceptional states
 
-Every surface renders eight states besides the one where everything worked, and `packages/schemas/ui-state-projection-v1.json` says where each comes from. D-334 records the choices.
+Every surface renders eight states besides the one where everything worked, and `packages/schemas/ui-state-projection-v1.json` says where each comes from. D-394 records the choices.
 
 `loading`, `empty` and `stale` are client-local: derived from a request in flight, a response with no items, or held data older than the freshness budget, and from nothing the server sends. `blocked` and `private` resolve to inputs of the current-viewer-authorization profile. `retracted`, `appeal` and `recovery` resolve to registered state machines and to states those machines declare, which the validator checks — so a surface cannot render a state from a lifecycle that does not exist.
 

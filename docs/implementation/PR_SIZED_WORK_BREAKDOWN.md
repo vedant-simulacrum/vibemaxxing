@@ -70,15 +70,19 @@ Units: 259. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
+| `not-started` | 219 |
+| `in-progress` | 12 |
+| `landed` | 22 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
+Every `landed` unit is backed by executable evidence: 68 assertions across 22 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 14.
 
 `PF-001`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-008`.
 
-Statuses additionally checkable against artifact presence: 195 of 259. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 194 of 259. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -199,7 +203,7 @@ Depends: PF-007
 Est: 12-16
 Status: in-progress
 
-The schema and the DDL half landed under D-322: `ranked_identities` carries `absorbed_into_ranked_identity_id`, `consolidation_cases` and `consolidation_contributions` exist, and `packages/schemas/consolidation-plan-v1.schema.json` validates against two fixtures. The unit is not finished. The fixture covers identities, claims and periods and not devices, social state, boards, moderation, exports or deletions, and `packages/schemas/openapi-v1.yaml` declares no consolidation operation at all.
+The schema and the DDL half landed under D-382: `ranked_identities` carries `absorbed_into_ranked_identity_id`, `consolidation_cases` and `consolidation_contributions` exist, and `packages/schemas/consolidation-plan-v1.schema.json` validates against two fixtures. The unit is not finished. The fixture covers identities, claims and periods and not devices, social state, boards, moderation, exports or deletions, and `packages/schemas/openapi-v1.yaml` declares no consolidation operation at all.
 
 - separate account and ranked identity;
 - canonical survivor, retired duplicates, private investigation evidence, restrictions, appeal and reversal;
@@ -272,7 +276,7 @@ Depends: PF-011
 Est: 12-16
 Status: in-progress
 
-Two things changed here under D-324 and are recorded rather than applied silently. The file is `local-store-v1.sql` rather than `local-schema.sql`, which is the versioned name every other schema in that directory uses, and the four units that named the old path now name this one. And the acceptance asked for an encryption key reference per table; the file deliberately has none. Encryption is page-level under a key held by the operating-system keystore, because a key column beside the ciphertext it protects gives no confidentiality at all — the same reasoning D-213 applies to the server keyring — so the validator asserts the absence of key material rather than the presence of a reference. The `sqlite3 -init` parse has not been run.
+Two things changed here under D-384 and are recorded rather than applied silently. The file is `local-store-v1.sql` rather than `local-schema.sql`, which is the versioned name every other schema in that directory uses, and the four units that named the old path now name this one. And the acceptance asked for an encryption key reference per table; the file deliberately has none. Encryption is page-level under a key held by the operating-system keystore, because a key column beside the ciphertext it protects gives no confidentiality at all — the same reasoning D-213 applies to the server keyring — so the validator asserts the absence of key material rather than the presence of a reference. The `sqlite3 -init` parse has not been run.
 
 - local DDL ownership, encryption, key references, schema generation, crash consistency, queues, commitments, receipts, migrations and recovery;
 - forbidden-content boundaries for logs, backups, diagnostics and corruption reports.
@@ -284,7 +288,7 @@ Depends: PF-004
 Est: 8-12
 Status: in-progress
 
-The schema landed under D-327 and requires every component, with the nine observation modes taken from `packages/schemas/observer-equivalence-v1.json` rather than spelled a second time. The digest half has not: no fixture records two orderings of one tuple and the expected digest, so the canonical-digest claim is stated in the description and not yet exercised.
+The schema landed under D-387 and requires every component, with the nine observation modes taken from `packages/schemas/observer-equivalence-v1.json` rather than spelled a second time. The digest half has not: no fixture records two orderings of one tuple and the expected digest, so the canonical-digest claim is stated in the description and not yet exercised.
 
 - product/source, exact version/artifact, platform profile, mode, adapter/collector artifacts, protocol/telemetry profile, accounting profile, privacy profile and evidence ceiling;
 - canonical digest construction.
@@ -674,7 +678,7 @@ Evidence: contains 1 packages/schemas/openapi-v1.yaml :: evidence_class
 Evidence: exists packages/schemas/disclosure-projection-v1.json
 Evidence: exists packages/schemas/disclosure-projection-v1.schema.json
 
-**Half landed in `963f6f6` under D-226; the rest under D-333.** `evidence_class` crosses the boundary on `PublicProfile`, `RankEntry`, `AccountProfile` and `ClaimRecord` with the three values D-143 fixed. The projection this unit's second clause names is `packages/schemas/disclosure-projection-v1.json`, which classifies every property of seven API schemas by audience; the file was previously named as `evidence-disclosure-v1.schema.json` and is renamed here because it governs privacy disclosure as well as evidence. `validate_planning_artifacts.py` resolves every field against the OpenAPI document. The unit was once recorded as `landed` on the strength of the first clause alone and `validate_work_unit_status.py` refused it, which is the check doing the job it was added for; what makes the status correct now is that both clauses are observable.
+**Half landed in `963f6f6` under D-226; the rest under D-393.** `evidence_class` crosses the boundary on `PublicProfile`, `RankEntry`, `AccountProfile` and `ClaimRecord` with the three values D-143 fixed. The projection this unit's second clause names is `packages/schemas/disclosure-projection-v1.json`, which classifies every property of seven API schemas by audience; the file was previously named as `evidence-disclosure-v1.schema.json` and is renamed here because it governs privacy disclosure as well as evidence. `validate_planning_artifacts.py` resolves every field against the OpenAPI document. The unit was once recorded as `landed` on the strength of the first clause alone and `validate_work_unit_status.py` refused it, which is the check doing the job it was added for; what makes the status correct now is that both clauses are observable.
 
 The defect as found: the string did not appear anywhere in the OpenAPI document, so the product's central differentiator was unrepresentable in its own API, and four competing vocabularies existed for the concept — `packages/ui` used `Hardened|Standard|Imported`, `crates/vibeproof-core` used a five-value scale, `evidence-profile-policy-v1.json` used `profile_id` values, and the API had none.
 
@@ -2370,7 +2374,7 @@ Depends: N-002, S-002, L-002
 Est: 10-14
 Status: not-started
 
-The unit persists `compatibility_edges`, one row per relation across the six interfaces that version independently, and `storage_migrations`, which carries the D-332 rollback class beside each `schema_migrations` version. `packages/schemas/compatibility-graph-v1.schema.json` and `packages/schemas/migration-chain-v1.schema.json` are the records; neither is loaded by any code.
+The unit persists `compatibility_edges`, one row per relation across the six interfaces that version independently, and `storage_migrations`, which carries the D-392 rollback class beside each `schema_migrations` version. `packages/schemas/compatibility-graph-v1.schema.json` and `packages/schemas/migration-chain-v1.schema.json` are the records; neither is loaded by any code.
 
 ### L-005 Health checks and staged activation
 Files: `crates/vibemaxxing-cli/src/update/health.rs` (new), `docs/operations/RELEASE_VERIFICATION.md`
@@ -2528,7 +2532,7 @@ Status: not-started
 
 The prose range `W-002 through W-009` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it, which is what makes the hosted web product gate launch.
 
-The matrix has an authority under D-334: `packages/schemas/ui-state-projection-v1.json` enumerates the eight exceptional states and resolves each to a registered machine, a viewer-authorization input, or nothing at all where it is genuinely client-local. The acceptance names four cells; the record names eight, and `blocked` and `private` are both required to render indistinguishably from a subject that does not exist, which a matrix test can assert and a screenshot cannot.
+The matrix has an authority under D-394: `packages/schemas/ui-state-projection-v1.json` enumerates the eight exceptional states and resolves each to a registered machine, a viewer-authorization input, or nothing at all where it is genuinely client-local. The acceptance names four cells; the record names eight, and `blocked` and `private` are both required to render indistinguishably from a subject that does not exist, which a matrix test can assert and a screenshot cannot.
 
 ## Epic X — Operations, open source and launch evidence
 

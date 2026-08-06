@@ -451,7 +451,7 @@ BINDINGS: tuple[Binding, ...] = (
             "expired",
         ),
         sql=("recovery_cases.state",),
-        note="Account recovery under D-320. No API enum: no operation exposes "
+        note="Account recovery under D-380. No API enum: no operation exposes "
         "the case, so a client cannot read a state the contract has not "
         "published, and inventing one here would be a projection with no "
         "consumer.",
@@ -470,7 +470,7 @@ BINDINGS: tuple[Binding, ...] = (
             "expired",
         ),
         sql=("identity_investigations.state",),
-        note="Integrity-private under D-321. The participant reads the effect "
+        note="Integrity-private under D-381. The participant reads the effect "
         "through `ranked-identity-eligibility`, which already marks its "
         "investigation states internal for the same reason.",
     ),
@@ -488,7 +488,7 @@ BINDINGS: tuple[Binding, ...] = (
             "expired",
         ),
         sql=("consolidation_cases.state",),
-        note="D-070 duplicate-account consolidation, D-322. `applied` is not "
+        note="D-070 duplicate-account consolidation, D-382. `applied` is not "
         "terminal: a successful appeal moves it to `reversed`.",
     ),
     Binding(
@@ -505,7 +505,7 @@ BINDINGS: tuple[Binding, ...] = (
             "reversed",
         ),
         sql=("lineage_fork_cases.state",),
-        note="D-072 fork and clone resolution, D-323. `unresolved` is not "
+        note="D-072 fork and clone resolution, D-383. `unresolved` is not "
         "terminal, because D-072 makes the resolution appealable and a denied "
         "appeal returns the case to it.",
     ),
@@ -523,7 +523,7 @@ BINDINGS: tuple[Binding, ...] = (
             "retired",
         ),
         sql=("source_certifications.state",),
-        note="D-327. Distinct from `platform-certification`, which certifies an "
+        note="D-387. Distinct from `platform-certification`, which certifies an "
         "operating-system profile; this one certifies an exact source, mode, "
         "platform and accounting tuple. Only `active` may exceed "
         "private-analytics, which is a check constraint rather than a rule.",

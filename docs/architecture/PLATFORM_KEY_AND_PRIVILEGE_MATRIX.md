@@ -64,7 +64,7 @@ Required fixtures cover full-disk restore, home-directory restore, credential-st
 
 ## Verified installation plans
 
-An installation is a typed, ordered sequence of named operating-system operations and never a script. `packages/schemas/install-plan-v1.schema.json` is the record, `platform_install_plans` and `platform_install_operations` are the persistence owners, and D-329 records the choices.
+An installation is a typed, ordered sequence of named operating-system operations and never a script. `packages/schemas/install-plan-v1.schema.json` is the record, `platform_install_plans` and `platform_install_operations` are the persistence owners, and D-389 records the choices.
 
 Ten operations exist: `verify-release-signature`, `place-binary`, `register-service`, `set-autostart`, `grant-keystore-access`, `create-ipc-endpoint`, `register-privileged-supervisor`, `start-service`, `verify-health` and `remove-previous-version`. Eight reversals exist, and each operation either names the one a rollback runs or declares that it has none — because it changes nothing, as a verification does, or because its effect cannot be undone. A rollback that discovers the answer at run time is D-074's failure mode rather than its contract.
 

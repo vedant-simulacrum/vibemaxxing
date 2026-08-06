@@ -335,7 +335,7 @@ create table friend_edges (
 
 -- A block is the existence of a row rather than a state, which is why it has
 -- no state column and no machine. `established_at` is not decoration: current
--- viewer authorization under D-326 compares what it read against what is
+-- viewer authorization under D-386 compares what it read against what is
 -- present when the response is emitted, and existence alone cannot order two
 -- changes to the same pair.
 create table blocks (

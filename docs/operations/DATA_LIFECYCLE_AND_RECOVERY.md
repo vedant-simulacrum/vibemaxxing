@@ -45,7 +45,7 @@ A backup is not valid until restored and verified. A deletion process is not val
 
 ## Migration chain and rollback classes
 
-"Failed migration and rollback" above is an exercise. Whether a rollback is available at all is a property of the migration, and `storage_migrations` with `packages/schemas/migration-chain-v1.schema.json` is where that property lives. D-332 records the choices.
+"Failed migration and rollback" above is an exercise. Whether a rollback is available at all is a property of the migration, and `storage_migrations` with `packages/schemas/migration-chain-v1.schema.json` is where that property lives. D-392 records the choices.
 
 | Class | What recovery means |
 |---|---|

@@ -64,7 +64,7 @@ A single shared IP address, household, workplace, school, device, or network is 
 
 ## The three aggregates behind those rules
 
-The three lists above are outcomes. Three aggregates produce them, and each has one lifecycle, one persistence owner, one revision model and one transaction boundary. D-321 and D-322 record the choices.
+The three lists above are outcomes. Three aggregates produce them, and each has one lifecycle, one persistence owner, one revision model and one transaction boundary. D-381 and D-382 record the choices.
 
 | Aggregate | Lifecycle | Persistence | Record |
 |---|---|---|---|

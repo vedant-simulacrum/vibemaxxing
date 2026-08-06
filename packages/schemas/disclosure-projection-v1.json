@@ -71,7 +71,7 @@
     {
       "api_schema": "PublicProfile",
       "audience": "public",
-      "note": "Served only after the current-viewer-authorization profile admits the viewer. Public here means public-once-authorized, and the authorization is the D-326 rule rather than a property of this shape.",
+      "note": "Served only after the current-viewer-authorization profile admits the viewer. Public here means public-once-authorized, and the authorization is the D-386 rule rather than a property of this shape.",
       "fields": [
         { "name": "account_id", "audience": "public", "classification": "observed-personal" },
         { "name": "handle", "audience": "public", "classification": "observed-personal" },
@@ -146,7 +146,7 @@
       "fields": [
         { "name": "notification_id", "audience": "self", "classification": "non-personal", "reason": "Addresses one row in one participant's inbox." },
         { "name": "type", "audience": "self", "classification": "server-assigned", "reason": "The event class; it is the participant's own inbox and nobody else's." },
-        { "name": "actor_account_id", "audience": "self", "classification": "observed-personal", "reason": "Who caused it. Disclosed to the recipient only, and rechecked at delivery time under D-326 in case the actor was blocked after the row was created." },
+        { "name": "actor_account_id", "audience": "self", "classification": "observed-personal", "reason": "Who caused it. Disclosed to the recipient only, and rechecked at delivery time under D-386 in case the actor was blocked after the row was created." },
         { "name": "scope_id", "audience": "self", "classification": "non-personal", "reason": "The board, generation or case the event is about." },
         { "name": "state", "audience": "self", "classification": "server-assigned", "reason": "Includes retracted, which is a correction to this recipient and to nobody else." },
         { "name": "created_at", "audience": "self", "classification": "observed-personal", "reason": "The recipient's own inbox timeline." }

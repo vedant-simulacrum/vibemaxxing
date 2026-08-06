@@ -203,7 +203,7 @@ Blocking, device revocation and privacy changes invalidate visibility immediatel
 
 ### Pulse, lease generation and audience projection
 
-`packages/schemas/presence-pulse-v1.schema.json` is the machine-readable form of the three records this section needs, and D-325 records the choices.
+`packages/schemas/presence-pulse-v1.schema.json` is the machine-readable form of the three records this section needs, and D-385 records the choices.
 
 A qualifying pulse names a device, a lease generation and a boolean. `qualifying` is a boolean rather than a description because a description would be content. Only a native collector produces one: a browser tab open on a leaderboard is not evidence that a participant is working, and counting it would make presence a measure of who is looking at the product.
 
@@ -233,7 +233,7 @@ Required controls:
 
 ## Current viewer authorization
 
-The rule above — recheck before delivery and rendering — appears in this contract, in the social contract and in the product specification, and none of them said what is rechecked or against what. SR-015 records that gap. `packages/schemas/projection-authorization-v1.json` closes the naming half of it and D-326 records the choices.
+The rule above — recheck before delivery and rendering — appears in this contract, in the social contract and in the product specification, and none of them said what is rechecked or against what. SR-015 records that gap. `packages/schemas/projection-authorization-v1.json` closes the naming half of it and D-386 records the choices.
 
 Nine inputs are read. Each names the table it reads and the column that changes when it changes, and the validator fails when either does not resolve: directional blocks, subject visibility, friendship, rivalry, board membership, board container state, presence visibility, account lifecycle and ranked-identity state.
 

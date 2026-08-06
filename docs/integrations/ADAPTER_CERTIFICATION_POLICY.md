@@ -34,7 +34,7 @@ An adapter is not publicly supported until every mandatory artifact exists.
 
 ## Certification states
 
-The five values this section previously listed conflated two different things: where a certification is in its life, and how strong the evidence it produces may be. `experimental` and `suspended` are lifecycle; `standard`, `hardened` and `imported` are evidence classes owned by D-008 and D-143. They are separated here under D-328, and the separation is what makes it possible to say that a suspended adapter still has an evidence ceiling.
+The five values this section previously listed conflated two different things: where a certification is in its life, and how strong the evidence it produces may be. `experimental` and `suspended` are lifecycle; `standard`, `hardened` and `imported` are evidence classes owned by D-008 and D-143. They are separated here under D-388, and the separation is what makes it possible to say that a suspended adapter still has an evidence ceiling.
 
 **Lifecycle** is the `source-certification` machine in `packages/schemas/state-machine-registry-v1.json`, persisted by `source_certifications`:
 
@@ -63,7 +63,7 @@ Revocation is `revoked_at` with a reason code, and the row is retained rather th
 
 ## The tuple being certified
 
-`packages/schemas/compatibility-tuple-v1.schema.json` is what a certification is about, and D-327 records why each dimension is inside it. The manifest list above describes what an adapter declares; the tuple is what the product advertises against, and the two are not the same document. A declaration is a claim by the adapter author. A tuple is an identity, addressed by digest under D-058, that a signed result attaches to.
+`packages/schemas/compatibility-tuple-v1.schema.json` is what a certification is about, and D-387 records why each dimension is inside it. The manifest list above describes what an adapter declares; the tuple is what the product advertises against, and the two are not the same document. A declaration is a claim by the adapter author. A tuple is an identity, addressed by digest under D-058, that a signed result attaches to.
 
 ## Fail-safe degradation
 

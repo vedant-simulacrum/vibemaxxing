@@ -15,7 +15,7 @@
   },
   "$defs": {
     "thresholds": {
-      "description": "The three D-073 numbers, each bound to the policy key that carries it. Two of those keys are misnamed and the binding is stated here rather than left to a reader's inference: presence_lease_expiry_seconds carries the 90-second idle threshold and presence_idle_after_seconds carries the 300-second offline threshold. The keys are not renamed because scripts/repository/validate_planning_artifacts.py requires those exact spellings; D-325 records the defect.",
+      "description": "The three D-073 numbers, each bound to the policy key that carries it. Two of those keys are misnamed and the binding is stated here rather than left to a reader's inference: presence_lease_expiry_seconds carries the 90-second idle threshold and presence_idle_after_seconds carries the 300-second offline threshold. The keys are not renamed because scripts/repository/validate_planning_artifacts.py requires those exact spellings; D-385 records the defect.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -86,7 +86,7 @@
       }
     },
     "audience_projection": {
-      "description": "What one viewer is shown about one subject at one moment. It is computed at display and delivery rather than stored, because a stored projection is a cached authorization decision and D-326 makes every such decision recheck current state.",
+      "description": "What one viewer is shown about one subject at one moment. It is computed at display and delivery rather than stored, because a stored projection is a cached authorization decision and D-386 makes every such decision recheck current state.",
       "type": "object",
       "additionalProperties": false,
       "required": ["viewer_relationship", "availability"],
