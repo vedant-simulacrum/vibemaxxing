@@ -324,8 +324,8 @@
     },
     {
       "decision_id": "D-033",
-      "decision_status": "accepted",
-      "active": true,
+      "decision_status": "superseded",
+      "active": false,
       "normative_owner": "docs/planning/DECISION_REGISTER.md",
       "work_unit": "docs/planning/decision-traceability/D-021-D-040.md",
       "schema_or_state_owner": "docs/planning/decision-traceability/D-021-D-040.md",

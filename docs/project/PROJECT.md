@@ -327,7 +327,7 @@ P-1104 is `authorized-open` as of 2026-08-05 by owner decision recorded in GitHu
 
 Planning artifacts and prototype workflows are not working code, cryptographic interoperability evidence, certified adapters, performance evidence, packages, deployments, security hardening or launch readiness.
 
-The repository remains private during planning and must become public open source before public launch.
+The repository is public, and has been since it was created on 2026-07-18. D-033 recorded the opposite and is superseded by D-540. Everything committed here is world-readable now, not at some later release decision, and the pre-publication audit `docs/planning/REPOSITORY_OPERATIONS.md` requires was never performed against it.
 
 ## Authority
 
