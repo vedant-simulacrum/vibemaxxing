@@ -27,13 +27,13 @@ jobs:
   # It runs per pull request rather than on main only, because a coverage regression
   # found after merge is found by whoever hits it next.
   measured-coverage:
-    # Not on pull requests. The instrumented Rust build alone exceeded the previous
-    # 15-minute budget and the job was cancelled mid-measurement, which turned the
-    # whole run red while `planning-checks` — the required check — had passed. A
-    # coverage number that costs 15+ minutes on every pull request buys very little
-    # that measuring `main` does not: the ceiling is a non-regression rule, and a
-    # regression is caught on the merge that introduces it either way.
-    if: github.event_name != 'pull_request'
+    # This job is cheap: it completes in about two and a half minutes, and the
+    # instrumented Rust build is not the cost. Two runs were cancelled at exactly
+    # 15m02s and 15m04s against completions of 1m47s, 2m38s and 2m47s — a bimodal
+    # split that is runner contention starving the job, not work it is doing. An
+    # earlier commit on this branch moved it off the pull-request path blaming the
+    # Rust build. That reason was wrong; the 15-minute budget was the defect, so
+    # the job runs on pull requests again and both jobs get room to finish.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -59,7 +59,7 @@ jobs:
 
   planning-checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16
