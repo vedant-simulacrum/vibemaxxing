@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "rule": "non-regression",
+  "measurer": "scripts/ci/measure_coverage.py",
+  "recorded_at": "2026-08-06",
+  "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/52",
+  "note": "The first coverage number this repository has ever measured, per executable surface. docs/verification/TEST_STRATEGY.md has stated floors since it was written and nothing had been measured against them, so each floor was a threshold with nothing on the other side of it. The measurer fails when a scope falls more than tolerance_percentage_points below its recorded percent, when a scope falls below a stated floor, when a recorded scope is no longer measured, when a measured scope is not recorded here, or when this file is missing or malformed. Sitting at the recorded number does not fail, so a known hole stays visible without holding a check red; improving never fails either. Editing this file is the only sanctioned way to record a worse number, so a deliberate one leaves a reviewable diff and a silent one turns the check red.",
+  "tolerance_percentage_points": 1.0,
+  "tolerance_note": "The one-point band is the one docs/verification/TEST_STRATEGY.md already states, so deleting a well-covered file does not fail an unrelated change. It also absorbs the small platform-to-platform drift in the Python number, which is measured on ubuntu-latest in CI and on a developer machine locally.",
+  "claim_scope": "executed-units-only",
+  "claim_note": "A covered unit executed. Nothing here says an assertion was made about it. Three surfaces are measured because three surfaces execute anything: apps/web, packages/ui and scripts/brand build under the node lane and run no tests worth measuring, and 24 of 27 eval suites still execute nothing. This is coverage of what runs, not coverage of the product.",
+  "regression_attribution": "Each scope records its denominator alongside its percentage. A regression whose denominator grew is new uncovered code, which is the signal. A regression whose denominator shrank is a deletion or a file that moved out of the scope, which is usually noise. A regression at an unchanged denominator is a test that was removed, skipped or weakened. A file moving within a scope is invisible, because a scope is a directory rather than a file list; a file moving between scopes shows as two opposite-signed denominator deltas that the measurer names and a human resolves. That residual is accepted, not solved.",
+  "scopes": {
+    "python-planning-tooling": {
+      "language": "python",
+      "metric": "line-and-branch",
+      "percent": 55.23,
+      "covered_units": 3794,
+      "total_units": 6870,
+      "floor_percent": 55.0,
+      "floor_source": "docs/verification/TEST_STRATEGY.md",
+      "note": "scripts/ci and scripts/repository under coverage.py, driven by the tests/ unit suite. TEST_STRATEGY.md had no Python row at all until this measurement: the floor table named Rust, Go, packages/ui and apps/web and omitted the only code in this repository that executes on every pull request. The 55% floor is the first measurement rounded down. It is a floor that was absent being written for the first time, not a floor lowered to fit a number, and it is stated with the intent to raise it as the modules below gain tests. Ten of the twenty-one modules in these two directories are at 0%: generate_gate_ledger.py, repository_policy.py, run_evals.py, run_phase1_evidence.py, generate_issue_plan.py, generate_repository_metadata.py, run_ed25519_oracles.py, validate_p1140e_contracts.py, validate_planning_coverage.py and validate_t20_contract.py. Every one of them runs in CI under make validate. Two of them, run_evals.py and generate_gate_ledger.py, are in fact exercised — by tests that invoke them as a child process, which in-process coverage cannot see — so this number is a lower bound on what the suite executes rather than an estimate of it.",
+      "undercount_note": "Child-process capture via coverage.py's patch = subprocess was tried and rejected. It reported about six points higher on one run and nothing on the next, depending on whether the site-packages .pth fired, which would make the recorded ceiling a measurement of the environment. A stable undercount that names what it missed is worth more than an unstable number that flatters."
+    },
+    "rust-vibeproof-core": {
+      "language": "rust",
+      "metric": "line",
+      "percent": 90.97,
+      "covered_units": 292,
+      "total_units": 321,
+      "floor_percent": 90.0,
+      "floor_source": "docs/verification/TEST_STRATEGY.md",
+      "note": "crates/vibeproof-core/src/lib.rs under -C instrument-coverage, five tests across three binaries. This is the one stated floor that had a subject and it clears it by 0.97 points, which is inside the one-point non-regression band: a single uncovered branch added to this crate takes it below 90% and fails the floor check rather than the regression check."
+    },
+    "go-apps-api": {
+      "language": "go",
+      "metric": "statement",
+      "percent": 72.86,
+      "covered_units": 51,
+      "total_units": 70,
+      "floor_percent": null,
+      "floor_absent_reason": "docs/verification/TEST_STRATEGY.md states two Go floors, 85% for accounting, ranking and verification packages and 75% for handlers, middleware and repositories, and excludes main packages from both. apps/api contains exactly one package and it is main, so neither floor has a subject and applying one would be inventing a comparison. The number is recorded anyway so it cannot rot unobserved, and the measurer fails the moment a non-main package appears in this module without a floor recorded for it.",
+      "note": "apps/api/cmd/api under go test -coverprofile. 70 statements across main.go and protocol_fixtures.go; the 19 uncovered ones are main() and the ListenAndServe error path, which is exactly the shape the main-package exclusion exists for."
+    }
+  }
+}
