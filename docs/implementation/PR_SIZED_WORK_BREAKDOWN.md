@@ -690,6 +690,18 @@ Coverage is driven by a hardcoded `BINDINGS` table, so an aggregate whose `sql=`
 
 Make omission explicit: require every aggregate to declare either a binding or a recorded reason for having none, and have the summary line state three-way, two-way, and format-only counts separately so a green run cannot be read as more than it is.
 
+### PF-068 — Author the Ed25519 divergence-case conformance corpus
+Files: `conformance/vibeproof/v1/ed25519-divergence-corpus.json` (new), `conformance/vibeproof/v1/README.md` (new), `scripts/repository/generate_vibeproof_vectors.py`, `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`
+Acceptance: the corpus contains at least one case for each of non-canonical `A`, non-canonical `R`, small-order `A`, and `S >= l`; every case records its expected ZIP-215 verdict; and a generator reproduces the corpus byte-identically from recorded inputs, so no verdict is asserted by hand.
+Depends: PF-005
+Est: 8-12
+
+VibeProof v1 pins Ed25519 verification to ZIP-215 because RFC 8032 does not pin it: SS5.1.7 permits both the cofactored and cofactorless group equations, and FIPS 186-5 SS7.7 repeats that permission verbatim. A cofactored verifier accepts a strictly larger set of signatures than a cofactorless one, and the implication runs one way only, so a Rust signer and a Go verifier that both conform to RFC 8032 can disagree without any round-trip test noticing.
+
+RFC 8032's own test vectors cannot detect this. They are well-formed signatures that pass under every implementation, which is exactly why they prove nothing about the axes that diverge. Only adversarial inputs separate the criteria sets.
+
+The corpus is a precondition of any cross-language conformance claim, and it cannot be authored by asserting verdicts from the specification text alone - each expected outcome has to be confirmed against a ZIP-215 reference implementation, or the corpus repeats the original defect at one remove. Go's `crypto/ed25519` is cofactorless and will fail these cases by design; selecting a ZIP-215-capable Go implementation is part of the D-012 bakeoff.
+
 ## Frozen backlog — scope inventory, not executable units
 
 Everything below is retained to hold the launch scope in `docs/planning/PRODUCT_SCOPE_FREEZE.md`. **These are headings, not units.** None carries `Files:`, `Acceptance:`, `Depends:` in resolvable form, or `Est:`, and none names a file path, schema, table, or endpoint. They must be promoted into the active plan against the required-fields standard before being worked, and they are all blocked until P-1104 regardless.

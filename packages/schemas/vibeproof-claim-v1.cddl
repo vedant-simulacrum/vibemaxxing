@@ -173,13 +173,13 @@ correction-record-v1 = {
 }
 
 protected-headers-claim-v1 = {
-  1: -8,                   ; alg = EdDSA
+  1: -19,                  ; alg = Ed25519 (RFC 9864; -8 EdDSA is deprecated)
   3: "application/vibemaxxing-claim+cbor",
   4: uuid7,                ; kid, raw UUID bytes
   1001: 1                  ; VibeProof protocol major
 }
 protected-headers-receipt-v1 = {
-  1: -8,
+  1: -19,
   3: "application/vibemaxxing-receipt+cbor",
   4: uuid7,
   1001: 1
