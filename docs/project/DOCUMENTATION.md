@@ -52,11 +52,10 @@ The technical-specification completeness authority is `docs/planning/SCHEMA_AND_
 - Participant-facing service terms, eligibility, acceptable use and the sanction and appeal process: `TERMS.md`
 - Public-by-default publication risk acceptance and the legal analysis behind the three documents above: ADR-021
 - Security: `docs/security/THREAT_MODEL.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`, ADR-015
-- Ranking computation and the credited-score model: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, ADR-020
+- Ranking computation, the credited-score model, sealed generations and durable cursors: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, ADR-020
 - API edge numbers — rate-limit classes and quotas, API versioning and deprecation policy, and client retry, backoff, retry-budget and circuit obligations: `docs/architecture/API_EDGE_CONTRACT.md`. The server API contract owns the rules; this document owns the numbers underneath them and defers to the authoritative state contract on idempotency
 - Origin validation, both for the public API and for every loopback listener, including the DNS-rebinding and cross-site request forgery defence for the local dashboard and the OTLP receiver: `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`
 - Private-beta admission — invite code format and storage, issuance, quota, expiry, revocation, redemption atomicity, the order the age and account-age gates are evaluated in, and the guessing controls: `docs/security/PRIVATE_BETA_ADMISSION.md`
-- Ranking computation, sealed generations, durable cursors and the confidence weight: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, ADR-020
 - Article 17 erasure, key material, proof of destruction, and backup and restore behaviour: `docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md`, ADR-022
 - Retention window per persistence owner, in machine-readable form: `packages/schemas/data-disposition-v1.json`, derived from `docs/privacy/DATA_MAP.md` and never disagreeing with it
 - Accepted residual risks without a normative owner: ADR-019

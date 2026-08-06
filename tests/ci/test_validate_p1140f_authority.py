@@ -85,6 +85,77 @@ class ValidateP1140fAuthorityTests(unittest.TestCase):
 
         self.assertIn("active P1 findings regressed", str(raised.exception))
 
+    def test_a_severity_with_no_recorded_ceiling_fails(self) -> None:
+        """The hole the severity-regrading proposal exposed.
+
+        The recorded baseline covers P1 alone and fails only when the count
+        *exceeds* it. Regrading a finding to P0 therefore lowers the P1 count
+        and, without this check, leaves validation green while the regraded
+        finding is tracked by nothing.
+        """
+        findings = self.read(FINDINGS)
+        next(
+            row for row in findings["findings"] if row["finding_id"] == "SR-010"
+        )["severity"] = "P0"
+        self.write(FINDINGS, findings)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        message = str(raised.exception)
+        self.assertIn("no recorded ceiling", message)
+        self.assertIn("SR-010", message)
+
+    def test_regrading_nine_findings_does_not_pass_by_emptying_the_ceiling(self) -> None:
+        """The proposal's actual scenario, which would have gone green."""
+        findings = self.read(FINDINGS)
+        regraded = [
+            "SR-005", "SR-006", "SR-007", "SR-009", "SR-010",
+            "SR-013", "SR-014", "SR-015", "SR-017",
+        ]
+        for row in findings["findings"]:
+            if row["finding_id"] in regraded:
+                row["severity"] = "P0"
+        self.write(FINDINGS, findings)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        message = str(raised.exception)
+        for identifier in regraded:
+            self.assertIn(identifier, message)
+
+    def test_a_state_outside_counted_states_fails(self) -> None:
+        """Neither open nor closed is governed by nothing."""
+        findings = self.read(FINDINGS)
+        findings["findings"][3]["state"] = "deferred"
+        self.write(FINDINGS, findings)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        self.assertIn("the ceiling does not count", str(raised.exception))
+
+    def test_the_recorded_escape_also_requires_a_schema_amendment(self) -> None:
+        """Naming an owner action is only honest if the action is reachable.
+
+        The validator tells the owner to add the missing ceiling. That is not
+        sufficient on its own: `gate-authorization-v1.schema.json` pins
+        `open_p1_baseline.severity` to the constant `P1` and sets
+        `additionalProperties: false`, so the record cannot express a second
+        ceiling at all. A regrade therefore needs the schema amended in the same
+        commit, and this test exists so that constraint is discovered here
+        rather than halfway through the change.
+        """
+        record = self.read(AUTHORIZATION)
+        record["open_p1_baseline"]["severity"] = "P0"
+        self.write(AUTHORIZATION, record)
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.run_main()
+
+        self.assertIn("'P1' was expected", str(raised.exception))
+
     def test_absent_authorization_record_fails_closed(self) -> None:
         (self.conformance / AUTHORIZATION).unlink()
 

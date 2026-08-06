@@ -186,6 +186,48 @@ def main() -> int:
             f"active P1 findings regressed: {open_p1} open exceeds the recorded baseline of "
             f"{baseline['count']} in conformance/p1140f/gate-authorization-v1.json"
         )
+
+    # Every severity that actually appears must have a ceiling tracking it.
+    #
+    # The recorded baseline covers P1 alone, and its rule fails only when the
+    # count *exceeds* it. So regrading findings to any other severity lowers the
+    # P1 count, keeps validation green, and leaves the regraded findings tracked
+    # by nothing at all — the ceiling would report an improvement while the
+    # findings walked out of scope. This is the same shape as an eval suite
+    # downgraded to not_applicable: a number improved by removing what it counts.
+    #
+    # A severity without a ceiling is therefore an error rather than an absence.
+    # Adding one is an owner action, because ceilings live in the gate record.
+    ceilinged = {baseline["severity"]}
+    ungoverned: dict[str, list[str]] = {}
+    for row in finding_rows:
+        if row["state"] in open_states and row["severity"] not in ceilinged:
+            ungoverned.setdefault(row["severity"], []).append(row["finding_id"])
+    if ungoverned:
+        detail = "; ".join(
+            f"{severity}: {', '.join(sorted(ids))}"
+            for severity, ids in sorted(ungoverned.items())
+        )
+        raise RuntimeError(
+            f"open findings carry a severity with no recorded ceiling ({detail}). "
+            f"conformance/p1140f/gate-authorization-v1.json records a ceiling for "
+            f"{baseline['severity']} only, so these findings are tracked by nothing. "
+            f"The owner adds the missing ceiling, which also needs "
+            f"gate-authorization-v1.schema.json amended because it pins "
+            f"open_p1_baseline.severity to the constant P1. A validator "
+            f"change would hide these findings instead."
+        )
+
+    # A state outside counted_states escapes the ceiling entirely.
+    declared_states = {row["state"] for row in finding_rows}
+    uncounted = sorted(declared_states - open_states - {"closed"})
+    if uncounted:
+        raise RuntimeError(
+            f"findings sit in states the ceiling does not count: {uncounted}. "
+            f"conformance/p1140f/gate-authorization-v1.json counts "
+            f"{sorted(open_states)}; a state outside that set is neither open nor "
+            f"closed and is governed by nothing"
+        )
     if finding_rows[0]["state"] == "open":
         raise RuntimeError(
             "SR-005 must be under repair or resolved while P-1140F-1 is active"
