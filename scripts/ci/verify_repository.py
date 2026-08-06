@@ -106,14 +106,38 @@ def planned_checks(root: Path) -> list[Check]:
     return checks
 
 
+# `apps/web` depends on `packages/ui` through a `file:` link, and npm will not
+# install the link target's own dependencies transitively. Installing `apps/web`
+# first leaves `lucide-react` unresolvable, so the order here is load-bearing
+# rather than cosmetic.
+NODE_WORKSPACE_ORDER = (
+    "packages/ui",
+    "apps/web",
+    "scripts/brand",
+    "scripts/ui/playwright-runtime",
+)
+
+
+def ordered_node_workspaces(root: Path) -> list[str]:
+    """Every npm workspace, dependency order first, then any not yet ranked."""
+    found = set(node_workspaces(root)) - {"."}
+    ordered = [name for name in NODE_WORKSPACE_ORDER if name in found]
+    return ordered + sorted(found - set(ordered))
+
+
 def planned_node_check(root: Path) -> Check:
-    """Decide whether the node lane runs, is genuinely absent, or is uncovered."""
-    workspaces = node_workspaces(root)
-    if "." in workspaces:
-        return Check("node", "pending", None)
-    if not workspaces:
+    """Decide whether the node lane runs or is genuinely absent.
+
+    It used to report `uncovered` whenever the repository root had no
+    package.json, which was true and useless: four npm workspaces existed and
+    nothing built any of them, so `apps/web` failed to compile from the first
+    commit that referenced a stylesheet nobody had written, and no check saw it.
+    The absence of a root manifest was never the reason the lane could not run;
+    it was only the reason nobody had made it.
+    """
+    if node_workspaces(root) == []:
         return Check("node", "not_applicable", None, note="no npm workspace exists")
-    return Check("node", "uncovered", None, note=f"no root package.json, so the node lane runs nothing, yet {len(workspaces)} npm workspace(s) exist and are never built: {', '.join(workspaces)}. Tracked as issue 52.")
+    return Check("node", "pending", None)
 
 
 def run_check(check: Check, root: Path) -> None:
@@ -121,12 +145,32 @@ def run_check(check: Check, root: Path) -> None:
         run_all_suites(check, root)
         return
     if check.name == "node":
-        commands = [["npm", "ci"], ["npm", "run", "lint", "--if-present"], ["npm", "run", "typecheck", "--if-present"], ["npm", "test", "--if-present"], ["npm", "run", "build", "--if-present"]]
+        commands = [
+            ["npm", "ci"],
+            ["npm", "run", "lint", "--if-present"],
+            ["npm", "run", "typecheck", "--if-present"],
+            ["npm", "test", "--if-present"],
+            ["npm", "run", "build", "--if-present"],
+        ]
         check.returncode = 0
-        for command in commands:
-            check.returncode = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False).returncode
+        covered: list[str] = []
+        for workspace in ordered_node_workspaces(root):
+            for command in commands:
+                check.returncode = subprocess.run(
+                    command,
+                    cwd=root / workspace,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                ).returncode
+                if check.returncode != 0:
+                    check.note = f"{workspace}: {' '.join(command)} exited {check.returncode}"
+                    break
             if check.returncode != 0:
                 break
+            covered.append(workspace)
+        if check.returncode == 0:
+            check.note = f"built {len(covered)} workspace(s) in dependency order: {', '.join(covered)}"
     else:
         assert check.command is not None
         working_directory = root / "apps" / "api" if check.name.startswith("go-") else root

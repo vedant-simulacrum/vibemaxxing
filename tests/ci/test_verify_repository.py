@@ -45,7 +45,7 @@ class VerifyRepositoryTests(unittest.TestCase):
 
     # -- lane selection ----------------------------------------------------------------
 
-    def test_selects_go_and_rust_and_reports_the_node_lane_as_uncovered(self) -> None:
+    def test_selects_go_and_rust_and_runs_the_node_lane(self) -> None:
         checks = self.verifier.planned_checks(ROOT)
         statuses = {check.name: check.status for check in checks}
 
@@ -55,30 +55,49 @@ class VerifyRepositoryTests(unittest.TestCase):
         self.assertEqual(statuses["rust-fmt"], "pending")
         self.assertEqual(statuses["rust-clippy"], "pending")
         self.assertEqual(statuses["rust-test"], "pending")
-        # Not `not_applicable`: apps/web, packages/ui and scripts/brand are real npm
-        # workspaces that no lane builds. Reporting that as a benign absence is the
-        # defect issue 52 records.
-        self.assertEqual(statuses["node"], "uncovered")
+        # The node lane now runs. It reported `uncovered` for as long as the
+        # repository root had no package.json, which was true and useless: four
+        # npm workspaces existed, nothing built any of them, and `apps/web`
+        # failed to compile from the first commit that imported a stylesheet
+        # nobody had written (issue 52). The missing root manifest was never
+        # the reason the lane could not run.
+        self.assertEqual(statuses["node"], "pending")
 
-    def test_uncovered_node_lane_names_every_workspace_nothing_builds(self) -> None:
-        node = next(
-            check
-            for check in self.verifier.planned_checks(ROOT)
-            if check.name == "node"
+    def test_workspaces_build_in_dependency_order(self) -> None:
+        """`packages/ui` must precede `apps/web`, and the order is load-bearing.
+
+        `apps/web` reaches `packages/ui` through a `file:` link, and npm does
+        not install a link target's own dependencies transitively. Installing
+        `apps/web` first leaves `lucide-react` unresolvable, so an ordering
+        that looks cosmetic decides whether the lane can run at all.
+        """
+        ordered = self.verifier.ordered_node_workspaces(ROOT)
+
+        self.assertIn("packages/ui", ordered)
+        self.assertIn("apps/web", ordered)
+        self.assertLess(
+            ordered.index("packages/ui"),
+            ordered.index("apps/web"),
+            "packages/ui must be installed before apps/web",
         )
 
-        self.assertIn("apps/web", node.note)
-        self.assertIn("issue 52", node.note)
-        self.assertEqual(
-            self.verifier.node_workspaces(ROOT),
-            ["apps/web", "packages/ui", "scripts/brand"],
-        )
+    def test_every_discovered_workspace_is_ordered_none_dropped(self) -> None:
+        """A workspace missing from the rank list is still built, not skipped.
 
-    def test_node_lane_runs_when_a_root_manifest_exists(self) -> None:
+        Silently covering a subset is the shape of defect this lane exists to
+        stop reporting.
+        """
+        discovered = set(self.verifier.node_workspaces(ROOT)) - {"."}
+
+        self.assertEqual(set(self.verifier.ordered_node_workspaces(ROOT)), discovered)
+
+    def test_node_lane_runs_without_a_root_manifest(self) -> None:
+        """A workspace with no root package.json is still buildable."""
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            (root / "package.json").write_text("{}")
-            (root / "package-lock.json").write_text("{}")
+            (root / "packages" / "ui").mkdir(parents=True)
+            (root / "packages" / "ui" / "package.json").write_text("{}")
+            (root / "packages" / "ui" / "package-lock.json").write_text("{}")
 
             self.assertEqual(self.verifier.planned_node_check(root).status, "pending")
 
@@ -336,7 +355,7 @@ class VerifyRepositoryTests(unittest.TestCase):
         planned = {check.name for check in self.verifier.planned_checks(ROOT)}
 
         self.assertEqual(set(recorded), planned)
-        self.assertEqual(recorded["node"], "uncovered")
+        self.assertEqual(recorded["node"], "pass")
         self.assertEqual(recorded["evaluator-all-suites"], "partial")
 
     def test_the_committed_baseline_attributes_every_hole_to_a_reference(self) -> None:
@@ -349,7 +368,15 @@ class VerifyRepositoryTests(unittest.TestCase):
             self.assertEqual(justification["outcome"], outcome)
             self.assertTrue(justification["reference"])
             self.assertGreater(len(justification["note"]), 80, lane)
-        self.assertIn("52", document["justifications"]["node"]["reference"])
+
+        # Every justification must belong to a lane that still needs one. A
+        # justification outliving the hole it explained is how a stale excuse
+        # survives its own fix, which is the failure mode this file exists for.
+        self.assertEqual(
+            set(document["justifications"]),
+            {lane for lane, outcome in document["lanes"].items() if outcome != "pass"},
+            "a passing lane must carry no justification, and a non-passing lane must",
+        )
 
     # -- the rest of the matrix --------------------------------------------------------
 

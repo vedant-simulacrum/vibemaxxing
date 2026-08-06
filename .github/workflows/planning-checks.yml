@@ -36,6 +36,13 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+      # The verification matrix now builds the npm workspaces, so node has to be
+      # pinned here rather than inherited from whatever the runner image ships.
+      # This is what stops `apps/web` regressing to a state where it does not
+      # compile at all — which is where it sat, unnoticed, until issue 52.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
       - name: Install pinned planning validators
         run: python3 -m pip install --disable-pip-version-check -r requirements-planning.txt
       - name: Repository doctor
