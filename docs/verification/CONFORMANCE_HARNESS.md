@@ -159,6 +159,6 @@ That last one is the check that would have caught the substitution this document
 
 ## Evidence
 
-No runner exists in any language. Fifteen manifests now exist, one per suite directory, and every one of them is validated and none of them is executed by a runner this document would recognise. Fourteen declare `runner.state: absent`; the fifteenth, `accounting`, declares the one present runner, and that runner reads one of the suite's eleven files.
+No runner of the kind this document designs exists in any language. Fifteen manifests now exist, one per suite directory, and every one of them is validated. Thirteen declare `runner.state: absent`. The other two, `accounting` and `protocol`, both name `scripts/ci/run_phase1_evidence.py`, and between them that script reads exactly two of the repository's forty-five conformance files: `conformance/accounting/accounting-v1-fixtures.json` and `conformance/protocol/vibeproof-v1-vectors.json`. Neither invocation emits the result document defined above, declares a subject, or can report a divergence class, so `present` here records what runs today and not that the harness exists.
 
 Three suites — `auth`, `release` and `sandbox` — hold no fixture at all and say so with `fixture_state: empty`. Four more record a `negative_case_gap`. Three eval suites are `ready` and 24 are `not_applicable`. Everything in this document is a design for a harness that has never run, and nothing in it may be cited as coverage. A validated manifest is a well-formed description of a suite; it is not a run of one.
