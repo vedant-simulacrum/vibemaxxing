@@ -116,9 +116,9 @@ The 2,000-millisecond refusal threshold is set an order of magnitude above the 2
 
 ### Ties, ranks, streaks
 
-- Competition uses SQL `rank()` semantics: equal score shares rank and leaves gaps.
-- Stable secondary ordering is `score DESC, first_reached_score_at ASC, user_id ASC`; it affects display order, not rank.
-- An overtake requires strictly greater score, not display-order movement within a tie.
+- Competition uses SQL `rank()` semantics: equal credited figures share a rank and leave gaps.
+- Stable secondary ordering is `credited_token_burn DESC, first_reached_at ASC, erasure_domain_id ASC`; it affects display order, not rank. `score` is not a column name anywhere, under ADR-020 and D-218.
+- An overtake requires strictly greater credited burn, not display-order movement within a tie.
 - Rank movement compares finalized snapshots at the same scope/period/filter.
 - Streaks require at least one accepted competitive claim per UTC day.
 - Deleted or disqualified scores trigger deterministic recomputation.

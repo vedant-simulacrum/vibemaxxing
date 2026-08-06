@@ -8,7 +8,7 @@ Updated: 2026-07-23
 
 Handles are 3–30 Unicode letters, numbers, underscores or hyphens after the accepted normalization policy. Reserved, deceptive, impersonating or confusable handles are rejected. Rename, redirect, non-reuse, deletion privacy and policy migration must use an append-only assignment/reservation ledger.
 
-Profiles expose only user-approved fields. Default public fields are handle, controlled avatar asset, Token Burn, rank, server-appraised evidence state and selected board memberships. Estimated Cash Burn, agent/model mix, history, friends and presence have independent visibility controls.
+Profiles expose only user-approved fields. Default public fields are handle, controlled avatar asset, Credited Token Burn, rank, server-appraised evidence state and selected board memberships. Raw Token Burn and the confidence weight are not public fields under D-144 and D-217; they appear on the participant's own surface and on surfaces they authorize. Estimated Cash Burn, agent/model mix, history, friends and presence have independent visibility controls.
 
 Provider subjects, duplicate-identity signals, device/recovery lineage, raw source records and moderation evidence are private integrity data and never public profile fields.
 

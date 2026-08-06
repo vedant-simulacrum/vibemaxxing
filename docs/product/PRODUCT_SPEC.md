@@ -1,6 +1,6 @@
 # VibeMaxxing Product Specification
 
-Updated: 2026-07-19
+Updated: 2026-08-06
 Status: planning contract
 
 ## Product definition
@@ -19,9 +19,27 @@ Public launch targets the complete initial product. Internal delivery may be sta
 
 ## Metrics
 
-### Token Burn
+### Token Burn and Credited Token Burn
 
-The default ranking metric is accepted live Token Burn. A normative accounting specification must define input, output, cache read/write, reasoning, tool/context, multimodal, retries, failures, streaming, compaction, subagents, local models, unknown categories, and double-count prevention.
+**Token Burn is the raw ranking metric of record.** It is accepted live usage, unnormalized across model capability, immutable once accepted, and it is what every accounting rule in this product is written against. D-004 and D-037 are unchanged.
+
+**Credited Token Burn is what public rank is computed on.** It is Token Burn multiplied by a server-assigned confidence weight derived from the awarded evidence profile and the ranked-identity trust state. ADR-020 owns the function, its bounds and its disclosure; D-082 and D-144 own the consequences.
+
+The two are never merged and never both public. The word "score" names neither of them, on any surface or in any field.
+
+Where each figure appears:
+
+| Surface | Token Burn | Credited Token Burn |
+|---|---|---|
+| The participant's own surface | Visible, with both weight factors and the reason either is below 100 | Visible |
+| A viewer the participant has authorized | Visible if the participant permits it | Visible |
+| Public leaderboards and public profiles | **Not published** | Published |
+
+**Publishing both in public would publish the sanction.** The credited figure divided by the raw figure is the composite weight; the evidence profile is already public under D-008, so the evidence factor is known and the trust factor follows by division — and the trust factor is the sanction that D-084 keeps private. Narrowing Token Burn to the participant's own surface and to viewers they authorize is the price of that rule.
+
+**The residual leak, stated rather than hidden.** An observer who records a participant's published Credited Token Burn across periods sees a discontinuity when a trust state changes, with no evidence-profile change to explain it, and can infer that something happened. No weighting whose output is visible can prevent that. What the design keeps is deniability: there is no marker, no badge and no label, and an ordinary drop in activity looks identical. That is materially weaker than secrecy and it is the honest description.
+
+A normative accounting specification defines input, output, cache read/write, reasoning, tool/context, multimodal, retries, failures, streaming, compaction, subagents, local models, unknown categories, and double-count prevention.
 
 Genuine but intentionally wasteful use counts. Fabricated, copied, replayed, duplicated, backdated, or source-misrepresented activity does not.
 
@@ -55,7 +73,7 @@ Private boards may configure visibility and eligible evidence/agents within glob
 
 ## Profiles
 
-Profiles may expose Token Burn, Estimated Cash Burn, rank, movement, periods, agent/model mix, daily activity, presence, friends, boards, organization/community memberships, evidence state, and achievements introduced by the launch scope.
+A public profile may expose Credited Token Burn, Estimated Cash Burn, rank, movement, periods, agent/model mix, daily activity, presence, friends, boards, organization and community memberships, evidence state, and achievements introduced by the launch scope. **It may not expose Token Burn.** The raw figure appears on the participant's own surface, and on a viewer's surface only where the participant has authorized that viewer. This is narrower than an earlier revision of this specification, which permitted profiles to expose Token Burn without qualification, and the reason is in the metrics section above.
 
 Users control visibility of Cash Burn, activity history, agent/model breakdown, presence, friends, country, and memberships. Privacy rules must prevent inference of projects, repositories, files, prompts, tools, or work content.
 
@@ -99,7 +117,9 @@ Anti-abuse is progressive, reason-coded, reviewable, and appealable. Define clai
 
 ## Export, deletion, and lifecycle
 
-Users can stop collection, remove adapters, disconnect/revoke devices, inspect/export local and server-side safe data, delete local models/intelligence, delete outbound ledger, delete profile, delete claims/aggregates subject to legal policy, and delete the account. Define grace periods, backups, derived data, social references, leaderboard history, moderation records, and irreversible completion.
+Users can stop collection, remove adapters, disconnect and revoke devices, inspect and export local and server-side safe data, delete local models and intelligence, delete the outbound ledger, delete their profile, delete claims and aggregates subject to legal policy, and delete the account.
+
+An account deletion that is an Article 17 erasure removes every live personal record and makes every retained historical standing unattributable, by destroying the key that binds the retained pseudonym to the person and appending a signed record. It does not delete a sealed leaderboard generation and it does not renumber one. `docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md` is the normative owner, including the parts the product cannot promise: a third party who copied a standing before the erasure is outside the controller's reach, and physical removal from backups completes at the backup window rather than immediately.
 
 ## Explicit non-goals
 

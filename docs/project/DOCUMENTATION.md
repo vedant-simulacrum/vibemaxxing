@@ -53,6 +53,9 @@ The technical-specification completeness authority is `docs/planning/SCHEMA_AND_
 - Ranking computation and the credited-score model: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, ADR-020
 - API edge numbers — rate-limit classes and quotas, API versioning and deprecation policy, and client retry, backoff, retry-budget and circuit obligations: `docs/architecture/API_EDGE_CONTRACT.md`. The server API contract owns the rules; this document owns the numbers underneath them and defers to the authoritative state contract on idempotency
 - Origin validation, both for the public API and for every loopback listener, including the DNS-rebinding and cross-site request forgery defence for the local dashboard and the OTLP receiver: `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`
+- Ranking computation, sealed generations, durable cursors and the confidence weight: `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, ADR-020
+- Article 17 erasure, key material, proof of destruction, and backup and restore behaviour: `docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md`, ADR-022
+- Retention window per persistence owner, in machine-readable form: `packages/schemas/data-disposition-v1.json`, derived from `docs/privacy/DATA_MAP.md` and never disagreeing with it
 - Accepted residual risks without a normative owner: ADR-019
 - Native runtime: `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, ADR-010 through ADR-013
 - Operations/release/open source: `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, ADR-013
@@ -100,9 +103,13 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 | `planning/` | Decisions, gates, scope, policy | `DECISION_REGISTER.md`, `TASK_CATALOG.md`, `SCHEMA_AND_INTERFACE_INVENTORY.md`, `ARTIFACT_POLICY.md`, `PRODUCT_SCOPE_FREEZE.md`, `REPOSITORY_OPERATIONS.md`, `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`, `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `CROSS_PLATFORM_COMPLETENESS_AUDIT.md`, `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, `decision-traceability/` (D-001..D-069 + `README.md`) |
 | `decisions/` | Accepted ADRs | `ADR-001` … `ADR-021` |
 | `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `API_EDGE_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
+| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-022` |
+| `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
 | `product/` | Product surface and metrics | `PRODUCT_SPEC.md`, `ACCOUNTING_AND_TIME_CONTRACT.md`, `TOKEN_ACCOUNTING_SPEC.md`, `CASH_BURN_PRICING_PROVENANCE.md`, `SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, `ONBOARDING_AND_PRIVACY_VERIFICATION.md`, `METRICS.md`, `SOCIAL_RANKING_AND_ABUSE_RESEARCH.md` |
 | `privacy/` | **The boundary.** The invariant everything else serves, plus the personal-data record that follows from it | `PRIVACY_CONTRACT.md`, `PRIVACY_PRESERVING_USAGE_EVIDENCE.md`, `DATA_MAP.md` |
 | `security/` | Threat, integrity, attestation, abuse | `THREAT_MODEL.md`, `INTEGRITY_MODEL.md`, `EVIDENCE_AND_ATTESTATION_PROFILES.md`, `AUTHENTICATION_AND_RECOVERY.md`, `RANKED_IDENTITY_ELIGIBILITY.md`, `ANTI_CHEAT_ATTACK_CATALOG.md`, `ANTI_CHEAT_RESEARCH_PROGRAM.md`, `ADVERSARIAL_TABLETOPS.md`, `LOCAL_IPC_AND_DEVICE_IDENTITY.md`, `ORIGIN_AND_LOOPBACK_CONTROLS.md`, `PLATFORM_ISOLATION.md`, `ABUSE_AND_COUNTRY_PRIVACY.md` |
+| `privacy/` | **The boundary.** The invariant everything else serves, the personal-data record that follows from it, and what an Article 17 erasure does | `PRIVACY_CONTRACT.md`, `PRIVACY_PRESERVING_USAGE_EVIDENCE.md`, `DATA_MAP.md`, `ERASURE_AND_KEY_DESTRUCTION.md` |
+| `security/` | Threat, integrity, attestation, abuse | `THREAT_MODEL.md`, `INTEGRITY_MODEL.md`, `EVIDENCE_AND_ATTESTATION_PROFILES.md`, `AUTHENTICATION_AND_RECOVERY.md`, `RANKED_IDENTITY_ELIGIBILITY.md`, `ANTI_CHEAT_ATTACK_CATALOG.md`, `ANTI_CHEAT_RESEARCH_PROGRAM.md`, `ADVERSARIAL_TABLETOPS.md`, `LOCAL_IPC_AND_DEVICE_IDENTITY.md`, `PLATFORM_ISOLATION.md`, `ABUSE_AND_COUNTRY_PRIVACY.md` |
 | `integrations/` | Agent compatibility and certification | `UNIVERSAL_AGENT_COMPATIBILITY.md`, `ADAPTER_CERTIFICATION_POLICY.md`, `ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, `AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `T20_CERTIFICATION_AND_SELECTION_SPEC.md`, `T20_MODEL_HARDENING_CONTRACT.md` |
 | `operations/` | Launch, running, recovery | `OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, `RELEASE_VERIFICATION.md`, `PRODUCTION_READINESS.md`, `COMPETITIVE_BETA_GATE.md`, `INCIDENT_RESPONSE.md`, `SLOS_AND_ALERTS.md`, `OBSERVABILITY_PRIVACY.md`, `LOGGING_AND_INSTRUMENTATION.md`, `ENVIRONMENTS_AND_SECRETS.md`, `DATA_LIFECYCLE_AND_RECOVERY.md` |
 | `implementation/` | Work decomposition | `IMPLEMENTATION_HANDOFF.md`, `PR_SIZED_WORK_BREAKDOWN.md`, `ISSUE_GENERATION.md`, `REPOSITORY_LAYOUT.md` |
@@ -132,6 +139,7 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 ### Small directories, with reasons
 
 `privacy/` (3 files) is deliberately isolated: it holds the invariant the whole system exists to serve, and burying it inside `security/` would make it look like one control among many. `project/` (3) is the top authority and must stay at a short, obvious path. `engineering/` (4) and `verification/` (5) were the two that had room to grow and did, absorbing the local-development, test-strategy and conformance-harness owners added on 2026-08-06. No other directory under `docs/` holds fewer than four files.
+`privacy/` (4 files) is deliberately isolated: it holds the invariant the whole system exists to serve, and burying it inside `security/` would make it look like one control among many. `project/` (3) is the top authority and must stay at a short, obvious path. `engineering/` (3) and `verification/` (3) are coherent single subjects with room to grow and no better host.
 
 ### Structural changes on 2026-08-06
 
@@ -169,10 +177,11 @@ Known duplication that genuinely remains, recorded rather than silently carried.
 - device lineage and privacy egress;
 - local IPC and social/integrity events;
 - OpenAPI and PostgreSQL planning schema;
-- state machines, platform profiles, ranking views, release sets and export manifests;
+- state machines, platform profiles, ranking views, sealed ranking generations, release sets and export manifests;
+- erasure records, tombstones and restore receipts, and the data-disposition registry;
 - reason codes, policy defaults and observability allowlists.
 
-Required but not-yet-present machine contracts are explicitly listed as `planned-missing` in `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`. These include source receipts, evidence bundles, verifier appraisal results, compatibility tuples, certification results/lifecycle, account consolidation, fork resolution, local persistence, ranking generations and contributions, notification delivery aggregates, deletion plans/tombstones, TUF client state, compatibility/migration graphs and other blocked owners.
+Required but not-yet-present machine contracts are explicitly listed as `planned-missing` in `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`. These include source receipts, evidence bundles, verifier appraisal results, compatibility tuples, certification results/lifecycle, account consolidation, fork resolution, local persistence, notification delivery aggregates, per-device deletion receipts, TUF client state, compatibility/migration graphs and other blocked owners.
 
 No agent may invent those semantics directly in product code.
 
@@ -200,9 +209,10 @@ Structural validation is not semantic review. Semantic review is not runtime pro
 - ADR-018 owns the database and migration tooling, and the executable form of the expand-and-contract migration policy.
 - ADR-019 is the register for accepted residual risks that no normative owner has adopted.
 - ADR-020 owns confidence-weighted ranking, the discount function and the raw-versus-credited vocabulary.
+- ADR-022 owns erasure by cryptographic tombstone and key destruction: the key hierarchy, what destruction physically means, how it is proved afterwards, and the limits it does not overcome.
 - ADR-021 owns the public-by-default publication risk acceptance and the lawful-basis, erasure, age, ePrivacy, records, representative, United States and portability analysis that `PRIVACY.md`, `TERMS.md` and `docs/privacy/DATA_MAP.md` derive from. It has not been reviewed by counsel and says so.
 
-The numbering gap at ADR-015 is closed. Every ADR from ADR-001 to ADR-021 exists.
+The numbering gap at ADR-015 is closed. Every ADR from ADR-001 to ADR-022 exists.
 
 ## Research
 

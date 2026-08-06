@@ -214,7 +214,10 @@ BINDINGS: tuple[Binding, ...] = (
             "retracted",
             "expired",
         ),
-        sql=("notification_events.state", "notifications.state",),
+        sql=(
+            "notification_events.state",
+            "notifications.state",
+        ),
         api=("Notification.state",),
         internal_states=("grouped", "ready"),
     ),
@@ -361,7 +364,10 @@ BINDINGS: tuple[Binding, ...] = (
             "blocked-version",
             "failed",
         ),
-        sql=("update_policies.state", "update_installations.state",),
+        sql=(
+            "update_policies.state",
+            "update_installations.state",
+        ),
     ),
     Binding(
         aggregate="release-trust",
@@ -483,6 +489,22 @@ SQL_LOCAL_VOCABULARIES: dict[str, tuple[str, ...]] = {
         "gap-declared",
         "broken",
         "revoked",
+    ),
+    # A sealed ranking entry freezes the trust state that produced its ADR-020
+    # weight, so the entry stays explainable after the ranked identity moves on.
+    # The column name does not end in `_state`, so nothing would have governed
+    # it; it is declared here deliberately, because it is a copy of the
+    # `ranked-identity-eligibility` vocabulary minus `retired`, which produces no
+    # entry at all, and a change to that machine has to be reconsidered here
+    # rather than silently diverge.
+    "ranking_entries.trust_state_at_projection": (
+        "unverified",
+        "eligible",
+        "investigating",
+        "restricted",
+        "consolidating",
+        "appealed",
+        "reversed",
     ),
 }
 

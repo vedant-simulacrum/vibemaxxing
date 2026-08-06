@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/period-calendar-v1.schema.json",
+  "title": "Period and season calendar v1",
+  "description": "The six frozen periods of D-088 and the season lifecycle that governs the seasonal one. docs/product/ACCOUNTING_AND_TIME_CONTRACT.md owns time semantics and docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md owns the ranking consequences; this schema is the machine-readable calendar. Country periods are absent because country leaderboards remain post-launch under D-052.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_version", "timezone", "periods"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "registry_version": { "type": "string", "minLength": 1 },
+    "timezone": {
+      "description": "Every boundary is evaluated in one timezone for every participant. A local-timezone boundary would give participants in different places different periods and make one leaderboard compare two different windows.",
+      "const": "UTC"
+    },
+    "periods": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": { "$ref": "#/$defs/period_definition" }
+    },
+    "seasons": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/season" }
+    }
+  },
+  "$defs": {
+    "period_definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["period_type", "boundary", "bounded"],
+      "properties": {
+        "period_type": {
+          "enum": ["daily", "weekly", "monthly", "seasonal", "yearly", "lifetime"]
+        },
+        "boundary": {
+          "description": "iso-week starts Monday per ISO 8601. season-declared means the boundary comes from the season record rather than from the calendar. unbounded is the lifetime period, which has no start and no end.",
+          "enum": [
+            "utc-midnight",
+            "iso-week",
+            "calendar-month",
+            "calendar-year",
+            "season-declared",
+            "unbounded"
+          ]
+        },
+        "bounded": { "type": "boolean" },
+        "late_claim_admission": {
+          "description": "How long after a period ends a claim whose interval falls inside it may still be admitted, keyed to standard_claim_lateness_seconds in policy-defaults-v1.json. A claim later than this is accepted into the ledger and excluded from the period, never silently backdated.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "period_type": { "const": "lifetime" } },
+            "required": ["period_type"]
+          },
+          "then": {
+            "properties": {
+              "bounded": { "const": false },
+              "boundary": { "const": "unbounded" }
+            }
+          },
+          "else": { "properties": { "bounded": { "const": true } } }
+        }
+      ]
+    },
+    "season": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The five timestamps after starts_at must be non-decreasing in the order given. packages/schemas/planning-schema.sql enforces the same order as check constraints, so a season whose dates do not order that way cannot be inserted.",
+      "required": [
+        "season_id",
+        "ordinal",
+        "starts_at",
+        "ends_at",
+        "freeze_at",
+        "close_at",
+        "appeal_window_ends_at",
+        "archive_at",
+        "rules_version"
+      ],
+      "properties": {
+        "season_id": { "type": "string", "format": "uuid" },
+        "ordinal": { "type": "integer", "minimum": 1 },
+        "starts_at": { "type": "string", "format": "date-time" },
+        "ends_at": { "type": "string", "format": "date-time" },
+        "freeze_at": {
+          "description": "After this instant no further claim enters the season, however late its interval. The gap between ends_at and freeze_at is what a delayed offline claim has to arrive in.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "close_at": {
+          "description": "The final generation seals here and becomes the archived standing. A correction after close produces a superseding generation rather than an edit.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "appeal_window_ends_at": {
+          "description": "An appeal decided inside this window can still supersede the archived standing, which is what keeps the reversed state of the appeal machine reachable after a season closes.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "archive_at": { "type": "string", "format": "date-time" },
+        "rules_version": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

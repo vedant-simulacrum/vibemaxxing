@@ -74,7 +74,9 @@ Two pieces of data do not come from you. When you link an account, **GitHub** or
 
 ## What becomes public
 
-The global leaderboard is public by default and is readable by anyone, with no account, worldwide. It shows your handle, your Token Burn at period granularity, your rank, an Estimated Cash Burn figure that is always labelled as an estimate and is never an invoice, and the evidence profile the server awarded you.
+The global leaderboard is public by default and is readable by anyone, with no account, worldwide. It shows your handle, your Credited Token Burn at period granularity, your rank, an Estimated Cash Burn figure that is always labelled as an estimate and is never an invoice, and the evidence profile the server awarded you.
+
+Credited Token Burn is your raw usage total multiplied by a confidence weight the server assigns from how well your usage was evidenced. **Your raw total is not published**, and neither is the weight. You see all three on your own page, including the reason the weight is what it is. We keep the raw figure off the public board because publishing both would let anyone divide one by the other and work out the weight, and the weight is how we would show that you were under an integrity restriction — which is between you and us.
 
 Friend boards, private boards, organization, hacker-house and community boards require the viewer to be authorized. Presence is shown only to viewers you have authorized, and `private` is an independent setting that withdraws it from everyone.
 
@@ -101,8 +103,9 @@ Real numbers, not "as long as necessary". The complete table is in `docs/privacy
 | Provider account identifier | Deleted immediately when you unlink, or on account erasure |
 | Sign-in session | Access handle 15 minutes; refresh handle 30 days; a browser session must reauthenticate after 90 days |
 | Sign-in attempt records | The transaction expires within 15 minutes; the row is deleted within 24 hours |
-| Accepted claims and your standings | Life of your ranked identity; then subject to erasure, below |
-| Minute-level score projections | 400 days. Never published at that granularity |
+| Accepted claims | Life of your ranked identity, then deleted on erasure |
+| Your entry in a sealed historical leaderboard | The row is kept so the board still adds up. The link from it to you lasts the life of your ranked identity and ends when an erasure destroys the key |
+| Minute-level projections of your usage | 400 days. Never published at that granularity |
 | Presence | Current state only. The record expires 300 seconds after your last activity. **No presence history is kept** |
 | Notifications | 90 days |
 | Friend requests you never answered | 30 days |
@@ -155,17 +158,25 @@ Consent is genuinely refusable. Article 7(4) and Recital 43 mean it is not real 
 
 If you withdraw consent, Article 17(1)(b) applies and there is no other basis under which we could keep publishing you — so the data goes.
 
-**What that means concretely.** Your account, your ranked identity and that identity's historical ranking entries are removed, so that you are neither visible nor reconstructible in any published standing. Not anonymised in place while the row stays. Removed.
+**What that means concretely.** Your account, your ranked identity, your claims and every live record about you are deleted. You are neither visible nor reconstructible in any published standing.
+
+**How the historical leaderboards are handled, stated exactly.** A past leaderboard is sealed: it is written once and never edited, because everyone else's position in it depends on it not moving. Your entry in a sealed board is not deleted from it. Instead, that entry was never stored under your name in the first place — it points at a random label, and the only thing that ever connected the label to you was a piece of data we hold encrypted, under a key that exists for that one purpose. **An erasure destroys the key.** Your entry stops resolving to anybody, it is shown on no page, and we can no longer tell you it was ever yours.
+
+That is a real difference from deletion and you should know which one you are getting. The row still exists so the boards it belongs to still add up. What ends is anyone's ability — including ours — to say it was you.
 
 - The live surface: within 30 days of the request completing.
-- Backups and point-in-time recovery: within 35 days, which is our backup retention. A restore reapplies deletion records before serving traffic.
+- Backups and point-in-time recovery: within 35 days, which is our backup retention. A restore replays the erasure record and destroys the key again before the system serves anybody.
 - There is a 7-day cooling-off period first, during which you can cancel. It exists so that an account is not destroyed by a misclick.
 
 **Article 17(2) — telling other people.** Because we made the data public, we have to take reasonable steps to inform others processing it. What we will actually do: remove it from the live surface, mark pages so archives do not retain them, and submit removal requests to the search engines that offer a removal interface. What we cannot do: reach a person who copied a leaderboard screenshot, or an archive service with no removal process. We are telling you that limit rather than implying a completeness we cannot deliver.
 
 **We are not going to claim a Article 17(3) exemption.** The one that would be reached for is freedom of expression. That argument was tested on very similar facts — republishing lawfully obtained personal financial data — in *Satakunnan Markkinapörssi Oy and Satamedia Oy v Finland* before the Grand Chamber of the European Court of Human Rights, application 931/13, decided 27 June 2017, and the publisher lost fifteen votes to two. We do not think a leaderboard of token spend is in a stronger position than a newspaper was.
 
-One honest limitation. Our own binding rules say accepted claims and historical facts are immutable and that corrections are append-only, and erasure of historical ranking entries pulls against that. The outcome above is decided and is not going to be quietly weakened. The internal mechanism that reconciles it with immutable ranking generations is still being specified, and `docs/privacy/DATA_MAP.md` says so in the same words rather than presenting a resolved design.
+**Three limitations, because destroying a key is not magic.**
+
+- It makes finding you again computationally infeasible *for us*. It is not a claim that the bytes evaporate. Our position is that a record nobody can attribute is no longer about a person; that is a defensible reading and not a certain one, and no lawyer has checked it yet.
+- Removing it from our backups takes up to 35 days, because a backup is a copy of the whole system at a moment and we cannot reach inside one to edit a row.
+- Your entry still sits in the historical boards as one anonymous line among many, and the same anonymous label runs through every board you were in. It is nameless. It is not absent.
 
 **Local deletion is separate and we will not overstate it.** We can delete what is on our servers. We cannot guarantee erasure of data on a device that is offline, unreachable or no longer yours. Deleting everything is a coordinated flow across your devices that reports each device's outcome honestly, including "we could not reach this one". No screen will ever tell you all local data is erased while a device has not confirmed it.
 

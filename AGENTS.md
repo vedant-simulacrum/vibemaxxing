@@ -61,7 +61,7 @@ Still not allowed, and not unlocked by P-1104:
 
 - Servers never receive prompts, responses, transcripts, code, diffs, tool contents, filenames, paths, project/repository names, credentials, embeddings, summaries, classifications, personal insights, or content-derived hashes.
 - Only fixed-schema aggregate accounting and integrity claims cross the device boundary.
-- Token Burn is the default raw ranking metric. Estimated Cash Burn is always labelled estimated and server interpreted.
+- Token Burn is the raw ranking metric of record: accepted, immutable, unnormalized. Public rank is computed on Credited Token Burn, which is Token Burn times a server-assigned confidence weight under ADR-020. Public surfaces publish the credited figure only; the raw figure is confined to the participant's own surface and to viewers they authorize, because publishing both recovers the weight by division and therefore recovers a sanction the product keeps private. Estimated Cash Burn is always labelled estimated and server interpreted.
 - Historical imports never enter active competition.
 - Authentic intentionally pointless activity counts when non-duplicated.
 - Public evidence status and competitive eligibility are assigned by the server verifier, never selected by the client.
@@ -70,7 +70,7 @@ Still not allowed, and not unlocked by P-1104:
 - Account, linked provider identity, and ranked identity are separate aggregates.
 - One person may have only one active resolved ranked identity, with private evidence, appeals, and no automatic summation of duplicate account scores.
 - Continuity is lineage-scoped rather than device-row-scoped.
-- Accepted claims and historical facts remain immutable; corrections, consolidation, deletion effects, and reversals are append-only.
+- Accepted claims and historical facts remain immutable; corrections, consolidation, deletion effects, and reversals are append-only. An Article 17 erasure deletes the live personal records, including accepted claims, and appends a signed erasure record; it never deletes a row from a sealed ranking generation, never renumbers one, and makes the retained entry unattributable by destroying the key that binds its pseudonym to the person.
 - Generic ACP, OpenTelemetry, proxy, wrapper, and unknown-version integrations remain private analytics until an exact tuple is certified.
 - Only global leaderboard views are universally public by default. Friend, rival, private, and unlisted board views require current viewer authorization.
 - Blocks are directional and independent from symmetric friendship state.

@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/erasure-record-v1.schema.json",
+  "title": "Signed erasure record, tombstone and restore receipt v1",
+  "description": "The machine-readable form of the append-only erasure log, the tombstones it produces and the receipt a restore writes. docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md is the normative owner and ADR-022 is the reasoning. A record proves which key was destroyed and that the log has not been rewritten. It does not prove that no copy of the key exists anywhere, and no mechanism can.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "record"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "record": { "$ref": "#/$defs/erasure_record" },
+    "tombstones": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tombstone" }
+    },
+    "restore_receipt": { "$ref": "#/$defs/restore_receipt" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "erasure_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "erasure_record_id",
+        "chain_sequence",
+        "deletion_job_id",
+        "erasure_domain_id",
+        "key_id",
+        "key_commitment",
+        "affected_generation_count",
+        "record_digest",
+        "cose_sign1",
+        "signing_key_id",
+        "destroyed_at"
+      ],
+      "properties": {
+        "erasure_record_id": { "type": "string", "format": "uuid" },
+        "chain_sequence": {
+          "description": "Dense and unique from 1. The chain is the tamper evidence: a removed record leaves a gap and a rewritten one breaks every digest after it.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "previous_record_digest": {
+          "description": "Absent only at chain_sequence 1.",
+          "$ref": "#/$defs/digest"
+        },
+        "deletion_job_id": { "type": "string", "format": "uuid" },
+        "erasure_domain_id": { "type": "string", "format": "uuid" },
+        "key_id": { "type": "string", "format": "uuid" },
+        "key_commitment": {
+          "description": "SHA-256 over key_id concatenated with the key material, taken before destruction and retained after it. A candidate key can be tested against it; it cannot be inverted, because a 256-bit uniformly random preimage is not searchable.",
+          "$ref": "#/$defs/digest"
+        },
+        "affected_generation_count": {
+          "description": "How many sealed generations hold an entry for this domain. Those generations are no longer rebuildable from source claims, because the erasure deletes them.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "record_digest": {
+          "description": "SHA-256 over the deterministic CBOR encoding of the record body, under the Core Deterministic Encoding profile D-191 fixes.",
+          "$ref": "#/$defs/digest"
+        },
+        "cose_sign1": {
+          "description": "Base64url COSE_Sign1 over record_digest, Ed25519, algorithm identifier -19 per D-190, verified under the ZIP-215 rules D-192 pins.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "signing_key_id": { "type": "string", "minLength": 1 },
+        "destroyed_at": { "type": "string", "format": "date-time" },
+        "journal_mirrored_at": {
+          "description": "When the record reached the append-only journal held outside the database backup set. The participant is not acknowledged before this is durable.",
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "chain_sequence": { "const": 1 } },
+            "required": ["chain_sequence"]
+          },
+          "then": { "not": { "required": ["previous_record_digest"] } },
+          "else": { "required": ["previous_record_digest"] }
+        }
+      ]
+    },
+    "tombstone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deletion_tombstone_id", "subject_id", "tombstone_class", "effective_at"],
+      "properties": {
+        "deletion_tombstone_id": { "type": "string", "format": "uuid" },
+        "subject_id": { "type": "string", "format": "uuid" },
+        "tombstone_class": {
+          "enum": ["account", "ranked-identity", "erasure-domain", "local-device"]
+        },
+        "erasure_record_id": {
+          "description": "Present exactly on an erasure-domain tombstone. The other classes record a deletion that destroyed no key.",
+          "type": "string",
+          "format": "uuid"
+        },
+        "effective_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "tombstone_class": { "const": "erasure-domain" } },
+            "required": ["tombstone_class"]
+          },
+          "then": { "required": ["erasure_record_id"] },
+          "else": { "not": { "required": ["erasure_record_id"] } }
+        }
+      ]
+    },
+    "restore_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "restore_receipt_id",
+        "restored_to",
+        "journal_head_digest",
+        "records_replayed",
+        "keys_reconfirmed_destroyed",
+        "live_rows_redeleted",
+        "reapply_started_at",
+        "reapply_completed_at"
+      ],
+      "properties": {
+        "restore_receipt_id": { "type": "string", "format": "uuid" },
+        "restored_to": { "type": "string", "format": "date-time" },
+        "journal_head_digest": { "$ref": "#/$defs/digest" },
+        "records_replayed": { "type": "integer", "minimum": 0 },
+        "keys_reconfirmed_destroyed": { "type": "integer", "minimum": 0 },
+        "live_rows_redeleted": { "type": "integer", "minimum": 0 },
+        "reapply_started_at": { "type": "string", "format": "date-time" },
+        "reapply_completed_at": { "type": "string", "format": "date-time" },
+        "traffic_admitted_at": {
+          "description": "Never earlier than reapply_completed_at, which packages/schemas/planning-schema.sql enforces as a check constraint. Between the restore and the reapply the cluster holds live keys for domains that were erased after the restore point; it serves no application traffic during that interval, and the interval is not zero.",
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}
