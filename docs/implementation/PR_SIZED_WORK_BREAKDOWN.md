@@ -1,16 +1,11 @@
 # PR-Sized Implementation Work Breakdown
 
 Status: canonical planning decomposition; inactive until P-1140F closes and P-1104 is explicitly authorized
-Updated: 2026-08-05
+Updated: 2026-08-06
 
-This file decomposes `IMPLEMENTATION_HANDOFF.md`. It does not authorize product code. Units prefixed `PF-` are planning repairs permitted in the current phase. All other units are future implementation work and remain blocked.
+This file decomposes `IMPLEMENTATION_HANDOFF.md`. It does not authorize product code. Units prefixed `PF-` are planning repairs permitted in the current phase. All other units are future implementation work and remain blocked until P-1104, which being open authorizes work but does not start it.
 
-This file has two parts, and they are not the same kind of object:
-
-1. **Active plan** — units specified to the standard below. These can be picked up and produced as a mergeable change without further design work.
-2. **Frozen backlog** — the remaining epic headings. These are a *scope inventory*, retained so the launch scope in `docs/planning/PRODUCT_SCOPE_FREEZE.md` is not silently narrowed. **They are not executable units** and must be promoted into the active plan, with the four required fields, before being worked.
-
-Nothing in the frozen backlog has been removed from scope. Promotion is the only path from backlog to work.
+Every unit in this file is specified to the required-fields standard below. The file no longer has an active half and a frozen half; it has one plan, and a unit's readiness is expressed by its `Status:` line rather than by which section it sits in. Nothing has been removed from the launch scope recorded in `docs/planning/PRODUCT_SCOPE_FREEZE.md`.
 
 ## Global rules
 
@@ -28,62 +23,60 @@ A unit cannot start because its predecessor document exists. Its dependency must
 
 ### Required unit fields
 
-Every unit in the **active plan** must carry these four lines verbatim, in this order, immediately under its heading. They exist so plan quality is machine-checkable rather than aspirational.
+Every unit must carry these five lines verbatim, in this order, immediately under its heading. They exist so plan quality is machine-checkable rather than aspirational.
 
-- `Files:` — the exact paths the change touches. Not a component name, not a directory. If the paths are unknown, the unit is not yet specified.
-- `Acceptance:` — one runnable assertion. A command, a query, or a grep whose result decides done. Prose descriptions of intent are not acceptance criteria.
-- `Depends:` — unit IDs only, comma-separated, or `none`. Prose dependencies ("implemented product paths") are not resolvable and are not permitted.
+- `Files:` — the exact paths the change touches. Not a component name, not a directory. If the paths are unknown, the unit is not yet specified. A path the unit will create carries the repository's `(new)` marker, which is also what tells `validate_cross_references.py` not to resolve it and what gives the status check something to observe.
+- `Acceptance:` — one runnable assertion. A command, a query, or a grep whose result decides done. Prose descriptions of intent are not acceptance criteria. Where a unit's real acceptance is a human judgement, it says so and names the mechanical part separately rather than dressing the judgement up as a check.
+- `Depends:` — unit IDs only, comma-separated, or `none`. Prose dependencies ("implemented product paths") are not resolvable and are not permitted. Ranges are not permitted either, because a range cannot be resolved by the cross-reference validator.
 - `Est:` — hours, as an integer or a range. A unit estimated above 16 hours must be split.
+- `Status:` — one of `not-started`, `in-progress`, `landed <commit>`, or `superseded-by <ID>`.
 
-A unit missing any of the four is not ready to start, regardless of how well its prose reads.
+A unit missing any of the five is not ready to start, regardless of how well its prose reads.
 
-`scripts/repository/generate_issue_plan.py` currently validates key format and uniqueness only; it neither reads nor requires these fields, so a file of empty records passes CI today. Extending it to parse the four fields and fail on any active-plan unit missing them is tracked as `PF-037`, and until that lands this standard is enforced by review rather than by tooling.
+`scripts/repository/validate_work_unit_status.py` enforces all five. It fails on a missing, empty or duplicated field, on an `Est:` above the ceiling, on a `Depends:` entry that names no heading, on a dependency cycle, and on any SQL table in `packages/schemas/planning-schema.sql` that no unit names. `PF-037` remains open for the separate half of that work: `generate_issue_plan.py` still emits records that carry none of these fields and hardcodes a phase gate.
 
-### Why the active plan is short
+### How status stays true
 
-The 195-unit decomposition below records scope faithfully but is not executable: 159 units are a heading plus a dependency line, and no unit anywhere names a file path, schema, table, or endpoint — the first item this document's own Global rules require. Expanding all 195 to the standard above before any of them is exercised would repeat the failure this repository is currently repairing. The active plan is therefore sized to what can be specified against artifacts that actually exist, and grows by promotion as each vertical slice teaches what the next one needs.
+Status is checked against the tree rather than trusted. Each unit's `(new)` paths are the artifacts it promised to create, so their presence is an observation:
 
-## Active plan
+- `not-started` fails the moment any promised artifact exists. A status cannot silently outlive the work starting.
+- `landed` fails unless every promised artifact exists **and** the status names a commit this repository resolves.
+- `in-progress` is deliberately unconstrained, because artifact presence cannot refute it. It is the weakest of the four and is counted separately.
 
-Units below are specified to the required-fields standard and are ordered by execution sequence. `PF-` units are planning repairs permitted in the current phase. Units marked **gated** are fully specified but must not start until P-1104 is authorized.
+A unit whose `Files:` names no new artifact gives this check nothing to observe. The summary reports that count as its own number, so a green run cannot be read as more coverage than it has — the same discipline `PF-067` applies to the vocabulary validator.
+
+The derived block below is generated by the same script. The list of what can be started now is computed from the statuses and the dependency graph, so it cannot drift from them the way a hand-written "current next unit" list did.
+
+## Plan status
 
 Ordering principle: each specification is paired with the artifact or code that consumes it, rather than batched into a specification phase. A contract with no consumer cannot be validated, and validating contracts against each other is what produced the current finding set.
 
-| Unit | Work | Depends | Est (h) |
-|---|---|---|---|
-| `PF-037` | Enforce required unit fields in the issue plan generator | none | 4-6 |
-| `PF-038` | Reconcile state vocabularies across API, SQL and registry | none | 12-16 |
-| `PF-039` | Decide and specify the session authentication scheme | none | 6-8 |
-| `PF-040` | Specify accounting arithmetic | PF-038 | 8-12 |
-| `PF-041` | Specify the OpenTelemetry accounting profile | PF-040 | 8-12 |
-| `PF-042` | Author the source receipt contract | PF-041 | 6-8 |
-| `PF-043` | Author the appraisal result and policy contracts | PF-038 | 8-10 |
-| `PF-044` | Add pagination to unpaginated list operations | none | 3-4 |
-| `PF-045` | Specify the error response matrix | PF-038 | 8-10 |
-| `PF-046` | Represent evidence class in the public API | PF-043 | 4-6 |
-| `PF-047` | Expand profile and rank entry schemas to the rendered product | PF-046 | 6-8 |
-| `PF-048` | Author the indexing and partitioning plan | PF-038 | 8-12 |
-| `PF-049` | Repair the idempotency contract | PF-038 | 4-6 |
-| `PF-050` | Populate retention and disposition policy | PF-038 | 6-8 |
-| `PF-051` | Specify multi-observer deduplication | PF-042 | 6-8 |
-| `PF-052` | Author ranking generation, entry and snapshot contracts | PF-038, PF-048 | 10-14 |
-| `PF-053` | Decide provider-attested evidence for organizations | none | 4-6 |
-| `PF-054` | Author the negative CBOR corpus | none | 4-6 |
-| `PF-055` | Repair the P-1140F authority validator | none | 3-4 |
-| `PF-056` | Restore executable evaluation gates | PF-055 | 4-6 |
-| `PF-057` | Specify the P-1104 gate transition | PF-055 | 4-6 |
-| `PF-058` | Author the system narrative in PROJECT.md | none | 6-8 |
-| `PF-059` | Merge duplicated UI and design documentation | none | 6-8 |
-| `PF-060` | Collapse single-purpose documentation directories | PF-059 | 4-6 |
-| `PF-061` | Archive spent planning specifications | none | 4-6 |
-| `PF-062` | Make the decision register and task catalog machine-readable | PF-053, PF-055 | 12-16 |
-| `PF-063` | Complete decision traceability coverage | PF-062 | 4-6 |
-| `PF-064` | Remove stale dates from living document filenames | PF-057 | 2-3 |
-| `PF-065` | Correct the OpenAPI file extension | PF-038 | 2-3 |
-| `PF-066` | Repair unreachable states and false terminal states | none | 6-8 |
-| `PF-067` | Make state-vocabulary binding coverage self-checking | none | 4-6 |
+<!-- generated: work-unit-status -->
 
-Full specifications for these units are in **Current planning program** below, in unit-number order after `PF-036`.
+Units: 245. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
+
+| Status | Units |
+|---|---|
+| `not-started` | 228 |
+| `in-progress` | 6 |
+| `landed` | 11 |
+| `superseded-by` | 0 |
+
+Startable now — not landed, and every dependency landed: 15.
+
+`PF-001`, `PF-004`, `PF-037`, `PF-039`, `PF-040`, `PF-043`, `PF-044`, `PF-045`, `PF-048`, `PF-049`, `PF-050`, `PF-054`, `PF-062`, `PF-064`, `PF-067`.
+
+Statuses checkable against artifact evidence: 189 of 245. The other 56 declare no new file in `Files:`, so this check can neither confirm nor refute them and does not claim to.
+
+<!-- end generated: work-unit-status -->
+
+### Why every unit is now specified
+
+An earlier revision of this section argued the opposite, and it is recorded here rather than deleted. It read: expanding all 195 backlog units to the required-fields standard before any of them is exercised "would repeat the failure this repository is currently repairing", so the active plan should stay sized to what can be specified against artifacts that actually exist and grow by promotion.
+
+**The owner has directed that they all be expanded** (D-200). The argument above was not wrong about the risk, and the risk is real: a file path written before the code exists is a guess, and 195 guesses look like a plan. What changed is the judgement about which failure costs more. An unspecified backlog unit is not neutral — it hides the defects this document had already recorded against itself and could not act on: six prose dependencies that could not be ordered, eleven orphans, a launch gate that excluded the entire web product, fifty-two SQL tables owned by nothing, and thirteen whole categories with no unit at all. None of those was findable by a validator while the units were headings, because there was nothing to validate.
+
+So the expansion is scoped to what it can honestly claim. Every `Files:` path that does not exist carries the `(new)` marker and is a stated intention, not a fact. Every `Acceptance:` is a command, a grep or a schema check that decides done — and where a unit's real acceptance is a human review, `X-010` and `X-011` say so in the unit rather than substituting a green ledger for a verdict. A specified unit is still not a started one, and `Status:` is what says which.
 
 ## Current planning program
 
@@ -548,9 +541,12 @@ Status: not-started
 
 ### PF-037 — Enforce required unit fields in the issue plan generator
 Files: `scripts/repository/generate_issue_plan.py`, `docs/implementation/ISSUE_GENERATION.md`, `tests/ci/test_generate_issue_plan.py` (new)
-Acceptance: `python3 scripts/repository/generate_issue_plan.py` exits non-zero when any unit under `## Active plan` lacks `Files:`, `Acceptance:`, `Depends:`, or `Est:`; exits 0 on the current file; emitted records carry all four fields.
+Acceptance: `python3 scripts/repository/generate_issue_plan.py` emits records carrying `files`, `acceptance`, `depends`, `est` and `status` read from each unit block, and exits non-zero when the generated record set disagrees with `python3 scripts/repository/validate_work_unit_status.py` about any unit's status.
 Depends: none
 Est: 4-6
+Status: not-started
+
+**Field enforcement has moved.** `scripts/repository/validate_work_unit_status.py` now owns it under D-201 and fails on a missing, empty or duplicated field, an over-ceiling `Est:`, an unresolvable `Depends:`, a cycle, a contradicted status, an unowned SQL table and a stale derived block. What remains for this unit is the generator, which still emits records carrying none of those fields, so the issue plan is a list of headings rather than a plan.
 
 Also corrects three defects in the generator: `labels` hardcodes `blocked` and `phase_gate` hardcodes `P-1104-explicit-implementation-approval` with no gate-state input, so every generated record is mislabeled the moment the gate moves; `POST_LAUNCH_HEADING` and the `PL-` branch are dead code matching a heading that does not exist; and `ISSUE_GENERATION.md` documented stable keys in a two-digit form that the generator's own `\d{3}` key pattern rejects, since corrected to the three-digit headings the breakdown actually carries.
 
@@ -559,6 +555,7 @@ Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql
 Acceptance: a script asserts that for every aggregate with a `state` column, an API enum, and a registry machine, the three value sets are identical; zero mismatches reported.
 Depends: none
 Est: 12-16
+Status: landed c7b4ed8
 
 Nine aggregates currently disagree. `Appeal` shares exactly one state name between API and registry. `ranking-projection` is `building/published/superseded/failed` in SQL against `building/validating/active/superseded/failed` in the registry, so the projection worker has no valid target state. `Notification` cannot express `retracted`, which is the D-070 correction path. `idempotency_records` is `reserved/committed/failed` in SQL against `reserved/committed/conflict/expired` in the registry — neither is a superset. Export, deletion, certification, update-lifecycle, and web-session-family also diverge; certification has four vocabularies across three files plus the inventory.
 
@@ -569,6 +566,7 @@ Files: `docs/decisions/ADR-015-SESSION_AUTHENTICATION.md` (new), `packages/schem
 Acceptance: `openapi-v1.yaml` declares a `securitySchemes` entry matching the ADR; a refresh operation exists if the ADR requires one; `grep -c "bearerAuth" openapi-v1.yaml` no longer returns a global-only result.
 Depends: none
 Est: 6-8
+Status: in-progress
 
 `AUTHENTICATION_AND_RECOVERY.md:63-66` specifies HTTP-only same-site cookies with refresh-token rotation. `openapi-v1.yaml:13-16,1710-1715` declares a single global opaque `bearerAuth` with no cookie scheme, no OAuth2 flows, no scopes, and no refresh endpoint among its 39 paths. These are two different architectures and the first authenticated request cannot be implemented until one is chosen. The `web-session-family` machine has a `replay-detected` state that neither SQL nor the API can persist.
 
@@ -577,6 +575,7 @@ Files: `packages/schemas/accounting-profile.schema.json`, `docs/product/TOKEN_AC
 Acceptance: two independent implementations reproduce every vector in the new fixture byte-for-byte, including the profile digest.
 Depends: PF-038
 Est: 8-12
+Status: not-started
 
 `accounting-profile.schema.json` defines no rounding, overflow, precision, or unit-conversion rules, and no canonical digest algorithm — yet `accounting_profile_sha256` is a signed claim field. `retry_policy`, `cancellation_policy`, and `nested_execution_policy` at `:209-228` are enum labels with no defined behavior. Two implementations cannot currently agree on a token total, which makes cross-language parity meaningless.
 
@@ -585,6 +584,7 @@ Files: `packages/schemas/accounting-profile-otel-v1.json` (new), `docs/integrati
 Acceptance: the profile maps a captured OTLP payload to a `NormalizedAccountingEvent` deterministically; fixture includes at least one real capture per supported metric.
 Depends: PF-040
 Est: 8-12
+Status: not-started
 
 Empirically verified capture surface, 2026-08-05: Claude Code emits `claude_code.token.usage` as a counter with attributes `model`, `query_source` (`main`/`subagent`/`auxiliary`), and `type` (`input`/`output`/`cacheRead`/`cacheCreation`). Gemini CLI emits `gemini_cli.token.usage`; Codex emits `codex.turn.token_usage`. Prompt and response content appears only on the logs channel and is redacted unless explicitly enabled, so metrics-only capture keeps the collector out of L0 entirely.
 
@@ -595,6 +595,7 @@ Files: `packages/schemas/source-receipt-v1.schema.json` (new), `packages/schemas
 Acceptance: every `NormalizedAccountingEvent` fixture resolves to exactly one source receipt; schema validates the full existing observation corpus.
 Depends: PF-041
 Est: 6-8
+Status: not-started
 
 Inventory line `:35`. Provenance for every claim, and the first of the 33 `planned-missing` contracts that blocks real work. Note the inventory maps this to `PF-021/PF-022`, which are ranking units; the accounting owners are `PF-017`/`PF-018`.
 
@@ -603,6 +604,7 @@ Files: `packages/schemas/appraisal-result-v1.schema.json` (new), `packages/schem
 Acceptance: `ClaimRecord.appraisal_id` resolves to a defined schema and a retrievable operation; no dangling reference remains.
 Depends: PF-038
 Est: 8-10
+Status: not-started
 
 Inventory lines `:37-38`. `ClaimRecord.appraisal_id` already references an appraisal today and there is no `/appraisals/{id}` path and no schema behind it.
 
@@ -611,6 +613,7 @@ Files: `packages/schemas/openapi-v1.yaml`
 Acceptance: every operation returning a collection declares `cursor` and `limit` parameters with the contract's default 50 and maximum 200; zero collection operations without both.
 Depends: none
 Est: 3-4
+Status: not-started
 
 Twelve operations lack both: `listSessions:279`, `listIdentities:339`, `listDevices:446`, `listFriends:868`, `listFriendRequests:894`, `listBlocks:959`, `listRivals:1024`, `listBoards:1089`, `listOrganizations:1198`, `listCommunities:1263`, `listModerationCases:1427`, `listAppeals:1492`. `SERVER_API_DATA_AND_RANKING_CONTRACT.md:44` already specifies the contract they violate.
 
@@ -619,6 +622,7 @@ Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.jso
 Acceptance: every operation declares its 4xx responses; every reason code maps to exactly one HTTP status and one registered state machine.
 Depends: PF-038
 Est: 8-10
+Status: in-progress
 
 No operation currently declares 401, 403, 404, 409, or 422 — only 200, 429, and default. `reason-codes-v1.json` has 20 codes for a 39-path API and 24 state machines, and all 20 reference `state_machine: "vibeproof-v1"`, which is not one of the registered machines. Every code dangles.
 
@@ -627,6 +631,7 @@ Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/evidence-disclosure
 Acceptance: `grep -c evidence_class packages/schemas/openapi-v1.yaml` returns non-zero; the disclosure projection defines exactly what a viewer may see.
 Depends: PF-043
 Est: 4-6
+Status: in-progress
 
 The string `evidence_class` does not appear in 3,780 lines of OpenAPI. The product's central differentiator is currently unrepresentable in its own API. Four vocabularies exist for this concept — `packages/ui` uses `Hardened|Standard|Imported`, `crates/vibeproof-core` uses `Authoritative|Structured|Observed|Estimated|Imported`, `evidence-profile-policy-v1.json` uses `authoritative-profile`, and the API has none. Reconcile to one.
 
@@ -635,6 +640,7 @@ Files: `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX
 Acceptance: every field rendered by `packages/ui/src/concepts/product-storyboards.tsx` and `packages/ui/src/patterns/product-system.tsx` resolves to an API field; no storyboard depends on a value the API cannot return.
 Depends: PF-046
 Est: 6-8
+Status: in-progress
 
 `PublicProfile` has 4 fields and `RankEntry` has 7, both `additionalProperties: false`. The finished 2,900-LOC design system renders avatars, evidence badges, rank movement, sparklines, and board standings that no operation can supply. This unit also removes the banned copy at `product-storyboards.tsx:56,105,111` ("Verified competitor", "All sources verified", "Rankings are based on verified Token Burn"), which `docs/privacy/PRIVACY_PRESERVING_USAGE_EVIDENCE.md:134-138` and `docs/product/PRODUCT_SPEC.md:109` prohibit.
 
@@ -643,6 +649,7 @@ Files: `packages/schemas/planning-schema.sql`, `docs/architecture/LEADERBOARD_ST
 Acceptance: every foreign key and every documented query path has a supporting index; claims are partitioned as the contract states; `grep -c "CREATE INDEX" planning-schema.sql` is greater than 3.
 Depends: PF-038
 Est: 8-12
+Status: not-started
 
 73 tables carry 3 indexes total at `:651-653` and zero `PARTITION BY`, while `SERVER_API_DATA_AND_RANKING_CONTRACT.md:70` states claims are partitioned by receipt month. `friend_edges:275` and `rival_edges:289` have no reverse-direction index, so bidirectional queries sequential-scan. The 300 ms leaderboard SLO is unreachable as written.
 
@@ -651,6 +658,7 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml
 Acceptance: a replayed request returns the original response body byte-for-byte; the ledger expresses `conflict` and `expired`.
 Depends: PF-038
 Est: 4-6
+Status: in-progress
 
 `planning-schema.sql:420-430` stores a nullable `response_digest` with no response-body column, so exact replay cannot return the original response. The primary key at `:426` is `(actor_account_id, idempotency_key)` with no global uniqueness, and the principal is account-only.
 
@@ -659,6 +667,7 @@ Files: `packages/schemas/policy-defaults-v1.json`, `packages/schemas/data-dispos
 Acceptance: every one of the 73 tables has a declared retention class; no `expires_at` column exists without a documented enforcement owner.
 Depends: PF-038
 Est: 6-8
+Status: not-started
 
 Inventory `:106-107` assigns retention to `policy-defaults-v1.json`, which currently contains 16 knobs and zero retention windows. `expires_at` is stored in several tables and enforced nowhere.
 
@@ -667,6 +676,7 @@ Files: `packages/schemas/normalized-event.schema.json`, `docs/product/TOKEN_ACCO
 Acceptance: two collectors observing one session produce a single counted event; fixture covers the colliding and non-colliding commitment cases.
 Depends: PF-042
 Est: 6-8
+Status: not-started
 
 Inventory `:74`. `TOKEN_ACCOUNTING_SPEC.md:74-76` currently relies on the collector's own `duplicate_domain_commitment`, so two collectors on one real session can choose non-colliding commitments and double-count. Double counting is a scoring defect, not a data-quality defect.
 
@@ -675,6 +685,7 @@ Files: `packages/schemas/ranking-generation-v1.schema.json` (new), `packages/sch
 Acceptance: `LeaderboardPage.snapshot_id` and `revision` and `RankEntry.ranking_view_id` all resolve; a generation can be pinned, superseded, and read back.
 Depends: PF-038, PF-048
 Est: 10-14
+Status: not-started
 
 Inventory `:88`. Three fields dangle in the API today. This is also where `getLeaderboard` gains a viewer parameter and loses its unauthenticated `security: []` while the `Scope` enum at `:1775` still admits `friends|rivals|board`.
 
@@ -683,6 +694,7 @@ Files: `docs/decisions/ADR-016-PROVIDER_ATTESTED_ORG_EVIDENCE.md` (new), `docs/s
 Acceptance: the ADR states whether org boards use provider admin APIs, and `EVIDENCE_AND_ATTESTATION_PROFILES.md` reflects the resulting E1 availability.
 Depends: none
 Est: 4-6
+Status: landed 82d2fc5
 
 Research on 2026-08-05 established that Anthropic's Admin API (`/v1/organizations/usage_report/messages` plus the Claude Code analytics endpoint), OpenAI's `/v1/organization/usage/completions`, and Cursor's team usage API all return provider-attested counts that a user cannot fabricate — but all three require org-admin credentials, and no provider offers an OAuth scope permitting an individual to authorize third-party read of their own consumption. Anthropic's documentation states the Admin API is unavailable for individual accounts.
 
@@ -693,6 +705,7 @@ Files: `conformance/vibeproof/v1/negative-vectors.json` (new), `docs/architectur
 Acceptance: a decoder rejects every vector for the stated reason; duplicate keys, non-minimal integers, indefinite-length containers, and trailing bytes are each covered.
 Depends: none
 Est: 4-6
+Status: not-started
 
 `vibeproof-claim-v1.cddl` is the strongest artifact in the repository — all nine types resolve, COSE alg −8 and tag 18 are pinned, byte-exact positive vectors exist. Its gap is that only positive vectors exist, and canonicalization, nesting depth, and allocation ceilings live in prose rather than in testable form. Batch, rotation, gap, and correction vectors are also absent.
 
@@ -701,6 +714,7 @@ Files: `scripts/repository/validate_p1140f_authority.py`, `tests/ci/test_validat
 Acceptance: closing a finding in `conformance/p1140f/semantic-findings-v1.json` leaves the validator green; the validator fails when the open count increases.
 Depends: none
 Est: 3-4
+Status: landed c7b4ed8
 
 `:53` raises unless exactly 13 P1 findings are open; `:139` raises unless zero are open for a review to pass. The two conditions cannot both hold, so closing a finding correctly turns CI red and the only routes to green are inaction or editing the validator. Replace the exact-count check with monotonic non-regression.
 
@@ -709,6 +723,7 @@ Files: `.github/workflows/planning-checks.yml`, `evals/suites/suites.yaml`, `scr
 Acceptance: `run_evals.py --validate-registry`, `verify_repository.py`, and `python -m unittest discover -s tests` all run in CI and exit 0.
 Depends: PF-055
 Est: 4-6
+Status: landed fe4925b
 
 Four validators fail at HEAD and no workflow invokes them, so nothing detected the failure. Commit `31a6539` added `authority_class` and `evidence_ceiling` to satisfy `validate_p1140f_authority.py:124`, while `run_evals.py` rejected any key outside its allowlist — one validator required exactly what another forbade.
 
@@ -721,6 +736,7 @@ Files: `scripts/repository/doctor.py`, `docs/project/STATUS.md`, `docs/planning/
 Acceptance: `doctor.py` derives phase state from `conformance/p1140f/*.json` rather than from prose substrings; opening or closing the gate requires no edit to `doctor.py`.
 Depends: PF-055
 Est: 4-6
+Status: landed c7b4ed8
 
 The gate is currently enforced by prose substring assertions in four files: `doctor.py:90` requires `STATUS.md` to contain the literal string "implementation remains unauthorized", `:95` requires "blocked-approval" in `TASK_CATALOG.md`, `:105` requires "P-1104: blocked", and `:110` requires "inactive" and "blocked" in the handoff. Moving the gate therefore requires editing the validator that enforces it, which is the same defect as PF-055 in a different place. The machine-readable state already exists in `conformance/p1140f/`; the validator should read it.
 
@@ -729,6 +745,7 @@ Files: `docs/project/PROJECT.md`, `docs/project/DOCUMENTATION.md`
 Acceptance: a reader who has read only `PROJECT.md` can state the full path a token takes from an agent process to a public rank, and name the component that owns each step.
 Depends: none
 Est: 6-8
+Status: landed c7b4ed8
 
 No document explains how the system works end to end. Understanding it currently requires reading eight files in a prescribed order, which is why `AGENTS.md:12` has to prescribe that order. `PROJECT.md` should carry one narrative — install, adapter observes, collector normalizes, sync signs, verifier appraises, ledger records, projection ranks — with a diagram, and every other document should read as detail hanging off it.
 
@@ -739,6 +756,7 @@ Files: `docs/style-guide/COMPONENT_INVENTORY.md`, `docs/style-guide/COMPONENT_ST
 Acceptance: one owner per concept; no two files in `docs/style-guide/` describe the same component surface; `DOCUMENTATION.md` names the surviving owner for each.
 Depends: none
 Est: 6-8
+Status: landed c7b4ed8
 
 Three files described components (`COMPONENTS.md`, `COMPONENT_INVENTORY.md`, `COMPONENT_STANDARD.md`) and three described design foundations (`design/design.md`, `design/UI_FOUNDATIONS.md`, `style-guide/README.md`); the first and fourth of those have since been merged into their surviving owners. `docs/architecture/ARCHITECTURE.md` and the former `docs/style-guide/ARCHITECTURE.md` shared a filename while describing unrelated scopes, which made every reference to "ARCHITECTURE.md" ambiguous until the latter was renamed to `docs/style-guide/UI_ARCHITECTURE.md`.
 
@@ -749,6 +767,7 @@ Files: `docs/protocol/`, `docs/qa/`, `docs/evals/`, `docs/design/`, `docs/projec
 Acceptance: no directory under `docs/` holds fewer than four files without a recorded reason; every moved path resolves; `doctor.py` passes.
 Depends: PF-059
 Est: 4-6
+Status: landed dfb0eea
 
 Eighteen directories hold 82 files, and seven of them hold one to three: `protocol/` (1), `qa/` (1), `evals/` (2), `privacy/` (2), `design/` (3), `engineering/` (3), `project/` (3). Fold `protocol/` into `architecture/`, combine `qa/` and `evals/` into one verification directory, and fold `design/` into `style-guide/`. Keep `privacy/` and `project/` where they are — both are small but load-bearing, and `privacy/` deliberately isolates the invariant everything else serves.
 
@@ -759,6 +778,7 @@ Files: `docs/history/MACHINE_CONTRACT_REPAIR_SPEC.md`, `docs/history/REPOSITORY_
 Acceptance: both files are in `docs/history/` with unique content merged into a living owner; no inbound reference is broken; `doctor.py` passes.
 Depends: none
 Est: 4-6
+Status: landed c7b4ed8
 
 `MACHINE_CONTRACT_REPAIR_SPEC.md` (521 lines) declares itself a "normative P-1140B–E planning input"; P-1140E is closed, so it is spent. `REPOSITORY_ALIGNMENT_2026-07-23.md` (366 lines) restates decisions owned by `DECISION_REGISTER.md` and is cited in the `AGENTS.md` initialization order and in `DOCUMENTATION.md`, so both must be updated when it moves. Roughly 890 lines leave the active planning surface.
 
@@ -769,28 +789,41 @@ Files: `conformance/planning/decisions-v1.json` (new), `conformance/planning/dec
 Acceptance: the Markdown register and catalog are generated from JSON and byte-identical to the committed files; a validator fails on drift between source and generated output.
 Depends: PF-053, PF-055
 Est: 12-16
+Status: not-started
 
-`conformance/p1140f/*.json` is the pattern that works in this repository: validators read structure. But 77 decisions and every planning gate live in Markdown tables, and validators reach them by substring matching — `validate_p1140f_authority.py:131` greps prose for a count, and `doctor.py` asserts that literal strings appear somewhere in a document. That is why the phase gate could only be moved by editing its own validator.
+`conformance/p1140f/*.json` is the pattern that works in this repository: validators read structure. But the register now holds **132 rows running to D-205**, and every planning gate lives in a Markdown table that validators reach by substring matching — `validate_p1140f_authority.py:131` greps prose for a count, and `doctor.py` asserts that literal strings appear somewhere in a document. That is why the phase gate could only be moved by editing its own validator.
 
-Make JSON the source and generate the Markdown, so prose can no longer drift from state and validators can assert on structure. This unit is what lets PF-063 assert on the whole register.
+The register has grown by 55 rows since this unit was written, which raises rather than lowers its priority: the numbering is already sparse — D-109 is followed by D-140, D-144 by D-180 — and nothing enforces that a decision's status, its reopen condition and the artifact it governs stay consistent.
+
+Make JSON the source and generate the Markdown, so prose can no longer drift from state and validators can assert on structure. `validate_work_unit_status.py` is the smaller precedent for exactly this shape: JSON-free, but the derived block in the work breakdown is generated and drift fails the build. This unit is what lets PF-063 assert on the whole register.
 
 ### PF-063 — Complete decision traceability coverage
 Files: `scripts/repository/validate_p1140e_contracts.py`, `docs/planning/decision-traceability/`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
 Acceptance: every accepted implementation-bearing decision has a traceability row with an implementation owner, machine or state ownership, platform scope, and executable evidence requirement; the traceability validator covers the whole register rather than a frozen prefix of it.
 Depends: PF-062
 Est: 4-6
+Status: not-started
 
 Reference resolution itself is closed. `scripts/repository/validate_cross_references.py` resolves every decision, finding, ADR, program, work-unit, path, `$ref`, and `operationId` citation in the repository and exits non-zero on any that dangles; `tests/ci/test_cross_references.py` proves it fires per class. The 128 dangling work-unit citations that motivated this unit — a superseded two-digit numbering across 72 identifiers, including the `I-`, `PL-` and `U-` prefixes that never existed in the breakdown, and `D-01` through `D-10` used as work-unit identifiers in the same files where `D-001` onward are decisions — were deleted rather than remapped, because no unit they named survives.
 
-What remains is coverage, not resolution. Decisions D-070 onward have no traceability rows at all, because `validate_p1140e_contracts.py:52-59` freezes its matrix at `range(1, 70)` and delegates the remainder to a validator that never references a `D-` identifier.
+What remains is coverage, not resolution. `validate_p1140e_contracts.py:52-59` freezes its traceability matrix at `range(1, 70)` and delegates the remainder to a validator that never references a `D-` identifier, so **every decision from D-070 onward has no traceability row at all**. The register now runs to D-205 with 132 rows, so the uncovered tail is larger than the covered head: 63 decisions are traced and 69 are not.
+
+The freeze is deliberate — P-1140E owns D-001..D-069 and a later decision must not silently expand a closed structural matrix — so the repair is a second matrix owned by the P-1140F track rather than widening the range in place. Widening `range(1, 70)` would make a closed program's evidence set mutable, which is the defect this repository exists to stop.
+
+The four traceability files under `docs/planning/decision-traceability/` cover D-001 through D-069 and stop there. Extending them is the visible half; the half that decides whether this closes is that a new decision must not be mergeable without a row, which needs the check to run over the register rather than over a fixed list.
 
 ### PF-064 — Remove stale dates from living document filenames
 Files: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `scripts/repository/doctor.py`, `AGENTS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/TASK_CATALOG.md`
 Acceptance: no file that is still being updated carries a date in its filename; every inbound reference resolves; `doctor.py` passes.
 Depends: PF-057
 Est: 2-3
+Status: not-started
 
-`P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md` is live and was last updated 2026-08-04, but its filename says July 24. A date in a filename should mean the document is a point-in-time record; using it for a living document teaches readers to distrust the convention. It has nine inbound references including `doctor.py`'s REQUIRED list.
+`P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md` is live and is still being updated, but its filename says July 24. A date in a filename should mean the document is a point-in-time record; using it for a living document teaches readers to distrust the convention.
+
+Nine tracked files reference it and each has to move with it: `AGENTS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/TASK_CATALOG.md`, `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `docs/history/REPOSITORY_ALIGNMENT_2026-07-23.md`, `scripts/repository/doctor.py`'s REQUIRED list, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`, and the pinned-path strings in `conformance/p1140f/gate-authorization-v1.json` and `conformance/p1140f/semantic-findings-v1.json`. Those last two are the constraint that decides how this unit is done: `validate_p1140f_authority.py` requires every pinned path to exist, and the records are owned by the P-1140F closure track. D-140 refused the same rename for `openapi-v1.yaml` for exactly this reason. Either the rename lands together with the record update in one change, or it waits for the pins to be released — decide which, and record it, rather than discovering the constraint mid-rename.
+
+Two other dated filenames under `docs/planning/` need the same judgement and are in scope for this unit: `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, which is a closed program's record and should keep its date, and `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, which is a plan rather than a record and should not.
 
 Archived point-in-time reports in `docs/history/` keep their dates. That is what the convention is for.
 
@@ -799,6 +832,7 @@ Files: `packages/schemas/openapi-v1.yaml`, `scripts/repository/validate_planning
 Acceptance: the file's extension matches its contents; every reader resolves it; all planning validators pass.
 Depends: PF-038
 Est: 2-3
+Status: landed 74e1573
 
 `openapi-v1.yaml` contains JSON. YAML is a superset of JSON so parsers accept it, but the first tool that selects a parser by extension, or any human opening it expecting YAML, will be wrong. Either rename to `.json` or convert the contents to YAML — decide deliberately and record which, since several validators reference the path by name.
 
@@ -807,6 +841,7 @@ Files: `packages/schemas/state-machine-registry-v1.json`, `tests/ci/test_state_v
 Acceptance: every state in every registry machine is reachable from its initial state, and no state listed in `terminal_states` has an outgoing transition. A test asserts both across all 26 machines, not only those bound to SQL or an API enum.
 Depends: none
 Est: 6-8
+Status: landed 8baad9a
 
 Two defect classes found by a reachability sweep during the PF-038 follow-up. Both are invisible to `validate_state_vocabularies.py`, which compares vocabularies across three sources and does not examine transitions.
 
@@ -821,6 +856,7 @@ Files: `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_state
 Acceptance: the validator fails when a declared aggregate has an unpopulated `sql=` or `api=` binding that could have been populated, and reports its true three-way coverage rather than an aggregate count.
 Depends: none
 Est: 4-6
+Status: in-progress
 
 `validate_state_vocabularies.py` is a genuine check — its drift-injection tests prove it catches renames, deletions, and dropped enum values. But its guarantee is narrower than its name implies. Of 31 declared aggregates, only **7** receive a real three-way registry + SQL + API comparison. 19 are two-way, usually legitimately because there is no API surface, and 5 are format-only.
 
@@ -833,6 +869,7 @@ Files: `conformance/vibeproof/v1/ed25519-divergence-corpus.json` (new), `conform
 Acceptance: the corpus contains at least one case for each of non-canonical `A`, non-canonical `R`, small-order `A`, and `S >= l`; every case records its expected ZIP-215 verdict; and a generator reproduces the corpus byte-identically from recorded inputs, so no verdict is asserted by hand.
 Depends: PF-005
 Est: 8-12
+Status: not-started
 
 VibeProof v1 pins Ed25519 verification to ZIP-215 because RFC 8032 does not pin it: SS5.1.7 permits both the cofactored and cofactorless group equations, and FIPS 186-5 SS7.7 repeats that permission verbatim. A cofactored verifier accepts a strictly larger set of signatures than a cofactorless one, and the implication runs one way only, so a Rust signer and a Go verifier that both conform to RFC 8032 can disagree without any round-trip test noticing.
 
@@ -840,21 +877,21 @@ RFC 8032's own test vectors cannot detect this. They are well-formed signatures 
 
 The corpus is a precondition of any cross-language conformance claim, and it cannot be authored by asserting verdicts from the specification text alone - each expected outcome has to be confirmed against a ZIP-215 reference implementation, or the corpus repeats the original defect at one remove. Go's `crypto/ed25519` is cofactorless and will fail these cases by design; selecting a ZIP-215-capable Go implementation is part of the D-012 bakeoff.
 
-## Frozen backlog — scope inventory, not executable units
+## Implementation epics — specified, blocked until P-1104
 
-Everything below is retained to hold the launch scope in `docs/planning/PRODUCT_SCOPE_FREEZE.md`. **These are headings, not units.** None carries `Files:`, `Acceptance:`, `Depends:` in resolvable form, or `Est:`, and none names a file path, schema, table, or endpoint. They must be promoted into the active plan against the required-fields standard before being worked, and they are all blocked until P-1104 regardless.
+Everything below holds the launch scope in `docs/planning/PRODUCT_SCOPE_FREEZE.md`. These were headings until D-200; they are now units specified to the same standard as the `PF-` units above, and they remain blocked until P-1104 regardless of how well specified they are. Being specified is not being authorized, and being authorized is not being started.
 
-Known defects in this section, recorded rather than silently carried:
+### The five defects this section recorded against itself
 
-- **Six units declare prose dependencies that do not resolve**: `PF-001`, `PF-004`, `O-005`, `X-001`, `X-009`, `X-010` depend on phrases such as "implemented product paths" and "all launch paths". Prose dependencies cannot be ordered.
-- **Eleven units are orphans** that nothing depends on: `F-008`, `L-014`, `N-018`, `N-019`, `P-010`, `S-001`, `S-004`, `S-015`, `W-001`, `W-010`, `X-011`. `S-001` is the Go service foundation, and `S-002` through `S-015` do not depend on it.
-- **`X-011` does not gate launch.** P-1105 readiness transitively depends on 162 of 194 units, excluding all ten Epic W units — the entire hosted web product — plus `O-012`, `R-012`, `M-011`, `S-015`, `N-018`, `N-019`, `P-010`, and `F-008`. Launch readiness is currently declarable with no web application.
-- **52 of the 73 tables in `packages/schemas/planning-schema.sql` are named nowhere in this file or in `IMPLEMENTATION_HANDOFF.md`.** Organizations and communities have four OpenAPI operations and two tables, and the words "organization" and "community" do not appear in this document at all. Passkeys, recovery codes, `model_alias_facts`, `minute_scores`, `social_integrity_events`, `audit_events`, and `adapter_installations` have no owning unit.
-- **Thirteen categories have no unit anywhere**: local development environment, product CI/CD, logging and metrics and tracing, error taxonomy, API versioning and deprecation, rate limiting, data migration and backfill, load testing, runbooks and on-call, staging environment, cost modeling, feature-flag mechanics, and product analytics.
+Each was recorded here rather than silently carried. Each is now closed or stands with a reason.
 
-Promotion of any unit below must resolve the defects that apply to it.
+- **Six units declared prose dependencies that do not resolve** — `PF-001`, `PF-004`, `O-005`, `X-001`, `X-009`, `X-010`, on phrases such as "implemented product paths" and "all launch paths". **Closed.** All six now carry unit IDs. In four of them the phrase was carrying two different things at once: an ordering claim and an authorization or capability condition. The ordering claim became a dependency; the condition is recorded in the unit body, because a condition is not an edge and cannot be scheduled. `validate_work_unit_status.py` fails on any `Depends:` entry that is not a resolvable ID.
+- **Eleven units were orphans that nothing depended on** — `F-008`, `L-014`, `N-018`, `N-019`, `P-010`, `S-001`, `S-004`, `S-015`, `W-001`, `W-010`, `X-011`. **Ten closed, one stands.** `S-001` was the worst of them: `S-002` through `S-015` are all built on the Go service foundation and none depended on it. `S-002` now does. `W-001` gained the nine screens that consume its generated client, `S-004` gained `S-010`, and the six suite and automation units gained `X-010` or `X-011`. `X-011` remains an orphan and that is correct: nothing follows a launch-readiness review. A sink at the end of the graph is not the defect a missing edge in the middle is.
+- **`X-011` did not gate launch.** P-1105 readiness transitively depended on 162 of 194 units, excluding all ten Epic W units — the entire hosted web product — plus `O-012`, `R-012`, `M-011`, `S-015`, `N-018`, `N-019`, `P-010` and `F-008`. Launch readiness was declarable with no web application. **Closed.** `X-011` now names the whole launch set explicitly, and `validate_work_unit_status.py --gate X-011` fails while any unit in its closure is not `landed`.
+- **52 of the tables in `packages/schemas/planning-schema.sql` were named nowhere in this file.** **Closed, and the real number was larger.** The recorded figure counted 73 tables; the DDL declares 98, so 77 were unowned rather than 52. Every one now has a unit that names it, including the organizations and communities surfaces whose words did not appear in this document at all, and `validate_work_unit_status.py` fails on any `create table` no unit names. The check runs against the DDL, so a table added later without an owner fails rather than joining the backlog quietly.
+- **Thirteen categories had no unit anywhere.** **Closed.** `F-009` local development environment, `F-010` product CI/CD, `F-011` feature-flag mechanics, `S-016` error taxonomy, `S-017` API versioning and deprecation, `S-018` rate limiting, `S-019` audit ledger, `S-020` data migration and backfill, `X-012` logging, metrics and tracing, `X-013` staging, `X-014` load and soak testing, `X-015` runbooks and on-call, `X-016` cost model, `X-017` product analytics. Four more units — `G-017`, `G-018`, `G-019` and `O-013` — were authored for table and API surfaces that had no owner rather than for a missing category.
 
-### Future implementation epics — blocked until P-1104
+Several of these units bind to documents that already exist in `docs/operations/`: `X-003` and `X-012` to `docs/operations/OBSERVABILITY_PRIVACY.md`, `X-004` to `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`, `X-005` to `docs/operations/INCIDENT_RESPONSE.md`, `X-015` to `docs/operations/SLOS_AND_ALERTS.md`, and `L-003` to `docs/operations/RELEASE_VERIFICATION.md`. Those documents are the normative owners and the units cite them; nothing here restates their contents. `gh pr list` reported no open pull request at the time of writing, so the operations surface consulted was the one on `main`.
 
 ## Epic F — Reproducible foundation
 
@@ -1152,6 +1189,8 @@ Depends: A-001
 Est: 8-12
 Status: not-started
 
+`pricing_interpretations` records how each dataset was applied to produce a figure.
+
 Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
 
 Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
@@ -1276,6 +1315,8 @@ Depends: N-007
 Est: 10-14
 Status: not-started
 
+`shell_ipc_peers` records the peer identity behind each live connection.
+
 `shell_sessions` had no owning unit before this one.
 
 `shell_sessions` had no owning unit before this one.
@@ -1297,6 +1338,8 @@ Acceptance: a full end-to-end run with the supervisor absent exits 0, which is w
 Depends: N-006
 Est: 10-14
 Status: not-started
+
+`privileged_consents` records the explicit consent for each privileged operation.
 
 The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
 
@@ -1375,6 +1418,8 @@ Depends: S-001, F-001
 Est: 12-16
 Status: not-started
 
+Also the persistence owner for `service_events`, the service-instance lifecycle ledger.
+
 Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
 
 Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
@@ -1411,6 +1456,8 @@ Acceptance: an `oauth_transactions` row binds action, account or session, recent
 Depends: S-002
 Est: 8-12
 Status: not-started
+
+Also the persistence owner for `oauth_authorization_events`, the append-only record of each authorization step.
 
 ### S-006 Account, linked identity and recent-auth persistence
 Files: `apps/api/internal/identity/store.go` (new), `migrations/0004_identity.sql` (new), `packages/schemas/planning-schema.sql`
@@ -1639,12 +1686,16 @@ Depends: S-006, PF-039
 Est: 10-14
 Status: not-started
 
+`session_tokens` is the per-token row inside a family and is written here, not by `S-006`, because rotation is what creates and retires it.
+
 ### O-007 Linked identity and exact unlink
 Files: `apps/api/internal/identity/link.go` (new), `apps/api/internal/identity/link_test.go` (new)
 Acceptance: unlinking the last authentication method is refused; an unlink revokes exactly the sessions and device grants the contract names and no others, asserted row by row before and after.
 Depends: O-004, O-006
 Est: 8-12
 Status: not-started
+
+Also writes `identity_events`, the append-only link and unlink ledger.
 
 ### O-008 Provider loss/compromise recovery
 Files: `apps/api/internal/identity/recovery.go` (new), `apps/api/internal/identity/recovery_test.go` (new)
@@ -1659,6 +1710,8 @@ Acceptance: an account with no resolved ranked identity returns no row from any 
 Depends: S-007, O-007
 Est: 10-14
 Status: not-started
+
+`identity_investigations` holds the private investigation record; it is written here and published nowhere.
 
 ### O-010 Duplicate-account consolidation execution
 Files: `apps/api/internal/rankedidentity/consolidate.go` (new), `packages/schemas/consolidation-plan-v1.schema.json` (new)
@@ -1744,6 +1797,8 @@ Depends: V-004, V-005
 Est: 12-16
 Status: not-started
 
+`certification_results` stores the signed bundle for each certified tuple.
+
 ### V-007 Source upgrade-break and privacy fixtures
 Files: `conformance/adapters/upgrade-break-fixtures-v1.json` (new), `crates/vibeproof-adapters/tests/upgrade_break.rs` (new)
 Acceptance: a fixture recorded from a newer source version with a changed field set makes the adapter report an uncertified tuple rather than parse best-effort; every privacy fixture in the set is blocked by the `F-006` canary suite.
@@ -1814,6 +1869,8 @@ Depends: R-002, R-003
 Est: 12-16
 Status: not-started
 
+`projection_generations` is the generation record the entry keys reference.
+
 ### R-005 Generation validation and atomic promotion
 Files: `apps/api/internal/ranking/promote.go` (new), `apps/api/internal/ranking/promote_test.go` (new)
 Acceptance: a partial unique index permits exactly one active generation; promotion is a single statement, and an injected validation failure leaves the previous generation active with no window in which none is.
@@ -1868,6 +1925,8 @@ Acceptance: every movement, overtake and streak event references the generation 
 Depends: R-006, R-010
 Est: 10-14
 Status: not-started
+
+`ranking_events` is the append-only movement, overtake, streak and retraction ledger.
 
 ### R-012 Authorization/pagination/correction concurrency suite
 Files: `evals/suites/suites.yaml`, `tests/conformance/test_ranking_races.py` (new)
@@ -1951,6 +2010,8 @@ Depends: N-006, O-009
 Est: 8-12
 Status: not-started
 
+`presence_events` is the append-only pulse ledger behind the derived state.
+
 ### G-010 Account presence projection and multi-device merge
 Files: `apps/api/internal/presence/project.go` (new), `packages/schemas/policy-defaults-v1.json`
 Acceptance: the merged state is `active`, `idle` at the 90-second threshold and `offline` at the 300-second threshold using the values recorded in `packages/schemas/policy-defaults-v1.json` rather than literals in code; merging two devices produces the same result under both orderings.
@@ -1982,6 +2043,8 @@ Acceptance: every attempt records exactly one of `queued`, `deferred`, `accepted
 Depends: G-012
 Est: 10-14
 Status: not-started
+
+`notification_deliveries` records one row per channel attempt.
 
 ### G-014 Preferences, quiet hours, read/dismiss and expiry
 Files: `apps/api/internal/notifications/preferences.go` (new), `packages/schemas/planning-schema.sql`
@@ -2037,6 +2100,8 @@ Depends: G-016, S-019
 Est: 8-12
 Status: not-started
 
+Also the persistence owner for `social_events`.
+
 `social_integrity_events` had a Protobuf contract and a table but no owning unit. Detection remains deterministic and local-only advisory per the binding product rules; this ledger records deterministic control outcomes, not statistical inferences.
 
 `social_integrity_events` had a Protobuf contract and a table but no owning unit. Detection remains deterministic and local-only advisory per the binding product rules; this ledger records deterministic control outcomes, not statistical inferences.
@@ -2078,6 +2143,8 @@ Depends: M-004
 Est: 8-12
 Status: not-started
 
+`export_download_grants` holds the short-lived revocable grants and their audit rows.
+
 ### M-006 Hosted deletion plan and account mutation freeze
 Files: `apps/api/internal/deletion/plan.go` (new), `migrations/0021_deletion.sql` (new), `packages/schemas/planning-schema.sql`
 Acceptance: a `deletion_jobs` row holds an immutable domain-and-effect plan covering every domain in `docs/privacy/DATA_MAP.md`; account mutations are refused while the job executes, asserted one refused mutation per restricted operation.
@@ -2106,6 +2173,8 @@ Depends: M-007
 Est: 10-14
 Status: not-started
 
+`deletion_tombstones` is what a restore has to reapply before any affected row becomes readable.
+
 ### M-010 Legal hold and minimal retained fraud/audit signals
 Files: `apps/api/internal/deletion/legalhold.go` (new), `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
 Acceptance: a legal hold blocks exactly the effects it names and no others, asserted effect by effect; retained fraud and audit signals are the minimal set enumerated in the contract, and a signal not in that set fails the retention check.
@@ -2133,12 +2202,16 @@ Depends: F-001
 Est: 10-14
 Status: not-started
 
+`tuf_metadata` stores the client's trusted metadata state alongside `tuf_roots`.
+
 ### L-002 Authenticated release component manifest
 Files: `apps/api/internal/release/manifest.go` (new), `packages/schemas/release-set-v1.schema.json`, `packages/schemas/planning-schema.sql`
 Acceptance: every `release_sets` row is itself an authenticated TUF target, and each `release_targets` row carries component ID, target path, architecture, hash, provenance, native signature, compatibility tuple and update class; a target missing any field is refused.
 Depends: L-001
 Est: 10-14
 Status: not-started
+
+`release_transparency_events` is the append-only publication log for each release set.
 
 ### L-003 Provenance and platform-native signature verification
 Files: `crates/vibemaxxing-cli/src/update/verify.rs` (new), `docs/operations/RELEASE_VERIFICATION.md`
@@ -2467,12 +2540,14 @@ The following are not launch units:
 - unsupported claims generated from unexercised manifests;
 - autonomous workflow activation during planning.
 
-## Current next unit
+## Critical path
 
-The currently-unstarted active-plan units are `PF-001`, `PF-037`, `PF-039` through `PF-052`, `PF-053`, `PF-054`, and `PF-062` through `PF-067`. (Checked against `git log --oneline origin/main`: PF-055 and PF-056 have landed; none of PF-001, PF-037, PF-053, PF-054 appear in recent commits, confirming they remain unstarted.)
+**What to start next is derived, not written here.** It is in the generated block under **Plan status**, computed from the `Status:` lines and the dependency graph by `scripts/repository/validate_work_unit_status.py`. The hand-written list that used to sit in this section went stale the moment a unit landed and nobody edited it — it still named `PF-053` as unstarted after its ADR had been committed. A list that has to be maintained by hand to stay true will not stay true.
 
-All `F-` through `X-` units remain blocked until P-1104.
+All `F-` through `X-` units remain blocked until P-1104 regardless of status.
 
-An earlier revision of this section stated "PF-001 only", and a companion claim placed `PF-002`/`PF-003` immediately after `PF-001` on the critical path. Both were wrong by this file's own dependency lines: `PF-002` and `PF-003` are leaves that nothing depends on, and the longest `PF-` chain begins at `PF-004`, which does not depend on `PF-001`. The corrected chain to `PF-036` is `PF-004 → PF-021 → PF-022 → PF-023 → PF-029 → PF-033 → PF-034 → PF-035 → PF-036`, a depth of nine.
+An earlier revision stated "PF-001 only" as the next unit, and a companion claim placed `PF-002`/`PF-003` immediately after `PF-001` on the critical path. Both were wrong by this file's own dependency lines: `PF-002` and `PF-003` are leaves that nothing depends on, and the longest `PF-` chain begins at `PF-004`, which does not depend on `PF-001`. The corrected chain to `PF-036` is `PF-004 → PF-021 → PF-022 → PF-023 → PF-029 → PF-033 → PF-034 → PF-035 → PF-036`, a depth of nine.
 
-For reference, the longest chains in the frozen backlog, measured in units rather than time: 19 to `S-010` (first claim accepted server-side), 26 to `V-004` (first working adapter), 28 to `W-003` (leaderboard visible in a browser), 36 to `X-011`, and 37 to `W-010`. A 26-unit serial chain before one real token reaches a board is the specific reason the active plan is sequenced by vertical slice rather than by layer.
+Longest chains under the repaired graph, measured in units rather than time: 19 to `S-010` (first claim accepted server-side), 26 to `V-004` (first working adapter), 28 to `W-003` (leaderboard visible in a browser), 37 to `W-010`, 38 to `X-010`, and 43 to `X-011`. A 26-unit serial chain before one real token reaches a board is the specific reason the plan is sequenced by vertical slice rather than by layer.
+
+`X-011`'s transitive closure is 216 of the 245 units. The 28 outside it are all `PF-037` through `PF-067` — planning repairs whose value is repository hygiene rather than a launch prerequisite. Every implementation unit is inside the closure, which is what the previous 162-of-194 figure was supposed to mean and did not.

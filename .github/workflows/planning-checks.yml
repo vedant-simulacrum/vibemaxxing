@@ -52,6 +52,12 @@ jobs:
         run: python3 scripts/repository/validate_planning_coverage.py
       - name: Validate state vocabularies across API, SQL, and the machine registry
         run: python3 scripts/repository/validate_state_vocabularies.py
+      # Fails on a missing required field, an unresolvable dependency, a cycle, a
+      # status the tree contradicts, a SQL table no unit owns, or a stale derived
+      # block. A `not-started` unit whose artifact now exists fails here rather
+      # than staying not-started until somebody notices.
+      - name: Validate work-unit fields, status and table ownership
+        run: python3 scripts/repository/validate_work_unit_status.py
       - name: Validate the evaluation registry
         run: python3 scripts/ci/run_evals.py --validate-registry
       # The dangle set is empty and tests/ci/test_cross_references.py pins it there, so
