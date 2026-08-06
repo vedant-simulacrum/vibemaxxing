@@ -13,7 +13,7 @@ This directory owns planning-grade source interfaces. These files are normative 
 - `local-detector-result.schema.json` — LocalDetectorResult v1 schema
 - `normalized-event.schema.json` — NormalizedAccountingEvent v1 schema
 - `observability-allowlist-v1.yaml` — Observability attributes allowlist v1
-- `openapi-v1.yaml` — VibeMaxxing Public API specification
+- `openapi-v1.yaml` — VibeMaxxing Public API specification, written as YAML under D-140
 - `planning-schema.sql` — P-1140D planning DDL contract
 - `platform-profile-registry-v1.json` — Platform profile registry data
 - `platform-profile-registry-v1.schema.json` — Exact Platform Profile Registry v1 schema

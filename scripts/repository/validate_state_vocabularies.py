@@ -5,7 +5,7 @@ The three owners are:
 
 * `packages/schemas/state-machine-registry-v1.json` — the lifecycle authority;
 * `packages/schemas/planning-schema.sql` — the persistence authority;
-* `packages/schemas/openapi-v1.yaml` — the client-visible projection.
+* `packages/schemas/openapi-v1.yaml` — the client-visible projection, read as YAML.
 
 `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` records the binding
 table in prose; this script holds the same table as data and refuses to run if the two
@@ -22,6 +22,8 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS = ROOT / "packages" / "schemas"
@@ -656,7 +658,7 @@ def validate(report: Report) -> None:
     bodies = table_bodies(sql_text)
     checks = sql_check_sets(bodies)
     declared_state_columns = sql_state_columns(bodies)
-    spec = json.loads(OPENAPI_PATH.read_text(encoding="utf-8"))
+    spec = yaml.safe_load(OPENAPI_PATH.read_text(encoding="utf-8"))
     enums = api_enums(spec)
     contract = contract_table(CONTRACT_PATH.read_text(encoding="utf-8"))
 

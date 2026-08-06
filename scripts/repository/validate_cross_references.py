@@ -146,6 +146,11 @@ AUDIT_FINDING_DETAIL = (
 )
 CONTEXT_PATH_DETAIL = ".context/ is gitignored working space, not repository authority"
 
+# A `$ref` as it is written in either serialisation this repository uses: JSON
+# (`"$ref": "…"`) and YAML (`$ref: '…'` or `$ref: "…"`). Used only to locate the
+# citation's line and to count citations; resolution works on the parsed document.
+REF_LINE_RE = re.compile(r'"?\$ref"?\s*:\s*["\']([^"\']+)["\']')
+
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]\n]*\]\(([^)\s]+)\)")
 INLINE_CODE_RE = re.compile(r"`([^`\n]+)`")
 FENCE_RE = re.compile(r"^\s*(?:```|~~~)")
@@ -294,17 +299,30 @@ def load_work_units() -> set[str]:
     return ids
 
 
-def load_openapi() -> dict:
-    text = read_text(OPENAPI)
+def parse_structured(text: str):
+    """Parse a schema document that may be written as JSON or as YAML.
+
+    JSON is attempted first because it is unambiguous and because every
+    `*.schema.json` in the repository is JSON. YAML is the fallback, and it is what
+    `packages/schemas/openapi-v1.yaml` has held since D-140. Returns `None` when the
+    text is neither, which the callers report as an unreadable document.
+    """
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
     try:
         import yaml
-    except ImportError as error:  # pragma: no cover - requirements pin PyYAML
-        raise Failure(f"cannot parse {OPENAPI.name} without PyYAML: {error}") from error
-    document = yaml.safe_load(text)
+    except ImportError:  # pragma: no cover - requirements pin PyYAML
+        return None
+    try:
+        return yaml.safe_load(text)
+    except Exception:
+        return None
+
+
+def load_openapi() -> dict:
+    document = parse_structured(read_text(OPENAPI))
     if not isinstance(document, dict):
         raise Failure(f"{OPENAPI.name} is not a mapping")
     return document
@@ -512,18 +530,28 @@ def resolve_pointer(document, pointer: str) -> bool:
 
 
 def collect_json_refs(relative: str, source: Path, text: str) -> list[Dangle]:
-    """Resolve every `$ref` in a schema document, internal pointer or external file."""
-    try:
-        document = json.loads(text)
-    except json.JSONDecodeError:
+    """Resolve every `$ref` in a schema document, internal pointer or external file.
+
+    The document may be JSON or YAML. `packages/schemas/openapi-v1.yaml` is YAML under
+    D-140 while every `*.schema.json` beside it is JSON, and a `$ref` means the same
+    thing in both, so the parser is chosen by content rather than by extension.
+    """
+    document = parse_structured(text)
+    if not isinstance(document, dict):
         return [
-            Dangle("json-ref", relative, relative, 1, "document is not readable JSON")
+            Dangle(
+                "json-ref",
+                relative,
+                relative,
+                1,
+                "document is not readable JSON or YAML",
+            )
         ]
     dangles: list[Dangle] = []
     line_of = {
         reference: index + 1
         for index, line in enumerate(text.splitlines())
-        for reference in re.findall(r'"\$ref"\s*:\s*"([^"]+)"', line)
+        for reference in REF_LINE_RE.findall(line)
     }
     for _pointer, reference in walk_refs(document):
         line = line_of.get(reference, 1)
@@ -544,8 +572,10 @@ def collect_json_refs(relative: str, source: Path, text: str) -> list[Dangle]:
             continue
         if fragment:
             try:
-                external = json.loads(target.read_text(encoding="utf-8"))
-            except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+                external = parse_structured(target.read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError):
+                external = None
+            if external is None:
                 dangles.append(
                     Dangle("json-ref", reference, relative, line, "unreadable target")
                 )
@@ -697,10 +727,7 @@ def scan(files: list[str] | None = None) -> Report:
         counts["path"] += count_path_candidates(lines, is_markdown)
         dangles.extend(collect_paths(relative, lines, is_markdown))
 
-        if (
-            relative.endswith(".schema.json")
-            or relative == OPENAPI_RELATIVE
-        ):
+        if relative.endswith(".schema.json") or relative == OPENAPI_RELATIVE:
             refs = collect_json_refs(relative, source, text)
             counts["json-ref"] += count_json_refs(text)
             dangles.extend(refs)
@@ -729,7 +756,7 @@ def count_path_candidates(lines: list[tuple[int, str]], is_markdown: bool) -> in
 
 
 def count_json_refs(text: str) -> int:
-    return len(re.findall(r'"\$ref"\s*:\s*"', text))
+    return len(REF_LINE_RE.findall(text))
 
 
 # ---------------------------------------------------------------------------

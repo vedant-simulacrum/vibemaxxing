@@ -81,7 +81,7 @@ Syntax validity, schema parsing, fixture loading, symbolic race plans, prototype
 
 | Specification family | Normative owner | Machine owner | Status | Repair / implementation dependency |
 |---|---|---|---|---|
-| Public API | authoritative state contract | `openapi-v1.yaml` | present-blocked | SR-006..SR-017; no generated production clients yet |
+| Public API | authoritative state contract | `openapi-v1.yaml` | present-blocked | SR-006..SR-017; YAML under D-140; no generated production clients yet |
 | PostgreSQL model | authoritative state contract | `planning-schema.sql` | present-blocked | named owners, keys and vocabularies must align before migrations |
 | Mutable-state registry | authoritative state contract | state-machine registry and schema | present-blocked | every state reachable; every owner exists; no hidden mappings |
 | Reason and policy registries | owning domain contracts | reason/policy JSON registries | present-blocked | add stable domain outcomes and accepted D-070..D-077 defaults |
