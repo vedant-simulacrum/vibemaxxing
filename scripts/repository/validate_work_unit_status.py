@@ -2,14 +2,14 @@
 """Check every work unit in the breakdown against evidence rather than assertion.
 
 `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` carries one block per work unit.
-Each block must declare five fields — `Files:`, `Acceptance:`, `Depends:`, `Est:`
-and `Status:` — and this validator decides whether the recorded status is
-consistent with what is actually in the tree.
+Each block declares `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`, and
+this validator decides whether the recorded status survives contact with the tree.
 
-The mechanism is deliberately narrow. A unit's `Files:` line marks each path it
-will *create* with the repository's existing `(new)` marker. Those paths are the
-unit's promised artifacts, so their presence or absence is an observation rather
-than a claim:
+Two independent observations back a status. Neither is a claim anybody makes.
+
+**Artifact presence.** A unit's `Files:` line marks each path it will *create* with
+the repository's existing `(new)` marker. Those paths are the unit's promised
+artifacts, so their presence is observable:
 
 | Signal         | Meaning                                                    |
 | -------------- | ---------------------------------------------------------- |
@@ -18,41 +18,68 @@ than a claim:
 | `present`      | all of them exist                                           |
 | `none-planned` | the unit creates no new file, so this check learns nothing  |
 
-A recorded status must be consistent with its signal:
+**Executable evidence.** A unit claiming `landed` carries one or more `Evidence:`
+lines, and this validator *runs* them. They are not descriptions of a check; they
+are the check. Five verbs, no shell, no interpolation:
 
-* `not-started` — the signal may not be `partial` or `present`. The moment
-  somebody creates one of the unit's artifacts, this fails, which is the whole
-  point: a stale `not-started` cannot survive the work starting.
-* `landed` — the signal may not be `absent` or `partial`, and the status must
-  name a commit this repository resolves.
+    Evidence: validator scripts/repository/validate_state_vocabularies.py
+    Evidence: unittest tests.ci.test_run_evals
+    Evidence: exists docs/decisions/ADR-015-SESSION_AUTHENTICATION.md
+    Evidence: missing docs/qa
+    Evidence: contains 17 packages/schemas/openapi-v1.yaml :: parameters/Cursor
+    Evidence: absent packages/ui/src/components.tsx :: Verified competitor
+
+`contains` takes a minimum count; `absent` requires zero. The literal after `::`
+is matched as a plain substring, so no pattern syntax can widen it by accident.
+
+**Why not a commit id.** An earlier revision recorded `Status: landed <sha>`. It
+was wrong in both directions and D-206 records the reversal. Every pull request is
+squash-merged under a linear-history rule, so the ids recorded from a branch stop
+existing the moment it merges — the check failed on correct data. And any
+resolvable id would have satisfied it, including one belonging to an unrelated
+commit — so it would have passed on fabricated data. A commit id describes nothing
+about whether the work is present.
+
+Statuses, and what each one has to survive:
+
+* `not-started` — artifact signal may not be `partial` or `present`. The moment
+  somebody creates one of the unit's artifacts this fails, which is the point: a
+  stale `not-started` cannot outlive the work starting.
+* `landed` — signal may not be `absent` or `partial`, at least one `Evidence:`
+  line is required, and every one of them must pass when run here and now.
+* `unverifiable` — the unit's completion cannot be observed from the tree. It
+  requires a `Reason:` line, is counted separately, and is never reported as done.
+  This is the honest status for work whose result is a human judgement.
 * `superseded-by <ID>` — the named unit must have a heading in the same file.
 * `in-progress` — deliberately unconstrained by the signal, because artifact
-  presence cannot refute it. A unit that has authored its one new file and not
-  yet touched the three existing files it also names looks `present` and is not
-  finished. This is the weakest of the four statuses and the summary counts it
-  separately for that reason.
+  presence cannot refute it. A unit that authored its one new file and has not
+  touched the three existing files it also names looks `present` and is not
+  finished. This is the weakest status and is counted separately for that reason.
 
-`none-planned` units are reported separately and are never counted as confirmed.
-A validator that hides how much it could not check is worse than one that checks
-less, so the summary states three numbers rather than one.
+`none-planned` units are reported separately and never counted as confirmed. A
+validator that hides how much it could not check is worse than one that checks
+less, so the summary states each number rather than one.
 
-Two further invariants, both mechanical:
+Three further invariants, all mechanical:
 
-* the dependency graph resolves and is acyclic, and `Est:` never exceeds the
-  16-hour ceiling the document's own standard sets;
+* the dependency graph resolves and is acyclic, and no `Est:` exceeds the 16-hour
+  ceiling the document's own standard sets;
 * every `create table` in `packages/schemas/planning-schema.sql` is named by at
-  least one unit block, so a table cannot be persisted by nothing.
+  least one unit block, so a table cannot be persisted by nothing;
+* no unit depends on a `superseded-by` unit, because a superseded unit will never
+  land and anything waiting on it would wait forever.
 
-The derived status block in the document is generated by this script, so the
-"what can be started now" list cannot drift from the statuses it summarises.
+The derived status block in the document is generated by this script, so the "what
+can be started now" list cannot drift from the statuses it summarises.
 
-Exit codes: 0 when every check passes, 1 on any defect, 2 when an input cannot
-be read.
+Exit codes: 0 when every check passes, 1 on any defect, 2 when an input cannot be
+read.
 
 Usage:
-  validate_work_unit_status.py            # check
-  validate_work_unit_status.py --write    # regenerate the derived block
-  validate_work_unit_status.py --gate ID  # require ID's whole closure landed
+  validate_work_unit_status.py             # check, running every Evidence line
+  validate_work_unit_status.py --write     # regenerate the derived block
+  validate_work_unit_status.py --gate ID   # require ID's whole closure landed
+  validate_work_unit_status.py --no-run    # skip execution; presence checks only
 """
 
 from __future__ import annotations
@@ -67,31 +94,44 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 BREAKDOWN = ROOT / "docs" / "implementation" / "PR_SIZED_WORK_BREAKDOWN.md"
 PLANNING_SQL = ROOT / "packages" / "schemas" / "planning-schema.sql"
+SELF = "scripts/repository/validate_work_unit_status.py"
 
 HEADING_RE = re.compile(r"^###\s+([A-Z]{1,2}-\d{3})\b")
 SECTION_RE = re.compile(r"^##\s")
-FIELD_RE = re.compile(r"^(Files|Acceptance|Depends|Est|Status):\s*(.*)$")
+FIELD_RE = re.compile(
+    r"^(Files|Acceptance|Depends|Est|Status|Evidence|Reason):\s*(.*)$"
+)
 INLINE_CODE_RE = re.compile(r"`([^`\n]+)`")
 NEW_MARKER_RE = re.compile(r"^\s*\(new\)", re.IGNORECASE)
 UNIT_ID_RE = re.compile(r"^[A-Z]{1,2}-\d{3}$")
 EST_RE = re.compile(r"^(\d{1,3})(?:\s*-\s*(\d{1,3}))?$")
-COMMIT_RE = re.compile(r"^[0-9a-f]{7,40}$")
 CREATE_TABLE_RE = re.compile(
     r"^\s*create\s+table\s+(?:if\s+not\s+exists\s+)?([a-z_]+)", re.I
 )
+SAFE_ARGUMENT_RE = re.compile(r"^[A-Za-z0-9_./=-]+$")
 
-STATUS_VALUES = ("not-started", "in-progress", "landed", "superseded-by")
+SINGLE_FIELDS = ("Files", "Acceptance", "Depends", "Est", "Status")
+REPEATABLE_FIELDS = ("Evidence",)
+STATUS_VALUES = (
+    "not-started",
+    "in-progress",
+    "landed",
+    "unverifiable",
+    "superseded-by",
+)
 EST_CEILING_HOURS = 16
+EVIDENCE_TIMEOUT_SECONDS = 300
 
 GENERATED_BEGIN = "<!-- generated: work-unit-status -->"
 GENERATED_END = "<!-- end generated: work-unit-status -->"
 
-# Which artifact signals each recorded status tolerates. `none-planned` is
-# admitted everywhere because it is an absence of evidence, not evidence.
+# Which artifact signals each recorded status tolerates. `none-planned` is admitted
+# everywhere because it is an absence of evidence, not evidence.
 ALLOWED_SIGNALS = {
     "not-started": {"absent", "none-planned"},
     "in-progress": {"absent", "partial", "present", "none-planned"},
     "landed": {"present", "none-planned"},
+    "unverifiable": {"absent", "partial", "present", "none-planned"},
     "superseded-by": {"absent", "partial", "present", "none-planned"},
 }
 
@@ -105,7 +145,7 @@ class Unit:
     unit_id: str
     line: int
     fields: dict[str, str] = field(default_factory=dict)
-    field_lines: dict[str, int] = field(default_factory=dict)
+    evidence: list[str] = field(default_factory=list)
     body: str = ""
     planned_paths: list[str] = field(default_factory=list)
 
@@ -122,11 +162,8 @@ class Unit:
 
     @property
     def status_word(self) -> str:
-        return (
-            self.fields.get("Status", "").split()[0]
-            if self.fields.get("Status")
-            else ""
-        )
+        raw = self.fields.get("Status", "")
+        return raw.split()[0] if raw else ""
 
     @property
     def depends(self) -> list[str]:
@@ -154,8 +191,7 @@ def planned_paths(files_line: str) -> list[str]:
     for match in INLINE_CODE_RE.finditer(files_line):
         token = match.group(1).strip()
         rest = files_line[match.end(1) :]
-        # skip the closing backtick before looking for the marker
-        rest = rest[1:] if rest.startswith("`") else rest
+        rest = rest[1:] if rest.startswith("`") else rest  # step over the backtick
         if NEW_MARKER_RE.match(rest):
             found.append(token)
     return found
@@ -184,13 +220,15 @@ def parse_units(text: str) -> list[Unit]:
             continue
         body.append(line)
         matched = FIELD_RE.match(line)
-        if matched:
-            name, value = matched.group(1), matched.group(2).strip()
-            if name in current.fields:
-                current.fields[f"__duplicate__{name}"] = value
-            else:
-                current.fields[name] = value
-                current.field_lines[name] = number
+        if not matched:
+            continue
+        name, value = matched.group(1), matched.group(2).strip()
+        if name in REPEATABLE_FIELDS:
+            current.evidence.append(value)
+        elif name in current.fields:
+            current.fields[f"__duplicate__{name}"] = value
+        else:
+            current.fields[name] = value
             if name == "Files":
                 current.planned_paths = planned_paths(value)
     if current is not None:
@@ -198,29 +236,118 @@ def parse_units(text: str) -> list[Unit]:
     return units
 
 
-def commit_resolves(sha: str) -> bool:
+# ---------------------------------------------------------------------------
+# Evidence
+# ---------------------------------------------------------------------------
+
+
+def run_process(argv: list[str]) -> tuple[bool, str]:
     try:
-        return (
-            subprocess.run(
-                ["git", "cat-file", "-e", f"{sha}^{{commit}}"],
-                cwd=ROOT,
-                capture_output=True,
-                check=False,
-            ).returncode
-            == 0
+        completed = subprocess.run(
+            argv,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=EVIDENCE_TIMEOUT_SECONDS,
         )
-    except OSError:  # pragma: no cover - git is always present in this repository
-        return False
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return False, f"could not run: {error}"
+    if completed.returncode != 0:
+        tail = (completed.stderr or completed.stdout or "").strip().splitlines()
+        detail = tail[-1] if tail else "no output"
+        return False, f"exit {completed.returncode}: {detail}"
+    return True, ""
+
+
+def evaluate_evidence(assertion: str, run: bool) -> tuple[bool, str]:
+    """Evaluate one `Evidence:` assertion. Returns (passed, explanation)."""
+    parts = assertion.split()
+    if not parts:
+        return False, "empty assertion"
+    verb, rest = parts[0], parts[1:]
+
+    if verb in ("exists", "missing"):
+        if len(rest) != 1:
+            return False, f"`{verb}` takes exactly one path"
+        target = ROOT / rest[0]
+        present = target.exists()
+        if verb == "exists" and not present:
+            return False, f"{rest[0]} does not exist"
+        if verb == "missing" and present:
+            return False, f"{rest[0]} still exists"
+        return True, ""
+
+    if verb in ("contains", "absent"):
+        head, separator, literal = assertion.partition(" :: ")
+        if not separator or not literal:
+            return False, f"`{verb}` needs `<path> :: <literal>`"
+        tokens = head.split()
+        if verb == "contains":
+            if len(tokens) != 3 or not tokens[1].isdigit():
+                return False, "`contains` needs `<minimum> <path> :: <literal>`"
+            minimum, relative = int(tokens[1]), tokens[2]
+        else:
+            if len(tokens) != 2:
+                return False, "`absent` needs `<path> :: <literal>`"
+            minimum, relative = 0, tokens[1]
+        target = ROOT / relative
+        if not target.is_file():
+            return False, f"{relative} is not a readable file"
+        try:
+            content = target.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as error:
+            return False, f"{relative}: {error}"
+        count = sum(1 for line in content.splitlines() if literal in line)
+        if verb == "contains" and count < minimum:
+            return (
+                False,
+                f"{relative} holds {count} line(s) with {literal!r}, wanted {minimum}",
+            )
+        if verb == "absent" and count:
+            return False, f"{relative} still holds {count} line(s) with {literal!r}"
+        return True, ""
+
+    if verb == "validator":
+        if not rest:
+            return False, "`validator` needs a script path"
+        script = rest[0]
+        if not script.startswith("scripts/"):
+            return False, f"`validator` may only run scripts/ paths, not {script}"
+        if script == SELF:
+            return False, "a unit may not cite this validator as its own evidence"
+        if not (ROOT / script).is_file():
+            return False, f"{script} does not exist"
+        for argument in rest[1:]:
+            if not SAFE_ARGUMENT_RE.match(argument):
+                return False, f"unsafe argument {argument!r}"
+        if not run:
+            return True, ""
+        return run_process([sys.executable, script, *rest[1:]])
+
+    if verb == "unittest":
+        if len(rest) != 1 or not re.fullmatch(r"[A-Za-z0-9_.]+", rest[0]):
+            return False, "`unittest` needs one dotted module name"
+        if not run:
+            return True, ""
+        return run_process([sys.executable, "-m", "unittest", rest[0]])
+
+    return False, f"unknown evidence verb {verb!r}"
+
+
+# ---------------------------------------------------------------------------
+# Checks
+# ---------------------------------------------------------------------------
 
 
 def check_fields(unit: Unit, known: set[str], defects: list[str]) -> None:
     where = f"{unit.unit_id} (line {unit.line})"
-    for name in ("Files", "Acceptance", "Depends", "Est", "Status"):
+    for name in SINGLE_FIELDS:
         if name not in unit.fields:
             defects.append(f"{where}: missing `{name}:`")
-        if f"__duplicate__{name}" in unit.fields:
+        elif f"__duplicate__{name}" in unit.fields:
             defects.append(f"{where}: duplicate `{name}:`")
-        elif not unit.fields.get(name):
+        elif not unit.fields[name]:
             defects.append(f"{where}: empty `{name}:`")
 
     estimate = unit.fields.get("Est", "")
@@ -245,7 +372,9 @@ def check_fields(unit: Unit, known: set[str], defects: list[str]) -> None:
             defects.append(f"{where}: `Depends:` names itself")
 
 
-def check_status(unit: Unit, known: set[str], defects: list[str]) -> None:
+def check_status(
+    unit: Unit, known: set[str], defects: list[str], run_evidence: bool
+) -> None:
     where = f"{unit.unit_id} (line {unit.line})"
     raw = unit.fields.get("Status", "")
     word = unit.status_word
@@ -256,17 +385,7 @@ def check_status(unit: Unit, known: set[str], defects: list[str]) -> None:
         return
 
     rest = raw[len(word) :].strip()
-    if word == "landed":
-        sha = rest.strip("()`")
-        if not COMMIT_RE.match(sha):
-            defects.append(
-                f"{where}: `Status: landed` must name a commit; found {rest!r}"
-            )
-        elif not commit_resolves(sha):
-            defects.append(
-                f"{where}: `Status: landed` names {sha}, which this repository does not resolve"
-            )
-    elif word == "superseded-by":
+    if word == "superseded-by":
         target = rest.strip("()`")
         if target not in known:
             defects.append(
@@ -274,6 +393,28 @@ def check_status(unit: Unit, known: set[str], defects: list[str]) -> None:
             )
     elif rest:
         defects.append(f"{where}: `Status: {word}` takes no argument; found {rest!r}")
+
+    if word == "landed":
+        if not unit.evidence:
+            defects.append(
+                f"{where}: `Status: landed` requires at least one `Evidence:` line. "
+                "If completion cannot be observed from the tree, the status is `unverifiable`."
+            )
+        for assertion in unit.evidence:
+            passed, explanation = evaluate_evidence(assertion, run_evidence)
+            if not passed:
+                defects.append(
+                    f"{where}: evidence `{assertion}` failed — {explanation}"
+                )
+    else:
+        if unit.evidence:
+            defects.append(
+                f"{where}: `Evidence:` is only meaningful on a `landed` unit; found on `{word}`"
+            )
+        if word == "unverifiable" and not unit.fields.get("Reason"):
+            defects.append(
+                f"{where}: `Status: unverifiable` requires a `Reason:` line saying what cannot be observed"
+            )
 
     signal = unit.signal
     if signal not in ALLOWED_SIGNALS[word]:
@@ -306,6 +447,17 @@ def check_cycles(units: list[Unit], defects: list[str]) -> None:
         visit(unit_id, [])
 
 
+def check_superseded_edges(units: list[Unit], defects: list[str]) -> None:
+    superseded = {u.unit_id for u in units if u.status_word == "superseded-by"}
+    for unit in units:
+        for dependency in unit.depends:
+            if dependency in superseded:
+                defects.append(
+                    f"{unit.unit_id} (line {unit.line}): depends on {dependency}, "
+                    "which is superseded and will never land"
+                )
+
+
 def check_table_ownership(units: list[Unit], defects: list[str]) -> int:
     text = read_text(PLANNING_SQL)
     tables = [
@@ -321,9 +473,15 @@ def check_table_ownership(units: list[Unit], defects: list[str]) -> int:
                 named.add(candidate)
     for table in sorted(set(tables) - named):
         defects.append(
-            f"`{table}` in packages/schemas/planning-schema.sql is named by no work unit, so nothing owns persisting it"
+            f"`{table}` in packages/schemas/planning-schema.sql is named by no work unit, "
+            "so nothing owns persisting it"
         )
     return len(tables)
+
+
+# ---------------------------------------------------------------------------
+# Derived block
+# ---------------------------------------------------------------------------
 
 
 def closure(units: dict[str, Unit], root: str) -> set[str]:
@@ -340,12 +498,12 @@ def closure(units: dict[str, Unit], root: str) -> set[str]:
 
 def startable(units: list[Unit]) -> list[str]:
     """Units not yet landed whose every dependency has landed."""
-    landed = {unit.unit_id for unit in units if unit.status_word == "landed"}
+    done = {u.unit_id for u in units if u.status_word in ("landed", "unverifiable")}
     ready = []
     for unit in units:
-        if unit.status_word in ("landed", "superseded-by"):
+        if unit.status_word in ("landed", "unverifiable", "superseded-by"):
             continue
-        if all(dependency in landed for dependency in unit.depends):
+        if all(dependency in done for dependency in unit.depends):
             ready.append(unit.unit_id)
     return ready
 
@@ -356,6 +514,7 @@ def render_block(units: list[Unit]) -> str:
         if unit.status_word in counts:
             counts[unit.status_word] += 1
     checkable = [unit for unit in units if unit.signal != "none-planned"]
+    assertions = sum(len(unit.evidence) for unit in units)
     ready = startable(units)
 
     lines = [
@@ -370,12 +529,15 @@ def render_block(units: list[Unit]) -> str:
         lines.append(f"| `{value}` | {counts[value]} |")
     lines += [
         "",
-        f"Startable now — not landed, and every dependency landed: {len(ready)}.",
+        f"Every `landed` unit is backed by executable evidence: {assertions} assertions "
+        f"across {counts['landed']} units, all run by `validate_work_unit_status.py` on every check.",
+        "",
+        f"Startable now — not done, and every dependency done: {len(ready)}.",
         "",
         ", ".join(f"`{unit_id}`" for unit_id in ready) + ".",
         "",
-        f"Statuses checkable against artifact evidence: {len(checkable)} of {len(units)}. "
-        f"The other {len(units) - len(checkable)} declare no new file in `Files:`, so this check "
+        f"Statuses additionally checkable against artifact presence: {len(checkable)} of {len(units)}. "
+        f"The other {len(units) - len(checkable)} declare no new file in `Files:`, so that check "
         "can neither confirm nor refute them and does not claim to.",
         "",
         GENERATED_END,
@@ -393,6 +555,11 @@ def rewrite_block(text: str, block: str) -> str:
     return text[:start] + block + text[end + len(GENERATED_END) :]
 
 
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -401,7 +568,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--gate", metavar="ID", help="require every dependency of ID to be landed"
     )
+    parser.add_argument(
+        "--no-run",
+        action="store_true",
+        help="check evidence syntax and file assertions without running subprocesses",
+    )
     arguments = parser.parse_args(argv)
+    run_evidence = not (arguments.no_run or arguments.write)
 
     try:
         text = read_text(BREAKDOWN)
@@ -412,8 +585,9 @@ def main(argv: list[str] | None = None) -> int:
         defects: list[str] = []
         for unit in units:
             check_fields(unit, known, defects)
-            check_status(unit, known, defects)
+            check_status(unit, known, defects, run_evidence)
         check_cycles(units, defects)
+        check_superseded_edges(units, defects)
         table_count = check_table_ownership(units, defects)
         block = render_block(units)
     except Failure as failure:
@@ -422,7 +596,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if arguments.write:
         BREAKDOWN.write_text(rewrite_block(text, block), encoding="utf-8")
-        print(f"regenerated the derived status block in {BREAKDOWN.relative_to(ROOT)}")
+        try:
+            shown = BREAKDOWN.relative_to(ROOT)
+        except ValueError:  # a test may point BREAKDOWN at a copy outside the tree
+            shown = BREAKDOWN
+        print(f"regenerated the derived status block in {shown}")
         return 0
 
     if block not in text:
@@ -446,9 +624,14 @@ def main(argv: list[str] | None = None) -> int:
                 )
 
     checkable = sum(1 for unit in units if unit.signal != "none-planned")
+    landed = sum(1 for unit in units if unit.status_word == "landed")
+    unverifiable = sum(1 for unit in units if unit.status_word == "unverifiable")
+    assertions = sum(len(unit.evidence) for unit in units)
+    ran = "ran" if run_evidence else "parsed but did not run"
     summary = (
-        f"{len(units)} units, {checkable} statuses checked against artifact evidence, "
-        f"{len(units) - checkable} unverifiable by this check, {table_count} SQL tables owned"
+        f"{len(units)} units, {landed} landed backed by {assertions} evidence assertions ({ran}), "
+        f"{unverifiable} unverifiable, {checkable} statuses checked against artifact presence, "
+        f"{len(units) - checkable} unobservable by that check, {table_count} SQL tables owned"
     )
 
     if defects:
@@ -463,7 +646,8 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"work-unit status validation: PASS ({summary})")
     print(
-        "claim_scope=field-completeness-and-artifact-presence-only; a landed status is not a working feature"
+        "claim_scope=field-completeness-and-executed-evidence-only; "
+        "a landed status means the recorded assertions pass, not that the feature works"
     )
     return 0
 

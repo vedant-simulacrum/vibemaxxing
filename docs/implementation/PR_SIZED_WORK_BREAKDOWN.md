@@ -29,21 +29,34 @@ Every unit must carry these five lines verbatim, in this order, immediately unde
 - `Acceptance:` — one runnable assertion. A command, a query, or a grep whose result decides done. Prose descriptions of intent are not acceptance criteria. Where a unit's real acceptance is a human judgement, it says so and names the mechanical part separately rather than dressing the judgement up as a check.
 - `Depends:` — unit IDs only, comma-separated, or `none`. Prose dependencies ("implemented product paths") are not resolvable and are not permitted. Ranges are not permitted either, because a range cannot be resolved by the cross-reference validator.
 - `Est:` — hours, as an integer or a range. A unit estimated above 16 hours must be split.
-- `Status:` — one of `not-started`, `in-progress`, `landed <commit>`, or `superseded-by <ID>`.
+- `Status:` — one of `not-started`, `in-progress`, `landed`, `unverifiable`, or `superseded-by <ID>`.
+
+Two fields are conditional. `Evidence:` is required on a `landed` unit, may repeat, and is forbidden anywhere else. `Reason:` is required on an `unverifiable` unit.
 
 A unit missing any of the five is not ready to start, regardless of how well its prose reads.
 
-`scripts/repository/validate_work_unit_status.py` enforces all five. It fails on a missing, empty or duplicated field, on an `Est:` above the ceiling, on a `Depends:` entry that names no heading, on a dependency cycle, and on any SQL table in `packages/schemas/planning-schema.sql` that no unit names. `PF-037` remains open for the separate half of that work: `generate_issue_plan.py` still emits records that carry none of these fields and hardcodes a phase gate.
+`scripts/repository/validate_work_unit_status.py` enforces all of it. It fails on a missing, empty or duplicated field, on an `Est:` above the ceiling, on a `Depends:` entry that names no heading, on a dependency cycle, on a dependency pointing at a superseded unit, and on any SQL table in `packages/schemas/planning-schema.sql` that no unit names. `PF-037` remains open for the separate half of that work: `generate_issue_plan.py` still emits records that carry none of these fields and hardcodes a phase gate.
 
 ### How status stays true
 
-Status is checked against the tree rather than trusted. Each unit's `(new)` paths are the artifacts it promised to create, so their presence is an observation:
+Status is checked against the tree rather than trusted, by two independent observations.
 
-- `not-started` fails the moment any promised artifact exists. A status cannot silently outlive the work starting.
-- `landed` fails unless every promised artifact exists **and** the status names a commit this repository resolves.
-- `in-progress` is deliberately unconstrained, because artifact presence cannot refute it. It is the weakest of the four and is counted separately.
+**Artifact presence.** Each unit's `(new)` paths are the artifacts it promised to create, so `not-started` fails the moment any of them exists. A status cannot silently outlive the work starting — which is how `F-009` was caught within minutes of `docs/engineering/LOCAL_DEVELOPMENT.md` landing on `main` from another branch.
 
-A unit whose `Files:` names no new artifact gives this check nothing to observe. The summary reports that count as its own number, so a green run cannot be read as more coverage than it has — the same discipline `PF-067` applies to the vocabulary validator.
+**Executed evidence.** A `landed` unit carries `Evidence:` lines and the validator *runs* them on every check. They are not a description of a check; they are the check. Five verbs, no shell, no interpolation:
+
+- `validator <script under scripts/> [args]` — run it, require exit 0;
+- `unittest <dotted.module>` — run it, require exit 0;
+- `exists <path>` and `missing <path>` — the artifact is, or is not, there;
+- `contains <n> <path> :: <literal>` and `absent <path> :: <literal>` — a plain substring count, so no pattern syntax can widen the assertion by accident.
+
+**A commit id is not evidence, and D-206 records why the first revision of this field was wrong to use one.** Every pull request here is squash-merged under a linear-history rule, so an id recorded on a branch stops existing the moment that branch merges: the check failed on correct data. And any resolvable id would have satisfied it, including one belonging to an unrelated commit: it would have passed on fabricated data. A field that fails on truth and passes on fiction is worse than no field at all.
+
+**`unverifiable` is the honest status** for a unit whose completion cannot be observed from the tree. It requires a `Reason:`, is counted separately, and is never reported as done. `landed` is not available as a place to put work that cannot be checked.
+
+`in-progress` is deliberately unconstrained by artifact presence, because presence cannot refute it — a unit that authored its one new file and has not touched the three existing files it also names looks complete and is not. It is the weakest status and is counted separately.
+
+A unit whose `Files:` names no new artifact gives the presence check nothing to observe. The summary reports that count as its own number, so a green run cannot be read as more coverage than it has — the same discipline `PF-067` applies to the vocabulary validator.
 
 The derived block below is generated by the same script. The list of what can be started now is computed from the statuses and the dependency graph, so it cannot drift from them the way a hand-written "current next unit" list did.
 
@@ -53,20 +66,23 @@ Ordering principle: each specification is paired with the artifact or code that 
 
 <!-- generated: work-unit-status -->
 
-Units: 245. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
+Units: 258. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
 
 | Status | Units |
 |---|---|
-| `not-started` | 227 |
+| `not-started` | 234 |
 | `in-progress` | 4 |
 | `landed` | 14 |
-| `superseded-by` | 0 |
+| `unverifiable` | 0 |
+| `superseded-by` | 6 |
 
-Startable now — not landed, and every dependency landed: 13.
+Every `landed` unit is backed by executable evidence: 41 assertions across 14 units, all run by `validate_work_unit_status.py` on every check.
 
-`PF-001`, `PF-004`, `PF-037`, `PF-040`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-050`, `PF-054`, `PF-062`, `PF-064`, `PF-067`.
+Startable now — not done, and every dependency done: 15.
 
-Statuses checkable against artifact evidence: 189 of 245. The other 56 declare no new file in `Files:`, so this check can neither confirm nor refute them and does not claim to.
+`PF-001`, `PF-004`, `PF-037`, `PF-040`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-050`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-008`.
+
+Statuses additionally checkable against artifact presence: 202 of 258. The other 56 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -555,7 +571,9 @@ Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql
 Acceptance: a script asserts that for every aggregate with a `state` column, an API enum, and a registry machine, the three value sets are identical; zero mismatches reported.
 Depends: none
 Est: 12-16
-Status: landed c7b4ed8
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_state_vocabularies
 
 Nine aggregates currently disagree. `Appeal` shares exactly one state name between API and registry. `ranking-projection` is `building/published/superseded/failed` in SQL against `building/validating/active/superseded/failed` in the registry, so the projection worker has no valid target state. `Notification` cannot express `retracted`, which is the D-070 correction path. `idempotency_records` is `reserved/committed/failed` in SQL against `reserved/committed/conflict/expired` in the registry — neither is a superset. Export, deletion, certification, update-lifecycle, and web-session-family also diverge; certification has four vocabularies across three files plus the inventory.
 
@@ -566,7 +584,10 @@ Files: `docs/decisions/ADR-015-SESSION_AUTHENTICATION.md` (new), `packages/schem
 Acceptance: `openapi-v1.yaml` declares a `securitySchemes` entry matching the ADR; a refresh operation exists if the ADR requires one; `grep -c "bearerAuth" openapi-v1.yaml` no longer returns a global-only result.
 Depends: none
 Est: 6-8
-Status: landed 963f6f6
+Status: landed
+Evidence: exists docs/decisions/ADR-015-SESSION_AUTHENTICATION.md
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: sessionCookie
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: refreshSession
 
 **Landed in `963f6f6` under D-220 and D-221.** The document declares `bearerAuth`, `sessionCookie` and `refreshCookie`, and `refreshSession` and `revokeAllSessions` exist.
 
@@ -615,7 +636,9 @@ Files: `packages/schemas/openapi-v1.yaml`
 Acceptance: every operation returning a collection declares `cursor` and `limit` parameters with the contract's default 50 and maximum 200; zero collection operations without both.
 Depends: none
 Est: 3-4
-Status: landed 963f6f6
+Status: landed
+Evidence: contains 17 packages/schemas/openapi-v1.yaml :: parameters/Cursor
+Evidence: contains 17 packages/schemas/openapi-v1.yaml :: parameters/Limit
 
 **Landed in `963f6f6` under D-222.** All seventeen collection operations declare `cursor` and `limit`.
 
@@ -648,7 +671,10 @@ Files: `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX
 Acceptance: every field rendered by `packages/ui/src/concepts/product-storyboards.tsx` and `packages/ui/src/patterns/product-system.tsx` resolves to an API field; no storyboard depends on a value the API cannot return.
 Depends: PF-046
 Est: 6-8
-Status: landed 963f6f6
+Status: landed
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: credited_token_burn
+Evidence: absent packages/ui/src/concepts/product-storyboards.tsx :: Verified competitor
+Evidence: absent packages/ui/src/concepts/product-storyboards.tsx :: All sources verified
 
 **Landed in `963f6f6` under D-227 and D-228.** `RankEntry` lost `score` and gained `credited_token_burn` and the rendered fields, and the four banned claim strings in `packages/ui/src/concepts/product-storyboards.tsx` were replaced rather than softened.
 
@@ -706,7 +732,9 @@ Files: `docs/decisions/ADR-016-PROVIDER_ATTESTED_ORG_EVIDENCE.md` (new), `docs/s
 Acceptance: the ADR states whether org boards use provider admin APIs, and `EVIDENCE_AND_ATTESTATION_PROFILES.md` reflects the resulting E1 availability.
 Depends: none
 Est: 4-6
-Status: landed 82d2fc5
+Status: landed
+Evidence: exists docs/decisions/ADR-016-PROVIDER_ATTESTED_ORG_EVIDENCE.md
+Evidence: contains 1 docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md :: E1-R
 
 Research on 2026-08-05 established that Anthropic's Admin API (`/v1/organizations/usage_report/messages` plus the Claude Code analytics endpoint), OpenAI's `/v1/organization/usage/completions`, and Cursor's team usage API all return provider-attested counts that a user cannot fabricate — but all three require org-admin credentials, and no provider offers an OAuth scope permitting an individual to authorize third-party read of their own consumption. Anthropic's documentation states the Admin API is unavailable for individual accounts.
 
@@ -726,7 +754,9 @@ Files: `scripts/repository/validate_p1140f_authority.py`, `tests/ci/test_validat
 Acceptance: closing a finding in `conformance/p1140f/semantic-findings-v1.json` leaves the validator green; the validator fails when the open count increases.
 Depends: none
 Est: 3-4
-Status: landed c7b4ed8
+Status: landed
+Evidence: validator scripts/repository/validate_p1140f_authority.py
+Evidence: unittest tests.ci.test_validate_p1140f_authority
 
 `:53` raises unless exactly 13 P1 findings are open; `:139` raises unless zero are open for a review to pass. The two conditions cannot both hold, so closing a finding correctly turns CI red and the only routes to green are inaction or editing the validator. Replace the exact-count check with monotonic non-regression.
 
@@ -735,7 +765,11 @@ Files: `.github/workflows/planning-checks.yml`, `evals/suites/suites.yaml`, `scr
 Acceptance: `run_evals.py --validate-registry`, `verify_repository.py`, and `python -m unittest discover -s tests` all run in CI and exit 0.
 Depends: PF-055
 Est: 4-6
-Status: landed fe4925b
+Status: landed
+Evidence: validator scripts/ci/run_evals.py --validate-registry
+Evidence: unittest tests.ci.test_run_evals
+Evidence: contains 1 .github/workflows/planning-checks.yml :: verify_repository.py
+Evidence: contains 1 .github/workflows/planning-checks.yml :: unittest discover
 
 Four validators fail at HEAD and no workflow invokes them, so nothing detected the failure. Commit `31a6539` added `authority_class` and `evidence_ceiling` to satisfy `validate_p1140f_authority.py:124`, while `run_evals.py` rejected any key outside its allowlist — one validator required exactly what another forbade.
 
@@ -748,7 +782,10 @@ Files: `scripts/repository/doctor.py`, `docs/project/STATUS.md`, `docs/planning/
 Acceptance: `doctor.py` derives phase state from `conformance/p1140f/*.json` rather than from prose substrings; opening or closing the gate requires no edit to `doctor.py`.
 Depends: PF-055
 Est: 4-6
-Status: landed c7b4ed8
+Status: landed
+Evidence: contains 1 scripts/repository/doctor.py :: conformance/p1140f/gate-authorization-v1.json
+Evidence: absent scripts/repository/doctor.py :: implementation remains unauthorized
+Evidence: unittest tests.ci.test_gate_authorization
 
 The gate is currently enforced by prose substring assertions in four files: `doctor.py:90` requires `STATUS.md` to contain the literal string "implementation remains unauthorized", `:95` requires "blocked-approval" in `TASK_CATALOG.md`, `:105` requires "P-1104: blocked", and `:110` requires "inactive" and "blocked" in the handoff. Moving the gate therefore requires editing the validator that enforces it, which is the same defect as PF-055 in a different place. The machine-readable state already exists in `conformance/p1140f/`; the validator should read it.
 
@@ -757,7 +794,11 @@ Files: `docs/project/PROJECT.md`, `docs/project/DOCUMENTATION.md`
 Acceptance: a reader who has read only `PROJECT.md` can state the full path a token takes from an agent process to a public rank, and name the component that owns each step.
 Depends: none
 Est: 6-8
-Status: landed c7b4ed8
+Status: landed
+Evidence: contains 1 docs/project/PROJECT.md :: collector
+Evidence: contains 1 docs/project/PROJECT.md :: adapter
+Evidence: contains 1 docs/project/PROJECT.md :: verifier
+Evidence: contains 1 docs/project/PROJECT.md :: daemon
 
 No document explains how the system works end to end. Understanding it currently requires reading eight files in a prescribed order, which is why `AGENTS.md:12` has to prescribe that order. `PROJECT.md` should carry one narrative — install, adapter observes, collector normalizes, sync signs, verifier appraises, ledger records, projection ranks — with a diagram, and every other document should read as detail hanging off it.
 
@@ -768,7 +809,10 @@ Files: `docs/style-guide/COMPONENT_INVENTORY.md`, `docs/style-guide/COMPONENT_ST
 Acceptance: one owner per concept; no two files in `docs/style-guide/` describe the same component surface; `DOCUMENTATION.md` names the surviving owner for each.
 Depends: none
 Est: 6-8
-Status: landed c7b4ed8
+Status: landed
+Evidence: missing docs/style-guide/COMPONENTS.md
+Evidence: exists docs/style-guide/UI_ARCHITECTURE.md
+Evidence: validator scripts/repository/doctor.py
 
 Three files described components (`COMPONENTS.md`, `COMPONENT_INVENTORY.md`, `COMPONENT_STANDARD.md`) and three described design foundations (`design/design.md`, `design/UI_FOUNDATIONS.md`, `style-guide/README.md`); the first and fourth of those have since been merged into their surviving owners. `docs/architecture/ARCHITECTURE.md` and the former `docs/style-guide/ARCHITECTURE.md` shared a filename while describing unrelated scopes, which made every reference to "ARCHITECTURE.md" ambiguous until the latter was renamed to `docs/style-guide/UI_ARCHITECTURE.md`.
 
@@ -779,7 +823,12 @@ Files: `docs/protocol/`, `docs/qa/`, `docs/evals/`, `docs/design/`, `docs/projec
 Acceptance: no directory under `docs/` holds fewer than four files without a recorded reason; every moved path resolves; `doctor.py` passes.
 Depends: PF-059
 Est: 4-6
-Status: landed dfb0eea
+Status: landed
+Evidence: missing docs/protocol
+Evidence: missing docs/qa
+Evidence: missing docs/evals
+Evidence: missing docs/design
+Evidence: validator scripts/repository/doctor.py
 
 Eighteen directories hold 82 files, and seven of them hold one to three: `protocol/` (1), `qa/` (1), `evals/` (2), `privacy/` (2), `design/` (3), `engineering/` (3), `project/` (3). Fold `protocol/` into `architecture/`, combine `qa/` and `evals/` into one verification directory, and fold `design/` into `style-guide/`. Keep `privacy/` and `project/` where they are — both are small but load-bearing, and `privacy/` deliberately isolates the invariant everything else serves.
 
@@ -790,7 +839,11 @@ Files: `docs/history/MACHINE_CONTRACT_REPAIR_SPEC.md`, `docs/history/REPOSITORY_
 Acceptance: both files are in `docs/history/` with unique content merged into a living owner; no inbound reference is broken; `doctor.py` passes.
 Depends: none
 Est: 4-6
-Status: landed c7b4ed8
+Status: landed
+Evidence: exists docs/history/MACHINE_CONTRACT_REPAIR_SPEC.md
+Evidence: exists docs/history/REPOSITORY_ALIGNMENT_2026-07-23.md
+Evidence: missing docs/planning/MACHINE_CONTRACT_REPAIR_SPEC.md
+Evidence: validator scripts/repository/doctor.py
 
 `MACHINE_CONTRACT_REPAIR_SPEC.md` (521 lines) declares itself a "normative P-1140B–E planning input"; P-1140E is closed, so it is spent. `REPOSITORY_ALIGNMENT_2026-07-23.md` (366 lines) restates decisions owned by `DECISION_REGISTER.md` and is cited in the `AGENTS.md` initialization order and in `DOCUMENTATION.md`, so both must be updated when it moves. Roughly 890 lines leave the active planning surface.
 
@@ -844,7 +897,9 @@ Files: `packages/schemas/openapi-v1.yaml`, `scripts/repository/validate_planning
 Acceptance: the file's extension matches its contents; every reader resolves it; all planning validators pass.
 Depends: PF-038
 Est: 2-3
-Status: landed 74e1573
+Status: landed
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: This document is YAML
+Evidence: validator scripts/repository/validate_planning_coverage.py
 
 `openapi-v1.yaml` contains JSON. YAML is a superset of JSON so parsers accept it, but the first tool that selects a parser by extension, or any human opening it expecting YAML, will be wrong. Either rename to `.json` or convert the contents to YAML — decide deliberately and record which, since several validators reference the path by name.
 
@@ -853,7 +908,9 @@ Files: `packages/schemas/state-machine-registry-v1.json`, `tests/ci/test_state_v
 Acceptance: every state in every registry machine is reachable from its initial state, and no state listed in `terminal_states` has an outgoing transition. A test asserts both across all 26 machines, not only those bound to SQL or an API enum.
 Depends: none
 Est: 6-8
-Status: landed 8baad9a
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_state_vocabularies
 
 Two defect classes found by a reachability sweep during the PF-038 follow-up. Both are invisible to `validate_state_vocabularies.py`, which compares vocabularies across three sources and does not examine transitions.
 
@@ -901,9 +958,9 @@ Each was recorded here rather than silently carried. Each is now closed or stand
 - **Eleven units were orphans that nothing depended on** — `F-008`, `L-014`, `N-018`, `N-019`, `P-010`, `S-001`, `S-004`, `S-015`, `W-001`, `W-010`, `X-011`. **Ten closed, one stands.** `S-001` was the worst of them: `S-002` through `S-015` are all built on the Go service foundation and none depended on it. `S-002` now does. `W-001` gained the nine screens that consume its generated client, `S-004` gained `S-010`, and the six suite and automation units gained `X-010` or `X-011`. `X-011` remains an orphan and that is correct: nothing follows a launch-readiness review. A sink at the end of the graph is not the defect a missing edge in the middle is.
 - **`X-011` did not gate launch.** P-1105 readiness transitively depended on 162 of 194 units, excluding all ten Epic W units — the entire hosted web product — plus `O-012`, `R-012`, `M-011`, `S-015`, `N-018`, `N-019`, `P-010` and `F-008`. Launch readiness was declarable with no web application. **Closed.** `X-011` now names the whole launch set explicitly, and `validate_work_unit_status.py --gate X-011` fails while any unit in its closure is not `landed`.
 - **52 of the tables in `packages/schemas/planning-schema.sql` were named nowhere in this file.** **Closed, and the real number was larger.** The recorded figure counted 73 tables; the DDL declares 98, so 77 were unowned rather than 52. Every one now has a unit that names it, including the organizations and communities surfaces whose words did not appear in this document at all, and `validate_work_unit_status.py` fails on any `create table` no unit names. The check runs against the DDL, so a table added later without an owner fails rather than joining the backlog quietly.
-- **Thirteen categories had no unit anywhere.** **Closed.** `F-009` local development environment, `F-010` product CI/CD, `F-011` feature-flag mechanics, `S-016` error taxonomy, `S-017` API versioning and deprecation, `S-018` rate limiting, `S-019` audit ledger, `S-020` data migration and backfill, `X-012` logging, metrics and tracing, `X-013` staging, `X-014` load and soak testing, `X-015` runbooks and on-call, `X-016` cost model, `X-017` product analytics. Four more units — `G-017`, `G-018`, `G-019` and `O-013` — were authored for table and API surfaces that had no owner rather than for a missing category.
+- **Thirteen categories had no unit anywhere.** **Closed, twice over.** This branch authored `F-009` local development, `F-010` product CI/CD, `F-011` feature-flag mechanics, `S-016` error taxonomy, `S-017` API versioning and deprecation, `S-018` rate limiting, `S-019` audit ledger, `S-020` data migration and backfill, `X-012` logging, metrics and tracing, `X-013` staging, `X-014` load and soak testing, `X-015` runbooks and on-call, `X-016` cost model, `X-017` product analytics. Four more — `G-017`, `G-018`, `G-019` and `O-013` — were authored for table and API surfaces with no owner rather than for a missing category. **Epic OS** then absorbed thirteen units from `https://github.com/vedant-simulacrum/vibemaxxing/pull/66`, which had closed the same surfaces as normative documents with real numbers behind them; six of the units above are `superseded-by` their OS counterpart under D-207.
 
-Several of these units bind to documents that already exist in `docs/operations/`: `X-003` and `X-012` to `docs/operations/OBSERVABILITY_PRIVACY.md`, `X-004` to `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`, `X-005` to `docs/operations/INCIDENT_RESPONSE.md`, `X-015` to `docs/operations/SLOS_AND_ALERTS.md`, and `L-003` to `docs/operations/RELEASE_VERIFICATION.md`. Those documents are the normative owners and the units cite them; nothing here restates their contents. `gh pr list` reported no open pull request at the time of writing, so the operations surface consulted was the one on `main`.
+These units bind to normative owners that already exist rather than restating them: `OS-001` and `OS-002` to `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`; `OS-003`, `OS-004` and `OS-011` to `docs/architecture/API_EDGE_CONTRACT.md`; `OS-005` and `OS-006` to `docs/operations/LOGGING_AND_INSTRUMENTATION.md`; `OS-007` to `docs/engineering/LOCAL_DEVELOPMENT.md`; `OS-008` and `OS-009` to `docs/verification/CONFORMANCE_HARNESS.md`; `OS-010` to `docs/verification/TEST_STRATEGY.md`; `OS-012` to `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`; `OS-013` to `docs/operations/ENVIRONMENTS_AND_SECRETS.md`; `X-003` to `docs/operations/OBSERVABILITY_PRIVACY.md`; `X-004` to `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`; `X-005` to `docs/operations/INCIDENT_RESPONSE.md`; `X-015` to `docs/operations/SLOS_AND_ALERTS.md`; and `L-003` to `docs/operations/RELEASE_VERIFICATION.md`.
 
 ## Epic F — Reproducible foundation
 
@@ -988,7 +1045,7 @@ Files: `docs/engineering/LOCAL_DEVELOPMENT.md` (new), `scripts/dev/bootstrap.sh`
 Acceptance: `make dev-up` brings up PostgreSQL and the API from a clean checkout with no manual step, `make dev-check` exits 0, and `bash scripts/dev/bootstrap.sh --verify` exits non-zero when a toolchain version pinned by `F-001` is missing or wrong.
 Depends: F-001, F-002
 Est: 8-12
-Status: not-started
+Status: superseded-by OS-007
 
 One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
 
@@ -1593,7 +1650,7 @@ Files: `docs/architecture/API_VERSIONING_AND_DEPRECATION.md` (new), `scripts/ci/
 Acceptance: `python3 scripts/ci/check_api_compatibility.py --base origin/main` exits non-zero on any breaking change to a released operation that is not accompanied by a version bump and a dated deprecation entry, and 0 otherwise; a removed operation with no deprecation window fails.
 Depends: S-001
 Est: 8-12
-Status: not-started
+Status: superseded-by OS-011
 
 One of the thirteen categories that previously had no unit anywhere.
 
@@ -1608,7 +1665,7 @@ Files: `apps/api/internal/ratelimit/ratelimit.go` (new), `apps/api/internal/rate
 Acceptance: `go test ./internal/ratelimit/...` exits 0; a table test asserts in both directions that every operation declaring a 429 has a configured limit and every configured limit names an existing operation; limits key on the authenticated principal and never on a content-derived value, which a test proves by rejecting a key derived from request content.
 Depends: S-001, S-016
 Est: 8-12
-Status: not-started
+Status: superseded-by OS-003
 
 One of the thirteen categories that previously had no unit anywhere.
 
@@ -2400,7 +2457,7 @@ The prose range `W-002 through W-009` is expanded because `Depends:` admits unit
 ### X-001 Cloud-portable reference deployment
 Files: `infrastructure/README.md` (new), `infrastructure/terraform/main.tf` (new), `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
 Acceptance: `terraform validate` and `terraform plan` exit 0 against the reference configuration; the plan names no managed service on the D-026 exclusion list; a second apply produces an empty plan, which is the check that the configuration is actually declarative.
-Depends: S-015, W-010, L-011, X-002
+Depends: S-015, W-010, L-011, OS-013
 Est: 12-16
 Status: not-started
 
@@ -2411,12 +2468,12 @@ Files: `docs/operations/SECRETS_AND_KEY_RECOVERY.md` (new), `scripts/ci/check_se
 Acceptance: `python3 scripts/ci/check_secret_inventory.py` exits 0 only when every secret and signing key named in the operations contract has an owner, a rotation period and a recovery procedure, and exits non-zero when any one of the three is missing.
 Depends: L-013
 Est: 8-12
-Status: not-started
+Status: superseded-by OS-013
 
 ### X-003 Observability allowlist and privacy canaries
 Files: `packages/schemas/observability-allowlist-v1.yaml`, `docs/operations/OBSERVABILITY_PRIVACY.md`, `evals/suites/suites.yaml`
 Acceptance: `python3 scripts/ci/run_evals.py --suite observability-privacy` exits 0 with a status that is not `not_applicable`; every emitted telemetry field appears in `packages/schemas/observability-allowlist-v1.yaml`, and a field added without an entry fails the suite.
-Depends: F-006, X-012
+Depends: F-006, OS-005
 Est: 10-14
 Status: not-started
 
@@ -2460,7 +2517,7 @@ Status: not-started
 ### X-009 Performance, capacity and cost evidence
 Files: `benchmarks/postgres/ranking_benchmark.sql`, `docs/engineering/PERFORMANCE_BUDGETS.md`, `evals/suites/suites.yaml`
 Acceptance: `python3 scripts/ci/run_evals.py --suite performance-efficiency` exits 0 with a status that is not `not_applicable`; every budget in `docs/engineering/PERFORMANCE_BUDGETS.md` has a measured figure recorded against it, and a run exceeding any budget fails.
-Depends: S-015, R-012, W-010, X-014, X-016
+Depends: S-015, R-012, W-010, OS-010, X-016
 Est: 12-16
 Status: not-started
 
@@ -2478,7 +2535,7 @@ The prose dependency `all launch paths` is replaced by the thirteen suite-termin
 ### X-011 P-1105 launch-readiness review
 Files: `conformance/p1140f/gate-authorization-v1.json`, `docs/project/STATUS.md`, `docs/verification/ACCEPTANCE_GATES.md`
 Acceptance: mechanical part: `python3 scripts/repository/validate_work_unit_status.py --gate X-011` exits 0 only when every unit this one depends on carries `Status: landed`; `python3 scripts/repository/validate_p1140f_authority.py` reports zero open P0 or P1; every launch-gating eval suite reports a status that is not `not_applicable`. The readiness verdict itself is the owner's decision and is not mechanizable — no agent may derive it from a green run, and gate state is changed by the owner alone.
-Depends: F-008, F-009, F-010, F-011, P-010, A-010, N-018, N-019, N-020, S-015, S-016, S-017, S-018, S-019, S-020, O-012, O-013, V-010, R-012, G-016, G-017, G-018, G-019, M-011, L-013, L-014, W-010, X-001, X-002, X-003, X-004, X-005, X-006, X-007, X-008, X-009, X-010, X-012, X-013, X-014, X-015, X-016, X-017
+Depends: F-008, F-010, F-011, P-010, A-010, N-018, N-019, N-020, S-015, S-016, S-019, S-020, O-012, O-013, V-010, R-012, G-016, G-017, G-018, G-019, M-011, L-013, L-014, W-010, X-001, X-003, X-004, X-005, X-006, X-007, X-008, X-009, X-010, X-013, X-015, X-016, X-017, OS-001, OS-002, OS-003, OS-004, OS-005, OS-006, OS-007, OS-008, OS-009, OS-010, OS-011, OS-012, OS-013
 Est: 12-16
 Status: not-started
 
@@ -2491,7 +2548,7 @@ Files: `apps/api/internal/observability/observability.go` (new), `apps/api/inter
 Acceptance: `go test ./internal/observability/...` exits 0; every log field, metric label and span attribute the service can emit is enumerated at build time and checked against `packages/schemas/observability-allowlist-v1.yaml`, so a field added without an allowlist entry fails to compile rather than failing in production.
 Depends: S-001, F-006
 Est: 10-14
-Status: not-started
+Status: superseded-by OS-005
 
 One of the thirteen categories that previously had no unit anywhere. `X-003` constrains what may be emitted; this unit is the emitter, and the allowlist check belongs at compile time because a runtime check has already leaked by the time it fires.
 
@@ -2509,14 +2566,14 @@ Files: `benchmarks/load/leaderboard.js` (new), `benchmarks/load/README.md` (new)
 Acceptance: a load run against staging sustains the recorded request rate inside the p99 latency budget in `docs/engineering/PERFORMANCE_BUDGETS.md`, and a soak run holds memory and connection counts flat across the recorded duration; exceeding either budget fails the run rather than being recorded as a note.
 Depends: X-013, R-012
 Est: 10-14
-Status: not-started
+Status: superseded-by OS-010
 
 One of the thirteen categories that previously had no unit anywhere. `X-009` reports the evidence; this unit produces it, and the 300 ms leaderboard SLO cannot be claimed without it.
 
 ### X-015 Runbooks and on-call
 Files: `docs/operations/RUNBOOKS.md` (new), `scripts/ci/check_runbook_coverage.py` (new), `docs/operations/SLOS_AND_ALERTS.md`
 Acceptance: `python3 scripts/ci/check_runbook_coverage.py` exits 0 only when every alert in `docs/operations/SLOS_AND_ALERTS.md` names a runbook section that exists and every runbook section names an alert that exists; an alert with no runbook fails, and so does a runbook for an alert that was deleted.
-Depends: X-003, X-012
+Depends: X-003, OS-005
 Est: 8-12
 Status: not-started
 
@@ -2525,7 +2582,7 @@ One of the thirteen categories that previously had no unit anywhere. The rotatio
 ### X-016 Cost model
 Files: `docs/operations/COST_MODEL.md` (new), `scripts/ci/check_cost_model.py` (new), `benchmarks/postgres/ranking_benchmark.sql`
 Acceptance: `python3 scripts/ci/check_cost_model.py` exits 0 only when every component of the reference deployment has a unit-cost figure and a measured driver, and the modelled cost at the recorded participant count falls inside the recorded band around the figure measured by `X-014`; a component with no figure fails.
-Depends: X-001, X-014
+Depends: X-001, OS-010
 Est: 8-12
 Status: not-started
 
@@ -2534,11 +2591,143 @@ One of the thirteen categories that previously had no unit anywhere. This is inf
 ### X-017 Product analytics
 Files: `docs/product/PRODUCT_ANALYTICS.md` (new), `packages/schemas/observability-allowlist-v1.yaml`, `conformance/telemetry/canaries.json`
 Acceptance: every analytics quantity is derived from fixed-schema aggregates the server already holds, asserted by a check that fails on any analytics field absent from `packages/schemas/observability-allowlist-v1.yaml`; the `N-020` egress suite runs unchanged and still passes, which is the proof that this unit added no client-side event stream.
-Depends: X-012, N-020
+Depends: OS-005, N-020
 Est: 8-12
 Status: not-started
 
 One of the thirteen categories that previously had no unit anywhere, and the one most likely to be built wrong. The binding product rules forbid content-derived data crossing the device boundary and admit only fixed-schema aggregate accounting, so there is no behavioural event pipeline to build. This unit is deliberately server-side aggregate only. If that is judged insufficient for a product decision, the answer is a recorded decision that changes the rule, not a wider collector added under an analytics heading.
+
+## Epic OS — Operational surfaces
+
+Proposed by `https://github.com/vedant-simulacrum/vibemaxxing/pull/66`, which closed
+fifteen operational surfaces as normative documents and recorded decisions D-230
+through D-245. That branch could not edit this file because this branch owned it, so
+the units were published in its description for absorption. They are absorbed here
+with their identifiers unchanged, because renaming a published identifier breaks
+every reference to it.
+
+Six units this branch had authored independently cover the same surfaces and are
+marked `superseded-by` rather than deleted: `F-009` by `OS-007`, `S-017` by
+`OS-011`, `S-018` by `OS-003`, `X-002` by `OS-013`, `X-012` by `OS-005`, and
+`X-014` by `OS-010`. The OS unit wins in each case because a normative owner
+document now exists behind it and carries the numbers. `X-012` also covered metric
+instrumentation, which is `OS-006`.
+
+Two prose dependencies in the proposed set are replaced by unit IDs, under the same
+rule as everywhere else: `OS-007` depended on "ADR-018 first migration", which is
+`S-002`, and `OS-013` on "ADR-017 provider selection", which is not a unit at all
+and is recorded as a condition.
+
+### OS-001 Origin validation and CORS at the API edge
+Files: `packages/schemas/openapi-v1.yaml`, `apps/api/internal/middleware/origin.go` (new), `apps/api/internal/middleware/origin_test.go` (new), `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`
+Acceptance: `go test ./internal/middleware/ -run Origin` exits 0; a preflight from a non-allowlisted origin returns 204 carrying no `Access-Control-*` header; a state-changing request with a foreign `Origin` returns 403; `grep -c localhost` over a production build artifact returns 0, which is what makes the development origin compiled out rather than configured off.
+Depends: PF-039
+Est: 3-5
+Status: not-started
+
+### OS-002 Loopback listener hardening
+Files: `crates/vibemaxxing-daemon/src/listener.rs` (new), `crates/vibeproof-collector/src/listener.rs` (new), `conformance/sandbox/loopback-vectors-v1.json` (new), `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`
+Acceptance: a request carrying `Host: evil.example` to a loopback listener returns 403; a listener configured with a routable bind address refuses to start rather than binding; the dashboard token never appears in a `Set-Cookie` header, asserted by a case that fails if it does.
+Depends: OS-001
+Est: 5-8
+Status: not-started
+
+The `Host` allowlist is the control that closes DNS rebinding, and it is the only one that can: a rebound request still carries the attacker's name in `Host` while resolving to a loopback address, and peer credentials cannot help because the peer is the participant's own browser running as the participant.
+
+### OS-003 Rate limiter
+Files: `apps/api/internal/ratelimit/ratelimit.go` (new), `apps/api/internal/ratelimit/ratelimit_test.go` (new), `packages/schemas/policy-defaults-v1.json`, `docs/architecture/API_EDGE_CONTRACT.md`
+Acceptance: `go test ./internal/ratelimit/...` exits 0; a table test asserts every class in `docs/architecture/API_EDGE_CONTRACT.md` enforces its recorded quota and that no class is enforced without a recorded quota; ordinary limits emit `RateLimit` headers and adaptive limits emit none; the first subject-rights request in any 24-hour window is admitted regardless of bucket state, which Article 12(5) requires.
+Depends: PF-045
+Est: 5-8
+Status: not-started
+
+Supersedes `S-018`, which this branch authored before `docs/architecture/API_EDGE_CONTRACT.md` existed. Limits key on the authenticated principal and never on a content-derived value.
+
+### OS-004 Client retry, backoff and circuit breaking
+Files: `crates/vibeproof-sync/src/retry.rs` (new), `apps/web/lib/api/retry.ts` (new), `docs/architecture/API_EDGE_CONTRACT.md`
+Acceptance: the jitter distribution is uniform over the full interval, asserted statistically over a fixed seed; the retry budget fails fast at 10% over a trailing 60-second window; the circuit opens at 20 consecutive failures and half-opens at 60 seconds; a 409 and a 410 are never retried, one case each.
+Depends: OS-003, PF-049
+Est: 5-8
+Status: not-started
+
+Full jitter rather than jittered fixed delay, because the failure mode is a fleet that all failed at the same instant. Retry safety is read from the specification and never from the HTTP method. The daemon claim queue is the one unbounded case: dropping a queued claim loses activity the append-only ledger cannot recreate.
+
+### OS-005 Structured logging
+Files: `apps/api/internal/logging/logging.go` (new), `crates/vibemaxxing-daemon/src/logging.rs` (new), `packages/schemas/observability-allowlist-v1.yaml`, `docs/operations/LOGGING_AND_INSTRUMENTATION.md`
+Acceptance: every emitted line carries the required field set; a non-literal message string fails lint, which is the control that stops interpolation carrying forbidden content past a field allowlist; `account_ref` differs across a salt rotation, asserted by rotating the salt in a test; a forbidden field is dropped and the `F-006` canary fires.
+Depends: F-006
+Est: 3-5
+Status: not-started
+
+Supersedes `X-012`. The proposed unit recorded `Depends: none`; `F-006` is the resolvable dependency, because the canary firing is half of this unit's acceptance and cannot fire before the canary library exists.
+
+### OS-006 Metric instrumentation
+Files: `apps/api/internal/telemetry/telemetry.go` (new), `packages/schemas/observability-allowlist-v1.yaml`, `evals/suites/suites.yaml`, `docs/operations/LOGGING_AND_INSTRUMENTATION.md`
+Acceptance: the eighteen metrics named in `docs/operations/LOGGING_AND_INSTRUMENTATION.md` emit with allowlisted attributes only, asserted in both directions; `python3 scripts/ci/run_evals.py --suite observability-privacy` reports a status that is not `not_applicable`; `/readyz` fails when the applied migration version is outside the declared range.
+Depends: OS-005, PF-049
+Est: 5-8
+Status: not-started
+
+There is no trace export: a hosted tracing backend is a recurring cost against D-093 and would have to process inside the EU under ADR-017. Four span boundaries are recorded locally.
+
+### OS-007 Local development stack
+Files: `compose.yaml` (new), `Makefile`, `.env.example` (new), `docs/engineering/LOCAL_DEVELOPMENT.md`
+Acceptance: `make dev-up` produces a healthy database on a clean machine with no manual step; `make validate` runs the PostgreSQL DDL stage rather than skipping it; `make migrate-verify` reproduces `packages/schemas/planning-schema.sql` from the migration history byte-for-byte.
+Depends: S-002
+Est: 3-5
+Status: not-started
+
+Supersedes `F-009`. The proposed dependency "ADR-018 first migration" is `S-002`. Three properties of the compose definition are load-bearing and `docs/engineering/LOCAL_DEVELOPMENT.md` explains each: the port binds `127.0.0.1` explicitly, the database initialises with locale `C` because two engineers on different distributions otherwise get different `ORDER BY` results and a leaderboard is an ordering, and the volume is named.
+
+### OS-008 Conformance manifest format and validator
+Files: `scripts/repository/validate_conformance_manifests.py` (new), `conformance/vibeproof/v1/manifest.json` (new), `docs/verification/CONFORMANCE_HARNESS.md`
+Acceptance: `python3 scripts/repository/validate_conformance_manifests.py` exits 0 and non-zero when a manifest cites an authority that does not resolve, when a fixture digest does not match, when a suite declares no negative case, or when a case identifier is duplicated or wrongly prefixed.
+Depends: none
+Est: 3-5
+Status: not-started
+
+### OS-009 Conformance runners
+Files: `crates/conformance-runner/src/main.rs` (new), `apps/api/cmd/conformance/main.go` (new), `docs/verification/EVAL_SYSTEM.md`
+Acceptance: each runner emits the result schema in `docs/verification/EVAL_SYSTEM.md`; a case where both subjects agree on the wrong answer reports `fail: expectation` rather than `pass`, which is the check that cross-language agreement is not being mistaken for conformance; two runs of the same commit produce byte-identical output.
+Depends: OS-008
+Est: 8-13
+Status: not-started
+
+### OS-010 Load test harness
+Files: `benchmarks/load/scenarios.js` (new), `benchmarks/load/README.md` (new), `.github/workflows/load-test.yml` (new), `docs/verification/TEST_STRATEGY.md`
+Acceptance: all six scenarios in `docs/verification/TEST_STRATEGY.md` run against an ephemeral stack; `offline-drain` admits every claim exactly once; `ratelimit-breach` leaves other principals statistically unchanged, asserted against a recorded tolerance.
+Depends: OS-003, X-013
+Est: 8-13
+Status: not-started
+
+Supersedes `X-014`. The scenarios are sized at the D-180 reference population of 200 participants and a passing run may never be cited as evidence for the 100,000 target; `docs/verification/TEST_STRATEGY.md` says so and this unit does not contradict it. Activating the workflow is product automation and is outside the current authorization.
+
+### OS-011 Deprecation mechanics
+Files: `packages/schemas/openapi-v1.yaml`, `apps/api/internal/middleware/deprecation.go` (new), `docs/architecture/API_EDGE_CONTRACT.md`
+Acceptance: a deprecated operation emits `Deprecation`, `Sunset` and `Link` headers; the window between the two dates is at least 180 days, asserted arithmetically rather than by review; a fixture pins the exact header set so a silent removal fails.
+Depends: OS-001
+Est: 2-3
+Status: not-started
+
+Supersedes `S-017`.
+
+### OS-012 Clock discipline
+Files: `apps/api/internal/clock/clock.go` (new), `crates/vibeproof-core/src/time.rs` (new), `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
+Acceptance: a claim beyond the 300-second future tolerance is rejected; the server refuses to finalize beyond a 2000 ms measured offset; `grep -rnE 'now\(\)\s*-' apps/api/internal crates/vibeproof-core` returns no interval computed by subtracting wall-clock timestamps, which is the defect a monotonic source exists to prevent.
+Depends: OS-006
+Est: 3-5
+Status: not-started
+
+D-245 is open and this unit inherits it: a clock rollback and a future timestamp still have no reason code, because registering one is blocked behind the partial reason-code repair D-224 records. This unit cannot close while its rejection has no code to cite.
+
+### OS-013 Secret rotation runbook and first rotation
+Files: `docs/operations/ENVIRONMENTS_AND_SECRETS.md`, `scripts/ci/check_secret_inventory.py` (new)
+Acceptance: `python3 scripts/ci/check_secret_inventory.py` exits 0 only when every class in `docs/operations/ENVIRONMENTS_AND_SECRETS.md` records a first rotation date, an owner and a cadence, and non-zero when any is missing; a session-key rotation does not invalidate a handle inside its retained generations, asserted by a case.
+Depends: L-013
+Est: 2-3
+Status: not-started
+
+Supersedes `X-002`. The proposed dependency "ADR-017 provider selection" is not a unit and is recorded as a condition instead: every environment, secret-store and residency statement behind this unit is contingent on an ADR-017 selection that has not run, and the unit cannot start before it does.
 
 ## Explicit non-units
 
@@ -2562,4 +2751,4 @@ An earlier revision stated "PF-001 only" as the next unit, and a companion claim
 
 Longest chains under the repaired graph, measured in units rather than time: 19 to `S-010` (first claim accepted server-side), 26 to `V-004` (first working adapter), 28 to `W-003` (leaderboard visible in a browser), 37 to `W-010`, 38 to `X-010`, and 43 to `X-011`. A 26-unit serial chain before one real token reaches a board is the specific reason the plan is sequenced by vertical slice rather than by layer.
 
-`X-011`'s transitive closure is 216 of the 245 units. The 28 outside it are all `PF-037` through `PF-067` — planning repairs whose value is repository hygiene rather than a launch prerequisite. Every implementation unit is inside the closure, which is what the previous 162-of-194 figure was supposed to mean and did not.
+`X-011`'s transitive closure is 224 of the 258 units. The 33 outside it are `PF-037` through `PF-067` — planning repairs whose value is repository hygiene rather than a launch prerequisite — plus the six `superseded-by` units, which are outside by construction because their successors are inside. Every live implementation unit is inside the closure, which is what the previous 162-of-194 figure was supposed to mean and did not.

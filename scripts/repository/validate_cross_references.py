@@ -114,6 +114,7 @@ PROGRAM_RE = re.compile(rf"{_LEFT}(P-\d{{4}}[A-Z]?)(?!\d)")
 # what makes those citations visible rather than silently unparsed.
 WORK_UNIT_PREFIXES = (
     "PF",
+    "OS",
     "PL",
     "F",
     "P",
