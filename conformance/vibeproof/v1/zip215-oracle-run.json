@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "record_kind": "reproducible-generated-artifact",
+  "produced_by": "scripts/repository/run_ed25519_oracles.py",
+  "command": "go run ./conformance/vibeproof/v1/zip215-oracle <corpus>",
+  "generated_at": "2026-08-06T08:51:12Z",
+  "zip215_oracle": {
+    "id": "github.com/hdevalence/ed25519consensus",
+    "version": "v0.2.0",
+    "go_sum_h1": "h1:37ICyZqdyj0lAZ8P4D1d1id3HqbbG1N3iBb1Tb4rdcU=",
+    "toolchain": "go version go1.26.4 darwin/arm64",
+    "why_this_one": "the ZIP-215 implementation Zcash and CometBFT use, written by a co-author of the ZIP. It is independent of the generator: the generator's arithmetic is Python written for this corpus and this is not a port of it."
+  },
+  "contrast_oracles": [
+    {
+      "id": "go crypto/ed25519",
+      "criterion": "cofactorless",
+      "role": "contrast only; never recorded as a ZIP-215 verdict"
+    },
+    {
+      "id": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+      "criterion": "cofactorless, libsodium-like",
+      "role": "contrast only; never recorded as a ZIP-215 verdict"
+    }
+  ],
+  "establishes": "that these three libraries returned these verdicts for these exact bytes, each case bound by a SHA-256 digest over its own id, public key, R, S and message",
+  "does_not_establish": [
+    "that any VibeProof implementation is conformant; none consumes this corpus",
+    "cross-language parity, which needs the Rust and Go verifiers of P-002 and S-002",
+    "anything about security, privacy or launch readiness"
+  ],
+  "results": [
+    {
+      "case_id": "control-canonical-valid",
+      "case_digest": "0681338bce9a4f630af1d0247f0947fd2bc87c716e607ecba5e470bddb6b6ac9",
+      "oracle_id": "github.com/hdevalence/ed25519consensus",
+      "zip215_verdict": "accept",
+      "cofactorless_observations": [
+        {
+          "implementation": "go crypto/ed25519",
+          "criterion": "cofactorless",
+          "verdict": "accept"
+        },
+        {
+          "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+          "criterion": "cofactorless",
+          "verdict": "accept"
+        }
+      ]
+    },
+    {
+      "case_id": "non-canonical-a-identity",
+      "case_digest": "b01ba67e05fe8a0921dd6821823754817f25d6bd5992e2460a6d87ed536c7cc4",
+      "oracle_id": "github.com/hdevalence/ed25519consensus",
+      "zip215_verdict": "accept",
+      "cofactorless_observations": [
+        {
+          "implementation": "go crypto/ed25519",
+          "criterion": "cofactorless",
+          "verdict": "accept"
+        },
+        {
+          "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+          "criterion": "cofactorless",
+          "verdict": "accept"
+        }
+      ]
+    },
+    {
+      "case_id": "non-canonical-a-mixed-order",
+      "case_digest": "4abb45db18c134225a2a254ba7b0d06124ad1cd9a0d36fcb0ccdc74098d52507",
+      "oracle_id": "github.com/hdevalence/ed25519consensus",
+      "zip215_verdict": "reject",
+      "cofactorless_observations": [
+        {
+          "implementation": "go crypto/ed25519",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        },
+        {
+          "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        }
+      ]
+    },
+    {
+      "case_id": "non-canonical-r-identity",
+      "case_digest": "002db9e1a03973348e12c2e6bd32a8e995c162c62af139c5d5e63e012b98d89d",
+      "oracle_id": "github.com/hdevalence/ed25519consensus",
+      "zip215_verdict": "accept",
+      "cofactorless_observations": [
+        {
+          "implementation": "go crypto/ed25519",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        },
+        {
+          "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        }
+      ]
+    },
+    {
+      "case_id": "non-canonical-r-order4",
+      "case_digest": "491dc7faad15089a6f8cb66d655dd97d6b80d73527ab76a623c5a255a1ced354",
+      "oracle_id": "github.com/hdevalence/ed25519consensus",
+      "zip215_verdict": "accept",
+      "cofactorless_observations": [
+        {
+          "implementation": "go crypto/ed25519",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        },
+        {
+          "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        }
+      ]
+    },
+    {
+      "case_id": "small-order-a-order8",
+      "case_digest": "71bad1e08506215901f798a5f6d19e179d5a1c01c63fc9b7b43a900f34ed8256",
+      "oracle_id": "github.com/hdevalence/ed25519consensus",
+      "zip215_verdict": "accept",
+      "cofactorless_observations": [
+        {
+          "implementation": "go crypto/ed25519",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        },
+        {
+          "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        }
+      ]
+    },
+    {
+      "case_id": "cofactored-only-order8-r",
+      "case_digest": "fb2cb4b38e35297dc61233dabe0f8988816d120b956986de7e28f3d4bd77d89f",
+      "oracle_id": "github.com/hdevalence/ed25519consensus",
+      "zip215_verdict": "accept",
+      "cofactorless_observations": [
+        {
+          "implementation": "go crypto/ed25519",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        },
+        {
+          "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        }
+      ]
+    },
+    {
+      "case_id": "s-equals-l",
+      "case_digest": "38ffc133c80568872cba976c9b6bbca8d4ba1d78947fb80eea3a5675e5f09dc7",
+      "oracle_id": "github.com/hdevalence/ed25519consensus",
+      "zip215_verdict": "reject",
+      "cofactorless_observations": [
+        {
+          "implementation": "go crypto/ed25519",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        },
+        {
+          "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        }
+      ]
+    },
+    {
+      "case_id": "s-plus-l",
+      "case_digest": "f1a935bd3b60e41cbe01b214453a24cd95f0ebf657d84edd6b9634045a4ec350",
+      "oracle_id": "github.com/hdevalence/ed25519consensus",
+      "zip215_verdict": "reject",
+      "cofactorless_observations": [
+        {
+          "implementation": "go crypto/ed25519",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        },
+        {
+          "implementation": "python cryptography 50.0.0 over OpenSSL 4.0.1 9 Jun 2026",
+          "criterion": "cofactorless",
+          "verdict": "reject"
+        }
+      ]
+    }
+  ]
+}
