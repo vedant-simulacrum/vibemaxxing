@@ -66,23 +66,23 @@ Ordering principle: each specification is paired with the artifact or code that 
 
 <!-- generated: work-unit-status -->
 
-Units: 259. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
+Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
 
 | Status | Units |
 |---|---|
-| `not-started` | 217 |
+| `not-started` | 216 |
 | `in-progress` | 14 |
-| `landed` | 22 |
+| `landed` | 24 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 68 assertions across 22 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 77 assertions across 24 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 14.
 
-`PF-001`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-008`.
+`PF-001`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
-Statuses additionally checkable against artifact presence: 194 of 259. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -2706,8 +2706,8 @@ and is recorded as a condition.
 
 ### OS-001 Origin validation and CORS at the API edge
 Files: `packages/schemas/openapi-v1.yaml`, `apps/api/internal/middleware/origin.go` (new), `apps/api/internal/middleware/origin_test.go` (new), `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`
-Acceptance: `go test ./internal/middleware/ -run Origin` exits 0; a preflight from a non-allowlisted origin returns 204 carrying no `Access-Control-*` header; a state-changing request with a foreign `Origin` returns 403; `grep -c localhost` over a production build artifact returns 0, which is what makes the development origin compiled out rather than configured off.
-Depends: PF-039
+Acceptance: `go test ./internal/middleware/ -run Origin` exits 0; a preflight from a non-allowlisted origin returns 204 carrying no `Access-Control-*` header; a state-changing request with a foreign `Origin` returns 403; `grep -c localhost` over a production build artifact returns 0, which is what makes the development origin compiled out rather than configured off. The middleware reads its allowlist, preflight values and check order from `packages/schemas/origin-policy-v1.json` rather than restating them, so a divergence is a build failure and not a review miss.
+Depends: PF-039, OS-014
 Est: 3-5
 Status: not-started
 
@@ -2766,11 +2766,19 @@ Status: not-started
 Supersedes `F-009`. The proposed dependency "ADR-018 first migration" is `S-002`. Three properties of the compose definition are load-bearing and `docs/engineering/LOCAL_DEVELOPMENT.md` explains each: the port binds `127.0.0.1` explicitly, the database initialises with locale `C` because two engineers on different distributions otherwise get different `ORDER BY` results and a leaderboard is an ordering, and the volume is named.
 
 ### OS-008 Conformance manifest format and validator
-Files: `scripts/repository/validate_conformance_manifests.py` (new), `conformance/vibeproof/v1/manifest.json` (new), `docs/verification/CONFORMANCE_HARNESS.md`
-Acceptance: `python3 scripts/repository/validate_conformance_manifests.py` exits 0 and non-zero when a manifest cites an authority that does not resolve, when a fixture digest does not match, when a suite declares no negative case, or when a case identifier is duplicated or wrongly prefixed.
+Files: `packages/schemas/conformance-manifest-v1.schema.json` (new), `conformance/vibeproof/v1/manifest.json` (new), `tests/ci/test_conformance_manifests.py` (new), `scripts/repository/validate_planning_artifacts.py`, `docs/verification/CONFORMANCE_HARNESS.md`
+Acceptance: every suite directory under `conformance/` other than `p1140e` and `p1140f` declares one manifest and one README; the validator exits non-zero when a manifest cites an authority or a clause that does not resolve, when a fixture digest does not match, when a fixture no manifest names is present, when a populated suite declares neither a negative case nor a recorded gap, or when a case identifier is duplicated or wrongly prefixed.
 Depends: none
 Est: 3-5
-Status: not-started
+Status: landed
+Evidence: unittest tests.ci.test_conformance_manifests
+Evidence: exists packages/schemas/conformance-manifest-v1.schema.json
+Evidence: contains 1 scripts/repository/validate_planning_artifacts.py :: validate_conformance_manifests
+Evidence: contains 1 conformance/sandbox/manifest.json :: origin-policy-v1.json
+
+**Landed under D-441 and D-442.** Fifteen manifests, one per suite directory. The proposed unit named a standalone `scripts/repository/validate_conformance_manifests.py`, superseded before it was written: the stage lives in `scripts/repository/validate_planning_artifacts.py` instead, beside the reason registry and OpenAPI stages it has to agree with, because a separate script would have had to reload and re-derive both.
+
+Three of the D-242 field rules could not be satisfied as written and are corrected rather than worked around. `suite_id` is the directory name and `eval_suite_ids` is a separate list, because no directory name equals its eval registry id. `reason_authority` is per suite, because a loopback refusal cannot live in a registry that requires every code to bind to an API operation. A suite holding no fixture records `fixture_state: empty` with zero cases. Thirteen of the fifteen declare no runner, which is the honest state and not a passing one; the two that do declare one name a script that reads two conformance files and emits none of the result document the harness contract defines.
 
 ### OS-009 Conformance runners
 Files: `crates/conformance-runner/src/main.rs` (new), `apps/api/cmd/conformance/main.go` (new), `docs/verification/EVAL_SYSTEM.md`
@@ -2814,6 +2822,22 @@ Est: 2-3
 Status: not-started
 
 Supersedes `X-002`. The proposed dependency "ADR-017 provider selection" is not a unit and is recorded as a condition instead: every environment, secret-store and residency statement behind this unit is contingent on an ADR-017 selection that has not run, and the unit cannot start before it does.
+
+### OS-014 Origin and loopback machine contract
+Files: `packages/schemas/origin-policy-v1.schema.json` (new), `packages/schemas/origin-policy-v1.json` (new), `tests/ci/test_origin_policy.py` (new), `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `scripts/repository/validate_planning_artifacts.py`, `docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md`
+Acceptance: the OpenAPI document declares an `Origin` parameter on exactly the operations whose security includes `csrfToken` and on no others, and a `Preflight` response component declaring six `Access-Control-*` headers none of which is required; the `x-origin-policy` block equals the policy record field by field; the development origin is recorded as compiled out rather than configured off; every loopback listener binds all eight D-231 controls and no loopback refusal code appears in `reason-codes-v1.json`.
+Depends: PF-039
+Est: 3-5
+Status: landed
+Evidence: unittest tests.ci.test_origin_policy
+Evidence: contains 22 packages/schemas/openapi-v1.yaml :: parameters/Origin
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: x-origin-policy
+Evidence: contains 1 packages/schemas/reason-codes-v1.json :: ORIGIN_NOT_ALLOWED
+Evidence: absent packages/schemas/reason-codes-v1.json :: LOOPBACK_
+
+**Landed under D-440.** This is the machine surface `OS-001` and `OS-002` implement against, and it is not either of them: no middleware validates an origin and no listener checks a `Host` header. The unit exists because the inventory recorded the origin row as `planned-missing` on the grounds that the OpenAPI document declared no `Origin` parameter and no preflight response, and that gap is a contract gap rather than an implementation one.
+
+The `Origin` parameter is optional in the document and conditionally required in the record, because OpenAPI cannot express a parameter that is mandatory under one security alternative and absent under another. The loopback refusal vocabulary is owned by the policy record and the validator fails if it is ever merged into the API reason registry, where every wire-visible code must bind to a declared operation.
 
 ## Explicit non-units
 

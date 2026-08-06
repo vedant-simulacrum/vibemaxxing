@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "suite_id": "accounting",
+  "case_prefix": "AC",
+  "eval_suite_ids": [
+    "token-accounting-conformance",
+    "ranking-accounting"
+  ],
+  "authorities": [
+    "docs/product/ACCOUNTING_AND_TIME_CONTRACT.md",
+    "docs/product/TOKEN_ACCOUNTING_SPEC.md",
+    "packages/schemas/accounting-profile.schema.json",
+    "packages/schemas/accounting-arithmetic-v1.json",
+    "packages/schemas/observer-equivalence-v1.json",
+    "packages/schemas/producer-accounting-binding-v1.schema.json",
+    "conformance/accounting/accounting-schema-v1.json"
+  ],
+  "subjects": [
+    "rust",
+    "go"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "present",
+    "command": [
+      "python3",
+      "scripts/ci/run_phase1_evidence.py",
+      "--suite",
+      "token-accounting-conformance",
+      "--commit",
+      "{commit}"
+    ],
+    "work_unit": "OS-009",
+    "note": "The present runner reads exactly one of this suite's eleven files, accounting-v1-fixtures.json, through evals/fixtures/token-accounting-conformance.json and evals/fixtures/ranking-accounting.json. The other ten are executed by scripts/repository/validate_planning_artifacts.py, which proves schema conformance and reproduces the arithmetic in Python; that is one subject and not the two this manifest declares, so no case here may be cited as cross-language conformance."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "cases": [
+    {
+      "case_id": "AC-001",
+      "title": "Accept the registered accounting profiles against the profile schema",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/accounting-profiles-v1.json",
+          "sha256": "e38ee3040b96f974c4591ad6aaed8da2a53b0b1354ef87524c598bc1f89873fc"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/accounting-profile.schema.json#/properties/profile_id",
+      "negative": false,
+      "state": "active"
+    },
+    {
+      "case_id": "AC-002",
+      "title": "Reproduce every Token Burn arithmetic vector byte-for-byte, including the profile digest",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/arithmetic-vectors-v1.json",
+          "sha256": "ac5fedae749e800ae6d95acb71fb7de16fd5f1696388c6f8957be6c3128109df"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/accounting-arithmetic-v1.json#/canonical_component_order",
+      "negative": false,
+      "state": "active"
+    },
+    {
+      "case_id": "AC-003",
+      "title": "Refuse a quantity carried as a float rather than a decimal string",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/arithmetic-vectors-v1.invalid-float-quantity.json",
+          "sha256": "d63de63fc8bd04bbe698f7fe34d27a95dc9b427e42ab82dda9c9df8c6ed8205a"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_ACCOUNTING_INCONSISTENT",
+      "authority_ref": "packages/schemas/accounting-arithmetic-v1.json#/integer_domain",
+      "negative": true,
+      "state": "active",
+      "note": "D-193 declines to define float determinism and D-260 carries every quantity as an unsigned 64-bit integer in a decimal string. The refusal is a schema refusal; the reason code is the wire code the server emits for that class and is a mapping this manifest asserts rather than one the authority states."
+    },
+    {
+      "case_id": "AC-004",
+      "title": "Resolve every deduplication vector to one counted observation",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/dedup-vectors-v1.json",
+          "sha256": "1a0f379510587b54400ce18a9cd979d67eee97f58c0e7c78950412a36a6707e9"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/observer-equivalence-v1.json#/equivalence_classes",
+      "negative": false,
+      "state": "active"
+    },
+    {
+      "case_id": "AC-005",
+      "title": "Refuse a deduplication preimage that is empty",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/dedup-vectors-v1.invalid-empty-preimage.json",
+          "sha256": "9bc87bcc09c50cd2a0c75e86b0929d2dda42c8adee5e31a03ea22bdaf75603bf"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_DUPLICATE_CONFLICT",
+      "authority_ref": "packages/schemas/observer-equivalence-v1.json#/key_derivation",
+      "negative": true,
+      "state": "active",
+      "note": "An empty preimage collides with every other empty preimage, so accepting it would deduplicate unrelated activity into one row."
+    },
+    {
+      "case_id": "AC-006",
+      "title": "Capture the OTel datapoint series without inventing or dropping a counted attempt",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/otel-capture-vectors-v1.json",
+          "sha256": "634f40c7a7007f24e35b0859c71ed3f5d4bfad636f020174c2d5086a81e23891"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/otel-capture-vectors-v1.schema.json",
+      "negative": false,
+      "state": "active"
+    },
+    {
+      "case_id": "AC-007",
+      "title": "Accept the certified producer bindings",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/producer-bindings-v1.json",
+          "sha256": "096e6cee24bbb77d6fab51d4413367bc5ecf0fd32b9457964391642072e2ba4c"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/producer-accounting-binding-v1.schema.json",
+      "negative": false,
+      "state": "active",
+      "note": "Every binding reachable from this repository is candidate, so this case proves the record is well formed and proves nothing about certified capture."
+    },
+    {
+      "case_id": "AC-008",
+      "title": "Refuse a binding that claims competitive eligibility without an active certification",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/producer-bindings-v1.invalid-uncertified-competitive.json",
+          "sha256": "0ebf92b873907672662ed4530920631425989b2b5f8499222cdf3b4fc070740f"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_ADAPTER_UNSUPPORTED",
+      "authority_ref": "packages/schemas/producer-accounting-binding-v1.schema.json",
+      "negative": true,
+      "state": "active",
+      "note": "D-388 pins any state other than active to a private-analytics ceiling."
+    },
+    {
+      "case_id": "AC-009",
+      "title": "Apply the P-1140B accounting cases without double counting a contained category",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/p1140b-accounting-cases-v1.json",
+          "sha256": "ee52f990e6988296f556486934553e62f3f17c0f508cf0f6a21db552c95fe01e"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/TOKEN_ACCOUNTING_SPEC.md#total-calculation",
+      "negative": false,
+      "state": "active"
+    },
+    {
+      "case_id": "AC-010",
+      "title": "Exclude imported activity and deduplicate a repeated observation across the nine ranking fixtures",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/accounting-v1-fixtures.json",
+          "sha256": "3466cacff808b3aa6ffaed2e374c83f0c3b4ea8ef0d3fb3b9aff5ef157e47786"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/ACCOUNTING_AND_TIME_CONTRACT.md#accounting-event-invariants",
+      "negative": false,
+      "state": "active",
+      "note": "This is the only file in the suite any runner reads today."
+    }
+  ],
+  "note": "The suite proves normalisation, token categories, retries and duplicates against the arithmetic record rather than against whichever implementation reads a profile first."
+}

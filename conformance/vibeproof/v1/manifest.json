@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "suite_id": "vibeproof",
+  "case_prefix": "VP",
+  "eval_suite_ids": [],
+  "authorities": [
+    "docs/architecture/VIBEPROOF_V1_PROTOCOL.md",
+    "packages/schemas/vibeproof-claim-v1.cddl"
+  ],
+  "subjects": [
+    "rust",
+    "go"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "This is the normative corpus and nothing executes it. evals/fixtures/protocol-conformance.json names conformance/vibeproof/v1/exact-byte-vectors.json as its normative_owner and then runs conformance/protocol/vibeproof-v1-vectors.json instead, so the shadow prototype has been standing in for the normative suite since the eval registry was written. eval_suite_ids is empty because no registry entry names this directory."
+  },
+  "fixture_state": "populated",
+  "generated_by": "scripts/repository/generate_vibeproof_vectors.py",
+  "tooling": [
+    "conformance/vibeproof/v1/zip215-oracle/main.go",
+    "conformance/vibeproof/v1/zip215-oracle/go.mod",
+    "conformance/vibeproof/v1/zip215-oracle/go.sum"
+  ],
+  "cases": [
+    {
+      "case_id": "VP-001",
+      "title": "Reproduce the exact canonical bytes, Sig_structure and COSE_Sign1 signature for a claim and a receipt",
+      "fixtures": [
+        {
+          "path": "conformance/vibeproof/v1/exact-byte-vectors.json",
+          "sha256": "c30a81990a1beada5ba04ed6c80ac5f2adb776762bddc1515c4a4748d4e8993e"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/vibeproof-claim-v1.cddl",
+      "negative": false,
+      "state": "active",
+      "note": "scripts/repository/validate_planning_artifacts.py reproduces these vectors in Python today, which is one subject. Two independent codecs have never agreed on them, because neither exists."
+    },
+    {
+      "case_id": "VP-002",
+      "title": "Refuse every malformed and resource-exhausting decoder input",
+      "fixtures": [
+        {
+          "path": "conformance/vibeproof/v1/malformed-resource-corpus.json",
+          "sha256": "36ddd626080811960ef920887c15e7b265269d4bb89f49fc67d3898c0a7a17c5"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING",
+      "authority_ref": "docs/architecture/VIBEPROOF_V1_PROTOCOL.md#canonical-cbor",
+      "negative": true,
+      "state": "active",
+      "note": "Duplicate keys, non-minimal integers and indefinite-length constructs, plus the resource limits a decoder must enforce before it allocates."
+    },
+    {
+      "case_id": "VP-003",
+      "title": "Match the ZIP-215 verdict on every Ed25519 divergence case",
+      "fixtures": [
+        {
+          "path": "conformance/vibeproof/v1/ed25519-divergence-corpus.json",
+          "sha256": "1c34cf27b9d175f3c25183e4f14f7b8620540439a2630af040300ad2c02fba45"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/architecture/VIBEPROOF_V1_PROTOCOL.md#ed25519-verification-criteria",
+      "negative": false,
+      "state": "active",
+      "note": "Nine cases where ZIP-215 and the cofactorless group equation disagree. A verifier that follows the wrong one accepts or rejects a signature the rest of the network decides the other way, which is a chain fork produced by a library choice."
+    },
+    {
+      "case_id": "VP-004",
+      "title": "Refuse a signature the ZIP-215 oracle rejects, rather than accepting it under cofactorless verification",
+      "fixtures": [
+        {
+          "path": "conformance/vibeproof/v1/zip215-oracle-run.json",
+          "sha256": "674492e03ce50f91e762421275990a71b3311a95db3963a077b64d5c8d878e78"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_INVALID_SIGNATURE",
+      "authority_ref": "docs/architecture/VIBEPROOF_V1_PROTOCOL.md#ed25519-verification-criteria",
+      "negative": true,
+      "state": "active",
+      "note": "The recorded run of github.com/hdevalence/ed25519consensus v0.2.0 against the divergence corpus, with go crypto/ed25519 and OpenSSL as contrast. It is an oracle result and not a verifier test: it says what the correct answer is, and no implementation of ours has been asked the question."
+    }
+  ]
+}

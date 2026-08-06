@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "suite_id": "social",
+  "case_prefix": "SO",
+  "eval_suite_ids": [
+    "social-ranking-simulation"
+  ],
+  "authorities": [
+    "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md",
+    "packages/schemas/projection-authorization-v1.json"
+  ],
+  "subjects": [
+    "go"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "The directory holds ten scenario names and no vectors. A scenario name is a plan for a case and is not a case: nothing in the file states an input, an expectation or a reason code."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "cases": [
+    {
+      "case_id": "SO-001",
+      "title": "Enumerate the ten social and ranking scenarios the suite owes",
+      "fixtures": [
+        {
+          "path": "conformance/social/simulation-scenarios.json",
+          "sha256": "b5efdfb4b245d2cc483b0135cd69302f0bdc20c870827a7513c5c9af75b4e85a"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#ranked-participation",
+      "negative": false,
+      "state": "active",
+      "note": "This case asserts that the scenario list parses and covers the named ten. It asserts nothing about ranking, blocks, boards or presence, and it must never be cited as social conformance. The suite has no negative case because it has no executable case at all."
+    }
+  ],
+  "negative_case_gap": {
+    "work_unit": "OS-009",
+    "reason": "The directory holds ten scenario names and no vectors, so it has no executable case of either polarity. The negative cases it owes are the blocked-viewer and unauthorized-board reads that packages/schemas/projection-authorization-v1.json already specifies."
+  }
+}

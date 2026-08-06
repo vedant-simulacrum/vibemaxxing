@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "suite_id": "protocol",
+  "case_prefix": "PR",
+  "eval_suite_ids": [
+    "shadow-codec-parity"
+  ],
+  "authorities": [
+    "docs/architecture/VIBEPROOF_V1_PROTOCOL.md"
+  ],
+  "subjects": [
+    "rust",
+    "go"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "present",
+    "command": [
+      "python3",
+      "scripts/ci/run_phase1_evidence.py",
+      "--suite",
+      "shadow-codec-parity",
+      "--commit",
+      "{commit}"
+    ],
+    "work_unit": "OS-009",
+    "note": "This is the only runner in the repository that executes a conformance directory, and it executes the wrong one. evals/fixtures/protocol-conformance.json records normative_owner as conformance/vibeproof/v1/exact-byte-vectors.json and then runs conformance/protocol/vibeproof-v1-vectors.json, an unsigned eleven-field shadow codec whose authority_class is exploratory-prototype and whose evidence_ceiling is cross-language-parity. The normative corpus has never been executed by anything. That substitution is exactly the condition a per-suite manifest exists to make visible, and it stays open under PF-001."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "cases": [
+    {
+      "case_id": "PR-001",
+      "title": "Agree byte-for-byte across Rust and Go on the shadow codec vector",
+      "fixtures": [
+        {
+          "path": "conformance/protocol/vibeproof-v1-vectors.json",
+          "sha256": "3c41e65a70a770c2fc93e5018f41494ffdb6bd90b241c98eef757b1e7803707b"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/architecture/VIBEPROOF_V1_PROTOCOL.md#canonical-cbor",
+      "negative": false,
+      "state": "active",
+      "note": "Cross-language agreement on a prototype codec. Under the harness contract's own rule this can never be conformance, because both subjects consume a corpus the normative owner does not own."
+    }
+  ],
+  "negative_case_gap": {
+    "work_unit": "PF-001",
+    "reason": "The corpus is an exploratory shadow codec that should not be normative at all. Adding rejecting vectors to it would deepen the substitution rather than repair it; the repair is quarantining the shadow protocol and executing conformance/vibeproof/v1/ instead."
+  },
+  "note": "The suite holds one fixture and no negative case, so it cannot show that either subject rejects anything. Recorded rather than repaired: the repair is quarantining the shadow protocol under PF-001, not adding rejecting vectors to a corpus that should not be normative in the first place."
+}

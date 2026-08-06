@@ -3,7 +3,7 @@
 Status: normative planning contract
 Version: 1
 Updated: 2026-08-06
-Decisions: D-230, D-231
+Decisions: D-230, D-231, D-440
 
 ## Why this document exists
 
@@ -86,13 +86,27 @@ Every HTTP server bound to a loopback interface in this product — `local-dashb
 
 `docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md` states plainly that the receiver is an unauthenticated localhost endpoint and that any process able to reach the socket can mint token counts. The controls here do not change that. They stop a *web page* from reaching it; they do not stop a *local process* from doing so, and no loopback control can, because a local process running as the participant is indistinguishable from the participant. That residual exposure remains recorded where it already is, and this document does not weaken it by implying otherwise.
 
+## The machine surface
+
+Everything above is now readable by a generator. `packages/schemas/origin-policy-v1.json` is the machine owner and `packages/schemas/origin-policy-v1.schema.json` constrains it. It carries the three origins, the preflight values, the ordered state-changing checks with the reason code each failure answers, the bearer exemption, and one entry per loopback listener binding all eight controls by name. `scripts/repository/validate_planning_artifacts.py` validates it.
+
+The public API's half is projected into `packages/schemas/openapi-v1.yaml` under D-440, because a middleware generator reads the API document and not a security contract beside it. Three things appear there: an `x-origin-policy` block at the document root, a `components/parameters/Origin` header parameter whose enum is the allowlist, and a `components/responses/Preflight` component declaring the six `Access-Control-*` headers an allowlisted origin receives. Every value in the block is compared field by field against the policy record, in the same way the reason registry's recorded operation classes are derived from the document and compared rather than trusted — a hand-maintained second copy keeps passing after the thing it describes changes shape.
+
+The `Origin` parameter is declared by exactly the operations whose security includes `csrfToken`, and by no others. That is the state-changing cookie-authenticated set PF-039 already marked, so the origin arm of the ADR-015 requirement binds to the same twenty-two operations by construction rather than by a second hand-maintained list. The parameter is declared optional, because OpenAPI cannot make a parameter required under one security alternative and absent under another and a bearer-authenticated native request sends no origin at all; the conditional rule lives in the policy record, whose `origin-exact-match` check records `missing_header` as `refuse`.
+
+Preflight is not declared as an `options` operation on every path. No CORS implementation routes a preflight to an operation — the edge answers it before routing — so declaring one per path would record a mechanism that does not exist. The response component is declared once and the extension block names it.
+
+The loopback listeners have no OpenAPI presence at all, because they are not the public API. Their refusal vocabulary — `LOOPBACK_HOST_NOT_ALLOWED`, `LOOPBACK_ORIGIN_NOT_ALLOWED`, `LOOPBACK_PREFLIGHT_REFUSED`, `LOOPBACK_TOKEN_EXPIRED`, `LOOPBACK_RATE_LIMIT_EXCEEDED` — lives in the policy record and deliberately not in `packages/schemas/reason-codes-v1.json`, which requires every wire-visible code to bind to a declared API operation and would therefore have to invent operations that do not exist. The validator fails if one of these codes is ever added there.
+
+One figure is recorded as a tension rather than resolved. Control 8 sets ten requests a minute for a request carrying no valid token. Every request to the OTLP receiver is unauthenticated by construction, so that probe limit is the receiver's whole limit and it bounds legitimate export as well as probing. A 60-second exporter interval fits inside it and a burst does not. Raising the number for that listener needs its own decision, because the same number is what makes port enumeration take a day.
+
 ## Evidence
 
-Nothing here is implemented. No server validates a `Host` header, no dashboard exists, no CORS configuration exists, and the conformance obligations that would turn these rules into evidence do not yet run. They are:
+Nothing here is implemented. No server validates a `Host` header, no dashboard exists, no CORS configuration exists, and the conformance obligations that would turn these rules into evidence do not yet run. A schema that validates is not a control that runs. They are:
 
 - a fixture set that drives each loopback listener with a rebinding-shaped request (`Host: evil.example`, loopback destination) and asserts `403`;
 - a fixture set that drives each state-changing loopback route with a foreign `Origin` and asserts `403`;
 - a preflight fixture for the public API asserting that a non-allowlisted origin receives no `Access-Control-*` header;
 - a test that the `local` origin entry is absent from a production build artifact rather than merely disabled.
 
-These belong to the `sandbox` conformance suite, whose harness contract is `docs/verification/CONFORMANCE_HARNESS.md`.
+These belong to the `sandbox` conformance suite, whose harness contract is `docs/verification/CONFORMANCE_HARNESS.md`. That suite now declares a manifest at `conformance/sandbox/manifest.json` recording `fixture_state` as `empty`, naming `packages/schemas/origin-policy-v1.json` as its reason authority, and naming `OS-002` as the unit that owes the fixtures. The suite still holds no fixture, and an empty suite with a manifest is a countable gap rather than a closed one.

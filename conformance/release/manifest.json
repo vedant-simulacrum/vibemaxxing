@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "suite_id": "release",
+  "case_prefix": "RL",
+  "eval_suite_ids": [
+    "release-verification",
+    "updater-conformance"
+  ],
+  "authorities": [
+    "docs/operations/RELEASE_VERIFICATION.md",
+    "docs/decisions/ADR-013-MANDATORY_AUTOMATIC_UPDATES.md",
+    "packages/schemas/release-set-v1.schema.json"
+  ],
+  "subjects": [
+    "rust",
+    "go"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "Neither the runner nor the fixtures exist. The case list the harness contract names is a well-formed release set plus one each for rollback, freeze, mix-and-match, fast-forward and endless-data, then expired timestamp metadata, an expired snapshot, a targets delegation outside its scope, and a client past a signed update deadline."
+  },
+  "fixture_state": "empty",
+  "generated_by": null,
+  "cases": [],
+  "note": "Two eval suites depend on a directory that holds no fixture. Declared with no cases so that the gap is countable rather than invisible."
+}

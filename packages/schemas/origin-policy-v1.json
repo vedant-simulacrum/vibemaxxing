@@ -1,0 +1,298 @@
+{
+  "schema_version": 1,
+  "policy_id": "origin-and-loopback-policy-v1",
+  "normative_owner": "docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md",
+  "public_api": {
+    "openapi_document": "packages/schemas/openapi-v1.yaml",
+    "wildcard_origin": "never",
+    "origin_reflection": "never",
+    "subdomain_wildcard": "never",
+    "allowed_origins": [
+      {
+        "origin": "https://vibemaxxing.dev",
+        "purpose": "the hosted web application",
+        "credentials": "allowed",
+        "environments": ["production", "staging", "local"],
+        "production_build": "included"
+      },
+      {
+        "origin": "https://www.vibemaxxing.dev",
+        "purpose": "canonical redirect target",
+        "credentials": "allowed",
+        "environments": ["production", "staging", "local"],
+        "production_build": "included"
+      },
+      {
+        "origin": "http://localhost:3000",
+        "purpose": "local development only",
+        "credentials": "allowed",
+        "environments": ["local"],
+        "production_build": "compiled-out"
+      }
+    ],
+    "preflight": {
+      "allow_methods": ["GET", "POST", "DELETE"],
+      "allow_headers": ["Content-Type", "Idempotency-Key", "If-Match"],
+      "expose_headers": ["Retry-After", "RateLimit", "RateLimit-Policy", "X-Request-Id"],
+      "allow_credentials": "true",
+      "max_age_seconds": 600,
+      "unlisted_origin_response": {
+        "status": 204,
+        "access_control_headers": "none",
+        "body": "none"
+      }
+    },
+    "state_changing_checks": [
+      {
+        "order": 1,
+        "check_id": "origin-exact-match",
+        "applies_to": "cookie-session",
+        "enforced_by": "server",
+        "on_failure": { "status": 403, "reason_code": "ORIGIN_NOT_ALLOWED" },
+        "missing_header": "refuse",
+        "rationale": "Scheme, host and port must match an allowlist entry exactly. Origin is a header and a request that is not from a browser can set it to anything, which is why it is not sufficient alone against a native attacker."
+      },
+      {
+        "order": 2,
+        "check_id": "double-submitted-csrf-token",
+        "applies_to": "cookie-session",
+        "enforced_by": "server",
+        "on_failure": { "status": 403, "reason_code": "CSRF_TOKEN_INVALID" },
+        "missing_header": "refuse",
+        "rationale": "The csrfToken scheme in packages/schemas/openapi-v1.yaml, carried in X-VibeMaxxing-CSRF and compared against the value stored with the session. It is the only one of the three an attacker cannot produce without already reading a response from the allowlisted origin."
+      },
+      {
+        "order": 3,
+        "check_id": "samesite-lax-session-cookie",
+        "applies_to": "cookie-session",
+        "enforced_by": "browser",
+        "on_failure": { "status": 403, "reason_code": null },
+        "missing_header": "not-applicable",
+        "rationale": "ADR-015 sets SameSite=Lax on the session cookie, which stops a cross-site POST before the request is dispatched. It carries no reason code because a browser that enforces it produces no server response."
+      }
+    ],
+    "bearer_exemption": {
+      "exempt_checks": ["origin-exact-match", "double-submitted-csrf-token"],
+      "rationale": "A cross-site request cannot attach a bearer credential the attacking page does not hold, so cross-site request forgery does not apply. Native client requests are exempt from these two checks and from nothing else; the native client is not a browser and has no origin at all."
+    },
+    "openapi_binding": {
+      "extension_key": "x-origin-policy",
+      "origin_parameter": "#/components/parameters/Origin",
+      "preflight_response": "#/components/responses/Preflight",
+      "required_on_security_scheme": "csrfToken",
+      "preflight_routing": "edge-before-routing"
+    }
+  },
+  "loopback_controls": [
+    {
+      "control_id": "host-allowlist",
+      "number": 1,
+      "title": "Host header allowlist",
+      "closes": "DNS rebinding. A rebound request still carries Host: evil.example because the browser sends the name it was given and not the address it resolved to, so a server that checks Host cannot be rebound and a server that ignores it cannot tell the two apart."
+    },
+    {
+      "control_id": "origin-rules",
+      "number": 2,
+      "title": "Origin header rules for state-changing requests",
+      "closes": "A web page talking to the daemon. Absent is permitted because the native shell and CLI are not browsers and send no origin; any other value means a page is on the other end."
+    },
+    {
+      "control_id": "no-browser-reachable-credential",
+      "number": 3,
+      "title": "No credentials in a browser-reachable form",
+      "closes": "Forgery that survives the first two controls. A cookie is attached automatically by the browser to a forged cross-site request; a header is not."
+    },
+    {
+      "control_id": "random-high-port",
+      "number": 4,
+      "title": "A random high port recorded in the local state directory",
+      "closes": "Targeting without probing. A fixed well-known port is the single fact an attacking page needs; a random port makes it enumerate roughly sixteen thousand possibilities."
+    },
+    {
+      "control_id": "bind-verification",
+      "number": 5,
+      "title": "Bind verification before listening",
+      "closes": "A configuration path that exposes the listener on a routable interface. The listener resolves its configured bind address and refuses to start if the result is not a loopback address."
+    },
+    {
+      "control_id": "no-cors-headers",
+      "number": 6,
+      "title": "No CORS headers, ever",
+      "closes": "A cross-origin consumer acquiring read access by configuration. There is no legitimate cross-origin consumer of a local control API, so a preflight receives 403 rather than an allow."
+    },
+    {
+      "control_id": "idle-expiry",
+      "number": 7,
+      "title": "Idle and absolute token expiry",
+      "closes": "A token left in a browser tab's memory remaining useful indefinitely."
+    },
+    {
+      "control_id": "local-rate-limit",
+      "number": 8,
+      "title": "Local rate limit",
+      "closes": "Port enumeration by a probing page. At ten attempts a minute, enumerating a sixteen-thousand-port range takes over a day, by which time the daemon has restarted onto a different port."
+    }
+  ],
+  "loopback_listeners": [
+    {
+      "listener_id": "local-dashboard",
+      "normative_owner": "docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md",
+      "authentication": "ephemeral-session-token",
+      "input_trust": "untrusted",
+      "host_allowlist": ["127.0.0.1:{port}", "[::1]:{port}", "localhost:{port}"],
+      "origin_allowlist": ["absent", "http://127.0.0.1:{port}", "http://[::1]:{port}", "http://localhost:{port}"],
+      "cors_headers": "none",
+      "controls": [
+        {
+          "control_id": "host-allowlist",
+          "state": "required",
+          "value": "exact-match-or-403",
+          "refusal_code": "LOOPBACK_HOST_NOT_ALLOWED",
+          "note": "Checked before routing, so a rebound request never reaches a handler."
+        },
+        {
+          "control_id": "origin-rules",
+          "state": "required",
+          "value": "absent-or-exact-loopback",
+          "refusal_code": "LOOPBACK_ORIGIN_NOT_ALLOWED"
+        },
+        {
+          "control_id": "no-browser-reachable-credential",
+          "state": "required",
+          "value": "url-fragment-then-request-header",
+          "refusal_code": null,
+          "note": "The session token is delivered as a URL fragment when the shell opens the dashboard, held in memory by the page, and sent in a request header. It is never stored in a cookie."
+        },
+        {
+          "control_id": "random-high-port",
+          "state": "required",
+          "value": "ephemeral-range-recorded-in-local-state",
+          "refusal_code": null
+        },
+        {
+          "control_id": "bind-verification",
+          "state": "required",
+          "value": "refuse-to-start-on-non-loopback",
+          "refusal_code": null
+        },
+        {
+          "control_id": "no-cors-headers",
+          "state": "required",
+          "value": "preflight-403",
+          "refusal_code": "LOOPBACK_PREFLIGHT_REFUSED"
+        },
+        {
+          "control_id": "idle-expiry",
+          "state": "required",
+          "value": "idle-900s-absolute-3600s",
+          "refusal_code": "LOOPBACK_TOKEN_EXPIRED",
+          "note": "The idle figure matches challenge_expiry_seconds, the existing repository figure for a short-lived local credential. Closing the dashboard revokes the token immediately."
+        },
+        {
+          "control_id": "local-rate-limit",
+          "state": "required",
+          "value": "60-per-minute-per-token-10-per-minute-unauthenticated",
+          "refusal_code": "LOOPBACK_RATE_LIMIT_EXCEEDED"
+        }
+      ]
+    },
+    {
+      "listener_id": "adapter-one-otlp-receiver",
+      "normative_owner": "docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md",
+      "authentication": "none",
+      "input_trust": "untrusted",
+      "host_allowlist": ["127.0.0.1:{port}", "[::1]:{port}", "localhost:{port}"],
+      "origin_allowlist": ["absent"],
+      "cors_headers": "none",
+      "residual_exposure": "An unauthenticated localhost endpoint that any local process can POST at. The controls here stop a web page from reaching it; they do not stop a local process, and no loopback control can, because a local process running as the participant is indistinguishable from the participant. Any process able to reach the socket can mint token counts. The origin controls are therefore never a substitute for treating every received datapoint as untrusted input, and no evidence ceiling above private-analytics may be claimed on the strength of them.",
+      "controls": [
+        {
+          "control_id": "host-allowlist",
+          "state": "required",
+          "value": "exact-match-or-403",
+          "refusal_code": "LOOPBACK_HOST_NOT_ALLOWED"
+        },
+        {
+          "control_id": "origin-rules",
+          "state": "required",
+          "value": "absent-only",
+          "refusal_code": "LOOPBACK_ORIGIN_NOT_ALLOWED",
+          "note": "Stricter than the dashboard because no browser is ever a legitimate OTLP exporter. The exporter is the local agent process and sends no Origin."
+        },
+        {
+          "control_id": "no-browser-reachable-credential",
+          "state": "not-applicable",
+          "value": null,
+          "refusal_code": null,
+          "note": "The receiver holds no credential to keep out of a cookie. Recorded as not-applicable rather than omitted, because an absent key would read as a control nobody considered."
+        },
+        {
+          "control_id": "random-high-port",
+          "state": "required",
+          "value": "ephemeral-range-recorded-in-local-state",
+          "refusal_code": null,
+          "note": "The exporter reads the port from the same local state file the daemon writes, so a random port costs the legitimate exporter nothing."
+        },
+        {
+          "control_id": "bind-verification",
+          "state": "required",
+          "value": "refuse-to-start-on-non-loopback",
+          "refusal_code": null,
+          "note": "ADAPTER_ONE_CLAUDE_CODE_OTEL.md already required this for the receiver; it is restated here because it applies to every loopback listener."
+        },
+        {
+          "control_id": "no-cors-headers",
+          "state": "required",
+          "value": "preflight-403",
+          "refusal_code": "LOOPBACK_PREFLIGHT_REFUSED"
+        },
+        {
+          "control_id": "idle-expiry",
+          "state": "not-applicable",
+          "value": null,
+          "refusal_code": null,
+          "note": "There is no session token to expire. The receiver is unauthenticated by design under D-100, so this control has nothing to bind to."
+        },
+        {
+          "control_id": "local-rate-limit",
+          "state": "required",
+          "value": "10-per-minute-unauthenticated",
+          "refusal_code": "LOOPBACK_RATE_LIMIT_EXCEEDED",
+          "note": "Every request to this listener is unauthenticated by construction, so the probe limit is the whole limit and it bounds legitimate export as well as probing. A 60-second exporter interval fits inside it and a burst does not. The tension is recorded rather than resolved: raising the figure for this listener needs its own decision, because the same number is what makes port enumeration take a day."
+        }
+      ]
+    }
+  ],
+  "loopback_refusal_codes": [
+    {
+      "code": "LOOPBACK_HOST_NOT_ALLOWED",
+      "status": 403,
+      "control_id": "host-allowlist",
+      "description": "The request's Host was not exactly a loopback authority on the listener's port. Refused before routing. This is the DNS-rebinding refusal."
+    },
+    {
+      "code": "LOOPBACK_ORIGIN_NOT_ALLOWED",
+      "status": 403,
+      "control_id": "origin-rules",
+      "description": "A state-changing request carried an Origin that was neither absent nor an exact loopback origin on the listener's port, which means a web page is talking to the daemon."
+    },
+    {
+      "code": "LOOPBACK_PREFLIGHT_REFUSED",
+      "status": 403,
+      "control_id": "no-cors-headers",
+      "description": "A CORS preflight reached a loopback listener. It is answered 403 with no Access-Control-* header rather than with an allow."
+    },
+    {
+      "code": "LOOPBACK_TOKEN_EXPIRED",
+      "status": 401,
+      "control_id": "idle-expiry",
+      "description": "The dashboard session token passed its 900-second idle window or its 3600-second absolute lifetime, or the dashboard was closed and the token revoked."
+    },
+    {
+      "code": "LOOPBACK_RATE_LIMIT_EXCEEDED",
+      "status": 429,
+      "control_id": "local-rate-limit",
+      "description": "The local rate limit was exceeded: 60 requests per minute against a valid token, 10 per minute for a request carrying none."
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "suite_id": "adapters",
+  "case_prefix": "AD",
+  "eval_suite_ids": [
+    "agent-integration-feasibility"
+  ],
+  "authorities": [
+    "docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md",
+    "docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md",
+    "packages/schemas/source-observation.schema.json",
+    "packages/schemas/normalized-event.schema.json",
+    "conformance/adapters/agent-registry-v1.schema.json"
+  ],
+  "subjects": [
+    "rust"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "scripts/repository/validate_planning_artifacts.py already executes the adapter-one identity-strip cases as a Python stage. That stage is a validator and not a runner: it emits no result document, declares no subject, and cannot report the divergence class the harness contract requires."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "tooling": [],
+  "cases": [
+    {
+      "case_id": "AD-001",
+      "title": "Accept the agent registry and its recorded capability verdicts",
+      "fixtures": [
+        {
+          "path": "conformance/adapters/agent-registry-v1.json",
+          "sha256": "a7d3887ea0e04cc0b47a58ef244476cbc8901ae249994b0efdda29b4317f3a97"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "conformance/adapters/agent-registry-v1.schema.json#/properties/products",
+      "negative": false,
+      "state": "active",
+      "note": "Every certification in the registry is empty or planned, so this case proves the registry is well formed and never that a tuple is exercised."
+    },
+    {
+      "case_id": "AD-002",
+      "title": "Strip exactly the five Claude Code identity attributes inside the receiver",
+      "fixtures": [
+        {
+          "path": "conformance/adapters/claude-code-otel/otlp-attribute-disposition-v1.json",
+          "sha256": "06f962d00882f4df01ffbba2eab53a8f0ef4bd7cd9e680d11c99f83e78723112"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md#4-attribute-allowlist-and-mandatory-strip-list",
+      "negative": false,
+      "state": "active",
+      "note": "D-099 makes removal a collector obligation performed at the device boundary rather than a configuration option, because no documented vendor setting removes user.email."
+    },
+    {
+      "case_id": "AD-003",
+      "title": "Accept a well-formed observed datapoint from the adapter-one receive surface",
+      "fixtures": [
+        {
+          "path": "conformance/adapters/claude-code-otel/source-observation.valid.json",
+          "sha256": "7a7435d1dc72825f2fa90c072b3028bf874b26a605a940635824ec8f3e498fab"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/source-observation.schema.json",
+      "negative": false,
+      "state": "active"
+    },
+    {
+      "case_id": "AD-004",
+      "title": "Refuse a source observation carrying a raw user email",
+      "fixtures": [
+        {
+          "path": "conformance/adapters/claude-code-otel/source-observation.invalid-user-email.json",
+          "sha256": "822c3bd69758a3db26b56c38dfc08c4e7f4ce2d0158d0500a2b306cbc9739c28"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_PRIVACY_SCAN_FAILED",
+      "authority_ref": "docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md#4-attribute-allowlist-and-mandatory-strip-list",
+      "negative": true,
+      "state": "active"
+    },
+    {
+      "case_id": "AD-005",
+      "title": "Refuse a source observation carrying an organization identifier",
+      "fixtures": [
+        {
+          "path": "conformance/adapters/claude-code-otel/source-observation.invalid-organization-id.json",
+          "sha256": "7ffd16e64fe10432ae846a1ceb9415e84a4613590241f86aa2b79176bbc1b1de"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_PRIVACY_SCAN_FAILED",
+      "authority_ref": "docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md#4-attribute-allowlist-and-mandatory-strip-list",
+      "negative": true,
+      "state": "active"
+    },
+    {
+      "case_id": "AD-006",
+      "title": "Refuse a source observation carrying a provider account identity",
+      "fixtures": [
+        {
+          "path": "conformance/adapters/claude-code-otel/source-observation.invalid-account-identity.json",
+          "sha256": "5474bc180e5c1f4faca06f67d52550042edb072991f033ff6eea5ecdf35456af"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_PRIVACY_SCAN_FAILED",
+      "authority_ref": "docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md#4-attribute-allowlist-and-mandatory-strip-list",
+      "negative": true,
+      "state": "active"
+    },
+    {
+      "case_id": "AD-007",
+      "title": "Refuse a normalized event that reintroduces an identity attribute after the receive stage",
+      "fixtures": [
+        {
+          "path": "conformance/adapters/claude-code-otel/normalized-event.invalid-user-email.json",
+          "sha256": "8536fa86e0c95726d4bdbb05309c9feb47d29582405d7deb17e82c652ae3616b"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_PRIVACY_SCAN_FAILED",
+      "authority_ref": "packages/schemas/normalized-event.schema.json",
+      "negative": true,
+      "state": "active",
+      "note": "The second stage is a separate case because a strip performed once and not enforced again is a strip that survives only until somebody adds a field."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "suite_id": "auth",
+  "case_prefix": "AU",
+  "eval_suite_ids": [
+    "authentication-recovery"
+  ],
+  "authorities": [
+    "docs/security/AUTHENTICATION_AND_RECOVERY.md",
+    "docs/decisions/ADR-015-SESSION_AUTHENTICATION.md",
+    "packages/schemas/openapi-v1.yaml"
+  ],
+  "subjects": [
+    "go"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "Neither the runner nor the fixtures exist. The eight transaction shapes the harness contract names — a replayed authorization code, a state mismatch, an expired code, a code redeemed twice, a refresh handle presented twice, a family past its 90-day absolute cap, a device code polled inside the 5-second minimum, and a recovery attempt inside the cooling-off period — are the case list this suite is waiting for."
+  },
+  "fixture_state": "empty",
+  "generated_by": null,
+  "cases": [],
+  "note": "Declared with no cases so that the absence is countable. The suite directory holds a README and this manifest and nothing else."
+}

@@ -1,0 +1,320 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/origin-policy-v1.schema.json",
+  "title": "Origin validation and loopback listener policy v1",
+  "description": "The machine surface of docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md under D-230 and D-231. The document specifies three exact origins, no wildcard, a localhost entry compiled out of the production build, and eight controls on every loopback listener; until this record existed none of that was consumable by a generator, so nothing stopped the deployed behaviour from diverging from the prose. Two surfaces are covered because they fail differently: the public API, whose origin rules are also projected into packages/schemas/openapi-v1.yaml as x-origin-policy, and the loopback listeners, which have no OpenAPI presence at all because they are not the public API. A loopback refusal never crosses the public API wire, so its refusal vocabulary lives here and deliberately not in packages/schemas/reason-codes-v1.json, where every code must bind to a declared API operation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_id",
+    "normative_owner",
+    "public_api",
+    "loopback_controls",
+    "loopback_listeners",
+    "loopback_refusal_codes"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "policy_id": { "const": "origin-and-loopback-policy-v1" },
+    "normative_owner": { "const": "docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md" },
+    "public_api": { "$ref": "#/$defs/publicApi" },
+    "loopback_controls": {
+      "description": "The eight controls the normative owner requires of every loopback HTTP listener. The list is the control vocabulary; each listener records its own binding for every one of them, so a listener cannot omit a control by omitting a key.",
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/loopbackControl" }
+    },
+    "loopback_listeners": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/loopbackListener" }
+    },
+    "loopback_refusal_codes": {
+      "description": "The refusal vocabulary of the loopback surfaces. These are not API reason codes and must never be added to packages/schemas/reason-codes-v1.json: that registry requires every wire-visible code to bind to a declared OpenAPI operation, and a loopback listener declares none. This list is the reason authority the sandbox conformance suite resolves its expect_reason_code values against.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/refusalCode" }
+    }
+  },
+  "$defs": {
+    "publicApi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "openapi_document",
+        "wildcard_origin",
+        "origin_reflection",
+        "subdomain_wildcard",
+        "allowed_origins",
+        "preflight",
+        "state_changing_checks",
+        "bearer_exemption",
+        "openapi_binding"
+      ],
+      "properties": {
+        "openapi_document": { "const": "packages/schemas/openapi-v1.yaml" },
+        "wildcard_origin": {
+          "description": "Access-Control-Allow-Origin: * is never sent. Recorded as a named value rather than a boolean because a two-valued field written as an enum stays legible inside a digest preimage and inside a diff.",
+          "const": "never"
+        },
+        "origin_reflection": {
+          "description": "An Origin is never echoed from the request without first being matched against the allowlist. Reflection is the single most common way a three-entry allowlist becomes a wildcard.",
+          "const": "never"
+        },
+        "subdomain_wildcard": {
+          "const": "never"
+        },
+        "allowed_origins": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/allowedOrigin" }
+        },
+        "preflight": { "$ref": "#/$defs/preflight" },
+        "state_changing_checks": {
+          "description": "Every applicable check must pass, in the recorded order. Three overlapping controls is deliberate: each covers the others' failure mode.",
+          "type": "array",
+          "minItems": 3,
+          "items": { "$ref": "#/$defs/stateChangingCheck" }
+        },
+        "bearer_exemption": { "$ref": "#/$defs/bearerExemption" },
+        "openapi_binding": { "$ref": "#/$defs/openapiBinding" }
+      }
+    },
+    "allowedOrigin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "purpose", "credentials", "environments", "production_build"],
+      "properties": {
+        "origin": {
+          "description": "An exact scheme, host and port. No wildcard character may appear.",
+          "type": "string",
+          "pattern": "^https?://[a-z0-9.-]+(?::[0-9]{1,5})?$"
+        },
+        "purpose": { "type": "string", "minLength": 1 },
+        "credentials": { "enum": ["allowed", "refused"] },
+        "environments": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["production", "staging", "local"] }
+        },
+        "production_build": {
+          "description": "compiled-out means the entry is absent from the production artifact rather than disabled by configuration. A flag that admits localhost is one environment-variable mistake away from admitting it in production.",
+          "enum": ["included", "compiled-out"]
+        }
+      }
+    },
+    "preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allow_methods",
+        "allow_headers",
+        "expose_headers",
+        "allow_credentials",
+        "max_age_seconds",
+        "unlisted_origin_response"
+      ],
+      "properties": {
+        "allow_methods": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"] }
+        },
+        "allow_headers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9-]+$" }
+        },
+        "expose_headers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9-]+$" }
+        },
+        "allow_credentials": { "enum": ["true", "false"] },
+        "max_age_seconds": { "type": "integer", "minimum": 0, "maximum": 86400 },
+        "unlisted_origin_response": {
+          "description": "A preflight for an origin that is not on the list answers 204 with no Access-Control-* header at all, and the browser blocks the request itself. An error body would tell a probing page whether the origin is known.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "access_control_headers", "body"],
+          "properties": {
+            "status": { "const": 204 },
+            "access_control_headers": { "const": "none" },
+            "body": { "const": "none" }
+          }
+        }
+      }
+    },
+    "stateChangingCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order", "check_id", "applies_to", "enforced_by", "on_failure", "rationale"],
+      "properties": {
+        "order": { "type": "integer", "minimum": 1 },
+        "check_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "applies_to": {
+          "description": "The credential shape the check binds to. cookie-session is the browser path; a bearer-authenticated native request is exempt from the first two checks and from nothing else.",
+          "enum": ["cookie-session", "any-credential"]
+        },
+        "enforced_by": { "enum": ["server", "browser"] },
+        "on_failure": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "reason_code"],
+          "properties": {
+            "status": { "type": "integer", "minimum": 400, "maximum": 499 },
+            "reason_code": {
+              "description": "Resolves in packages/schemas/reason-codes-v1.json. A check the browser enforces carries null, because no server response exists to carry a code.",
+              "type": ["string", "null"],
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            }
+          }
+        },
+        "missing_header": {
+          "description": "What a state-changing cookie-authenticated request with the header absent receives. Every browser sends Origin on POST and DELETE, so its absence means the request did not come from one.",
+          "enum": ["refuse", "permit", "not-applicable"]
+        },
+        "rationale": { "type": "string", "minLength": 1 }
+      }
+    },
+    "bearerExemption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exempt_checks", "rationale"],
+      "properties": {
+        "exempt_checks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z0-9-]+$" }
+        },
+        "rationale": { "type": "string", "minLength": 1 }
+      }
+    },
+    "openapiBinding": {
+      "description": "How the policy appears inside the OpenAPI document, so a client or middleware generator reading only that document sees the same rule.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["extension_key", "origin_parameter", "preflight_response", "required_on_security_scheme", "preflight_routing"],
+      "properties": {
+        "extension_key": { "const": "x-origin-policy" },
+        "origin_parameter": { "const": "#/components/parameters/Origin" },
+        "preflight_response": { "const": "#/components/responses/Preflight" },
+        "required_on_security_scheme": {
+          "description": "Every operation whose security includes this scheme declares the Origin parameter, and no operation that does not include it may declare one. csrfToken already marks exactly the state-changing cookie-authenticated set under PF-039, so the origin arm binds to the same set by construction rather than by a second hand-maintained list.",
+          "const": "csrfToken"
+        },
+        "preflight_routing": {
+          "description": "Preflight is answered by the edge before routing, not per operation. Declaring an options operation on every path would claim per-operation preflight routing that no CORS implementation performs, so the response component is declared once and referenced by the extension.",
+          "const": "edge-before-routing"
+        }
+      }
+    },
+    "loopbackControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control_id", "number", "title", "closes"],
+      "properties": {
+        "control_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "number": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "title": { "type": "string", "minLength": 1 },
+        "closes": {
+          "description": "The attack this control closes and the others do not. A control that closes nothing the others do not is redundant and should be removed rather than recorded.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "loopbackListener": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "listener_id",
+        "normative_owner",
+        "authentication",
+        "input_trust",
+        "controls",
+        "host_allowlist",
+        "origin_allowlist",
+        "cors_headers"
+      ],
+      "properties": {
+        "listener_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "normative_owner": { "type": "string", "minLength": 1 },
+        "authentication": {
+          "description": "none is a recorded fact and not an omission. The adapter-one OTLP receiver is an unauthenticated localhost endpoint that any local process can POST at, and no loopback control changes that: a local process running as the participant is indistinguishable from the participant.",
+          "enum": ["ephemeral-session-token", "none"]
+        },
+        "input_trust": {
+          "description": "untrusted means the listener treats its request bodies as adversarial input regardless of who reached the socket. Origin controls stop a web page from reaching the listener; they are not a substitute for input validation and are never cited as one.",
+          "enum": ["untrusted"]
+        },
+        "controls": {
+          "description": "One binding per control in loopback_controls, keyed by control_id. A listener that cannot apply a control records not-applicable with the reason rather than omitting the key, so an absent control is always visible.",
+          "type": "array",
+          "minItems": 8,
+          "items": { "$ref": "#/$defs/controlBinding" }
+        },
+        "host_allowlist": {
+          "description": "The exact Host values the listener accepts. This is the control that defeats DNS rebinding: a rebound request still carries the attacker's name in Host, because the browser sends the name it was given and not the address it resolved to.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^(127\\.0\\.0\\.1|\\[::1\\]|localhost):\\{port\\}$" }
+        },
+        "origin_allowlist": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(absent|http://(127\\.0\\.0\\.1|\\[::1\\]|localhost):\\{port\\})$"
+          }
+        },
+        "cors_headers": {
+          "description": "A loopback surface sends no Access-Control-Allow-Origin, no Access-Control-Allow-Credentials, and answers no preflight with an allow. There is no legitimate cross-origin consumer of a local control API.",
+          "const": "none"
+        },
+        "residual_exposure": { "type": "string", "minLength": 1 }
+      }
+    },
+    "controlBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control_id", "state"],
+      "properties": {
+        "control_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "state": { "enum": ["required", "not-applicable"] },
+        "value": { "type": ["string", "integer", "null"] },
+        "refusal_code": { "type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "note": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "not-applicable" } }, "required": ["state"] },
+          "then": { "required": ["note"] }
+        }
+      ]
+    },
+    "refusalCode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "status", "control_id", "description"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^LOOPBACK_[A-Z0-9_]+$" },
+        "status": { "type": "integer", "minimum": 400, "maximum": 499 },
+        "control_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

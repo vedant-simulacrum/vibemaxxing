@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "suite_id": "evidence",
+  "case_prefix": "EV",
+  "eval_suite_ids": [],
+  "authorities": [
+    "docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md",
+    "packages/schemas/source-receipt-v1.schema.json",
+    "packages/schemas/appraisal-result-v1.schema.json",
+    "packages/schemas/appraisal-policy-v1.schema.json",
+    "packages/schemas/evidence-profile-policy-v1.json"
+  ],
+  "subjects": [
+    "rust",
+    "go"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "OS-009",
+    "note": "No eval suite consumes this directory at all, which is why eval_suite_ids is empty. The eleven fixtures are executed only by the evidence-chain stage of scripts/repository/validate_planning_artifacts.py, so a result document for them has never existed."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "cases": [
+    {
+      "case_id": "EV-001",
+      "title": "Accept a receipt recording two observations and exactly one counted",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/source-receipt.valid.json",
+          "sha256": "934820576f2a2c3e034de76f5030736162f3a281183ecec2bcd996790911184b"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/source-receipt-v1.schema.json",
+      "negative": false,
+      "state": "active"
+    },
+    {
+      "case_id": "EV-002",
+      "title": "Refuse a receipt carrying prompt content",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/source-receipt.invalid-content-field.json",
+          "sha256": "b68e54284eae01d9f368702a610b7f822a2fe4f3710afbc46844733425706113"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_PRIVACY_SCAN_FAILED",
+      "authority_ref": "docs/privacy/PRIVACY_CONTRACT.md#absolute-server-boundary",
+      "negative": true,
+      "state": "active"
+    },
+    {
+      "case_id": "EV-003",
+      "title": "Refuse a receipt claiming provider attestation",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/source-receipt.invalid-provider-attested.json",
+          "sha256": "9dc42bbf0479eaabc62cea40f78c2fdee12f218ed230edabb3ff798b6a8b4ce1"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_ADAPTER_UNSUPPORTED",
+      "authority_ref": "docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md#source-receipt-and-evidence-bundle",
+      "negative": true,
+      "state": "active",
+      "note": "D-100 makes the receipt carry no attestation. A receipt that claims one is asserting a property no device can produce."
+    },
+    {
+      "case_id": "EV-004",
+      "title": "Refuse a receipt marking two observations counted",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/source-receipt.invalid-two-counted-observations.json",
+          "sha256": "a00da4501df7a10285b500c8f93489eac3affdb5dca9b8a6fc0238892198746d"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_DUPLICATE_CONFLICT",
+      "authority_ref": "packages/schemas/observer-equivalence-v1.json#/exclusivity",
+      "negative": true,
+      "state": "active"
+    },
+    {
+      "case_id": "EV-005",
+      "title": "Refuse a receipt asserting network eligibility it cannot hold",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/source-receipt.invalid-network-eligible.json",
+          "sha256": "bdb5427a185269dc310b56f9bc94f2f34ed1fad9057cb3aef7cba71bf6e6769f"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_ADAPTER_DOWNGRADED",
+      "authority_ref": "docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md#source-evidence-classes",
+      "negative": true,
+      "state": "active"
+    },
+    {
+      "case_id": "EV-006",
+      "title": "Accept a standard appraisal across all seven named dimensions",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/appraisal-result.valid-standard.json",
+          "sha256": "8781d4a033ad90265711dbd38c2c79be0764047bacee814fdb0c840319d5fbb7"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/appraisal-result-v1.schema.json",
+      "negative": false,
+      "state": "active"
+    },
+    {
+      "case_id": "EV-007",
+      "title": "Accept a superseded appraisal without renumbering the one it supersedes",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/appraisal-result.valid-superseded.json",
+          "sha256": "a188a75ae74d455161eece168b100a333526fc147283547252620ada19cba348"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/appraisal-result-v1.schema.json",
+      "negative": false,
+      "state": "active"
+    },
+    {
+      "case_id": "EV-008",
+      "title": "Refuse an appraisal state selected by the client",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/appraisal-result.invalid-client-selected-state.json",
+          "sha256": "41ad6bfa86ae55072cfa3b4a25905b0e60b41ea2f8cbeb9d1cc40c91657146b8"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_ADAPTER_UNSUPPORTED",
+      "authority_ref": "docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md#the-appraisal-record",
+      "negative": true,
+      "state": "active",
+      "note": "Public evidence status is assigned by the server verifier and never selected by the client. A client-selected state is the whole appraisal boundary failing at once."
+    },
+    {
+      "case_id": "EV-009",
+      "title": "Refuse an E1-R classification presented as hardened",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/appraisal-result.invalid-e1r-hardened.json",
+          "sha256": "8430c13931f073d9621d75923c284a223de378e79c7f54e56505c35a35f25167"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_ADAPTER_DOWNGRADED",
+      "authority_ref": "packages/schemas/appraisal-policy-v1.json#/dimension_refinements",
+      "negative": true,
+      "state": "active"
+    },
+    {
+      "case_id": "EV-010",
+      "title": "Refuse an imported claim presented as competitive",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/appraisal-result.invalid-imported-competitive.json",
+          "sha256": "574009692f84651c51589ec99d6909842d036c0c694358be6d9b9fc242bb8659"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_LATE_EXCLUDED",
+      "authority_ref": "docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md#named-public-profiles",
+      "negative": true,
+      "state": "active",
+      "note": "D-007 keeps historical imports out of active competition permanently."
+    },
+    {
+      "case_id": "EV-011",
+      "title": "Refuse a policy bundle whose second dimension names a different authority",
+      "fixtures": [
+        {
+          "path": "conformance/evidence/appraisal-policy.invalid-second-dimension-authority.json",
+          "sha256": "98c659e9e5d4b949d44568adda9736f7ccec48f443ca17add0d6a1ddb3677c26"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_ADAPTER_UNSUPPORTED",
+      "authority_ref": "packages/schemas/appraisal-policy-v1.schema.json",
+      "negative": true,
+      "state": "active"
+    }
+  ]
+}
