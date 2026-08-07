@@ -70,8 +70,8 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 216 |
-| `in-progress` | 14 |
+| `not-started` | 215 |
+| `in-progress` | 15 |
 | `landed` | 24 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
@@ -547,7 +547,9 @@ Files: `scripts/repository/validate_p1140e_contracts.py`, `conformance/p1140e/va
 Acceptance: `python3 scripts/repository/validate_p1140e_contracts.py` exits non-zero on each of six injected defects — missing owner, unreachable lifecycle, SQL/state/API vocabulary mismatch, missing generation key, missing authority revision, and a content digest that does not match — and 0 on the clean tree; the summary line names the check as structural.
 Depends: PF-034
 Est: 10-14
-Status: not-started
+Status: in-progress
+
+The test file now exists and the validator gained the reason-authority repair under D-560, so this is started rather than done. Three of the six injected defects the acceptance names are covered — an authority that resolves to nothing, a declared authority no code uses, and one shadowing a registered machine — plus two assertions that the committed state holds the properties those checks enforce. The remaining three are the vocabulary-mismatch, missing-generation-key and content-digest injections, and the clean-tree case passes today. The unit closes when all six fire.
 
 - verify owner existence and reachable lifecycle;
 - detect SQL/state/API vocabulary mismatch;
