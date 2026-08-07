@@ -70,17 +70,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 211 |
+| `not-started` | 210 |
 | `in-progress` | 16 |
-| `landed` | 27 |
+| `landed` | 28 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 83 assertions across 27 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 85 assertions across 28 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 22.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-009`, `PF-011`, `PF-015`, `PF-020`, `PF-021`, `PF-024`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-009`, `PF-011`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
