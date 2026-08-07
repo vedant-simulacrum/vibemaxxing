@@ -1,6 +1,11 @@
 [package]
 name = "vibeproof-core"
 version = "0.1.0"
+# Quarantined under P-1140F-1: an exploratory prototype of an eleven-field shadow
+# payload, not the VibeProof v1 protocol. See README.md and
+# conformance/p1140f/artifact-authority-v1.json.
+description = "Exploratory prototype, quarantined under P-1140F-1. Not the VibeProof v1 protocol; the normative authority is packages/schemas/vibeproof-claim-v1.cddl."
+publish = false
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

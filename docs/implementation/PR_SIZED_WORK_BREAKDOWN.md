@@ -70,17 +70,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 215 |
+| `not-started` | 214 |
 | `in-progress` | 15 |
-| `landed` | 24 |
+| `landed` | 25 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 77 assertions across 24 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 79 assertions across 25 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 14.
+Startable now — not done, and every dependency done: 15.
 
-`PF-001`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -97,19 +97,15 @@ So the expansion is scoped to what it can honestly claim. Every `Files:` path th
 ## Current planning program
 
 ### PF-001 — Quarantine the shadow VibeProof protocol
-Files: `crates/vibeproof-core/README.md`, `crates/vibeproof-core/Cargo.toml`, `apps/api/cmd/api/protocol_fixtures.go`, `conformance/p1140f/artifact-authority-v1.json`, `evals/suites/suites.yaml`
-Acceptance: `grep -rn 'VibeProof v1' crates/vibeproof-core apps/api/cmd/api` returns no line that omits the word `prototype`; `artifact-authority-v1.json` records `authority_class: prototype` for both artifacts; `python3 scripts/repository/validate_p1140f_authority.py` exits 0.
+Files: `crates/vibeproof-core/README.md`, `crates/vibeproof-core/Cargo.toml`, `crates/vibeproof-core/src/lib.rs`, `apps/api/cmd/api/protocol_fixtures.go`, `conformance/protocol/vibeproof-v1-vectors.json`, `apps/web/README.md`, `conformance/p1140f/artifact-authority-v1.json`, `evals/suites/suites.yaml`, `scripts/repository/validate_artifact_quarantine.py`, `tests/ci/test_artifact_quarantine.py`
+Acceptance: `python3 scripts/repository/validate_artifact_quarantine.py` exits 0, and fails when any artifact `artifact-authority-v1.json` classes as a prototype omits the gate, its normative owner, or any one of its recorded incompatibilities or prohibited uses from its own source; `python3 -m unittest tests.ci.test_artifact_quarantine` exits 0 with a case per omission; `python3 scripts/repository/validate_p1140f_authority.py` exits 0.
+
+The original criterion was `grep -rn 'VibeProof v1' crates/vibeproof-core apps/api/cmd/api` returning no line that omits the word `prototype`. It passed before any quarantine work was done, because `crates/vibeproof-core/README.md` was a two-line stub that mentioned nothing. A criterion phrased as the absence of a bad mention is satisfied by the absence of any mention, so it measured silence and reported compliance. The replacement requires the notice to be present and to agree with the record, which silence cannot satisfy.
 Depends: none
 Est: 6-8
-Status: not-started
-
-`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
-
-`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
-
-`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
-
-`Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
+Status: landed
+Evidence: validator scripts/repository/validate_artifact_quarantine.py
+Evidence: unittest tests.ci.test_artifact_quarantine
 
 `Depends: none` replaces the prose dependency `PR #42 consolidation`, which merged and can no longer be ordered against. The consolidation is a historical fact, not a pending unit.
 
@@ -148,14 +144,6 @@ Acceptance: `python3 scripts/repository/validate_state_vocabularies.py` exits 0 
 Depends: none
 Est: 12-16
 Status: not-started
-
-`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
-
-`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
-
-`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
-
-`Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
 
 `Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
 
@@ -526,14 +514,6 @@ Acceptance: `python3 scripts/repository/validate_planning_coverage.py` exits 0 w
 Depends: PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033
 Est: 12-16
 Status: not-started
-
-The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
-
-The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
-
-The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
-
-The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
 
 The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
 
@@ -1107,28 +1087,12 @@ Status: superseded-by OS-007
 
 One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
 
-One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
-
-One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
-
-One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
-
-One of the thirteen categories that previously had no unit anywhere. The database engine and migration tool are fixed by ADR-018 and are not re-decided here.
-
 ### F-010 Product CI/CD pipeline
 Files: `scripts/ci/check_required_checks.py` (new), `docs/engineering/CI_AND_DELIVERY.md` (new), `.github/workflows/ci.yml`, `docs/engineering/ENGINEERING_SYSTEM.md`
 Acceptance: `python3 scripts/ci/check_required_checks.py` exits 0 only when every quality layer listed under `## Required quality layers` in `docs/engineering/ENGINEERING_SYSTEM.md` has a matching job in the workflow set and appears in the branch-protection required-checks list, and exits non-zero when a layer has no job.
 Depends: F-008
 Est: 8-12
 Status: not-started
-
-One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
-
-One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
-
-One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
-
-One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
 
 One of the thirteen categories that previously had no unit anywhere. Deployment is deliberately excluded here and stays in `X-001`; this unit ends at a verified artifact, not at a running environment. Activating product CI is outside the current authorization for the reason recorded under `F-008`.
 
@@ -1320,14 +1284,6 @@ Status: not-started
 
 Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
 
-Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
-
-Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
-
-Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
-
-Persistence owner for `pricing_datasets`, `pricing_entries`, `cost_interpretations` and `model_alias_facts`. All four had no owning unit before this one; `model_alias_facts` in particular is what lets an unrecognised model alias resolve to a priced model without guessing.
-
 ### A-010 Accounting differential and order-invariance evidence
 Files: `evals/suites/suites.yaml`, `evals/fixtures/token-accounting-conformance.json`, `tests/conformance/test_accounting_differential.py` (new)
 Acceptance: `python3 scripts/ci/run_evals.py --suite token-accounting-conformance` exits 0 with a status that is not `not_applicable`; the Rust and Go implementations produce identical totals for every fixture under both input orderings, and a one-token divergence fails the suite.
@@ -1446,12 +1402,6 @@ Status: not-started
 
 `shell_sessions` had no owning unit before this one.
 
-`shell_sessions` had no owning unit before this one.
-
-`shell_sessions` had no owning unit before this one.
-
-`shell_sessions` had no owning unit before this one.
-
 ### N-016 Shell subsystem projections and action separation
 Files: `crates/vibemaxxing-cli/src/shell/projections.rs` (new)
 Acceptance: a matrix test asserts that UI exit, pause collection, pause sync, stop daemon, logout and uninstall each produce their own recorded effect and none produces another's; the daemon, collection, sync, auth, permission, update and connectivity projections are read independently and no command mutates a projection it does not own.
@@ -1470,24 +1420,12 @@ Status: not-started
 
 The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
 
-The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
-
-The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
-
-The prose condition `separate privilege review` is not a dependency and is recorded here instead: this unit needs a privilege review before it starts, and no unit ID expresses that. `privileged_supervisor_instances` had no owning unit before this one.
-
 ### N-018 Sleep/resume/reboot/login/logout/offline suite
 Files: `crates/vibemaxxing-daemon/tests/platform_lifecycle.rs` (new), `evals/suites/suites.yaml`
 Acceptance: `python3 scripts/ci/run_evals.py --suite resilience` exits 0 with a status that is not `not_applicable`, carrying one case per transition — sleep, resume, reboot, login, logout and offline — each with a recorded expected outcome; a transition with no case fails the suite rather than being absent from it.
 Depends: N-009, N-015
 Est: 10-14
 Status: not-started
-
-This unit was an orphan. `X-010` now depends on it.
-
-This unit was an orphan. `X-010` now depends on it.
-
-This unit was an orphan. `X-010` now depends on it.
 
 This unit was an orphan. `X-010` now depends on it.
 
@@ -1500,24 +1438,12 @@ Status: not-started
 
 This unit was an orphan. `X-010` now depends on it.
 
-This unit was an orphan. `X-010` now depends on it.
-
-This unit was an orphan. `X-010` now depends on it.
-
-This unit was an orphan. `X-010` now depends on it.
-
 ### N-020 Content-egress and local-role adversarial suite
 Files: `crates/vibemaxxing-canary/src/lib.rs` (new), `conformance/telemetry/canaries.json`, `evals/suites/suites.yaml`
 Acceptance: `python3 scripts/ci/run_evals.py --suite privacy-boundary` exits 0 with a status that is not `not_applicable`; every forbidden content class named in `docs/privacy/PRIVACY_CONTRACT.md` has at least one attempted-egress case from every local role, and every attempt is blocked.
 Depends: N-003, N-004, N-005, N-006, N-007, N-008, N-009, N-010, N-011, N-012, N-013, N-014, N-015, N-016, N-017
 Est: 12-16
 Status: not-started
-
-The prose range `N-003 through N-017` is expanded because `Depends:` admits unit IDs only.
-
-The prose range `N-003 through N-017` is expanded because `Depends:` admits unit IDs only.
-
-The prose range `N-003 through N-017` is expanded because `Depends:` admits unit IDs only.
 
 The prose range `N-003 through N-017` is expanded because `Depends:` admits unit IDs only.
 
@@ -1532,12 +1458,6 @@ Status: not-started
 
 This unit was an orphan: `S-002` through `S-015` did not depend on the Go service foundation they are all built on. `S-002` now depends on it and every later Epic S unit reaches it transitively.
 
-This unit was an orphan: `S-002` through `S-015` did not depend on the Go service foundation they are all built on. `S-002` now depends on it and every later Epic S unit reaches it transitively.
-
-This unit was an orphan: `S-002` through `S-015` did not depend on the Go service foundation they are all built on. `S-002` now depends on it and every later Epic S unit reaches it transitively.
-
-This unit was an orphan: `S-002` through `S-015` did not depend on the Go service foundation they are all built on. `S-002` now depends on it and every later Epic S unit reaches it transitively.
-
 ### S-002 PostgreSQL migration runner, roles and recovery
 Files: `migrations/0001_init.sql` (new), `apps/api/internal/db/migrate.go` (new), `packages/schemas/planning-schema.sql`, `docs/decisions/ADR-018-DATABASE_AND_MIGRATION_TOOLING.md`
 Acceptance: applying every migration to an empty database produces a schema dump byte-identical to one produced from `packages/schemas/planning-schema.sql`; `schema_migrations` records each version exactly once; every reversible step has a down path and every irreversible one is declared irreversible rather than left undefined.
@@ -1546,12 +1466,6 @@ Est: 12-16
 Status: not-started
 
 Also the persistence owner for `service_events`, the service-instance lifecycle ledger.
-
-Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
-
-Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
-
-Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
 
 Persistence owner for `schema_migrations` and `service_instances`, neither of which had an owning unit before.
 
@@ -1568,12 +1482,6 @@ Acceptance: a replayed request returns the stored body byte-for-byte and the sto
 Depends: S-003
 Est: 8-12
 Status: not-started
-
-This unit was an orphan. `S-010` now depends on it, which is correct: claim acceptance is the mutation whose replay has to be exact.
-
-This unit was an orphan. `S-010` now depends on it, which is correct: claim acceptance is the mutation whose replay has to be exact.
-
-This unit was an orphan. `S-010` now depends on it, which is correct: claim acceptance is the mutation whose replay has to be exact.
 
 This unit was an orphan. `S-010` now depends on it, which is correct: claim acceptance is the mutation whose replay has to be exact.
 
@@ -1597,12 +1505,6 @@ The unit also persists `recovery_cases`, whose cooling-off window, session revoc
 
 `optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
 
-`optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
-
-`optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
-
-`optional_authenticators` and `recovery_codes` — the passkey and recovery-code tables — had no owning unit before this one.
-
 ### S-007 Ranked identity, consolidation and appeal persistence
 Files: `apps/api/internal/rankedidentity/store.go` (new), `migrations/0005_ranked_identity.sql` (new), `packages/schemas/planning-schema.sql`
 Acceptance: `ranked_identities` is a separate table from `accounts` with at most one active resolved row per person, enforced by a partial unique index; `appeals` and `appeal_decisions` record the investigation privately, and no query path sums two accounts' scores.
@@ -1620,12 +1522,6 @@ Est: 12-16
 Status: not-started
 
 The unit also persists `lineage_fork_cases` and `lineage_fork_branches`, the D-072 fork and clone resolution tables, because a fork is a property of a lineage and belongs with the lineage keying this unit owns.
-
-`adapter_installations` had no owning unit before this one.
-
-`adapter_installations` had no owning unit before this one.
-
-`adapter_installations` had no owning unit before this one.
 
 `adapter_installations` had no owning unit before this one.
 
@@ -1666,12 +1562,6 @@ Status: not-started
 
 The prose range `S-008 through S-012` is expanded because `Depends:` admits unit IDs only.
 
-The prose range `S-008 through S-012` is expanded because `Depends:` admits unit IDs only.
-
-The prose range `S-008 through S-012` is expanded because `Depends:` admits unit IDs only.
-
-The prose range `S-008 through S-012` is expanded because `Depends:` admits unit IDs only.
-
 ### S-014 Compatibility/certification policy persistence
 Files: `apps/api/internal/certification/store.go` (new), `migrations/0012_certification.sql` (new), `packages/schemas/planning-schema.sql`
 Acceptance: `platform_profiles` and `platform_certifications` bind an exact compatibility tuple; a query for support returns nothing when the certification is empty, planned, expired or suspended, which a table test asserts for each of those four states.
@@ -1690,24 +1580,12 @@ Status: not-started
 
 The prose range `S-010 through S-012` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
 
-The prose range `S-010 through S-012` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
-
-The prose range `S-010 through S-012` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
-
-The prose range `S-010 through S-012` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
-
 ### S-016 Error taxonomy and reason-code mapping
 Files: `apps/api/internal/apierr/apierr.go` (new), `apps/api/internal/apierr/apierr_test.go` (new), `packages/schemas/reason-codes-v1.json`, `packages/schemas/openapi-v1.yaml`
 Acceptance: `go test ./internal/apierr/...` exits 0 with a table test proving every code in `packages/schemas/reason-codes-v1.json` maps to exactly one HTTP status and one registered state machine, and that no handler can return a status or reason absent from the registry.
 Depends: S-001, PF-045
 Est: 8-12
 Status: not-started
-
-One of the thirteen categories that previously had no unit anywhere. `PF-045` decides the matrix; this unit is the runtime that cannot deviate from it.
-
-One of the thirteen categories that previously had no unit anywhere. `PF-045` decides the matrix; this unit is the runtime that cannot deviate from it.
-
-One of the thirteen categories that previously had no unit anywhere. `PF-045` decides the matrix; this unit is the runtime that cannot deviate from it.
 
 One of the thirteen categories that previously had no unit anywhere. `PF-045` decides the matrix; this unit is the runtime that cannot deviate from it.
 
@@ -1720,24 +1598,12 @@ Status: superseded-by OS-011
 
 One of the thirteen categories that previously had no unit anywhere.
 
-One of the thirteen categories that previously had no unit anywhere.
-
-One of the thirteen categories that previously had no unit anywhere.
-
-One of the thirteen categories that previously had no unit anywhere.
-
 ### S-018 Rate limiting and quota enforcement
 Files: `apps/api/internal/ratelimit/ratelimit.go` (new), `apps/api/internal/ratelimit/ratelimit_test.go` (new), `packages/schemas/policy-defaults-v1.json`, `packages/schemas/openapi-v1.yaml`
 Acceptance: `go test ./internal/ratelimit/...` exits 0; a table test asserts in both directions that every operation declaring a 429 has a configured limit and every configured limit names an existing operation; limits key on the authenticated principal and never on a content-derived value, which a test proves by rejecting a key derived from request content.
 Depends: S-001, S-016
 Est: 8-12
 Status: superseded-by OS-003
-
-One of the thirteen categories that previously had no unit anywhere.
-
-One of the thirteen categories that previously had no unit anywhere.
-
-One of the thirteen categories that previously had no unit anywhere.
 
 One of the thirteen categories that previously had no unit anywhere.
 
@@ -1750,24 +1616,12 @@ Status: not-started
 
 `audit_events` had no owning unit before this one.
 
-`audit_events` had no owning unit before this one.
-
-`audit_events` had no owning unit before this one.
-
-`audit_events` had no owning unit before this one.
-
 ### S-020 Data migration and backfill runner
 Files: `apps/api/internal/backfill/runner.go` (new), `apps/api/internal/backfill/runner_test.go` (new), `docs/operations/DATA_MIGRATION_AND_BACKFILL.md` (new)
 Acceptance: `go test ./internal/backfill/...` exits 0; a backfill resumes from its recorded `worker_checkpoints` row after a kill, and re-running a completed backfill changes no row, which a table-checksum comparison before and after asserts.
 Depends: S-002, S-012
 Est: 10-14
 Status: not-started
-
-One of the thirteen categories that previously had no unit anywhere. Distinct from `S-002`, which runs schema migrations: this unit moves and rebuilds data behind them, which is the operation that can starve online traffic and the one that has to be resumable.
-
-One of the thirteen categories that previously had no unit anywhere. Distinct from `S-002`, which runs schema migrations: this unit moves and rebuilds data behind them, which is the operation that can starve online traffic and the one that has to be resumable.
-
-One of the thirteen categories that previously had no unit anywhere. Distinct from `S-002`, which runs schema migrations: this unit moves and rebuilds data behind them, which is the operation that can starve online traffic and the one that has to be resumable.
 
 One of the thirteen categories that previously had no unit anywhere. Distinct from `S-002`, which runs schema migrations: this unit moves and rebuilds data behind them, which is the operation that can starve online traffic and the one that has to be resumable.
 
@@ -1807,10 +1661,6 @@ Acceptance: a table test asserts the flow starts only for providers whose regist
 Depends: O-001, O-002, O-003
 Est: 8-12
 Status: not-started
-
-The prose dependency `provider capability; never CI default` is replaced. The capability half is now the resolvable dependency on `O-001` and `O-002`; the never-CI-default half was never a dependency at all and is an acceptance clause, which is where it now lives.
-
-The prose dependency `provider capability; never CI default` is replaced. The capability half is now the resolvable dependency on `O-001` and `O-002`; the never-CI-default half was never a dependency at all and is an acceptance clause, which is where it now lives.
 
 The prose dependency `provider capability; never CI default` is replaced. The capability half is now the resolvable dependency on `O-001` and `O-002`; the never-CI-default half was never a dependency at all and is an acceptance clause, which is where it now lives.
 
@@ -1873,20 +1723,12 @@ Status: not-started
 
 The prose range `O-004 through O-011` is expanded because `Depends:` admits unit IDs only.
 
-The prose range `O-004 through O-011` is expanded because `Depends:` admits unit IDs only.
-
-The prose range `O-004 through O-011` is expanded because `Depends:` admits unit IDs only.
-
 ### O-013 Optional authenticator and recovery-code enrollment
 Files: `apps/api/internal/authenticator/authenticator.go` (new), `apps/api/internal/authenticator/authenticator_test.go` (new), `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `packages/schemas/planning-schema.sql`
 Acceptance: `go test ./internal/authenticator/...` exits 0; a recovery code is single-use and a direct read of `recovery_codes` returns only a hash; an `optional_authenticators` row cannot become the last remaining method without the recorded explicit confirmation, asserted by a refused case.
 Depends: O-006, S-006
 Est: 8-12
 Status: not-started
-
-D-028 makes passkeys and hardware credentials optional stronger factors rather than mandatory primary authentication. `optional_authenticators` and `recovery_codes` are persisted by `S-006` and had no runtime unit before this one.
-
-D-028 makes passkeys and hardware credentials optional stronger factors rather than mandatory primary authentication. `optional_authenticators` and `recovery_codes` are persisted by `S-006` and had no runtime unit before this one.
 
 D-028 makes passkeys and hardware credentials optional stronger factors rather than mandatory primary authentication. `optional_authenticators` and `recovery_codes` are persisted by `S-006` and had no runtime unit before this one.
 
@@ -1970,10 +1812,6 @@ Status: not-started
 
 The prose range `V-006 through V-009` is expanded because `Depends:` admits unit IDs only.
 
-The prose range `V-006 through V-009` is expanded because `Depends:` admits unit IDs only.
-
-The prose range `V-006 through V-009` is expanded because `Depends:` admits unit IDs only.
-
 ## Epic R — Ranking and pricing
 
 ### R-001 Period and season registry
@@ -1993,10 +1831,6 @@ Est: 10-14
 Status: not-started
 
 `score_contributions` is the immutable ledger row; `minute_scores` and `period_scores` are projections of it, and a rebuild reads the ledger rather than the projections.
-
-`minute_scores` had no owning unit before this one.
-
-`minute_scores` had no owning unit before this one.
 
 `minute_scores` had no owning unit before this one.
 
@@ -2062,10 +1896,6 @@ Status: not-started
 
 The prose range `R-002 through R-009` is expanded because `Depends:` admits unit IDs only.
 
-The prose range `R-002 through R-009` is expanded because `Depends:` admits unit IDs only.
-
-The prose range `R-002 through R-009` is expanded because `Depends:` admits unit IDs only.
-
 ### R-011 Movement, overtakes, streaks and retractions
 Files: `apps/api/internal/ranking/events.go` (new), `packages/schemas/planning-schema.sql`
 Acceptance: every movement, overtake and streak event references the generation that produced it, and a retraction is a new event referencing the retracted one; a retracted event is absent from the viewer projection while remaining in the ledger, asserted by reading both.
@@ -2083,10 +1913,6 @@ Acceptance: `python3 scripts/ci/run_evals.py --suite ranking-accounting` exits 0
 Depends: R-003, R-004, R-005, R-006, R-007, R-008, R-009, R-010, R-011
 Est: 12-16
 Status: not-started
-
-The prose range `R-003 through R-011` is expanded because `Depends:` admits unit IDs only.
-
-The prose range `R-003 through R-011` is expanded because `Depends:` admits unit IDs only.
 
 The prose range `R-003 through R-011` is expanded because `Depends:` admits unit IDs only.
 
@@ -2136,8 +1962,6 @@ Status: not-started
 
 `board_invites` and `board_membership_events` had no owning unit before this one.
 
-`board_invites` and `board_membership_events` had no owning unit before this one.
-
 ### G-007 Separate admin promotion
 Files: `apps/api/internal/boards/promote.go` (new), `apps/api/internal/boards/promote_test.go` (new)
 Acceptance: promotion requires a recent-authentication grant and a matching membership revision, one refused case each; a promotion attempted as part of an invite acceptance is refused, which is the privilege-escalation path this unit exists to close.
@@ -2184,8 +2008,6 @@ Status: not-started
 
 The prose range `G-002 through G-008` is expanded because `Depends:` admits unit IDs only. `notification_events` had no owning unit before this one.
 
-The prose range `G-002 through G-008` is expanded because `Depends:` admits unit IDs only. `notification_events` had no owning unit before this one.
-
 ### G-013 Channel subscriptions and delivery attempts
 Files: `apps/api/internal/notifications/delivery.go` (new), `apps/api/internal/notifications/delivery_test.go` (new)
 Acceptance: every attempt records exactly one of `queued`, `deferred`, `accepted`, `acknowledged`, `failed` or `expired`; a test asserts no code path maps provider acceptance to a read or to a delivery guarantee.
@@ -2218,16 +2040,12 @@ Status: not-started
 
 The prose range `G-002 through G-015` is expanded because `Depends:` admits unit IDs only.
 
-The prose range `G-002 through G-015` is expanded because `Depends:` admits unit IDs only.
-
 ### G-017 Organization boards
 Files: `apps/api/internal/boards/organizations.go` (new), `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/decisions/ADR-016-PROVIDER_ATTESTED_ORG_EVIDENCE.md`
 Acceptance: the four organization operations in `packages/schemas/openapi-v1.yaml` all resolve to the `organizations` table; an organization board admits only members whose ranked identity is resolved, and an org-admin credential grants no read of an individual member's content, asserted by a refused case.
 Depends: G-005, S-007
 Est: 10-14
 Status: not-started
-
-`organizations` had no owning unit and the word "organization" did not appear anywhere in this document. ADR-016 decides whether org boards consume provider admin APIs, and this unit implements whichever answer that ADR records rather than reopening it.
 
 `organizations` had no owning unit and the word "organization" did not appear anywhere in this document. ADR-016 decides whether org boards consume provider admin APIs, and this unit implements whichever answer that ADR records rather than reopening it.
 
@@ -2240,8 +2058,6 @@ Status: not-started
 
 `communities` had no owning unit and the word "community" did not appear anywhere in this document.
 
-`communities` had no owning unit and the word "community" did not appear anywhere in this document.
-
 ### G-019 Social integrity event ledger
 Files: `apps/api/internal/integrity/events.go` (new), `packages/schemas/social-integrity-events-v1.proto`, `packages/schemas/planning-schema.sql`
 Acceptance: `social_integrity_events` rejects `UPDATE` and `DELETE`; every event type in `packages/schemas/social-integrity-events-v1.proto` has a writer and every writer names a declared type, asserted in both directions; no event column can hold a content-derived value, asserted against the `F-006` canary set.
@@ -2250,8 +2066,6 @@ Est: 8-12
 Status: not-started
 
 Also the persistence owner for `social_events`.
-
-`social_integrity_events` had a Protobuf contract and a table but no owning unit. Detection remains deterministic and local-only advisory per the binding product rules; this ledger records deterministic control outcomes, not statistical inferences.
 
 `social_integrity_events` had a Protobuf contract and a table but no owning unit. Detection remains deterministic and local-only advisory per the binding product rules; this ledger records deterministic control outcomes, not statistical inferences.
 
@@ -2341,8 +2155,6 @@ Acceptance: `python3 scripts/ci/run_evals.py --suite data-lifecycle-recovery` ex
 Depends: M-003, M-004, M-005, M-006, M-007, M-008, M-009, M-010
 Est: 12-16
 Status: not-started
-
-The prose range `M-003 through M-010` is expanded because `Depends:` admits unit IDs only.
 
 The prose range `M-003 through M-010` is expanded because `Depends:` admits unit IDs only.
 
@@ -2440,8 +2252,6 @@ Status: not-started
 
 The prose range `L-001 through L-011` is expanded because `Depends:` admits unit IDs only. `update_policies` had no owning unit before this one.
 
-The prose range `L-001 through L-011` is expanded because `Depends:` admits unit IDs only. `update_policies` had no owning unit before this one.
-
 ### L-013 Key compromise, freeze, rollback and mix-and-match suite
 Files: `evals/suites/suites.yaml`, `tests/conformance/test_updater_hostile.py` (new)
 Acceptance: `python3 scripts/ci/run_evals.py --suite updater-conformance` exits 0 with a status that is not `not_applicable`; key compromise, freeze, rollback and mix-and-match of components from two release sets are each refused, one case each.
@@ -2455,8 +2265,6 @@ Acceptance: after uninstall no daemon, launch agent, service, key, database file
 Depends: L-008, L-009, L-010, L-011, M-008
 Est: 10-14
 Status: not-started
-
-The prose range `L-008 through L-011` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
 
 The prose range `L-008 through L-011` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it.
 
