@@ -164,10 +164,21 @@ def main() -> int:
         require(actual == expected, f"platform case mismatch: {profile_id}")
         require(all(item["execution_state"] == "planned-runtime-evidence" for item in planned["cases"]), f"platform plan overclaims execution: {profile_id}")
 
+    # The non-aggregate authorities are read from the registry rather than listed
+    # here. They were hard-coded, which meant a reader of reason-codes-v1.json saw
+    # `state_machine: "vibeproof-v1"` with no way to tell it was not a machine, and
+    # the list had drifted: `device-lineage-v1` was permitted and used by no code.
     reason_registry = load_json(SCHEMAS / "reason-codes-v1.json")
-    allowed_authorities = set(machines) | {"vibeproof-v1", "device-lineage-v1", "server-runtime"}
+    non_aggregate = set(reason_registry["non_aggregate_authorities"])
+    require(not (non_aggregate & set(machines)), "a non-aggregate authority shadows a registered machine")
+    allowed_authorities = set(machines) | non_aggregate
+    used = {item["state_machine"] for item in reason_registry["codes"]}
     for item in reason_registry["codes"]:
         require(item["state_machine"] in allowed_authorities, f"reason authority does not resolve: {item['code']}")
+    # A declared exemption that nothing uses is a stale excuse, which is how
+    # `device-lineage-v1` survived being permitted long after it stopped applying.
+    unused = sorted(non_aggregate - used)
+    require(not unused, f"non-aggregate authority declared and used by no code: {unused}")
 
     forbidden = [
         ROOT / "apps/android", ROOT / "apps/ios", ROOT / "apps/ipados", ROOT / "apps/chromeos",
