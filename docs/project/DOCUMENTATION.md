@@ -102,7 +102,7 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 | Directory | Role | Files |
 |---|---|---|
 | `project/` | **Top authority.** Product, phase, and this map | `PROJECT.md`, `STATUS.md`, `DOCUMENTATION.md` |
-| `planning/` | Decisions, gates, scope, policy | `DECISION_REGISTER.md`, `TASK_CATALOG.md`, `SCHEMA_AND_INTERFACE_INVENTORY.md`, `ARTIFACT_POLICY.md`, `PRODUCT_SCOPE_FREEZE.md`, `REPOSITORY_OPERATIONS.md`, `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`, `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `SR_SEVERITY_REGRADING_PROPOSAL.md` (proposal, no authority), `CROSS_PLATFORM_COMPLETENESS_AUDIT.md`, `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, `decision-traceability/` (D-001..D-069 + `README.md`) |
+| `planning/` | Decisions, gates, scope, policy | `DECISION_REGISTER.md`, `TASK_CATALOG.md`, `SCHEMA_AND_INTERFACE_INVENTORY.md`, `ARTIFACT_POLICY.md`, `PRODUCT_SCOPE_FREEZE.md`, `REPOSITORY_OPERATIONS.md`, `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`, `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `SR_SEVERITY_REGRADING_PROPOSAL.md` (proposal, no authority), `CROSS_PLATFORM_COMPLETENESS_AUDIT.md`, `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, `decision-traceability/` (`D-001-D-020.md`, `D-021-D-040.md`, `D-041-D-061.md`, `D-062-D-069.md`, `README.md`) |
 | `decisions/` | Accepted ADRs | `ADR-001` … `ADR-022` |
 | `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `API_EDGE_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
 | `decisions/` | Accepted ADRs | `ADR-001` … `ADR-022` |
@@ -168,6 +168,43 @@ Known duplication that genuinely remains, recorded rather than silently carried.
 - Anti-cheat material spans `research/ANTI_CHEAT_SYSTEMS_RESEARCH_2026-07-23.md`, `planning/ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, `security/ANTI_CHEAT_ATTACK_CATALOG.md`, `security/ANTI_CHEAT_RESEARCH_PROGRAM.md`, and `security/ADVERSARIAL_TABLETOPS.md`.
 - `style-guide/COMPONENT_INVENTORY.md` records an unresolved naming overlap between the proposed generic `Notice`/`Dialog` and the implemented `ProductNotice`/`ProductDialog`. An owner must decide whether these are one concept or two.
 - `style-guide/UI_FOUNDATIONS.md` §17 records the token, radius, type-scale, motion and logo values on which the retired `design.md` disagreed with `BRAND.md`. The approved column governs; the disagreement is kept visible rather than deleted.
+
+## Every document declares an owner
+
+`scripts/repository/doctor.py` requires every tracked markdown file to be named in
+this document, either individually or by a directory class declared below. Adding a
+file without naming it here fails the doctor.
+
+This replaces a blocklist of thirteen exact filenames. Those thirteen — starting with
+`PROJECT_CONTEXT.md`, `START_HERE_PROMPT.md` and `IMPLEMENTATION_ROADMAP.md` — were
+real files that once competed with the authorities they duplicated, and deleting them
+was correct. Forbidding those names was not the same rule: it caught the thirteen that
+had already happened and nothing else. A fourteenth competing file under any other
+name passed every check, which was verified by creating `MASTER_CONTEXT.md` asserting
+"P-1140F complete, gate P-1104 closed" — a direct contradiction of
+`conformance/p1140f/gate-authorization-v1.json` — and watching the full validator
+suite pass. The thirteen names remain refused, as history that should stay dead.
+
+The rule is now positive: a new document must say what it owns, in the table that
+lists what everything else owns, where a duplicate is visible to a reviewer. That is
+the check the principle always needed, and a rename does not evade it.
+
+Two directory classes are covered in bulk rather than per file, because both are
+explicitly non-authoritative and grow by accumulation:
+
+| Class | Why bulk coverage is admissible |
+|---|---|
+| `docs/history/` | Superseded point-in-time reports. Nothing in it is authority, and it is retained so retracted conclusions stay visible. |
+| `docs/research/` | Primary evidence behind `README.md`, its sole entrypoint. Research informs an open decision and never overrides an accepted one. |
+
+Four files outside `docs/` are named here so the rule holds over the whole tree:
+
+| File | What it is |
+|---|---|
+| `CLAUDE.md` | A symlink to `AGENTS.md`. It is the same file, not a second manual. |
+| `.github/PULL_REQUEST_TEMPLATE.md` | GitHub tooling; owns no content. |
+| `assets/brand/FONT_PROVENANCE.md` | Licence and provenance for the repository-owned type. |
+| `conformance/p1140f/REPAIR_HEAD_REVIEW.md` | The P-1140F repair-head review record. |
 
 ## Machine-readable authorities
 

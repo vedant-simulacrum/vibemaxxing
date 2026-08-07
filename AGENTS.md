@@ -2,6 +2,10 @@
 
 This file is the sole agent initialization entrypoint. Do not create additional start prompts, master-context files, model-specific manuals, duplicate roadmaps, or parallel project repositories.
 
+The rule is about authority, not about file count. Every tracked markdown file must be named in `docs/project/DOCUMENTATION.md`, which is where the single normative owner of each topic is declared, and `scripts/repository/doctor.py` fails on one that is not. A new document is fine when it owns something no existing document owns and says so in that table, beside everything else that owns something. It is not fine when it restates phase, gate, status, scope or plan that an existing authority already owns, because then two files answer the same question and a reader cannot tell which is stale.
+
+That check replaced a blocklist of thirteen exact filenames. Those thirteen were real files that once competed with the authorities they duplicated, and they stay refused, but refusing names only caught what had already happened: a fourteenth competing file under any other name passed every check in this repository.
+
 ## Initialize
 
 Before changing anything:
