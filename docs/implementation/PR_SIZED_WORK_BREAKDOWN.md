@@ -70,17 +70,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 212 |
+| `not-started` | 211 |
 | `in-progress` | 16 |
-| `landed` | 26 |
+| `landed` | 27 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 81 assertions across 26 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 83 assertions across 27 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 21.
+Startable now — not done, and every dependency done: 22.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-009`, `PF-011`, `PF-015`, `PF-019`, `PF-021`, `PF-024`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-009`, `PF-011`, `PF-015`, `PF-020`, `PF-021`, `PF-024`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -341,11 +341,13 @@ Status: not-started
 
 ### PF-019 — Idempotency authority
 Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`
-Acceptance: `idempotency_records` keys on `(principal_type, principal_id, operation_id, idempotency_key)`; the `idempotency-ledger` machine declares `executing`, `committed`, `replayable-failure`, `conflict`, `expired` and `abandoned`, and all six are reachable under `validate_state_vocabularies.py`.
+Acceptance: `idempotency_records` keys on exactly the `key_scope` declared in `openapi-v1.yaml#x-idempotency-contract`, which a test asserts by comparing the two rather than restating either; the `idempotency-ledger` machine declares `executing`, `committed`, `replayable-failure`, `conflict`, `expired` and `abandoned`, all six reachable from the initial state, with `committed` non-terminal because it expires; `python3 -m unittest tests.ci.test_idempotency_ledger` exits 0 and fails when `operation_id` leaves the key.
 Depends: PF-004
 Repair: P-1140F-4
 Est: 8-12
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_idempotency_ledger
 
 - typed principal, operation/API version, key and request fingerprint;
 - exact stored status, content type, safe headers, bytes and result references;
