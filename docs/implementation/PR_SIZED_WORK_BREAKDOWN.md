@@ -70,17 +70,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 214 |
+| `not-started` | 213 |
 | `in-progress` | 15 |
-| `landed` | 25 |
+| `landed` | 26 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 79 assertions across 25 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 81 assertions across 26 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 15.
+Startable now — not done, and every dependency done: 21.
 
-`PF-002`, `PF-003`, `PF-004`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-009`, `PF-011`, `PF-015`, `PF-019`, `PF-021`, `PF-024`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -143,11 +143,13 @@ Status: not-started
 
 ### PF-004 — Mutable aggregate ownership inventory
 Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/planning-schema.sql`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `scripts/repository/validate_state_vocabularies.py`
-Acceptance: `python3 scripts/repository/validate_state_vocabularies.py` exits 0 with every registry machine naming a `persistence_owner` that resolves to a `create table` in `planning-schema.sql`, and fails when one does not.
+Acceptance: `python3 scripts/repository/validate_state_vocabularies.py` exits 0 with every registry machine naming a `persistence_owner` that resolves to a `create table` in `planning-schema.sql`, and fails when one does not; every machine additionally declares `revision_model`, `transaction_boundary` and `outbox`, and the validator fails on each of the four combinations `outbox_events.unique(aggregate_id, aggregate_revision)` forbids — publishing without a revision, publishing outside the aggregate transaction, a device-local aggregate publishing, and a local-only aggregate in a server transaction; `python3 -m unittest tests.ci.test_state_vocabularies` exits 0 with a case per rule.
 Depends: none
 Repair: P-1140F-1
 Est: 12-16
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_state_vocabularies
 
 `Depends: none` replaces the prose dependency `PR #42 consolidation`. D-195 has since landed the persistence-owner half of this unit; what remains is the revision model, transaction boundary and outbox behaviour per aggregate.
 
