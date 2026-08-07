@@ -87,7 +87,7 @@
       "machine_id": "idempotency-ledger",
       "positive": {
         "case_id": "idempotency-ledger-valid-transition",
-        "from": "reserved",
+        "from": "executing",
         "transition_id": "idempotency-commit",
         "expected_to": "committed",
         "expected": "commit-once-and-audit"

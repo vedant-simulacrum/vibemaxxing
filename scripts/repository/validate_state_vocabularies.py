@@ -123,7 +123,14 @@ BINDINGS: tuple[Binding, ...] = (
     Binding(
         aggregate="idempotency-ledger",
         machine="idempotency-ledger",
-        states=("reserved", "committed", "conflict", "expired", "failed"),
+        states=(
+            "executing",
+            "committed",
+            "replayable-failure",
+            "conflict",
+            "expired",
+            "abandoned",
+        ),
         sql=("idempotency_records.state",),
     ),
     Binding(

@@ -570,15 +570,28 @@ create table schema_migrations (
 
 
 -- Repaired append-only authority, identity, verification, ranking, and social tables.
+-- Keyed on the full scope openapi-v1.yaml#x-idempotency-contract declares:
+-- (principal_type, principal_id, operation_id, idempotency_key). It previously keyed
+-- on (actor_account_id, idempotency_key), so `operation_id` was a column outside the
+-- key and a client reusing one key across two operations collided. The dangerous half
+-- of that collision is not the spurious 409: a committed row stores the exact response
+-- for replay, so the second operation could be answered with the first operation's
+-- recorded body.
+--
+-- `principal_id` deliberately carries no foreign key. The contract's principal is the
+-- account for a web session and the bound device enrollment for a native session, so
+-- the column addresses two tables and a reference could only point at one of them.
+-- `principal_type` says which.
 create table idempotency_records (
-  actor_account_id uuid not null references accounts(account_id),
-  idempotency_key uuid not null,
+  principal_type text not null check (principal_type in ('account','device')),
+  principal_id uuid not null,
   operation_id text not null,
+  idempotency_key uuid not null,
   request_digest bytea not null check (octet_length(request_digest) = 32),
   response_digest bytea,
-  state text not null check (state in ('reserved','committed','conflict','expired','failed')),
+  state text not null check (state in ('executing','committed','replayable-failure','conflict','expired','abandoned')),
   expires_at timestamptz not null,
-  primary key (actor_account_id, idempotency_key)
+  primary key (principal_type, principal_id, operation_id, idempotency_key)
 );
 
 create table session_families (

@@ -20,14 +20,15 @@ servers:
 x-idempotency-contract:
   ledger: packages/schemas/state-machine-registry-v1.json#idempotency-ledger
   key_scope:
+    - principal_type
     - principal_id
     - operation_id
     - idempotency_key
-  principal: The account the session resolves to and, for a native session, the device enrollment bound to that session. Two principals presenting the same key against the same operation hold two independent ledger rows.
+  principal: The account the session resolves to and, for a native session, the device enrollment bound to that session. `principal_type` records which of the two a row addresses, because `principal_id` names a row in `accounts` or in `devices` and a foreign key could only point at one of them. Two principals presenting the same key against the same operation hold two independent ledger rows.
   request_digest: 'SHA-256 over the canonical request: the uppercase method, the path with its query in the order the server sorts it, the exact request body bytes, and the principal. The digest decides replay against conflict and is recorded on reservation.'
   response_record: The committed response is recorded in full — status, the ordered response header set this contract publishes, and the exact body bytes — so a replay returns it byte-identically rather than recomputing it. The record is not nullable on a committed row.
   replay_header: Idempotency-Replayed
-  reserved_recovery: A second request arriving while the row is reserved and carrying the same digest waits for the in-flight transaction and then returns the recorded response. A reserved row whose transaction did not commit moves to failed on lease expiry and the key becomes usable again.
+  executing_recovery: A second request arriving while the row is executing and carrying the same digest waits for the in-flight transaction and then returns the recorded response. An executing row whose transaction did not commit moves to abandoned on lease expiry and the key becomes usable again. An operation that ran and failed in a way that is safe to retry moves to replayable-failure instead, which records that it ran; abandoned records that it did not. Distinguishing the two is what lets a retry be answered without guessing whether the first attempt had an effect.
   conflict:
     ledger_state: conflict
     status: 409

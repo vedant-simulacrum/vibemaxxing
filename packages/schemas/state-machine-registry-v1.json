@@ -725,19 +725,21 @@
       "persistence_owner": [
         "idempotency-records"
       ],
-      "aggregate_key": "principal-route-key",
-      "initial_state": "reserved",
+      "aggregate_key": "principal-operation-key",
+      "initial_state": "executing",
       "states": [
-        "reserved",
+        "executing",
         "committed",
+        "replayable-failure",
         "conflict",
         "expired",
-        "failed"
+        "abandoned"
       ],
       "terminal_states": [
+        "replayable-failure",
         "conflict",
         "expired",
-        "failed"
+        "abandoned"
       ],
       "privacy_boundary": "integrity-private",
       "revision_model": "monotonic-revision",
@@ -747,7 +749,7 @@
         {
           "transition_id": "idempotency-commit",
           "from": [
-            "reserved"
+            "executing"
           ],
           "action": "store-exact-response",
           "to": "committed",
@@ -762,7 +764,7 @@
         {
           "transition_id": "idempotency-conflict",
           "from": [
-            "reserved"
+            "executing"
           ],
           "action": "different-request-fingerprint",
           "to": "conflict",
@@ -777,7 +779,7 @@
         {
           "transition_id": "idempotency-expire",
           "from": [
-            "reserved",
+            "executing",
             "committed"
           ],
           "action": "expire-after-policy",
@@ -791,19 +793,34 @@
           "transaction_boundary": "single-aggregate"
         },
         {
-          "transition_id": "idempotency-fail",
+          "transition_id": "idempotency-replayable-failure",
           "from": [
-            "reserved"
+            "executing"
           ],
-          "action": "release-aborted-reservation",
-          "to": "failed",
+          "action": "record-retryable-failure",
+          "to": "replayable-failure",
           "actor": "system",
           "authentication": "none",
           "recent_auth": false,
           "idempotency": "exact-request-replay",
-          "audit_event": "idempotency-fail.audit",
+          "audit_event": "idempotency-replayable-failure.audit",
           "reversal": "none",
-          "transaction_boundary": "idempotency-record"
+          "transaction_boundary": "business-transaction"
+        },
+        {
+          "transition_id": "idempotency-abandon",
+          "from": [
+            "executing"
+          ],
+          "action": "release-lease-without-commit",
+          "to": "abandoned",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "exact-request-replay",
+          "audit_event": "idempotency-abandon.audit",
+          "reversal": "none",
+          "transaction_boundary": "business-transaction"
         }
       ]
     },
