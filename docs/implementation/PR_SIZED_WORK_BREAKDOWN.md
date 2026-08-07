@@ -409,11 +409,13 @@ Status: not-started
 
 ### PF-024 — Social relationship authority
 Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
-Acceptance: `friend_edges` stores one canonical ordered pair with a check constraint, `blocks` is directional with no symmetry constraint, and `rival_edges` references neither; a fixture proves a block does not remove a friendship row and a friendship does not clear a block.
+Acceptance: `friend_edges` stores one canonical ordered pair with a check constraint, `blocks` is directional with no symmetry constraint, and neither `friend_requests.state` nor `rival_edges.state` admits `blocked`; the `friendship` and `rivalry` machines declare no `blocked` state and no transition into one, with every remaining state reachable and every terminal state a sink; `conformance/social/block-independence-vectors.json` states six cases with inputs, expected relationship rows and expected visibility, registered in the suite manifest with two negative cases; `python3 -m unittest tests.ci.test_block_independence` exits 0 and fails when a terminal `blocked` state is reintroduced.
 Depends: PF-004
 Repair: P-1140F-4
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_block_independence
 
 - canonical friendship pair and directional request lifecycle;
 - directional blocks separate from friendship;

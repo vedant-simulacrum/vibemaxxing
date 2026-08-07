@@ -155,7 +155,6 @@ BINDINGS: tuple[Binding, ...] = (
             "pending-a-to-b",
             "pending-b-to-a",
             "active",
-            "blocked",
             "ended",
         ),
         sql=("friend_requests.state",),
@@ -163,7 +162,7 @@ BINDINGS: tuple[Binding, ...] = (
     Binding(
         aggregate="rivalry",
         machine="rivalry",
-        states=("none", "active", "ended", "blocked"),
+        states=("none", "active", "ended"),
         sql=("rival_edges.state",),
     ),
     Binding(

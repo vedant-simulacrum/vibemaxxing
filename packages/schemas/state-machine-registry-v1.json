@@ -985,11 +985,9 @@
         "pending-a-to-b",
         "pending-b-to-a",
         "active",
-        "blocked",
         "ended"
       ],
       "terminal_states": [
-        "blocked",
         "ended"
       ],
       "privacy_boundary": "account-private",
@@ -1060,24 +1058,6 @@
           "transaction_boundary": "canonical-pair"
         },
         {
-          "transition_id": "friend-block",
-          "from": [
-            "none",
-            "pending-a-to-b",
-            "pending-b-to-a",
-            "active"
-          ],
-          "action": "block",
-          "to": "blocked",
-          "actor": "user",
-          "authentication": "web-session",
-          "recent_auth": true,
-          "idempotency": "principal-route-key",
-          "audit_event": "friend-block.audit",
-          "reversal": "none",
-          "transaction_boundary": "social-pair-cascade"
-        },
-        {
           "transition_id": "friend-remove",
           "from": [
             "active"
@@ -1106,12 +1086,10 @@
       "states": [
         "none",
         "active",
-        "ended",
-        "blocked"
+        "ended"
       ],
       "terminal_states": [
-        "ended",
-        "blocked"
+        "ended"
       ],
       "privacy_boundary": "account-private",
       "revision_model": "monotonic-revision",
@@ -1147,21 +1125,6 @@
           "audit_event": "rival-remove.audit",
           "reversal": "explicit-transition",
           "transaction_boundary": "single-aggregate"
-        },
-        {
-          "transition_id": "rival-block",
-          "from": [
-            "active"
-          ],
-          "action": "block-cascade",
-          "to": "blocked",
-          "actor": "system",
-          "authentication": "none",
-          "recent_auth": false,
-          "idempotency": "aggregate-action-key",
-          "audit_event": "rival-block.audit",
-          "reversal": "none",
-          "transaction_boundary": "social-pair-cascade"
         }
       ]
     },
