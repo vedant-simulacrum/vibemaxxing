@@ -37,7 +37,9 @@ def load_validator() -> object:
     return module
 
 
-class StateVocabularyValidatorTests(unittest.TestCase):
+class ValidatorFixture:
+    """Shared setup only. Carries no tests, so inheriting it does not re-run them."""
+
     def setUp(self) -> None:
         self.validator = load_validator()
         self.directory = Path(tempfile.mkdtemp(prefix="state-vocab-"))
@@ -317,3 +319,85 @@ class StateVocabularyValidatorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ConcurrencyModelTests(ValidatorFixture, unittest.TestCase):
+    """PF-004. Every rule here is a consequence of one SQL constraint.
+
+    `outbox_events` carries `unique (aggregate_id, aggregate_revision)`. An aggregate
+    can only publish if it has a revision to publish under, and only once per revision.
+    Before PF-004 the registry declared none of this: thirty-two aggregates named a
+    persistence owner and said nothing about how a concurrent write to it is ordered,
+    what commits alongside it, or whether anything downstream could observe it.
+    """
+
+    def test_publishing_without_a_revision_fails(self) -> None:
+        """`single-writer` has no server revision for the unique constraint to key on."""
+        self.edit_registry(
+            lambda machines: machines["friendship"].update(
+                revision_model="single-writer"
+            )
+        )
+
+        code, output = self.run_validator()
+
+        self.assertEqual(code, 1, output)
+        self.assertIn("carries no revision", output)
+
+    def test_publishing_outside_the_aggregate_transaction_fails(self) -> None:
+        """An outbox row written in a second transaction is the lost-event bug."""
+        self.edit_registry(
+            lambda machines: machines["friendship"].update(
+                transaction_boundary="aggregate-local"
+            )
+        )
+
+        code, output = self.run_validator()
+
+        self.assertEqual(code, 1, output)
+        self.assertIn("lost exactly when the write succeeds", output)
+
+    def test_a_device_local_aggregate_cannot_publish(self) -> None:
+        self.edit_registry(
+            lambda machines: machines["daemon-lifecycle"].update(outbox="required")
+        )
+
+        code, output = self.run_validator()
+
+        self.assertEqual(code, 1, output)
+        self.assertIn("no server transaction to publish inside", output)
+
+    def test_a_local_only_aggregate_in_a_server_transaction_fails(self) -> None:
+        """A privacy-boundary violation stated as a persistence choice."""
+        self.edit_registry(
+            lambda machines: machines["interactive-shell"].update(
+                transaction_boundary="aggregate-local"
+            )
+        )
+
+        code, output = self.run_validator()
+
+        self.assertEqual(code, 1, output)
+        self.assertIn("privacy-boundary violation", output)
+
+    def test_every_machine_declares_all_three_fields(self) -> None:
+        """The committed registry holds the property, so absence is a regression."""
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+        for machine in registry["machines"]:
+            for field in ("revision_model", "transaction_boundary", "outbox"):
+                self.assertIn(field, machine, machine["machine_id"])
+
+    def test_every_publisher_has_a_revision_and_the_right_boundary(self) -> None:
+        """States the invariant over the committed data, not just the checker."""
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+        publishers = [m for m in registry["machines"] if m["outbox"] == "required"]
+        self.assertTrue(publishers)
+        for machine in publishers:
+            self.assertNotEqual(
+                machine["revision_model"], "single-writer", machine["machine_id"]
+            )
+            self.assertEqual(
+                machine["transaction_boundary"],
+                "aggregate-and-outbox",
+                machine["machine_id"],
+            )

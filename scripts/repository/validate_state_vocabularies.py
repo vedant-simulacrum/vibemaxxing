@@ -1156,10 +1156,76 @@ def validate(report: Report) -> None:
         )
 
 
+
+def check_concurrency_model(report: Report) -> None:
+    """The outbox contract is a schema constraint, not a naming convention.
+
+    `outbox_events` in `packages/schemas/planning-schema.sql` carries
+    `unique (aggregate_id, aggregate_revision)`. That single constraint decides most of
+    what follows: an aggregate can only publish if it has a revision to publish under,
+    and it can only publish exactly once per revision. Until PF-004 the registry
+    declared none of this, so thirty-two aggregates named a persistence owner and said
+    nothing about how a concurrent write to it is ordered, what commits with it, or
+    whether anything downstream can observe it. `AGENTS.md` requires every mutable
+    aggregate to have a revision model, transaction boundaries and reversal behaviour;
+    the registry is where that has to be checkable.
+
+    The rules are consequences of the schema rather than preferences:
+
+    - publishing requires a revision, so `outbox: required` cannot pair with
+      `single-writer`, which has no server-side revision at all;
+    - publishing is part of the write, so `outbox: required` demands the
+      `aggregate-and-outbox` boundary — an outbox row written in a second transaction
+      is exactly the lost-event bug the table exists to prevent;
+    - `device-local` never reaches a server transaction, so it cannot publish;
+    - `local-only` privacy means the rows never leave the device, so the boundary must
+      be `device-local`. A local-only aggregate in a server transaction would be a
+      privacy-boundary violation expressed as a persistence choice.
+    """
+    registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+    for machine in registry["machines"]:
+        identifier = machine["machine_id"]
+        revision = machine["revision_model"]
+        boundary = machine["transaction_boundary"]
+        outbox = machine["outbox"]
+
+        if outbox == "required":
+            if revision == "single-writer":
+                report.errors.append(
+                    f"{identifier} publishes to the outbox and has revision model "
+                    "single-writer, which carries no revision; "
+                    "outbox_events.unique(aggregate_id, aggregate_revision) has "
+                    "nothing to key on"
+                )
+            if boundary != "aggregate-and-outbox":
+                report.errors.append(
+                    f"{identifier} publishes to the outbox with transaction boundary "
+                    f"{boundary!r}; the outbox row must commit with the aggregate or "
+                    "the event is lost exactly when the write succeeds"
+                )
+        if boundary == "device-local" and outbox != "none":
+            report.errors.append(
+                f"{identifier} is device-local and declares outbox {outbox!r}; a device "
+                "has no server transaction to publish inside"
+            )
+        if machine["privacy_boundary"] == "local-only" and boundary != "device-local":
+            report.errors.append(
+                f"{identifier} is local-only and declares transaction boundary "
+                f"{boundary!r}; local-only rows never reach a server transaction, so "
+                "this states a privacy-boundary violation as a persistence choice"
+            )
+        if revision == "immutable-after-seal" and boundary == "aggregate-local":
+            report.errors.append(
+                f"{identifier} is immutable after sealing and publishes nothing; a "
+                "sealed aggregate nothing can observe cannot drive a projection"
+            )
+
+
 def main() -> int:
     report = Report()
     try:
         validate(report)
+        check_concurrency_model(report)
     except Failure as failure:
         print(f"state vocabulary validation: FAIL\n- {failure}", file=sys.stderr)
         return 1

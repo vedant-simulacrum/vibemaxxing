@@ -167,6 +167,40 @@ Every specification family must define, where applicable:
 - implementation owner and dependency;
 - launch certification or evidence gate.
 
+## Aggregate concurrency model
+
+Every machine in `packages/schemas/state-machine-registry-v1.json` declares
+`revision_model`, `transaction_boundary` and `outbox` under PF-004. These are not
+descriptive labels: `outbox_events` in `packages/schemas/planning-schema.sql` carries
+`unique (aggregate_id, aggregate_revision)`, and that constraint decides what the
+combinations may be. An aggregate can publish only if it has a revision to publish
+under, and only once per revision.
+
+| Field | Values | Meaning |
+|---|---|---|
+| `revision_model` | `monotonic-revision` | integer bumped per write, compare-and-set |
+| | `append-only` | never updated in place; state folded from inserts, whose sequence is the revision |
+| | `single-writer` | device-local state held by one process under a lease; no server concurrency to resolve |
+| | `immutable-after-seal` | written once, never modified |
+| `transaction_boundary` | `aggregate-local` | the aggregate's own tables |
+| | `aggregate-and-outbox` | additionally the `outbox_events` row, in the same transaction |
+| | `device-local` | device storage; never a server transaction |
+| `outbox` | `required` | downstream observes this aggregate only through `outbox_events` |
+| | `none` | nothing observes it asynchronously |
+
+`scripts/repository/validate_state_vocabularies.py` enforces the four invariants that
+follow from the constraint rather than from preference: publishing requires a revision,
+so `required` cannot pair with `single-writer`; publishing is part of the write, so
+`required` demands `aggregate-and-outbox`, because an outbox row committed separately
+is lost exactly when the aggregate write succeeds; `device-local` cannot publish; and a
+`local-only` privacy boundary must be `device-local`, since a local-only aggregate
+inside a server transaction states a privacy-boundary violation as a persistence
+choice.
+
+Nineteen of thirty-two aggregates publish. Nothing consumes `outbox_events` yet — no
+worker, projection or notification path reads it — so this declares the contract and is
+not evidence that any event is delivered.
+
 ## Conversion order
 
 1. Repair the normative owner and accepted decisions.

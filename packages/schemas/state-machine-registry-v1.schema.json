@@ -33,7 +33,10 @@
           "states",
           "terminal_states",
           "transitions",
-          "privacy_boundary"
+          "privacy_boundary",
+          "revision_model",
+          "transaction_boundary",
+          "outbox"
         ],
         "properties": {
           "machine_id": {
@@ -191,6 +194,30 @@
               "integrity-private",
               "local-only",
               "release-public"
+            ]
+          },
+          "revision_model": {
+            "description": "How a concurrent write to this aggregate is ordered and detected. `monotonic-revision` carries an integer bumped on every write and uses compare-and-set. `append-only` never updates in place; current state is folded from inserts and the insert sequence is the revision. `single-writer` is device-local state held by one process under a lease, with no server concurrency to resolve. `immutable-after-seal` is written once and never modified.",
+            "enum": [
+              "monotonic-revision",
+              "append-only",
+              "single-writer",
+              "immutable-after-seal"
+            ]
+          },
+          "transaction_boundary": {
+            "description": "What must commit atomically. `aggregate-local` is the aggregate's own tables. `aggregate-and-outbox` additionally writes the outbox_events row in the same transaction, which is what makes a published state change unlosable. `device-local` is device storage and never a server transaction.",
+            "enum": [
+              "aggregate-local",
+              "aggregate-and-outbox",
+              "device-local"
+            ]
+          },
+          "outbox": {
+            "description": "Whether a state change must publish transactionally to outbox_events. `required` means anything downstream \u2014 projections, notifications, presence \u2014 observes this aggregate only through that table.",
+            "enum": [
+              "required",
+              "none"
             ]
           }
         }
