@@ -22,17 +22,35 @@ High-impact duplicate-identity outcomes require corroborating signals, human rev
 
 ## Friendship and blocking
 
-Friend request states are `pending`, `accepted`, `declined`, `cancelled`, `expired` and `blocked`.
+Friend request states are `pending`, `accepted`, `declined`, `cancelled` and
+`expired`. There is no blocked state, and this is load-bearing rather than tidy.
 
-The persistence model must guarantee one canonical relationship per unordered account pair and prevent reverse-edge duplicates or crossed-request ambiguity.
+The persistence model must guarantee one canonical relationship per unordered account
+pair and prevent reverse-edge duplicates or crossed-request ambiguity.
 
-Blocking immediately:
+A block is directional and independent of friendship, which `AGENTS.md` states as a
+binding rule. Friendship is keyed on an unordered pair and is therefore symmetric, so
+a directional action cannot mutate it without deciding whose intent wins. This
+document previously said blocking "removes or disables friendship/rival
+relationships" and "does not automatically restore relationships after unblock",
+which meant one person blocking permanently destroyed a shared aggregate: the other
+party lost a relationship through an action they could not see, take or reverse, and
+`blocked` was a terminal state with no transition out, so unblocking could not undo
+it. That is repaired under D-585.
 
-- removes or disables friendship/rival relationships;
-- hides presence and notifications in both directions;
-- prevents requests and invitations;
+Blocking changes no relationship row. Every effect is evaluated at read time against
+the block, which `packages/schemas/projection-authorization-v1.json` already declares
+as `directional-block`, a deny-hard input evaluated in both directions. While a block
+exists it:
+
+- hides presence, profile and notifications in both directions;
+- prevents new requests and invitations;
 - suppresses discovery where feasible;
-- does not automatically restore relationships after unblock.
+- suppresses the relationship from every live surface without deleting it.
+
+Removing the block restores visibility, because nothing was destroyed to begin with.
+A participant who wants the relationship gone removes the friendship, which is a
+separate and deliberate act.
 
 Every transition requires an initiator, authorization rule, idempotency behavior, timestamp, audit event and user-safe result.
 

@@ -70,17 +70,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 211 |
+| `not-started` | 210 |
 | `in-progress` | 16 |
-| `landed` | 27 |
+| `landed` | 28 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 83 assertions across 27 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 85 assertions across 28 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 22.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-009`, `PF-011`, `PF-015`, `PF-020`, `PF-021`, `PF-024`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-009`, `PF-011`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -409,11 +409,13 @@ Status: not-started
 
 ### PF-024 — Social relationship authority
 Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
-Acceptance: `friend_edges` stores one canonical ordered pair with a check constraint, `blocks` is directional with no symmetry constraint, and `rival_edges` references neither; a fixture proves a block does not remove a friendship row and a friendship does not clear a block.
+Acceptance: `friend_edges` stores one canonical ordered pair with a check constraint, `blocks` is directional with no symmetry constraint, and neither `friend_requests.state` nor `rival_edges.state` admits `blocked`; the `friendship` and `rivalry` machines declare no `blocked` state and no transition into one, with every remaining state reachable and every terminal state a sink; `conformance/social/block-independence-vectors.json` states six cases with inputs, expected relationship rows and expected visibility, registered in the suite manifest with two negative cases; `python3 -m unittest tests.ci.test_block_independence` exits 0 and fails when a terminal `blocked` state is reintroduced.
 Depends: PF-004
 Repair: P-1140F-4
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_block_independence
 
 - canonical friendship pair and directional request lifecycle;
 - directional blocks separate from friendship;

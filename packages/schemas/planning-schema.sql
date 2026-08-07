@@ -325,7 +325,7 @@ create table friend_requests (
   friend_request_id uuid primary key,
   requester_account_id uuid not null references accounts(account_id),
   target_account_id uuid not null references accounts(account_id),
-  state text not null check (state in ('none','pending-a-to-b','pending-b-to-a','active','blocked','ended'))
+  state text not null check (state in ('none','pending-a-to-b','pending-b-to-a','active','ended'))
 );
 
 create table friend_edges (
@@ -352,7 +352,7 @@ create table blocks (
 create table rival_edges (
   account_id uuid not null references accounts(account_id),
   rival_account_id uuid not null references accounts(account_id),
-  state text not null check (state in ('none','active','ended','blocked')),
+  state text not null check (state in ('none','active','ended')),
   primary key (account_id, rival_account_id)
 );
 

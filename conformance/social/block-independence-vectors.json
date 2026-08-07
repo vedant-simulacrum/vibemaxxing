@@ -1,0 +1,256 @@
+{
+  "schema_version": 1,
+  "suite_id": "social",
+  "case_prefix": "SO",
+  "authority": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md",
+  "supporting_authorities": [
+    "packages/schemas/projection-authorization-v1.json",
+    "packages/schemas/state-machine-registry-v1.json"
+  ],
+  "decisions": [
+    "D-569",
+    "D-585",
+    "D-586"
+  ],
+  "note": "Blocks are directional; friendship is keyed on an unordered pair and is symmetric. These vectors state what a block may and may not touch. Each case names its inputs, the relationship rows after the action, and what each viewer may see, so a case fails by disagreeing rather than by being absent. conformance/social/manifest.json records that the directory previously held ten scenario names and no vectors; a scenario name is a plan for a case and is not a case.",
+  "accounts": {
+    "a": "00000000-0000-4000-8000-0000000000a1",
+    "b": "00000000-0000-4000-8000-0000000000b2"
+  },
+  "cases": [
+    {
+      "case_id": "SO-101",
+      "given": {
+        "friend_edges": [
+          {
+            "account_id_a": "a",
+            "account_id_b": "b"
+          }
+        ],
+        "blocks": []
+      },
+      "action": {
+        "actor": "a",
+        "operation": "createBlock",
+        "subject": "b"
+      },
+      "expected_rows": {
+        "friend_edges": [
+          {
+            "account_id_a": "a",
+            "account_id_b": "b"
+          }
+        ],
+        "blocks": [
+          {
+            "blocker_account_id": "a",
+            "blocked_account_id": "b"
+          }
+        ]
+      },
+      "expected_visibility": {
+        "a_sees_b": "denied",
+        "b_sees_a": "denied"
+      },
+      "expected_reason_code": "VIEWER_NOT_AUTHORIZED",
+      "note": "The friendship row survives unchanged. Visibility is denied in both directions because a one-way hole is itself a disclosure: the blocked party would see a gap where a person used to be.",
+      "title": "block does not remove friendship"
+    },
+    {
+      "case_id": "SO-102",
+      "given": {
+        "friend_edges": [
+          {
+            "account_id_a": "a",
+            "account_id_b": "b"
+          }
+        ],
+        "blocks": [
+          {
+            "blocker_account_id": "a",
+            "blocked_account_id": "b"
+          }
+        ]
+      },
+      "action": {
+        "actor": "a",
+        "operation": "deleteBlock",
+        "subject": "b"
+      },
+      "expected_rows": {
+        "friend_edges": [
+          {
+            "account_id_a": "a",
+            "account_id_b": "b"
+          }
+        ],
+        "blocks": []
+      },
+      "expected_visibility": {
+        "a_sees_b": "allowed",
+        "b_sees_a": "allowed"
+      },
+      "note": "Nothing was destroyed, so nothing has to be restored. Under the previous contract the friendship reached a terminal blocked state and this case was unreachable.",
+      "title": "unblock restores visibility"
+    },
+    {
+      "case_id": "SO-103",
+      "given": {
+        "friend_edges": [
+          {
+            "account_id_a": "a",
+            "account_id_b": "b"
+          }
+        ],
+        "blocks": [
+          {
+            "blocker_account_id": "a",
+            "blocked_account_id": "b"
+          }
+        ]
+      },
+      "action": {
+        "actor": "a",
+        "operation": "removeFriend",
+        "subject": "b"
+      },
+      "expected_rows": {
+        "friend_edges": [],
+        "blocks": [
+          {
+            "blocker_account_id": "a",
+            "blocked_account_id": "b"
+          }
+        ]
+      },
+      "expected_visibility": {
+        "a_sees_b": "denied",
+        "b_sees_a": "denied"
+      },
+      "note": "The independence holds in the other direction too. Ending a friendship is not an implicit unblock.",
+      "title": "friendship removal does not clear a block"
+    },
+    {
+      "case_id": "SO-104",
+      "given": {
+        "friend_edges": [],
+        "blocks": [
+          {
+            "blocker_account_id": "a",
+            "blocked_account_id": "b"
+          }
+        ]
+      },
+      "action": {
+        "actor": "b",
+        "operation": "createBlock",
+        "subject": "a"
+      },
+      "expected_rows": {
+        "friend_edges": [],
+        "blocks": [
+          {
+            "blocker_account_id": "a",
+            "blocked_account_id": "b"
+          },
+          {
+            "blocker_account_id": "b",
+            "blocked_account_id": "a"
+          }
+        ]
+      },
+      "expected_visibility": {
+        "a_sees_b": "denied",
+        "b_sees_a": "denied"
+      },
+      "note": "Two independent rows, because the relation is directional in storage even though its visibility effect is symmetric. b blocking a is not a no-op just because a already blocked b: if a later unblocks, b's block still stands.",
+      "title": "block is directional in the row"
+    },
+    {
+      "case_id": "SO-105",
+      "given": {
+        "friend_edges": [
+          {
+            "account_id_a": "a",
+            "account_id_b": "b"
+          }
+        ],
+        "blocks": [
+          {
+            "blocker_account_id": "a",
+            "blocked_account_id": "b"
+          },
+          {
+            "blocker_account_id": "b",
+            "blocked_account_id": "a"
+          }
+        ]
+      },
+      "action": {
+        "actor": "a",
+        "operation": "deleteBlock",
+        "subject": "b"
+      },
+      "expected_rows": {
+        "friend_edges": [
+          {
+            "account_id_a": "a",
+            "account_id_b": "b"
+          }
+        ],
+        "blocks": [
+          {
+            "blocker_account_id": "b",
+            "blocked_account_id": "a"
+          }
+        ]
+      },
+      "expected_visibility": {
+        "a_sees_b": "denied",
+        "b_sees_a": "denied"
+      },
+      "expected_reason_code": "VIEWER_NOT_AUTHORIZED",
+      "note": "The surviving block still denies both directions. This is the case a symmetric boolean would get wrong.",
+      "title": "one sided unblock leaves the other block standing"
+    },
+    {
+      "case_id": "SO-106",
+      "given": {
+        "rival_edges": [
+          {
+            "account_id": "a",
+            "rival_account_id": "b",
+            "state": "active"
+          }
+        ],
+        "blocks": []
+      },
+      "action": {
+        "actor": "a",
+        "operation": "createBlock",
+        "subject": "b"
+      },
+      "expected_rows": {
+        "rival_edges": [
+          {
+            "account_id": "a",
+            "rival_account_id": "b",
+            "state": "active"
+          }
+        ],
+        "blocks": [
+          {
+            "blocker_account_id": "a",
+            "blocked_account_id": "b"
+          }
+        ]
+      },
+      "expected_visibility": {
+        "a_sees_b": "denied",
+        "b_sees_a": "denied"
+      },
+      "note": "rival_edges.state no longer admits blocked. The edge stays active and is suppressed at read time, so an unblock does not need to guess which rivalries to revive.",
+      "title": "rivalry is not a block state"
+    }
+  ]
+}

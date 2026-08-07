@@ -17,7 +17,7 @@
     "state": "absent",
     "command": null,
     "work_unit": "OS-009",
-    "note": "The directory holds ten scenario names and no vectors. A scenario name is a plan for a case and is not a case: nothing in the file states an input, an expectation or a reason code."
+    "note": "block-independence-vectors.json states six cases with inputs, expected relationship rows and expected visibility under D-585. No runner executes them; the suite is declarative and is not evidence that any block is enforced."
   },
   "fixture_state": "populated",
   "generated_by": null,
@@ -37,10 +37,102 @@
       "negative": false,
       "state": "active",
       "note": "This case asserts that the scenario list parses and covers the named ten. It asserts nothing about ranking, blocks, boards or presence, and it must never be cited as social conformance. The suite has no negative case because it has no executable case at all."
+    },
+    {
+      "case_id": "SO-101",
+      "title": "block does not remove friendship",
+      "fixtures": [
+        {
+          "path": "conformance/social/block-independence-vectors.json",
+          "sha256": "81d868d4de79f44863fb2b0f0eea08c2ff198f2d969474af7c521ffae7639d4b"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "VIEWER_NOT_AUTHORIZED",
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#friendship-and-blocking",
+      "negative": true,
+      "state": "active",
+      "note": "The friendship row survives unchanged. Visibility is denied in both directions because a one-way hole is itself a disclosure: the blocked party would see a gap where a person used to be."
+    },
+    {
+      "case_id": "SO-102",
+      "title": "unblock restores visibility",
+      "fixtures": [
+        {
+          "path": "conformance/social/block-independence-vectors.json",
+          "sha256": "81d868d4de79f44863fb2b0f0eea08c2ff198f2d969474af7c521ffae7639d4b"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#friendship-and-blocking",
+      "negative": false,
+      "state": "active",
+      "note": "Nothing was destroyed, so nothing has to be restored. Under the previous contract the friendship reached a terminal blocked state and this case was unreachable."
+    },
+    {
+      "case_id": "SO-103",
+      "title": "friendship removal does not clear a block",
+      "fixtures": [
+        {
+          "path": "conformance/social/block-independence-vectors.json",
+          "sha256": "81d868d4de79f44863fb2b0f0eea08c2ff198f2d969474af7c521ffae7639d4b"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#friendship-and-blocking",
+      "negative": false,
+      "state": "active",
+      "note": "The independence holds in the other direction too. Ending a friendship is not an implicit unblock."
+    },
+    {
+      "case_id": "SO-104",
+      "title": "block is directional in the row",
+      "fixtures": [
+        {
+          "path": "conformance/social/block-independence-vectors.json",
+          "sha256": "81d868d4de79f44863fb2b0f0eea08c2ff198f2d969474af7c521ffae7639d4b"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#friendship-and-blocking",
+      "negative": false,
+      "state": "active",
+      "note": "Two independent rows, because the relation is directional in storage even though its visibility effect is symmetric. b blocking a is not a no-op just because a already blocked b: if a later unblocks, b's block still stands."
+    },
+    {
+      "case_id": "SO-105",
+      "title": "one sided unblock leaves the other block standing",
+      "fixtures": [
+        {
+          "path": "conformance/social/block-independence-vectors.json",
+          "sha256": "81d868d4de79f44863fb2b0f0eea08c2ff198f2d969474af7c521ffae7639d4b"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "VIEWER_NOT_AUTHORIZED",
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#friendship-and-blocking",
+      "negative": true,
+      "state": "active",
+      "note": "The surviving block still denies both directions. This is the case a symmetric boolean would get wrong."
+    },
+    {
+      "case_id": "SO-106",
+      "title": "rivalry is not a block state",
+      "fixtures": [
+        {
+          "path": "conformance/social/block-independence-vectors.json",
+          "sha256": "81d868d4de79f44863fb2b0f0eea08c2ff198f2d969474af7c521ffae7639d4b"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#friendship-and-blocking",
+      "negative": false,
+      "state": "active",
+      "note": "rival_edges.state no longer admits blocked. The edge stays active and is suppressed at read time, so an unblock does not need to guess which rivalries to revive."
     }
-  ],
-  "negative_case_gap": {
-    "work_unit": "OS-009",
-    "reason": "The directory holds ten scenario names and no vectors, so it has no executable case of either polarity. The negative cases it owes are the blocked-viewer and unauthorized-board reads that packages/schemas/projection-authorization-v1.json already specifies."
-  }
+  ]
 }
