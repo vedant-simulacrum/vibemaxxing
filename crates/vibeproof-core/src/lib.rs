@@ -1,3 +1,22 @@
+//! Exploratory prototype, quarantined under P-1140F-1. This crate is not the
+//! VibeProof v1 protocol; see `README.md`.
+//!
+//! The normative authority is `packages/schemas/vibeproof-claim-v1.cddl`. Where this
+//! crate and the CDDL disagree, the CDDL is correct and this crate is the defect.
+//!
+//! Known incompatibilities with the normative schema:
+//! - unsigned 11-field payload
+//! - client-selected evidence class
+//! - client-selected billable total
+//! - does not consume normative COSE vectors
+//!
+//! Prohibited uses:
+//! - claim-ingestion
+//! - ranking
+//! - verifier-appraisal
+//! - normative-conformance
+//! - support-claim
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

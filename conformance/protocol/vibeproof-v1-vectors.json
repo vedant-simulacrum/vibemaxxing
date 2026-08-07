@@ -1,4 +1,19 @@
 {
+  "_quarantine": {
+    "gate": "P-1140F-1",
+    "authority_class": "exploratory-prototype",
+    "normative_owner": "conformance/vibeproof/v1/exact-byte-vectors.json",
+    "known_incompatibilities": [
+      "parallel shadow vector corpus",
+      "includes client-selected authoritative evidence"
+    ],
+    "prohibited_uses": [
+      "canonical-label",
+      "normative-conformance",
+      "production-evidence-claim"
+    ],
+    "note": "Shadow vector corpus for the unsigned 11-field prototype codec. Not the normative corpus; conformance/vibeproof/v1/exact-byte-vectors.json is. conformance/p1140f/artifact-authority-v1.json is the authority for this status and validate_artifact_quarantine.py enforces agreement."
+  },
   "version": "1",
   "valid": [
     {

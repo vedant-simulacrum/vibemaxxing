@@ -99,6 +99,12 @@ jobs:
         run: python3 scripts/repository/validate_t20_contract.py
       - name: Validate P-1140E cross-contract handoff
         run: python3 scripts/repository/validate_p1140e_contracts.py
+      # PF-001. Every artifact the authority record calls a prototype says so in
+      # its own source, and lists the same incompatibilities and prohibitions the
+      # record does. The criterion this replaces was a grep for unmarked mentions,
+      # which a file saying nothing at all satisfied.
+      - name: Validate that quarantined artifacts carry their notice
+        run: python3 scripts/repository/validate_artifact_quarantine.py
       - name: Validate current launch API, SQL, and repaired authority coverage
         run: python3 scripts/repository/validate_planning_coverage.py
       - name: Validate state vocabularies across API, SQL, and the machine registry

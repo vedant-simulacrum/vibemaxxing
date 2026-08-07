@@ -5,7 +5,7 @@ suites:
   blocking_milestone: vertical-slice
   status: ready
   reason: ""
-  scope_note: Exploratory Rust and Go parity for the unsigned 11-field shadow codec; not normative VibeProof conformance.
+  scope_note: "Quarantined under P-1140F-1 as an exploratory prototype: Rust and Go parity for the unsigned 11-field shadow codec, not normative VibeProof conformance. Normative owner conformance/vibeproof/v1/exact-byte-vectors.json. Known incompatibilities: tests shadow codec only. Prohibited uses: normative-conformance, launch-gate, support-claim. Both implementations consume the same shadow schema, so parity between them is agreement about the wrong authority."
   command: ["python3", "scripts/ci/run_phase1_evidence.py", "--suite", "shadow-codec-parity", "--commit", "{commit}"]
   cases: ["shadow-vectors", "rust-go-acceptance-parity", "invalid-shadow-vectors"]
   fixture_manifest: evals/fixtures/protocol-conformance.json

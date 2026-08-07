@@ -1,3 +1,29 @@
+// Exploratory prototype, quarantined under P-1140F-1. This file is not the
+// VibeProof v1 protocol.
+//
+// It decodes an eleven-field shadow payload predating the normative schema. The
+// normative authority is packages/schemas/vibeproof-claim-v1.cddl, owned by
+// docs/architecture/VIBEPROOF_V1_PROTOCOL.md; where the two disagree the CDDL is
+// correct and this file is the defect.
+//
+// Known incompatibilities with the normative schema:
+//   - expects unsigned 11-field payload
+//   - does not verify COSE Sign1
+//
+// Prohibited uses:
+//   - claim-ingestion
+//   - ranking
+//   - normative-conformance
+//   - support-claim
+//
+// Its evidence ceiling is cross-language-parity: it agrees with
+// crates/vibeproof-core, which consumes the same shadow schema. Two implementations
+// agreeing about the wrong authority is not conformance.
+//
+// conformance/p1140f/artifact-authority-v1.json is the authority for this file's
+// status, and scripts/repository/validate_artifact_quarantine.py checks this notice
+// against it. Edit the record, not this comment.
+
 package main
 
 const maximumClaimBytes = 1024

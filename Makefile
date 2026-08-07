@@ -27,6 +27,7 @@ validate: $(VENV_PY) ## Run the planning validator suite
 	$(VENV_PY) scripts/repository/validate_p1140f_authority.py
 	$(VENV_PY) scripts/repository/validate_t20_contract.py
 	$(VENV_PY) scripts/repository/validate_p1140e_contracts.py
+	$(VENV_PY) scripts/repository/validate_artifact_quarantine.py
 	$(VENV_PY) scripts/repository/validate_planning_coverage.py
 	$(VENV_PY) scripts/repository/validate_state_vocabularies.py
 	$(VENV_PY) scripts/repository/validate_work_unit_status.py
