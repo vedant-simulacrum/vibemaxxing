@@ -1,11 +1,15 @@
 {
   "schema_version": 2,
-  "registry_version": "1.5.0-p1140f",
+  "registry_version": "1.6.0-p1140f",
   "transports": {
     "problem": "Returned to the client as the reason_code of an RFC 9457 Problem body under the declared http_status.",
     "claim-rejection": "Returned inside ClaimBatchResult.rejections against one claim index. The batch operation itself answers 200, so http_status is null.",
     "appraisal": "Recorded on the server appraisal or the ranking projection and read through the private notice path. It never appears on the wire, so http_status is null.",
     "notification": "Recorded on a retracted inbox item as Notification.retraction_reason_code and read through listNotifications. It is not an RFC 9457 Problem body and answers no request, so http_status is null."
+  },
+  "non_aggregate_authorities": {
+    "vibeproof-v1": "The wire protocol, not a mutable aggregate. A claim is validated and either accepted or rejected; it has no lifecycle to hold a state, so these codes answer for the protocol rather than for a row. Owned by docs/architecture/VIBEPROOF_V1_PROTOCOL.md.",
+    "server-runtime": "The request path itself, not a mutable aggregate. Malformed input, an invalid cursor, a rate limit or an internal fault belong to the runtime that answered the request, and none of them moves a row through a state. Owned by docs/architecture/API_EDGE_CONTRACT.md."
   },
   "operation_class_definitions": {
     "all": "Every operation in packages/schemas/openapi-v1.yaml.",
