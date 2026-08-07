@@ -110,6 +110,31 @@ x-origin-policy:
   bearer_exemption:
     exempt_checks: [origin-exact-match, double-submitted-csrf-token]
     rationale: A cross-site request cannot attach a bearer credential the attacking page does not hold, so cross-site request forgery does not apply. Native client requests are exempt from these two checks and from nothing else; the native client is not a browser and has no origin at all.
+x-public-operations:
+  # Every operation carrying `security: []` must appear here with a reason, and
+  # scripts/repository/validate_planning_artifacts.py fails on any that does not.
+  # Writing `security: []` is not by itself authority to be public: getPublicProfile
+  # carried it while its own schema described "what a viewer authorized to read this
+  # profile receives", and projection-authorization-v1.json makes directional-block
+  # deny-hard and subject-visibility deny-unless-authorized. An unauthenticated caller
+  # has no viewer identity, so neither input could be evaluated and a blocked person
+  # could read the profile by logging out. It now requires a viewer.
+  #
+  # Three reason classes, and nothing else is admissible:
+  #   auth-bootstrap  — establishes the very session a viewer check would need.
+  #   global-board    — the one universally public view AGENTS.md names.
+  #   reference-data  — carries no participant, so no viewer is relevant to it.
+  startGitHubAuth: auth-bootstrap
+  completeGitHubAuth: auth-bootstrap
+  startXAuth: auth-bootstrap
+  completeXAuth: auth-bootstrap
+  startDeviceAuth: auth-bootstrap
+  pollDeviceAuth: auth-bootstrap
+  exchangeDeviceAuth: auth-bootstrap
+  getLeaderboard: global-board
+  listPricingDatasets: reference-data
+  getCompatibility: reference-data
+
 paths:
   /auth/github/start:
     post:
@@ -1020,10 +1045,13 @@ paths:
   /profiles/{handle}:
     get:
       operationId: getPublicProfile
-      x-authorization: public
+      x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: not-applicable
-      security: []
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
       responses:
         '200':
           description: PublicProfile
@@ -1033,6 +1061,8 @@ paths:
                 $ref: '#/components/schemas/PublicProfile'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
