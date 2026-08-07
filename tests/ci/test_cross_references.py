@@ -462,3 +462,68 @@ class CrossReferenceValidatorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class UnreachableDecisionRecordTests(unittest.TestCase):
+    """An ADR citable by identifier and linked by path from nowhere.
+
+    This class was invisible to every other check here. Identifier citations resolve
+    against the register, so `ADR-004` resolved cleanly while the file it named was
+    reachable only from gitignored working notes. Resolving a reference is not the
+    same as being able to open the document.
+    """
+
+    def setUp(self) -> None:
+        self.validator = load_validator()
+        self.root = Path(tempfile.mkdtemp(prefix="unreachable-"))
+        self.addCleanup(shutil.rmtree, self.root, True)
+        (self.root / "docs" / "decisions").mkdir(parents=True)
+        (self.root / "docs" / "project").mkdir(parents=True)
+        for identifier in ("ADR-001-FIRST", "ADR-002-SECOND"):
+            (self.root / "docs" / "decisions" / f"{identifier}.md").write_text(
+                f"# {identifier}\n", encoding="utf-8"
+            )
+
+    def index(self, body: str) -> None:
+        (self.root / "docs" / "project" / "DOCUMENTATION.md").write_text(
+            body, encoding="utf-8"
+        )
+
+    def run_check(self):
+        with patch.object(self.validator, "ROOT", self.root):
+            return self.validator.unreachable_decision_records()
+
+    def test_every_record_linked_by_path_passes(self) -> None:
+        self.index(
+            "| ADR-001 | first | `docs/decisions/ADR-001-FIRST.md` |\n"
+            "| ADR-002 | second | `docs/decisions/ADR-002-SECOND.md` |\n"
+        )
+        self.assertEqual(self.run_check(), [])
+
+    def test_a_record_linked_by_path_from_nowhere_fails(self) -> None:
+        self.index("| ADR-001 | first | `docs/decisions/ADR-001-FIRST.md` |\n")
+
+        dangles = self.run_check()
+
+        self.assertEqual(len(dangles), 1)
+        self.assertIn("ADR-002-SECOND.md", dangles[0].token)
+
+    def test_an_identifier_mention_is_not_a_path_link(self) -> None:
+        """The exact prior state: cited by identifier, openable by nobody."""
+        self.index("ADR-001 and ADR-002 remain accepted.\n")
+
+        self.assertEqual(len(self.run_check()), 2)
+
+    def test_a_new_record_added_without_indexing_it_fails(self) -> None:
+        self.index(
+            "| ADR-001 | first | `docs/decisions/ADR-001-FIRST.md` |\n"
+            "| ADR-002 | second | `docs/decisions/ADR-002-SECOND.md` |\n"
+        )
+        (self.root / "docs" / "decisions" / "ADR-003-THIRD.md").write_text(
+            "# ADR-003\n", encoding="utf-8"
+        )
+
+        dangles = self.run_check()
+
+        self.assertEqual(len(dangles), 1)
+        self.assertIn("ADR-003-THIRD.md", dangles[0].token)

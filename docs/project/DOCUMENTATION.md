@@ -103,7 +103,7 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 |---|---|---|
 | `project/` | **Top authority.** Product, phase, and this map | `PROJECT.md`, `STATUS.md`, `DOCUMENTATION.md` |
 | `planning/` | Decisions, gates, scope, policy | `DECISION_REGISTER.md`, `TASK_CATALOG.md`, `SCHEMA_AND_INTERFACE_INVENTORY.md`, `ARTIFACT_POLICY.md`, `PRODUCT_SCOPE_FREEZE.md`, `REPOSITORY_OPERATIONS.md`, `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`, `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `SR_SEVERITY_REGRADING_PROPOSAL.md` (proposal, no authority), `CROSS_PLATFORM_COMPLETENESS_AUDIT.md`, `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, `decision-traceability/` (D-001..D-069 + `README.md`) |
-| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-021` |
+| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-022` |
 | `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `API_EDGE_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
 | `decisions/` | Accepted ADRs | `ADR-001` … `ADR-022` |
 | `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
@@ -197,22 +197,38 @@ No agent may invent those semantics directly in product code.
 
 Structural validation is not semantic review. Semantic review is not runtime proof. A prototype is not product implementation. Empty or expired certification is not support evidence.
 
-## Current important ADRs
+## Accepted ADRs
 
-- ADR-008 and ADR-009 remain accepted.
-- ADR-010 owns always-on daemon lifecycle.
-- ADR-011 owns candidate platform scope.
-- ADR-012 owns optional privileged supervision.
-- ADR-013 owns mandatory automatic updates.
-- ADR-014 owns bounded prototype visual validation.
-- ADR-015 owns the session authentication scheme, including token format, refresh rotation, revocation, device binding and the OAuth authorization-exchange requirements.
-- ADR-016 owns provider-attested organization evidence.
-- ADR-017 owns hosting region and data residency, and the provider selection procedure.
-- ADR-018 owns the database and migration tooling, and the executable form of the expand-and-contract migration policy.
-- ADR-019 is the register for accepted residual risks that no normative owner has adopted.
-- ADR-020 owns confidence-weighted ranking, the discount function and the raw-versus-credited vocabulary.
-- ADR-022 owns erasure by cryptographic tombstone and key destruction: the key hierarchy, what destruction physically means, how it is proved afterwards, and the limits it does not overcome.
-- ADR-021 owns the public-by-default publication risk acceptance and the lawful-basis, erasure, age, ePrivacy, records, representative, United States and portability analysis that `PRIVACY.md`, `TERMS.md` and `docs/privacy/DATA_MAP.md` derive from. It has not been reviewed by counsel and says so.
+Every accepted ADR, with the path a reader can follow. ADRs are cited by identifier
+throughout this repository and were previously linked by path from nowhere, so a
+reader who met `ADR-004` in prose had no way to reach the document short of guessing
+its filename. `scripts/repository/validate_cross_references.py` now requires every
+file in `docs/decisions/` to be reachable by path from this table.
+
+| ADR | Owns | Path |
+|---|---|---|
+| ADR-001 | Local-first development | `docs/decisions/ADR-001-LOCAL-FIRST-DEVELOPMENT.md` |
+| ADR-002 | Deliberate Polyglot Production Stack | `docs/decisions/ADR-002-POLYGLOT-PRODUCTION-STACK.md` |
+| ADR-003 | Platform Isolation, Authentication, Ranking, and Release Verification | `docs/decisions/ADR-003-PLATFORM-SECURITY_AUTH_AND_RANKING.md` |
+| ADR-004 | Protocol Libraries, Local IPC, Pricing Provenance, and Abuse Controls | `docs/decisions/ADR-004-LIBRARIES_IPC_PRICING_AND_ABUSE.md` |
+| ADR-005 | Decision-Closing Research and Beta Gates | `docs/decisions/ADR-005-DECISION-CLOSING-RESEARCH.md` |
+| ADR-006 | Identity and Native Authorization | `docs/decisions/ADR-006-IDENTITY_AND_NATIVE_AUTH.md` |
+| ADR-007 | Batch Challenge and Sequence Recovery | `docs/decisions/ADR-007-BATCH_CHALLENGE_AND_SEQUENCE_RECOVERY.md` |
+| ADR-008 | Handle Normalization and Policy Registry | `docs/decisions/ADR-008-HANDLE_NORMALIZATION_AND_POLICY_REGISTRY.md` |
+| ADR-009 | Licensing and Contribution Model | `docs/decisions/ADR-009-LICENSING_AND_CONTRIBUTION_MODEL.md` |
+| ADR-010 | Always-on daemon lifecycle | `docs/decisions/ADR-010-ALWAYS_ON_DAEMON_LIFECYCLE.md` |
+| ADR-011 | Universal platform support baseline | `docs/decisions/ADR-011-UNIVERSAL_PLATFORM_SUPPORT_BASELINE.md` |
+| ADR-012 | Optional privileged machine-wide supervision | `docs/decisions/ADR-012-OPTIONAL_PRIVILEGED_SUPERVISION.md` |
+| ADR-013 | Mandatory automatic updates | `docs/decisions/ADR-013-MANDATORY_AUTOMATIC_UPDATES.md` |
+| ADR-014 | Prototype visual-validation automation | `docs/decisions/ADR-014-PROTOTYPE_VISUAL_VALIDATION_AUTOMATION.md` |
+| ADR-015 | Session authentication | `docs/decisions/ADR-015-SESSION_AUTHENTICATION.md` |
+| ADR-016 | Provider-attested organization evidence | `docs/decisions/ADR-016-PROVIDER_ATTESTED_ORG_EVIDENCE.md` |
+| ADR-017 | Hosting region and residency | `docs/decisions/ADR-017-HOSTING_REGION_AND_RESIDENCY.md` |
+| ADR-018 | Database and migration tooling | `docs/decisions/ADR-018-DATABASE_AND_MIGRATION_TOOLING.md` |
+| ADR-019 | Accepted residual risks | `docs/decisions/ADR-019-ACCEPTED_RESIDUAL_RISKS.md` |
+| ADR-020 | Confidence-weighted ranking | `docs/decisions/ADR-020-CONFIDENCE_WEIGHTED_RANKING.md` |
+| ADR-021 | Public-by-default leaderboard, and the risk the owner accepted | `docs/decisions/ADR-021-PUBLIC_BY_DEFAULT_RISK_ACCEPTANCE.md` |
+| ADR-022 | Erasure by cryptographic tombstone and key destruction | `docs/decisions/ADR-022-ERASURE_BY_KEY_DESTRUCTION.md` |
 
 The numbering gap at ADR-015 is closed. Every ADR from ADR-001 to ADR-022 exists.
 

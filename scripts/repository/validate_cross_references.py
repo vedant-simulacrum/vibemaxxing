@@ -779,6 +779,7 @@ CLASS_ORDER = (
     "operation",
     "non-authority",
     "superseded",
+    "unreachable",
 )
 
 
@@ -903,6 +904,40 @@ def report_superseded_citations() -> list[Dangle]:
     return found
 
 
+def unreachable_decision_records() -> list[Dangle]:
+    """Every ADR must be reachable by path from the documentation index.
+
+    ADRs are cited by identifier — `ADR-004` — everywhere in this repository, and an
+    identifier citation resolves against the register rather than against a file. That
+    made a whole class of document invisible to the path checks: eleven ADRs were cited
+    by identifier and linked by path from nowhere, and ADR-004 was reachable only from
+    gitignored `.context/` working notes, so a reader who met it in prose had no way to
+    open it short of guessing the filename.
+
+    Resolving an identifier is not the same as being able to find the document. This
+    requires the index in `docs/project/DOCUMENTATION.md` to name each ADR file.
+    """
+    index = ROOT / "docs" / "project" / "DOCUMENTATION.md"
+    text = index.read_text(encoding="utf-8")
+    dangles: list[Dangle] = []
+    for record in sorted((ROOT / "docs" / "decisions").glob("ADR-*.md")):
+        relative = record.relative_to(ROOT).as_posix()
+        if relative not in text:
+            dangles.append(
+                Dangle(
+                    kind="unreachable",
+                    path="docs/project/DOCUMENTATION.md",
+                    line=0,
+                    token=relative,
+                    detail=(
+                        f"{relative} is not linked by path from the ADR index, so it is "
+                        "citable by identifier and reachable by nobody"
+                    ),
+                )
+            )
+    return dangles
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -917,6 +952,10 @@ def main(argv: list[str] | None = None) -> int:
     except Failure as failure:
         print(f"cross-reference validation: ERROR\n- {failure}", file=sys.stderr)
         return 2
+
+    unreachable = unreachable_decision_records()
+    report.dangles.extend(unreachable)
+    report.counts["unreachable"] = len(unreachable)
 
     total_scanned = sum(report.counts.values())
     summary = f"{report.scanned_files} files, {total_scanned} references, " + ", ".join(
