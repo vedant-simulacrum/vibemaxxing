@@ -105,6 +105,12 @@ jobs:
       # which a file saying nothing at all satisfied.
       - name: Validate that quarantined artifacts carry their notice
         run: python3 scripts/repository/validate_artifact_quarantine.py
+      # Binds each P-1140F step to the units and findings that compose it, so a
+      # step's Status: is derived rather than asserted. Before this, the catalog
+      # named zero units and the work breakdown named zero repair tasks, and a
+      # step could record complete-planning with six units not-started.
+      - name: Validate the P-1140F step, unit and finding binding
+        run: python3 scripts/repository/validate_repair_task_binding.py
       - name: Validate current launch API, SQL, and repaired authority coverage
         run: python3 scripts/repository/validate_planning_coverage.py
       - name: Validate state vocabularies across API, SQL, and the machine registry
