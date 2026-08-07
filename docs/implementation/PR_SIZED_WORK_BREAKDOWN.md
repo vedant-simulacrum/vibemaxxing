@@ -70,8 +70,8 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 213 |
-| `in-progress` | 15 |
+| `not-started` | 212 |
+| `in-progress` | 16 |
 | `landed` | 26 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
@@ -366,11 +366,11 @@ Status: not-started
 
 ### PF-021 — Ranking definition and audience authorization
 Files: `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
-Acceptance: `ranking-view-v1.schema.json` separates the ranking definition from the audience; only the global scope carries `security: []` in the OpenAPI document and every other scope requires a viewer; `grep -n 'security: \[\]' packages/schemas/openapi-v1.yaml` returns exactly one leaderboard operation.
+Acceptance: `ranking-view-v1.schema.json` separates the ranking definition from the audience; every operation carrying `security: []` is declared in `openapi-v1.yaml#x-public-operations` with one of the three admissible reasons, exactly one of which is `global-board`; `getPublicProfile` requires a session and returns 401 without one; `python3 -m unittest tests.ci.test_public_operations` exits 0 with a case per way the declaration can rot.
 Depends: PF-004
 Repair: P-1140F-4
 Est: 12-16
-Status: not-started
+Status: in-progress
 
 - stable ranking definition separate from viewer/board audience;
 - metric/version, period, evidence/source/agent/provider/model filters, tie and projection policy;

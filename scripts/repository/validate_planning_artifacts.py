@@ -474,6 +474,65 @@ def validate_policy_and_observability() -> None:
         )
 
 
+PUBLIC_OPERATION_REASONS = {
+    # auth-bootstrap  — establishes the very session a viewer check would need.
+    # global-board    — the one universally public view AGENTS.md names.
+    # reference-data  — carries no participant, so no viewer is relevant to it.
+    "auth-bootstrap",
+    "global-board",
+    "reference-data",
+}
+
+
+def validate_public_operations(spec: dict) -> None:
+    """An operation is public only if it is declared public, with a stated reason.
+
+    Writing `security: []` is not by itself authority to be public. `getPublicProfile`
+    carried it while its own response schema described "what a viewer authorized to
+    read this profile receives", and `projection-authorization-v1.json` makes
+    `directional-block` deny-hard in both directions and `subject-visibility`
+    deny-unless-authorized. An unauthenticated caller has no viewer identity, so
+    neither input could be evaluated: a blocked person could read the profile, with
+    presence and social counts on it, by logging out.
+
+    Requiring a declaration puts the reason where a reviewer sees it, and closing the
+    set of admissible reasons stops the next one being argued into existence.
+    """
+    declared = spec.get("x-public-operations", {})
+    for identifier, reason in sorted(declared.items()):
+        if reason not in PUBLIC_OPERATION_REASONS:
+            raise ValidationFailure(
+                f"x-public-operations lists {identifier} with reason {reason!r}, which "
+                f"is not one of {sorted(PUBLIC_OPERATION_REASONS)}; a free-text reason "
+                "lets any operation be justified into being public"
+            )
+
+    for path, item in spec["paths"].items():
+        for method, operation in item.items():
+            if not isinstance(operation, dict) or "operationId" not in operation:
+                continue
+            identifier = operation["operationId"]
+            is_public = operation.get("security") == []
+            if is_public and identifier not in declared:
+                raise ValidationFailure(
+                    f"OpenAPI operation {identifier} is public and undeclared: it "
+                    "carries security: [] and x-public-operations does not name it, so "
+                    "no viewer check applies to it and no reason was recorded"
+                )
+            if identifier in declared and not is_public:
+                raise ValidationFailure(
+                    f"OpenAPI operation {identifier} is declared in "
+                    "x-public-operations and does not carry security: []; a stale "
+                    "declaration is how the next public operation goes unnoticed"
+                )
+            if is_public and operation.get("x-authorization") != "public":
+                raise ValidationFailure(
+                    f"OpenAPI operation {identifier} carries security: [] and "
+                    f"x-authorization: {operation.get('x-authorization')!r}; the two "
+                    "must agree or one of them is decorative"
+                )
+
+
 def validate_openapi_file() -> None:
     spec = load_yaml(SCHEMAS / "openapi-v1.yaml")
     validate_openapi(spec)
@@ -518,6 +577,8 @@ def validate_openapi_file() -> None:
         ("/auth/session/refresh", "post"),
         ("/claim-challenges", "post"),
     }
+    validate_public_operations(spec)
+
     for path, operations in spec["paths"].items():
         for method, operation in operations.items():
             method = method.lower()
