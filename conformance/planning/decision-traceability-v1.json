@@ -1794,7 +1794,7 @@
       "implementation_owner": "PF-010, persisted by S-008",
       "machine_or_state_ownership": "`lineage_fork_cases` and `lineage_fork_branches`, `unresolved` non-terminal, quarantined claims held",
       "platform_scope": "Server",
-      "required_executable_evidence": "Constraint tests that a resumed generation is strictly greater than the fork generation and that two survivors in one case are unwritable, over `conformance/vibeproof/v1/fork-and-rotation-vectors.json`"
+      "required_executable_evidence": "Constraint tests that a resumed generation is strictly greater than the fork generation and that two survivors in one case are unwritable, over the fork and rotation vectors PF-010 authors"
     },
     {
       "id": "D-384",
