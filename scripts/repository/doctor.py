@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -87,6 +88,13 @@ REQUIRED = [
     ".github/workflows/storyboard-visuals.yml",
 ]
 
+# These thirteen were real files that competed with the authorities they duplicated,
+# and deleting them was correct. Refusing the names keeps them dead, but it was never
+# the rule it looked like: it caught the thirteen that had already happened and could
+# not catch a fourteenth under any other name. Verified — MASTER_CONTEXT.md asserting
+# "P-1140F complete, gate P-1104 closed", a direct contradiction of the gate record,
+# passed the entire validator suite. `every_document_declares_an_owner` below is the
+# positive rule that a rename does not evade; this list is now history, not the fence.
 FORBIDDEN = [
     "PROJECT_CONTEXT.md",
     "PROJECT_INSTRUCTIONS.md",
@@ -427,6 +435,56 @@ def evaluate_phase(root: Path) -> tuple[list[str], str]:
     return errors, summary
 
 
+
+# docs/project/DOCUMENTATION.md locates the single normative owner for every topic.
+# A document that appears in the tree and not in that map owns nothing and says so to
+# nobody; a second roadmap is exactly that shape. These two directories are covered as
+# classes rather than per file because both are explicitly non-authoritative and grow
+# by accumulation. Every other markdown file must be named individually, which forces a
+# new document to state what it owns beside everything else that owns something.
+BULK_DOCUMENTED_DIRECTORIES = ("docs/history/", "docs/research/")
+
+
+def every_document_declares_an_owner(root: Path) -> list[str]:
+    """Every tracked markdown file is named in the documentation map."""
+    listing = subprocess.run(
+        ["git", "ls-files", "*.md"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if listing.returncode != 0:
+        return ["could not list tracked markdown files"]
+
+    # Only table rows count as declarations. Substring-matching the whole document
+    # would let prose that merely *mentions* a filename declare it — which this check
+    # did on its first run: the paragraph above explaining the MASTER_CONTEXT.md
+    # evasion named the file, and that alone satisfied the rule. A document that talks
+    # about a file has not given it an owner.
+    index = "\n".join(
+        line
+        for line in (root / "docs" / "project" / "DOCUMENTATION.md")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.lstrip().startswith("|")
+    )
+    undeclared = []
+    for relative in sorted(filter(None, listing.stdout.split("\n"))):
+        if relative.startswith(BULK_DOCUMENTED_DIRECTORIES):
+            continue
+        if relative in index or Path(relative).name in index:
+            continue
+        undeclared.append(relative)
+
+    return [
+        f"undeclared document: {relative} is tracked and is named nowhere in "
+        "docs/project/DOCUMENTATION.md, so it declares no owner and duplicates "
+        "nothing visibly"
+        for relative in undeclared
+    ]
+
+
 def main() -> None:
     errors: list[str] = []
     summary = "phase=unknown"
@@ -438,6 +496,8 @@ def main() -> None:
     for path in FORBIDDEN + OUT_OF_SCOPE_NATIVE_PATHS:
         if (ROOT / path).exists():
             errors.append(f"forbidden or out-of-scope path exists: {path}")
+
+    errors.extend(every_document_declares_an_owner(ROOT))
 
     if not errors:
         phase_errors, summary = evaluate_phase(ROOT)
