@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 208 |
+| `not-started` | 207 |
 | `in-progress` | 16 |
-| `landed` | 30 |
+| `landed` | 31 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 89 assertions across 30 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 91 assertions across 31 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 25.
+Startable now — not done, and every dependency done: 24.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-012`, `PF-013`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-013`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -265,13 +265,17 @@ Evidence: unittest tests.ci.test_local_trust_domains
 - allowed capabilities and data classes per role.
 
 ### PF-012 — Local channel protocol
-Files: `packages/schemas/local-control-v1.proto`, `conformance/sandbox/local-channel-vectors-v1.json` (new), `docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md`
-Acceptance: `local-control-v1.proto` declares one request and one response message per role rather than a universal union; the vector file contains a same-user impersonation case and a stale-process case, each with the expected rejection reason drawn from `packages/schemas/reason-codes-v1.json`.
+Files: `packages/schemas/local-control-v1.proto`, `conformance/local-channel/local-channel-vectors-v1.json` (new), `conformance/local-channel/manifest.json` (new), `conformance/local-channel/README.md` (new), `packages/schemas/reason-codes-v1.json`, `docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md`
+Acceptance: `local-control-v1.proto` declares one request and one response message per role rather than a universal union, and no role's arm reaches another role's body; the vector file contains a same-user impersonation case and a stale-process case, each with the expected rejection reason drawn from `packages/schemas/reason-codes-v1.json`, plus one accepted case so the refusals are not satisfied by a channel that refuses everything; `python3 -m unittest tests.ci.test_local_channel` exits 0 and fails when the universal union is restored.
+
+The vectors are in `conformance/local-channel/` rather than `conformance/sandbox/` as this unit originally named. The sandbox suite's `reason_authority` is `packages/schemas/origin-policy-v1.json`, because a loopback refusal is an origin decision; a local-channel refusal is a peer-identity decision drawing on `reason-codes-v1.json`. One suite cannot carry two reason authorities, and bending the sandbox's would have made its existing loopback cases resolve against the wrong vocabulary.
 Depends: PF-011
 Repair: P-1140F-3
 Serves: SR-008
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_local_channel
 
 - handshake, daemon-assigned role, generation, nonce, sequence window, capability grant, deadline, revocation;
 - typed request/response per role rather than one universal message union;

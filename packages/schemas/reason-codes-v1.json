@@ -5,11 +5,13 @@
     "problem": "Returned to the client as the reason_code of an RFC 9457 Problem body under the declared http_status.",
     "claim-rejection": "Returned inside ClaimBatchResult.rejections against one claim index. The batch operation itself answers 200, so http_status is null.",
     "appraisal": "Recorded on the server appraisal or the ranking projection and read through the private notice path. It never appears on the wire, so http_status is null.",
-    "notification": "Recorded on a retracted inbox item as Notification.retraction_reason_code and read through listNotifications. It is not an RFC 9457 Problem body and answers no request, so http_status is null."
+    "notification": "Recorded on a retracted inbox item as Notification.retraction_reason_code and read through listNotifications. It is not an RFC 9457 Problem body and answers no request, so http_status is null.",
+    "local-channel": "Refusals carried on the local IPC channel between a role process and the daemon. They never reach the network and never reach a participant surface; they are recorded locally and surfaced in diagnostics."
   },
   "non_aggregate_authorities": {
     "vibeproof-v1": "The wire protocol, not a mutable aggregate. A claim is validated and either accepted or rejected; it has no lifecycle to hold a state, so these codes answer for the protocol rather than for a row. Owned by docs/architecture/VIBEPROOF_V1_PROTOCOL.md.",
-    "server-runtime": "The request path itself, not a mutable aggregate. Malformed input, an invalid cursor, a rate limit or an internal fault belong to the runtime that answered the request, and none of them moves a row through a state. Owned by docs/architecture/API_EDGE_CONTRACT.md."
+    "server-runtime": "The request path itself, not a mutable aggregate. Malformed input, an invalid cursor, a rate limit or an internal fault belong to the runtime that answered the request, and none of them moves a row through a state. Owned by docs/architecture/API_EDGE_CONTRACT.md.",
+    "local-channel-v1": "The local control protocol in packages/schemas/local-control-v1.proto. It is a wire format between processes on one device, not a persisted aggregate, so it has no state machine and no persistence owner; its refusals still need stable identifiers so a diagnostic can name them."
   },
   "operation_class_definitions": {
     "all": "Every operation in packages/schemas/openapi-v1.yaml.",
@@ -1645,6 +1647,63 @@
       "operation_classes": [],
       "operations": [],
       "introduced_in": "1.4.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "IPC_ROLE_MISMATCH",
+      "class": "channel",
+      "default_outcome": "rejected_invalid",
+      "user_safe": false,
+      "subsystem": "device",
+      "retryable": false,
+      "public_message_key": "reason.ipc_role_mismatch",
+      "internal_visibility": "support-and-security",
+      "severity": "high",
+      "appealability": "not-eligible",
+      "state_machine": "local-channel-v1",
+      "transport": "local-channel",
+      "http_status": null,
+      "operation_classes": [],
+      "operations": [],
+      "introduced_in": "1.7.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "IPC_PEER_IDENTITY_REJECTED",
+      "class": "channel",
+      "default_outcome": "rejected_invalid",
+      "user_safe": false,
+      "subsystem": "device",
+      "retryable": false,
+      "public_message_key": "reason.ipc_peer_identity_rejected",
+      "internal_visibility": "support-and-security",
+      "severity": "high",
+      "appealability": "not-eligible",
+      "state_machine": "local-channel-v1",
+      "transport": "local-channel",
+      "http_status": null,
+      "operation_classes": [],
+      "operations": [],
+      "introduced_in": "1.7.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "IPC_ROLE_GRANT_STALE",
+      "class": "channel",
+      "default_outcome": "rejected_invalid",
+      "user_safe": false,
+      "subsystem": "device",
+      "retryable": false,
+      "public_message_key": "reason.ipc_role_grant_stale",
+      "internal_visibility": "support-and-security",
+      "severity": "medium",
+      "appealability": "not-eligible",
+      "state_machine": "local-channel-v1",
+      "transport": "local-channel",
+      "http_status": null,
+      "operation_classes": [],
+      "operations": [],
+      "introduced_in": "1.7.0",
       "deprecated_in": null
     }
   ]

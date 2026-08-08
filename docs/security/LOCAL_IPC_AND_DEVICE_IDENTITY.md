@@ -7,6 +7,28 @@
 - Only the intended local peer can submit safe claims.
 - Replays, stale handshakes, oversized messages, role confusion, and endpoint hijacking are rejected.
 
+Role confusion is rejected by shape rather than by check. `packages/schemas/local-control-v1.proto`
+reaches every message body through its own role's arm — `CollectorToDaemon`,
+`SyncToDaemon`, `ControlToDaemon`, `SupervisorToDaemon` and their four responses — so a
+collector encoding a deletion request cannot be expressed. The envelope previously
+carried one universal `oneof` holding all fifteen bodies with `sender_role` as a field
+the sender filled in, which made the thing this line promises to prevent the default
+shape of the protocol. The privileged supervisor matters most here: elevated, and now
+holding the narrowest arm of all, health and lifecycle only.
+
+Three refusals remain detectable rather than unrepresentable, and each has a stable
+code under the `local-channel` transport in `packages/schemas/reason-codes-v1.json`:
+
+| Code | Refuses |
+|---|---|
+| `IPC_PEER_IDENTITY_REJECTED` | a peer whose executable identity does not match the role it claims. Every role runs per-user, so `SO_PEERCRED` uid proves nothing on its own; the executable identity is what separates them. |
+| `IPC_ROLE_GRANT_STALE` | a genuine peer carrying a grant generation older than the daemon's current one — a survivor of a restart or a revocation. Without a generation, revocation is advisory. |
+| `IPC_ROLE_MISMATCH` | a sender setting `sender_role` to one role and selecting another role's arm. |
+
+`conformance/local-channel/` states five cases, four refusals and one accepted
+submission, the last so the refusals are not satisfied by a channel that refuses
+everything. No runner executes them.
+
 ## Common protocol
 
 Every connection must perform:

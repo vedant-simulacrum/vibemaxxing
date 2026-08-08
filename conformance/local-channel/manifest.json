@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "suite_id": "local-channel",
+  "case_prefix": "LC",
+  "eval_suite_ids": [],
+  "authorities": [
+    "docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+    "packages/schemas/local-control-v1.proto",
+    "packages/schemas/local-trust-domains-v1.json"
+  ],
+  "subjects": [
+    "rust"
+  ],
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "runner": {
+    "state": "absent",
+    "command": null,
+    "work_unit": "PF-012",
+    "note": "No runner executes these vectors. They state the two refusals LOCAL_IPC_AND_DEVICE_IDENTITY.md already promised \u2014 role confusion and stale handshakes \u2014 and are not evidence that any daemon enforces them."
+  },
+  "fixture_state": "populated",
+  "generated_by": null,
+  "note": "Separate from conformance/sandbox, whose reason authority is origin-policy-v1.json because a loopback refusal is an origin decision. A local-channel refusal is a peer-identity decision and draws its codes from reason-codes-v1.json under the local-channel transport added by PF-012. Two different refusals with two different vocabularies do not belong in one suite.",
+  "cases": [
+    {
+      "case_id": "LC-201",
+      "title": "same-user impersonation",
+      "fixtures": [
+        {
+          "path": "conformance/local-channel/local-channel-vectors-v1.json",
+          "sha256": "0a9996ac25c4acfa9f3fb6b78771a562885243c11ec262dadc56e5a0953729bb"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "IPC_PEER_IDENTITY_REJECTED",
+      "authority_ref": "docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+      "negative": true,
+      "state": "active",
+      "note": "The attacker runs as the same user, so uid alone proves nothing \u2014 every role in local-trust-domains-v1.json runs per-user and shares that uid. The executable identity is what separates them: SecCode on macOS, the Authenticode publisher plus service SID on Windows, and the resolved /proc/pid/exe on Linux. A check that stopped at SO_PEERCRED uid would accept this."
+    },
+    {
+      "case_id": "LC-202",
+      "title": "stale process after a role grant is reissued",
+      "fixtures": [
+        {
+          "path": "conformance/local-channel/local-channel-vectors-v1.json",
+          "sha256": "0a9996ac25c4acfa9f3fb6b78771a562885243c11ec262dadc56e5a0953729bb"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "IPC_ROLE_GRANT_STALE",
+      "authority_ref": "docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+      "negative": true,
+      "state": "active",
+      "note": "A genuine collector from before a daemon restart or a revocation. Its executable identity verifies and its grant does not. Without a generation the daemon cannot tell a survivor from a current peer, which is what makes revocation meaningful rather than advisory."
+    },
+    {
+      "case_id": "LC-203",
+      "title": "role confusion is unrepresentable, not merely refused",
+      "fixtures": [
+        {
+          "path": "conformance/local-channel/local-channel-vectors-v1.json",
+          "sha256": "0a9996ac25c4acfa9f3fb6b78771a562885243c11ec262dadc56e5a0953729bb"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "IPC_ROLE_MISMATCH",
+      "authority_ref": "docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+      "negative": true,
+      "state": "active",
+      "note": "CollectorToDaemon has no local_deletion_request arm, so this cannot be encoded at all. The case is retained because a sender may still set sender_role to one role and select another role's arm on the envelope, which remains detectable and is what this code names."
+    },
+    {
+      "case_id": "LC-204",
+      "title": "the supervisor cannot read a queue",
+      "fixtures": [
+        {
+          "path": "conformance/local-channel/local-channel-vectors-v1.json",
+          "sha256": "0a9996ac25c4acfa9f3fb6b78771a562885243c11ec262dadc56e5a0953729bb"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "IPC_ROLE_MISMATCH",
+      "authority_ref": "docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+      "negative": true,
+      "state": "active",
+      "note": "The elevated role has the narrowest surface: health and lifecycle only. This is the case where the universal oneof was most dangerous, because a compromised supervisor could previously encode any message in the protocol while running as root."
+    },
+    {
+      "case_id": "LC-205",
+      "title": "a well-formed collector submission is accepted",
+      "fixtures": [
+        {
+          "path": "conformance/local-channel/local-channel-vectors-v1.json",
+          "sha256": "0a9996ac25c4acfa9f3fb6b78771a562885243c11ec262dadc56e5a0953729bb"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+      "negative": false,
+      "state": "active",
+      "note": "The positive case. Without it the four refusals above are satisfied by a channel that refuses everything."
+    }
+  ]
+}
