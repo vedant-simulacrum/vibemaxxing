@@ -70,17 +70,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 210 |
+| `not-started` | 209 |
 | `in-progress` | 16 |
-| `landed` | 28 |
+| `landed` | 29 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 85 assertions across 28 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 87 assertions across 29 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 22.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-009`, `PF-011`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-011`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -210,11 +210,13 @@ The schema and the DDL half landed under D-382: `ranked_identities` carries `abs
 
 ### PF-009 — Canonical challenge and lineage continuity
 Files: `packages/schemas/device-lineage.schema.json`, `packages/schemas/vibeproof-claim-v1.cddl`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`
-Acceptance: one identifier spelling for a challenge and one for a lineage resolves across CDDL, OpenAPI and SQL; `python3 scripts/repository/validate_cross_references.py` exits 0 and `claim_challenges`, `device_sequences` and `device_lineages` all key on the lineage rather than the device row.
+Acceptance: one identifier spelling for a challenge and one for a lineage resolves across CDDL, OpenAPI and SQL, with no camelCase variant in any of the three; `python3 scripts/repository/validate_cross_references.py` exits 0; `device_sequences` keys on `lineage_id` and references no device row, `claim_challenges` carries a `lineage_id` foreign key, and `continuity_state` has exactly one owner in `device_lineages`; `device_lineages` is declared before both dependants so the file applies to `postgres:16`, which `validate_planning_artifacts.py` proves when `PLANNING_DATABASE_URL` is set; `python3 -m unittest tests.ci.test_lineage_continuity` exits 0 and fails when the sequence is keyed on the device row again.
 Depends: PF-004
 Repair: P-1140F-2
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_lineage_continuity
 
 - one identifier/type model across CDDL, OpenAPI and SQL;
 - expected lineage revision, sequence, commitment head, checkpoint, batch commitment, policy, issue/expiry;

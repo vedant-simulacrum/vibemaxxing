@@ -98,9 +98,26 @@ create table adapter_installations (
   unique (device_id, adapter_id)
 );
 
+-- A challenge is scoped to the lineage that must answer it. device_id records which
+-- device row asked, which stays useful for audit, but consumption is checked against
+-- the lineage so a re-enrolled device inside one lineage cannot replay a challenge
+-- issued to its predecessor.
+-- Moved above claim_challenges and device_sequences under PF-009: both now carry a
+-- foreign key to it, and PostgreSQL rejects a reference to a table that does not yet
+-- exist. Verified by applying this file to postgres:16, which failed with
+-- 'relation "device_lineages" does not exist' before the move.
+create table device_lineages (
+  lineage_id uuid primary key,
+  account_id uuid not null references accounts(account_id),
+  root_installation_id uuid not null,
+  continuity_state text not null check (continuity_state in ('continuous','gap-declared','broken','revoked')),
+  revision bigint not null check (revision >= 0)
+);
+
 create table claim_challenges (
   challenge_id text primary key,
   account_id uuid not null references accounts(account_id),
+  lineage_id uuid not null references device_lineages(lineage_id),
   device_id uuid not null references devices(device_id),
   nonce bytea not null,
   expires_at timestamptz not null,
@@ -108,12 +125,23 @@ create table claim_challenges (
   consumed_at timestamptz
 );
 
+-- Keyed on the lineage, not the device row. AGENTS.md states as a binding rule that
+-- continuity is lineage-scoped rather than device-row-scoped, and this table is the
+-- mechanism that enforces it. Keyed on device_id it did the opposite: a copied device
+-- store enrols as a second device row, gets its own sequence starting from zero, and
+-- both rows are then internally continuous forever. The fork that the D-072 quarantine
+-- exists to catch was invisible to the counter meant to catch it. One row per lineage
+-- means two devices sharing a lineage contend for one sequence, which is what makes a
+-- clone observable.
+--
+-- continuity_state is deliberately absent. device_lineages owns it. It previously sat
+-- on both tables with nothing stating which won, so a device row reading `continuous`
+-- while its lineage read `broken` was representable and unresolvable.
 create table device_sequences (
-  device_id uuid primary key references devices(device_id),
-  next_sequence bigint not null,
+  lineage_id uuid primary key references device_lineages(lineage_id),
+  next_sequence bigint not null check (next_sequence >= 0),
   local_commitment_head bytea,
-  server_checkpoint_head bytea,
-  continuity_state text not null check (continuity_state in ('continuous','gap-declared','broken','revoked'))
+  server_checkpoint_head bytea
 );
 
 create table claims (
@@ -611,13 +639,6 @@ create table native_sessions (
   expires_at timestamptz not null
 );
 
-create table device_lineages (
-  lineage_id uuid primary key,
-  account_id uuid not null references accounts(account_id),
-  root_installation_id uuid not null,
-  continuity_state text not null check (continuity_state in ('continuous','gap-declared','broken','revoked')),
-  revision bigint not null check (revision >= 0)
-);
 
 create table device_key_events (
   device_key_event_id uuid primary key,
