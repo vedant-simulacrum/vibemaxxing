@@ -330,3 +330,66 @@ class WorkUnitStatusValidatorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RepairScheduleTests(unittest.TestCase):
+    """The schedule is derived, so it cannot disagree with the units it schedules.
+
+    A hand-maintained plan is stale the moment a unit lands, and a stale plan is worse
+    than no plan because it still reads like one.
+    """
+
+    def setUp(self) -> None:
+        self.validator = load_validator()
+        self.units = self.validator.parse_units(
+            self.validator.read_text(self.validator.BREAKDOWN)
+        )
+        self.series = {
+            unit.unit_id: unit
+            for unit in self.units
+            if unit.unit_id.startswith("PF-")
+            and int(unit.unit_id.split("-")[1]) <= 36
+        }
+
+    def test_every_unlanded_repair_unit_appears_exactly_once(self) -> None:
+        waves = self.validator.repair_waves(self.units)
+        scheduled = [unit_id for wave in waves for unit_id in wave]
+        unlanded = {
+            unit_id
+            for unit_id, unit in self.series.items()
+            if unit.status_word != "landed"
+        }
+
+        self.assertEqual(sorted(scheduled), sorted(unlanded))
+        self.assertEqual(len(scheduled), len(set(scheduled)))
+
+    def test_no_landed_unit_is_scheduled(self) -> None:
+        waves = self.validator.repair_waves(self.units)
+        scheduled = {unit_id for wave in waves for unit_id in wave}
+        for unit_id, unit in self.series.items():
+            if unit.status_word == "landed":
+                self.assertNotIn(unit_id, scheduled)
+
+    def test_every_dependency_lands_in_an_earlier_wave(self) -> None:
+        """The property that makes the schedule a schedule."""
+        waves = self.validator.repair_waves(self.units)
+        position = {
+            unit_id: index for index, wave in enumerate(waves) for unit_id in wave
+        }
+        for unit_id, unit in self.series.items():
+            for dependency in unit.depends:
+                if dependency in position and unit_id in position:
+                    self.assertLess(
+                        position[dependency], position[unit_id], f"{unit_id}"
+                    )
+
+    def test_wave_one_units_have_no_unlanded_dependency(self) -> None:
+        waves = self.validator.repair_waves(self.units)
+        if not waves:
+            self.skipTest("every repair unit has landed")
+        for unit_id in waves[0]:
+            for dependency in self.series[unit_id].depends:
+                if dependency in self.series:
+                    self.assertEqual(
+                        self.series[dependency].status_word, "landed", unit_id
+                    )
