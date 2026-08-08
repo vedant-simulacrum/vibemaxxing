@@ -8,7 +8,7 @@ Research is evidence, not product authority. Accepted decisions and repaired nor
 |---|---|---|
 | `ANTI_CHEAT_SYSTEMS_RESEARCH_2026-07-23.md` | current primary-source research on deterministic anti-cheat, attestation, replay, cloning, OAuth, local SLM feasibility, desktop services and release provenance | D-049–D-060; P-1140B–E; privacy, evidence, VibeProof, native, identity and release contracts |
 
-Its derived engineering input is `docs/planning/ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`. That file is not a parallel roadmap: its unique content must flow into the canonical implementation handoff and PR-sized work breakdown.
+Its derived engineering input is `docs/planning/ANTI_CHEAT_IMPLEMENTATION_PLAN.md`. That file is not a parallel roadmap: its unique content must flow into the canonical implementation handoff and PR-sized work breakdown.
 
 ## Historical research set
 

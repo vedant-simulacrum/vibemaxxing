@@ -13,7 +13,7 @@ Before changing anything:
 1. Confirm the repository is `vedant-simulacrum/vibemaxxing` or an authorized fork.
 2. Resolve default branch, current branch, working-tree state, current issue/PR, linked issue, and unresolved review threads.
 3. Run `python3 scripts/repository/doctor.py` from a clean checkout. Do not continue past a failure without repairing or documenting it.
-4. Read, in order: `docs/project/PROJECT.md`, `docs/project/STATUS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, then relevant ADRs, contracts, schemas, fixtures, issues, and PR discussions.
+4. Read, in order: `docs/project/PROJECT.md`, `docs/project/STATUS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`, then relevant ADRs, contracts, schemas, fixtures, issues, and PR discussions.
 5. Read `conformance/p1140f/gate-authorization-v1.json` before acting on anything this file says about phase, gate, or authorization state. The record is authoritative; this file restates it.
 6. Use `docs/research/README.md` to locate primary evidence relevant to the active decision.
 
@@ -31,7 +31,7 @@ Opening P-1104 authorizes implementation work. It is not evidence that any compo
 
 The owner has elected to finish the planning track first. Product code is permitted but is not the active program; the active program remains the semantic closure sequence in `docs/planning/TASK_CATALOG.md`.
 
-The earlier P-1140F four-finding review at `f06f630619427ec7f0576b57c4b3ac914d9a4c87` is stale. Later commits added executable Rust/Go protocol and accounting prototypes and additional machine contracts. The canonical current semantic scope, findings, closed defaults, user decisions, and dependency order live only in `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
+The earlier P-1140F four-finding review at `f06f630619427ec7f0576b57c4b3ac914d9a4c87` is stale. Later commits added executable Rust/Go protocol and accounting prototypes and additional machine contracts. The canonical current semantic scope, findings, closed defaults, user decisions, and dependency order live only in `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`.
 
 Allowed work:
 

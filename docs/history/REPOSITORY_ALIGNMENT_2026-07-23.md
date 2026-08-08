@@ -4,7 +4,7 @@ Updated: 2026-07-24
 Archived: 2026-08-06
 Status: **historical. Not authority.**
 
-> This document was the canonical planning audit and reconciliation record for P-1140A. Every gate it programmed — P-1140A through P-1140E — is now `complete-planning`, and its findings were absorbed by `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`. Its one piece of still-live unique content, the canonical authority hierarchy used to resolve artifact conflicts, was merged into `docs/project/DOCUMENTATION.md` before this file moved here. Do not cite anything below to justify a decision or establish state.
+> This document was the canonical planning audit and reconciliation record for P-1140A. Every gate it programmed — P-1140A through P-1140E — is now `complete-planning`, and its findings were absorbed by `docs/planning/DECISION_REGISTER.md`, `docs/planning/TASK_CATALOG.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`. Its one piece of still-live unique content, the canonical authority hierarchy used to resolve artifact conflicts, was merged into `docs/project/DOCUMENTATION.md` before this file moved here. Do not cite anything below to justify a decision or establish state.
 
 ## Purpose
 

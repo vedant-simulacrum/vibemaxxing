@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 206 |
+| `not-started` | 205 |
 | `in-progress` | 13 |
-| `landed` | 35 |
+| `landed` | 36 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 101 assertions across 35 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 108 assertions across 36 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 23.
+Startable now — not done, and every dependency done: 22.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `OS-001`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -997,17 +997,30 @@ The freeze is deliberate — P-1140E owns D-001..D-069 and a later decision must
 The four traceability files under `docs/planning/decision-traceability/` cover D-001 through D-069 and stop there. Extending them is the visible half; the half that decides whether this closes is that a new decision must not be mergeable without a row, which needs the check to run over the register rather than over a fixed list.
 
 ### PF-064 — Remove stale dates from living document filenames
-Files: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `scripts/repository/doctor.py`, `AGENTS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/TASK_CATALOG.md`
-Acceptance: no file that is still being updated carries a date in its filename; every inbound reference resolves; `doctor.py` passes.
+Files: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`, `docs/planning/ANTI_CHEAT_IMPLEMENTATION_PLAN.md`, `scripts/repository/doctor.py`, `AGENTS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/TASK_CATALOG.md`, `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`, `docs/planning/SR_SEVERITY_REGRADING_PROPOSAL.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `docs/history/REPOSITORY_ALIGNMENT_2026-07-23.md`, `docs/research/README.md`, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`, `conformance/p1140f/gate-authorization-v1.json`, `conformance/p1140f/semantic-findings-v1.json`
+Acceptance: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md` and `docs/planning/ANTI_CHEAT_IMPLEMENTATION_PLAN.md` exist and neither dated predecessor does; `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md` still carries its date, because a closed record is what the convention is for; no reference to either old basename survives anywhere in the tree; `doctor.py`, `validate_p1140f_authority.py` and `validate_cross_references.py` each exit 0.
 Depends: PF-057
 Est: 2-3
-Status: not-started
+Status: landed
+Evidence: exists docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md
+Evidence: missing docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md
+Evidence: exists docs/planning/ANTI_CHEAT_IMPLEMENTATION_PLAN.md
+Evidence: missing docs/planning/ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md
+Evidence: exists docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md
+Evidence: validator scripts/repository/validate_p1140f_authority.py
+Evidence: validator scripts/repository/validate_cross_references.py
 
-`P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md` is live and is still being updated, but its filename says July 24. A date in a filename should mean the document is a point-in-time record; using it for a living document teaches readers to distrust the convention.
+The `Acceptance` this unit shipped with was "no file that is still being updated carries a date in its filename; every inbound reference resolves; `doctor.py` passes", and it is rewritten above because none of its three clauses could fail. Nothing in the repository determines which files are "still being updated", so the first clause was satisfiable by asserting that every dated file is a record — including the two this unit exists to rename. The second and third restate checks `validate_cross_references.py` and `doctor.py` already run on every commit, so they would have passed before the unit was started. An acceptance that holds on the unrepaired tree measures nothing. The replacement names the three files and their disposition, and it fails in both directions: removing the P-1140E audit's date breaks it exactly as leaving the other two dates would.
+
+The `Files:` line named five paths; the change touches fourteen. The unit's own prose already listed nine of the missing ones, so the field that is supposed to be "the exact paths" was the least accurate statement in the block.
+
+`P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md` is live and is still being updated, but its filename says July 24. A date in a filename should mean the document is a point-in-time record; using it for a living document teaches readers to distrust the convention.
 
 Nine tracked files reference it and each has to move with it: `AGENTS.md`, `docs/project/DOCUMENTATION.md`, `docs/planning/TASK_CATALOG.md`, `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`, `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `docs/history/REPOSITORY_ALIGNMENT_2026-07-23.md`, `scripts/repository/doctor.py`'s REQUIRED list, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`, and the pinned-path strings in `conformance/p1140f/gate-authorization-v1.json` and `conformance/p1140f/semantic-findings-v1.json`. Those last two are the constraint that decides how this unit is done: `validate_p1140f_authority.py` requires every pinned path to exist, and the records are owned by the P-1140F closure track. D-140 refused the same rename for `openapi-v1.yaml` for exactly this reason. Either the rename lands together with the record update in one change, or it waits for the pins to be released — decide which, and record it, rather than discovering the constraint mid-rename.
 
-Two other dated filenames under `docs/planning/` need the same judgement and are in scope for this unit: `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, which is a closed program's record and should keep its date, and `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, which is a plan rather than a record and should not.
+Decided under D-606: the rename lands together with the record update, in this change. D-140 is not the same case. There the disagreement was between a path and its contents, and converting the contents to YAML removed it without touching a pinned string — a repair existed that left the records alone. Here the filename asserts a date the document contradicts by continuing to change, and no edit to the contents can fix that. Waiting for the pins to be released is strictly worse than moving them: PF-034 and PF-036 both add citations to this document, and PF-062 absorbs `TASK_CATALOG.md` into generated output, so every unit that lands first makes the rename larger.
+
+Two other dated filenames under `docs/planning/` need the same judgement and are in scope for this unit: `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, which is a closed program's record and should keep its date, and `ANTI_CHEAT_IMPLEMENTATION_PLAN.md`, which is a plan rather than a record and should not.
 
 Archived point-in-time reports in `docs/history/` keep their dates. That is what the convention is for.
 

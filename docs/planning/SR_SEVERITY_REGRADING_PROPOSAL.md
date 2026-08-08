@@ -7,7 +7,7 @@ Authority: none. `conformance/p1140f/semantic-findings-v1.json` holds the live s
 
 ## What this is
 
-All thirteen P-1140F semantic findings, SR-005 through SR-017, carry the same severity. `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md` says that uniformity "is not a graded judgement and must not be read as one: severity here means only 'open and blocking this gate'", and refers the grading to the owner because changing it changes the count pinned in the gate record.
+All thirteen P-1140F semantic findings, SR-005 through SR-017, carry the same severity. `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md` says that uniformity "is not a graded judgement and must not be read as one: severity here means only 'open and blocking this gate'", and refers the grading to the owner because changing it changes the count pinned in the gate record.
 
 This document is that referred judgement, written out so the owner can approve, amend or reject it row by row. It proposes a severity for each finding, argues the proposal from what the finding would cost if it shipped unfixed, and separates two things severity does not carry: whether the finding blocks launch, and whether it can be falsified today.
 
@@ -202,7 +202,7 @@ This section exists so the owner can price the decision. None of it has been don
 
 1. **Thirteen `severity` edits in `conformance/p1140f/semantic-findings-v1.json`.** Nine to `P0`, one to `P2`, three unchanged.
 
-2. **Three prose counts must move in the same commit.** `scripts/repository/doctor.py` requires every open-P1 count stated in a registry summary document to equal the live registry count exactly, and reports the number the document states when it does not. `docs/project/STATUS.md`, `docs/planning/TASK_CATALOG.md` and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md` each state thirteen. After the regrade the live P1 count is three, and all three documents fail until they say three.
+2. **Three prose counts must move in the same commit.** `scripts/repository/doctor.py` requires every open-P1 count stated in a registry summary document to equal the live registry count exactly, and reports the number the document states when it does not. `docs/project/STATUS.md`, `docs/planning/TASK_CATALOG.md` and `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md` each state thirteen. After the regrade the live P1 count is three, and all three documents fail until they say three.
 
 3. **One prose statement becomes false.** The semantic review document states that semantic P0 findings open is zero. Under this proposal it is nine. That line is not matched by any recorded claim pattern, so no validator would catch it — which is precisely why it is listed here.
 

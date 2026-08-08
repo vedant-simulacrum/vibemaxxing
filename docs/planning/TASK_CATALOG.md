@@ -48,7 +48,7 @@ P-1140E proves structural repository consistency only. It does not prove semanti
 
 Status: `in-progress-planning`
 
-Canonical prose record: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
+Canonical prose record: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`.
 
 Machine-readable authorities:
 
