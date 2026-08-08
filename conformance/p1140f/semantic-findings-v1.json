@@ -101,7 +101,7 @@
     {
       "finding_id": "SR-009",
       "severity": "P1",
-      "state": "open",
+      "state": "repair-in-progress",
       "title": "Universal adapter certification and deterministic accounting",
       "repair_task": "P-1140F-3",
       "finding_class": "contradiction",
@@ -115,7 +115,9 @@
         "packages/schemas/source-observation.schema.json",
         "packages/schemas/planning-schema.sql#platform_certifications"
       ],
-      "closure_evidence": [],
+      "closure_evidence": [
+        "PF-015 at HEAD of planning/pf-015-compatibility-tuple: the compatibility tuple's canonical digest is proved rather than asserted. The schema stated that the digest is over the RFC 8949 core deterministic CBOR encoding so two implementations cannot disagree about a tuple's identity, and nothing tested it; the unit's own note recorded the digest half as not landed. Two serialisations in opposite key order at every level now produce one digest, and each of the five independent dimensions changes it. Certification lifecycle and accounting reconciliation remain open under PF-016 and PF-018."
+      ],
       "reviewed_commit": null,
       "review_verdict": "pending"
     },

@@ -73,16 +73,16 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 | Status | Units |
 |---|---|
 | `not-started` | 206 |
-| `in-progress` | 15 |
-| `landed` | 33 |
+| `in-progress` | 14 |
+| `landed` | 34 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 95 assertions across 33 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 97 assertions across 34 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 22.
+Startable now — not done, and every dependency done: 24.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,9 +90,9 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 10 | `PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028` |
-| 2 | 6 | `PF-006`, `PF-016`, `PF-017`, `PF-022`, `PF-027`, `PF-030` |
-| 3 | 5 | `PF-007`, `PF-018`, `PF-023`, `PF-031`, `PF-032` |
+| 1 | 12 | `PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
+| 2 | 6 | `PF-006`, `PF-018`, `PF-022`, `PF-027`, `PF-031`, `PF-032` |
+| 3 | 2 | `PF-007`, `PF-023` |
 | 4 | 2 | `PF-008`, `PF-029` |
 | 5 | 1 | `PF-033` |
 | 6 | 1 | `PF-034` |
@@ -330,12 +330,14 @@ Two things changed here under D-384 and are recorded rather than applied silentl
 
 ### PF-015 — Atomic compatibility tuple
 Files: `packages/schemas/compatibility-tuple-v1.schema.json` (new), `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`, `conformance/adapters/agent-registry-v1.schema.json`
-Acceptance: the tuple schema requires all nine components and a canonical digest; two independently ordered serialisations of the same tuple produce the same digest in a fixture that records both inputs and the expected digest.
+Acceptance: the tuple schema requires all nine components and a canonical digest; `conformance/adapters/compatibility-tuple-digest-v1.json` records two serialisations of one tuple in opposite key order at every level, including nested maps, together with the expected digest, and both produce it; changing any one of observation mode, platform profile, source version floor, accounting arithmetic or privacy strip list produces a different digest; `python3 -m unittest tests.ci.test_compatibility_tuple_digest` exits 0, including a case asserting the two recorded orderings are genuinely different.
 Depends: PF-004
 Repair: P-1140F-3
 Serves: SR-009
 Est: 8-12
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_compatibility_tuple_digest
 
 The schema landed under D-387 and requires every component, with the nine observation modes taken from `packages/schemas/observer-equivalence-v1.json` rather than spelled a second time. The digest half has not: no fixture records two orderings of one tuple and the expected digest, so the canonical-digest claim is stated in the description and not yet exercised.
 

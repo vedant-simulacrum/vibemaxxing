@@ -133,6 +133,38 @@
       "negative": true,
       "state": "active",
       "note": "The second stage is a separate case because a strip performed once and not enforced again is a strip that survives only until somebody adds a field."
+    },
+    {
+      "case_id": "AD-008",
+      "title": "Two orderings of one compatibility tuple produce one digest",
+      "fixtures": [
+        {
+          "path": "conformance/adapters/compatibility-tuple-digest-v1.json",
+          "sha256": "59cb1afb30d5a196c9bf4cd29df2b1c13213169d0b8d7b9aa1fb0f32ee7dfebe"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/compatibility-tuple-v1.schema.json",
+      "negative": false,
+      "state": "active",
+      "note": "The schema states the digest is over the RFC 8949 core deterministic encoding so two implementations cannot disagree about a tuple's identity. Nothing proved it. The two records hold identical values in opposite key order at every level; a reader preserving insertion order would give one certified tuple two identities, so a re-serialised tuple would miss its own certification."
+    },
+    {
+      "case_id": "AD-009",
+      "title": "Changing any one component changes the tuple identity",
+      "fixtures": [
+        {
+          "path": "conformance/adapters/compatibility-tuple-digest-v1.json",
+          "sha256": "59cb1afb30d5a196c9bf4cd29df2b1c13213169d0b8d7b9aa1fb0f32ee7dfebe"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_ADAPTER_UNSUPPORTED",
+      "authority_ref": "packages/schemas/compatibility-tuple-v1.schema.json",
+      "negative": true,
+      "state": "active",
+      "note": "Atomic means atomic: observation mode, platform profile, source version floor, accounting arithmetic and privacy strip list each change the digest. A certification of one combination says nothing about any other, and this is the case that would fail if the digest covered only part of the record. A mutated tuple resolves to no certification, which is exactly what CLAIM_ADAPTER_UNSUPPORTED refuses; the tuple is looked up by digest under D-058, so a changed dimension is not a degraded certification but an absent one."
     }
   ]
 }
