@@ -73,16 +73,16 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 | Status | Units |
 |---|---|
 | `not-started` | 206 |
-| `in-progress` | 14 |
-| `landed` | 34 |
+| `in-progress` | 13 |
+| `landed` | 35 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 97 assertions across 34 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 101 assertions across 35 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 24.
+Startable now — not done, and every dependency done: 23.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `OS-001`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -1044,13 +1044,21 @@ Files: `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_state
 Acceptance: the validator fails when a declared aggregate has an unpopulated `sql=` or `api=` binding that could have been populated, and reports its true three-way coverage rather than an aggregate count.
 Depends: none
 Est: 4-6
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: contains 5 scripts/repository/validate_state_vocabularies.py :: _state.state",)
+Evidence: contains 1 scripts/repository/validate_state_vocabularies.py :: def check_absence_reasons
+Evidence: contains 1 docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md :: ### Recorded absences
 
-`validate_state_vocabularies.py` is a genuine check — its drift-injection tests prove it catches renames, deletions, and dropped enum values. But its guarantee is narrower than its name implies. Of 31 declared aggregates, only **7** receive a real three-way registry + SQL + API comparison. 19 are two-way, usually legitimately because there is no API surface, and 5 are format-only.
+`validate_state_vocabularies.py` is a genuine check — its drift-injection tests prove it catches renames, deletions, and dropped enum values. But its guarantee was narrower than its name implied. Of 42 declared aggregates, only **9** received a real three-way registry + SQL + API comparison; 27 were two-way and 6 were format-only. (The unit was written when there were 31; PF-013 added five more.)
 
-Coverage is driven by a hardcoded `BINDINGS` table, so an aggregate whose `sql=` or `api=` field was simply never populated silently escapes the identity checks while still counting toward the reported total. The validator does fail closed on newly orphaned columns and enums, which is what prevents regression — the gap is that a binding omitted at authoring time is indistinguishable from one that is legitimately absent.
+Coverage was driven by a hardcoded `BINDINGS` table, so an aggregate whose `sql=` or `api=` field was simply never populated silently escaped the identity checks while still counting toward the reported total.
 
-Make omission explicit: require every aggregate to declare either a binding or a recorded reason for having none, and have the summary line state three-way, two-way, and format-only counts separately so a green run cannot be read as more than it is.
+Reading the table against `local-store-v1.sql` found that this had already happened. All five `local-*` aggregates carried an explicit `sql=()` while PF-013 had created `local_collection_state`, `local_sync_state`, `local_auth_state`, `local_permission_state` and `local_connectivity_state`, each with a CHECK constraint holding exactly that aggregate's declared states. The five were reported as covered aggregates and were compared against nothing. The check that should have caught it — "every SQL state column is bound to an aggregate or declares a sub-entity vocabulary" — read the device half of the storage contract for table *names* only, so a column there could be neither bound nor found unbound. That is the recurring class again: a signal that improves when you remove what it counts.
+
+Repaired three ways. The five bindings are wired, taking coverage to 9 three-way, 32 two-way and 1 format-only. The persistence check now resolves both halves of the storage contract, so the SQL axis fails closed on the device side as the API axis already did under rule 10. And omission is now explicit: every absent binding carries a recorded reason in `RECORDED_ABSENCES`, mirrored entry-for-entry in the contract's recorded-absence table, with the reverse check too — a reason for a binding that is in fact populated fails, because that is how the `local-*` excuse survived. The contract previously said the reason for a `—` "is given under Open items"; 39 cells recorded `—` and Open items explained four. A promise no validator executes is the same defect as a check phrased as an absence.
+
+Two device columns surfaced once the persistence check began reading `local-store-v1.sql`: `outbox_claims.state` is now a declared sub-entity vocabulary, and `source_receipts.certification_state` has no CHECK constraint at all, so it is recorded in `SQL_COLUMNS_WITHOUT_VOCABULARY` naming PF-017 and PF-018 as the owners of the vocabulary it should mirror, rather than guessed at.
 
 ### PF-068 — Author the Ed25519 divergence-case conformance corpus
 Files: `conformance/vibeproof/v1/ed25519-divergence-corpus.json`, `conformance/vibeproof/v1/README.md`, `conformance/vibeproof/v1/zip215-oracle-run.json`, `conformance/vibeproof/v1/zip215-oracle/main.go`, `scripts/repository/generate_ed25519_divergence_corpus.py`, `scripts/repository/run_ed25519_oracles.py`, `tests/ci/test_ed25519_divergence_corpus.py`, `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`

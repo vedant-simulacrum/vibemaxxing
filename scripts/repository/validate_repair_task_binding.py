@@ -20,15 +20,18 @@ This derives step state instead:
 - every finding's `repair_task` names a step that owns units, so a finding cannot be
   parked against a step with no work in it;
 - a step's recorded `Status:` may not claim completion while it owns an unlanded unit
-  or an unclosed finding.
+  or an unclosed finding;
+- every `closure_evidence` entry names a unit that serves that finding, that has
+  landed, at a commit rather than a branch.
 
-The last rule is the point. The rest exist so it cannot be satisfied vacuously.
+The last two rules are the point. The rest exist so they cannot be satisfied vacuously.
 """
 
 from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -46,6 +49,56 @@ UNIT = re.compile(r"###+\s+(PF-\d{3})\b[^\n]*\n(?P<body>.*?)(?=\n###|\Z)", re.S)
 STEP = re.compile(
     r"####\s+(P-1140F-\d)\s*[—–-][^\n]*\n(?P<body>.*?)(?=\n####|\n## |\Z)", re.S
 )
+# A closure-evidence entry opens by naming the unit and the commit it landed at, with
+# an optional parenthesised scope for a unit that repaired only part of the finding.
+# That qualifier is kept because it carries what the entry does *not* cover, which is
+# the half of a partial repair a reader most needs. The prose after the colon is the
+# claim; this constrains only the provenance.
+EVIDENCE = re.compile(
+    r"^(?P<unit>PF-\d{3}) at (?P<sha>[0-9a-f]{40})"
+    r"(?: \((?P<scope>[^)]+)\))?: \S"
+)
+
+# States in which a finding asserts it is no longer being worked on. Evidence held by
+# a unit that has not landed is admissible while repair is in progress and is not
+# admissible once the finding claims the repair is finished.
+SETTLED_STATES = ("repaired-pending-review", "closed")
+
+
+def repository_is_shallow() -> bool:
+    result = run_git("rev-parse", "--is-shallow-repository")
+    return result is not None and result.strip() == "true"
+
+
+def run_git(*args: str) -> str | None:
+    """Stdout of a git command, or None when git cannot answer here."""
+    try:
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return completed.stdout if completed.returncode == 0 else None
+
+
+def commit_resolves(sha: str) -> bool | None:
+    """True if the commit exists, False if it does not, None if this checkout cannot say.
+
+    CI checks out at `fetch-depth: 1`, so historical commits are genuinely absent
+    there and their absence proves nothing. Returning None rather than False keeps a
+    shallow clone from failing an honest record — and the summary line reports how
+    many went unchecked, so a skip is never read as a pass.
+    """
+    if run_git("rev-parse", "--git-dir") is None:
+        return None
+    if run_git("cat-file", "-e", f"{sha}^{{commit}}") is not None:
+        return True
+    return None if repository_is_shallow() else False
 
 
 class Failure(Exception):
@@ -113,7 +166,6 @@ def main() -> int:
             "finding is tracked against a step with no work in it",
         )
 
-
     # Units bind to steps and findings bind to steps, which was too coarse to say
     # which unit serves which finding: P-1140F-4 owns twelve units and five findings,
     # so "PF-019 landed" implied nothing about SR-012 specifically. Recording closure
@@ -148,6 +200,56 @@ def main() -> int:
             f"{row['finding_id']} is served by no unit, so nothing landing can ever "
             "close it",
         )
+
+    # `closure_evidence` was the last binding nothing checked. The schema accepts any
+    # non-empty string, so "PF-011 at HEAD of planning/pf-011-trust-domains" passed —
+    # and so would a branch that never existed. D-206 records why a branch name is not
+    # a record: under squash merge it stops existing the moment it lands, and until
+    # then it moves. Four of SR-008's entries were written that way.
+    #
+    # This does not contradict D-206's refusal of commit ids as landing proof. What
+    # proves a unit landed is its `Evidence:` lines, which execute. A sha here is
+    # provenance on a narrative claim about a repair — it says where to look, not that
+    # the repair is correct.
+    unchecked_shas = 0
+    evidence_entries = 0
+    for row in findings:
+        finding_id = row["finding_id"]
+        for entry in row["closure_evidence"]:
+            evidence_entries += 1
+            match = EVIDENCE.match(entry)
+            require(
+                match is not None,
+                f"{finding_id} records closure evidence that does not open "
+                f"'PF-NNN at <40-hex commit>: ' — {entry[:72]!r}. A branch name moves "
+                "and a bare claim resolves to nothing, so neither can be checked",
+            )
+            unit, sha = match.group("unit"), match.group("sha")
+            require(
+                unit in served[finding_id],
+                f"{finding_id} cites {unit} as closure evidence, but {unit} does not "
+                f"serve it; its serving units are {sorted(served[finding_id])}",
+            )
+            status = (field(series[unit], "Status") or "").strip("`")
+            require(
+                status != "not-started",
+                f"{finding_id} cites {unit} as closure evidence while {unit} records "
+                "Status: 'not-started'; evidence cannot precede the work it describes",
+            )
+            require(
+                status == "landed" or row["state"] not in SETTLED_STATES,
+                f"{finding_id} is {row['state']!r} and rests on {unit}, which records "
+                f"Status: {status!r}. A finding is not repaired while a unit its own "
+                "evidence names is still open",
+            )
+            resolved = commit_resolves(sha)
+            require(
+                resolved is not False,
+                f"{finding_id} cites {unit} at {sha}, which is not a commit in this "
+                "repository",
+            )
+            if resolved is None:
+                unchecked_shas += 1
 
     # A finding may only close once every unit serving it has landed. Closure evidence
     # is not the same as closure: a partially repaired finding may carry evidence and
@@ -206,9 +308,21 @@ def main() -> int:
             for step in sorted(steps)
         )
     )
+    if unchecked_shas:
+        print(
+            f"closure_evidence={evidence_entries} entries, "
+            f"{evidence_entries - unchecked_shas} at commits this checkout can resolve, "
+            f"{unchecked_shas} UNRESOLVED HERE (shallow clone; their existence is "
+            "unproven, not proven)"
+        )
+    else:
+        print(
+            f"closure_evidence={evidence_entries} entries, all at commits this "
+            "checkout resolves"
+        )
     print(
         "claim_scope=binding-and-status-consistency-only; a bound step is not a "
-        "correct one"
+        "correct one, and a resolved commit is not a correct repair"
     )
     return 0
 

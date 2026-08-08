@@ -73,8 +73,18 @@ FINDINGS = {
     "schema_version": 1,
     "program": "P-1140F",
     "findings": [
-        {"finding_id": "SR-005", "state": "closed", "repair_task": "P-1140F-1"},
-        {"finding_id": "SR-006", "state": "open", "repair_task": "P-1140F-2"},
+        {
+            "finding_id": "SR-005",
+            "state": "closed",
+            "repair_task": "P-1140F-1",
+            "closure_evidence": [],
+        },
+        {
+            "finding_id": "SR-006",
+            "state": "open",
+            "repair_task": "P-1140F-2",
+            "closure_evidence": [],
+        },
     ],
 }
 
@@ -215,12 +225,16 @@ class ServesBindingTests(BindingFixture, unittest.TestCase):
 
     def test_a_unit_serving_a_finding_from_another_step_fails(self) -> None:
         """The binding has to agree with itself or it explains nothing."""
-        self.write(CATALOG, BREAKDOWN.replace("Serves: SR-006", "Serves: SR-005"), FINDINGS)
+        self.write(
+            CATALOG, BREAKDOWN.replace("Serves: SR-006", "Serves: SR-005"), FINDINGS
+        )
 
         with self.assertRaises(self.validator.Failure) as raised:
             self.run_validator()
 
-        self.assertIn("cannot repair a finding its own step does not own", str(raised.exception))
+        self.assertIn(
+            "cannot repair a finding its own step does not own", str(raised.exception)
+        )
 
     def test_a_finding_served_by_no_unit_fails(self) -> None:
         """Nothing landing could ever close it, so it would sit open forever."""
@@ -247,6 +261,133 @@ class ServesBindingTests(BindingFixture, unittest.TestCase):
             self.run_validator()
 
         self.assertIn("units serving it are not all landed", str(raised.exception))
+
+
+class ClosureEvidenceTests(BindingFixture, unittest.TestCase):
+    """`closure_evidence` is the last binding nothing checked before this.
+
+    Before this check existed, four SR-008 entries and one SR-009 entry read
+    "PF-0NN at HEAD of planning/some-branch: ..." — a branch that moves and, under
+    squash merge, stops existing the moment the unit it names actually lands. These
+    tests reproduce that prior state and the other ways the same field can lie.
+    """
+
+    def test_a_branch_pinned_entry_is_rejected(self) -> None:
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][0]["closure_evidence"] = [
+            "PF-002 at HEAD of planning/some-branch: did a thing"
+        ]
+
+        self.write(CATALOG, BREAKDOWN, findings)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("PF-NNN at <40-hex commit>", str(raised.exception))
+
+    def test_a_sha_that_is_not_a_commit_is_rejected(self) -> None:
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][0]["closure_evidence"] = [
+            "PF-001 at " + "0" * 40 + ": did a thing"
+        ]
+
+        self.write(CATALOG, BREAKDOWN, findings)
+
+        with patch.object(self.validator, "commit_resolves", lambda sha: False):
+            with self.assertRaises(self.validator.Failure) as raised:
+                self.run_validator()
+
+        self.assertIn("is not a commit in this repository", str(raised.exception))
+
+    def test_commit_resolves_returns_none_when_git_cannot_answer(self) -> None:
+        """A checkout that cannot answer must not be read as a rejection.
+
+        `self.root` is a plain tempdir, not a git repository, so `git rev-parse
+        --git-dir` run there fails and `run_git` reports it cannot answer.
+        """
+        with patch.object(self.validator, "ROOT", self.root):
+            self.assertIsNone(self.validator.commit_resolves("0" * 40))
+
+    def test_a_unit_that_does_not_serve_the_finding_is_rejected(self) -> None:
+        """PF-002 serves SR-006, not SR-005; citing it for SR-005 must fail."""
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][0]["closure_evidence"] = [
+            "PF-002 at " + "a" * 40 + ": did a thing"
+        ]
+
+        self.write(CATALOG, BREAKDOWN, findings)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("does not serve it", str(raised.exception))
+
+    def test_a_not_started_unit_cannot_be_cited_as_evidence(self) -> None:
+        """PF-002 is `Status: not-started` in the base fixture."""
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][1]["closure_evidence"] = [
+            "PF-002 at " + "a" * 40 + ": did a thing"
+        ]
+
+        self.write(CATALOG, BREAKDOWN, findings)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn(
+            "evidence cannot precede the work it describes", str(raised.exception)
+        )
+
+    def test_a_settled_finding_resting_on_an_unlanded_unit_is_rejected(self) -> None:
+        """A finding may not claim it is done while its own cited unit is still open."""
+        breakdown = BREAKDOWN.replace("Status: not-started", "Status: in-progress")
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][1]["state"] = "repaired-pending-review"
+        findings["findings"][1]["closure_evidence"] = [
+            "PF-002 at " + "a" * 40 + ": did a thing"
+        ]
+
+        self.write(CATALOG, breakdown, findings)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn(
+            "is not repaired while a unit its own evidence names is still open",
+            str(raised.exception),
+        )
+
+    def test_a_finding_still_in_progress_may_rest_on_an_unlanded_unit(self) -> None:
+        """The same fixture, unsettled, must pass: only settled states are checked.
+
+        This is the companion the failure test above needs: on its own, that test
+        cannot tell a genuine settled/unlanded check from one that rejects every
+        unlanded citation unconditionally. This fixes the state at `repair-in-progress`
+        — not in `SETTLED_STATES` — where the same unlanded citation is honest.
+        """
+        breakdown = BREAKDOWN.replace("Status: not-started", "Status: in-progress")
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][1]["state"] = "repair-in-progress"
+        findings["findings"][1]["closure_evidence"] = [
+            "PF-002 at " + "a" * 40 + ": did a thing"
+        ]
+
+        self.write(CATALOG, breakdown, findings)
+
+        with patch.object(self.validator, "commit_resolves", lambda sha: True):
+            self.assertEqual(self.run_validator(), 0)
+
+    def test_the_optional_scope_qualifier_is_accepted(self) -> None:
+        """Live in the real registry for SR-010/PF-021 and SR-011/PF-024."""
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][0]["closure_evidence"] = [
+            "PF-001 at " + "a" * 40 + " (audience half only): did a thing"
+        ]
+
+        self.write(CATALOG, BREAKDOWN, findings)
+
+        with patch.object(self.validator, "commit_resolves", lambda sha: True):
+            self.assertEqual(self.run_validator(), 0)
 
 
 if __name__ == "__main__":

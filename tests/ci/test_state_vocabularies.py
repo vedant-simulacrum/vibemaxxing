@@ -401,3 +401,201 @@ class ConcurrencyModelTests(ValidatorFixture, unittest.TestCase):
                 "aggregate-and-outbox",
                 machine["machine_id"],
             )
+
+
+class RecordedAbsenceCoverageTests(ValidatorFixture, unittest.TestCase):
+    """PF-067. `check_absence_reasons` is what stops a `sql=()` aggregate from being
+
+    silently counted as covered again: every axis an aggregate does not bind must
+    carry a reason in `RECORDED_ABSENCES`, that reason must vanish the moment the
+    axis is populated, and the reason table mirrored into
+    `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` must agree with it in both
+    directions and on the text. These drive `check_absence_reasons` directly with a
+    synthetic contract string rather than editing the real document, because the
+    check under test is the comparison logic itself, not file parsing.
+    """
+
+    def test_absence_with_no_recorded_reason_fails(self) -> None:
+        report = self.validator.Report()
+        contract_text = CONTRACT.read_text(encoding="utf-8")
+        absences = dict(self.validator.RECORDED_ABSENCES)
+        del absences[("local-collection", "api")]
+
+        with patch.object(self.validator, "RECORDED_ABSENCES", absences):
+            self.validator.check_absence_reasons(report, contract_text)
+
+        self.assertTrue(
+            any(
+                "local-collection: binds no api and records no reason" in error
+                for error in report.errors
+            ),
+            report.errors,
+        )
+
+    def test_reason_for_populated_binding_fails(self) -> None:
+        """The check that would have caught the real defect: PF-013 left the five
+
+        `local-*` bindings at `sql=()` while `local-store-v1.sql` defined the
+        tables they name, so a reason recorded against a binding that is actually
+        populated must fail loudly rather than sit there looking like coverage.
+        `oauth-transaction` binds `sql`, so recording an absence reason for its
+        `sql` axis is the bogus case.
+        """
+        report = self.validator.Report()
+        contract_text = CONTRACT.read_text(encoding="utf-8")
+        absences = dict(self.validator.RECORDED_ABSENCES)
+        absences[("oauth-transaction", "sql")] = (
+            "bogus reason for a binding that is actually populated"
+        )
+
+        with patch.object(self.validator, "RECORDED_ABSENCES", absences):
+            self.validator.check_absence_reasons(report, contract_text)
+
+        self.assertTrue(
+            any(
+                "oauth-transaction: records a reason for an absent sql binding" in error
+                and "the reason has outlived the gap it excused" in error
+                for error in report.errors
+            ),
+            report.errors,
+        )
+
+    def test_absence_table_document_only_row_fails_mismatch(self) -> None:
+        contract_text = CONTRACT.read_text(encoding="utf-8")
+        marker = "| Aggregate | Absent binding | Reason |\n|---|---|---|\n"
+        self.assertEqual(contract_text.count(marker), 1)
+        extra_row = (
+            "| `fake-aggregate` | `sql` | Manufactured absence for a drift test. |\n"
+        )
+        mutated = contract_text.replace(marker, marker + extra_row)
+
+        report = self.validator.Report()
+        self.validator.check_absence_reasons(report, mutated)
+
+        self.assertTrue(
+            any(
+                "recorded-absence table mismatch" in error
+                and "only-in-document" in error
+                and "fake-aggregate" in error
+                for error in report.errors
+            ),
+            report.errors,
+        )
+
+    def test_absence_table_validator_only_entry_fails_mismatch(self) -> None:
+        contract_text = CONTRACT.read_text(encoding="utf-8")
+        row = (
+            "| `oauth-transaction` | `api` | OAuthCompletion.state echoes the "
+            "terminal value only; see TRANSIENT_API_ENUMS. |\n"
+        )
+        self.assertEqual(contract_text.count(row), 1)
+        mutated = contract_text.replace(row, "")
+
+        report = self.validator.Report()
+        self.validator.check_absence_reasons(report, mutated)
+
+        self.assertTrue(
+            any(
+                "recorded-absence table mismatch" in error
+                and "only-in-validator" in error
+                and "oauth-transaction" in error
+                for error in report.errors
+            ),
+            report.errors,
+        )
+
+    def test_absence_reason_text_drift_fails(self) -> None:
+        contract_text = CONTRACT.read_text(encoding="utf-8")
+        row = (
+            "| `oauth-transaction` | `api` | OAuthCompletion.state echoes the "
+            "terminal value only; see TRANSIENT_API_ENUMS. |\n"
+        )
+        self.assertEqual(contract_text.count(row), 1)
+        drifted_row = (
+            "| `oauth-transaction` | `api` | A drifted reason that does not "
+            "match the validator's text. |\n"
+        )
+        mutated = contract_text.replace(row, drifted_row)
+
+        report = self.validator.Report()
+        self.validator.check_absence_reasons(report, mutated)
+
+        self.assertTrue(
+            any(
+                "oauth-transaction" in error
+                and "absent api binding" in error
+                and "differs from the validator's" in error
+                for error in report.errors
+            ),
+            report.errors,
+        )
+
+    def test_missing_absence_table_raises_failure(self) -> None:
+        report = self.validator.Report()
+        contract_text = "# Doc\n\nNo such table anywhere in this document.\n"
+
+        with self.assertRaises(self.validator.Failure) as context:
+            self.validator.check_absence_reasons(report, contract_text)
+
+        self.assertIn("contains no recorded-absence table", str(context.exception))
+
+    def test_local_aggregates_are_wired_to_sql(self) -> None:
+        """PF-013 created `local_collection_state` etc. in `local-store-v1.sql`, but
+
+        the five `local-*` bindings sat at `sql=()`. `coverage()` counted an
+        aggregate as covered whether it was compared against three owners or
+        none, so those five were reported as covered while compared against
+        nothing. This asserts directly against the committed `BINDINGS`, not
+        through the validator's report, so it fails on the exact regression
+        rather than on any incidental message text.
+        """
+        bindings = {binding.aggregate: binding for binding in self.validator.BINDINGS}
+        expected_columns = {
+            "local-collection": "local_collection_state.state",
+            "local-sync": "local_sync_state.state",
+            "local-auth": "local_auth_state.state",
+            "local-permission": "local_permission_state.state",
+            "local-connectivity": "local_connectivity_state.state",
+        }
+        for aggregate, column in expected_columns.items():
+            binding = bindings[aggregate]
+            self.assertEqual(
+                binding.sql,
+                (column,),
+                f"{aggregate}: PF-013 created {column.split('.')[0]} but the "
+                f"binding's sql tuple is {binding.sql!r}; an aggregate counted as "
+                "covered while compared against nothing is exactly the PF-013 "
+                "defect PF-067 exists to catch",
+            )
+
+    def test_unbound_local_store_column_fails_rule_8(self) -> None:
+        """Rule 8 must fail closed on the device half of the storage contract too.
+
+        Before PF-067, `local_store_tables()` read `local-store-v1.sql` for table
+        names only, so a state column declared there and bound to nothing could
+        not be detected. This injects one into `local_meta`, a table no binding
+        or sub-entity vocabulary names, and points the validator's `SCHEMAS`
+        constant at a temporary copy so the real schema tree is never touched.
+        """
+        local_store_path = ROOT / "packages" / "schemas" / "local-store-v1.sql"
+        text = local_store_path.read_text(encoding="utf-8")
+        old = (
+            "create table local_meta (\n"
+            "  singleton integer primary key check (singleton = 1),"
+        )
+        new = old + "\n  state text not null check (state in ('applied')),"
+        self.assertEqual(text.count(old), 1)
+        mutated = text.replace(old, new)
+
+        schema_dir = self.directory / "local_schema"
+        schema_dir.mkdir()
+        (schema_dir / "local-store-v1.sql").write_text(mutated, encoding="utf-8")
+
+        with patch.object(self.validator, "SCHEMAS", schema_dir):
+            code, output = self.run_validator()
+
+        self.assertEqual(code, 1, output)
+        self.assertIn(
+            "bound to no aggregate and declares no local vocabulary: local_meta.state",
+            output,
+        )
