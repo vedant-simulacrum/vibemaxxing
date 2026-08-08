@@ -190,6 +190,15 @@ def validate_json_schemas_and_examples() -> None:
         "notification",
         "moderation",
         "export",
+        # PF-014. The four surfaces that carry content by accident rather than by
+        # design, and the four the acceptance for the local store names. A log line, a
+        # backup, a support bundle and a corruption report are each assembled while
+        # something is going wrong, which is when quoting the thing that went wrong is
+        # most tempting and least examined.
+        "log",
+        "backup",
+        "diagnostic",
+        "corruption-report",
     }
     covered_boundaries = {case["boundary"] for case in privacy_cases["cases"]}
     if covered_boundaries != required_privacy_boundaries:

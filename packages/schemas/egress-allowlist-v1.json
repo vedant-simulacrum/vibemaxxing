@@ -390,6 +390,7 @@
     "summary",
     "classification",
     "free-text",
-    "arbitrary-metadata"
+    "arbitrary-metadata",
+    "provider-identity-attribute"
   ]
 }

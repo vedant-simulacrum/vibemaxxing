@@ -76,7 +76,7 @@
     {
       "finding_id": "SR-008",
       "severity": "P1",
-      "state": "repair-in-progress",
+      "state": "repaired-pending-review",
       "title": "Local daemon, shell, IPC, and platform supervision",
       "repair_task": "P-1140F-3",
       "finding_class": "contradiction",
@@ -92,7 +92,8 @@
       "closure_evidence": [
         "PF-011 at HEAD of planning/pf-011-trust-domains: all eight local roles are declared once in packages/schemas/local-trust-domains-v1.json with an OS peer identity per platform, a session boundary, an explicit network scope and capability, data-class and prohibition lists. PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md tabulated six and omitted the interactive shell and the privileged supervisor \u2014 the only role taking arbitrary operator input and the only one running elevated. The separation the privacy boundary rests on is enforced: exactly one role may read transcript-content and its network scope is none. The local channel protocol, shell/subsystem separation and local persistence remain open under PF-012, PF-013 and PF-014.",
         "PF-012 at HEAD of planning/pf-012-local-channel: local-control-v1.proto reaches every message body only through its own role's arm, so a collector encoding a deletion request is unrepresentable rather than rejected. Envelope previously carried one universal oneof holding all fifteen bodies with sender_role a field the sender filled in, while LOCAL_IPC_AND_DEVICE_IDENTITY.md stated that role confusion is rejected. Three local-channel reason codes now exist for what remains detectable; the protocol previously had no vocabulary with which to refuse anything. Shell/subsystem separation and local persistence remain open under PF-013 and PF-014.",
-        "PF-013 at HEAD of planning/pf-013-shell-separation: interactive-shell declares only the eight process and connection states. It previously carried fifteen, collapsing collection, sync, auth, permission, update and connectivity into one state variable, so a device with paused collection and an offline network had no representable shell state. Five projections now persist in local-store-v1.sql. Local persistence and migration remain open under PF-014."
+        "PF-013 at HEAD of planning/pf-013-shell-separation: interactive-shell declares only the eight process and connection states. It previously carried fifteen, collapsing collection, sync, auth, permission, update and connectivity into one state variable, so a device with paused collection and an offline network had no representable shell state. Five projections now persist in local-store-v1.sql. Local persistence and migration remain open under PF-014.",
+        "PF-014 at HEAD of planning/pf-014-local-persistence: the canary fixture now covers log, backup, diagnostic and corruption-report, the four surfaces that carry content by accident rather than by design and the four the acceptance named. Repairing it found four pre-existing negative cases naming a forbidden class in snake_case where the allowlist declares kebab-case, so they resolved to nothing; a fifth naming otel-identity-attributes, which was declared nowhere; and two cases sharing one canary token, which defeats attribution. All four units serving SR-008 have landed."
       ],
       "reviewed_commit": null,
       "review_verdict": "pending"
