@@ -113,6 +113,59 @@ def main() -> int:
             "finding is tracked against a step with no work in it",
         )
 
+
+    # Units bind to steps and findings bind to steps, which was too coarse to say
+    # which unit serves which finding: P-1140F-4 owns twelve units and five findings,
+    # so "PF-019 landed" implied nothing about SR-012 specifically. Recording closure
+    # evidence had to be done by hand and by reading, which is exactly the kind of
+    # bookkeeping that goes wrong quietly. `Serves:` closes that, and the two bindings
+    # must agree: a unit cannot serve a finding assigned to a different step.
+    served: dict[str, list[str]] = defaultdict(list)
+    finding_step = {row["finding_id"]: row["repair_task"] for row in findings}
+    for identifier, body in sorted(series.items()):
+        serves = field(body, "Serves")
+        require(
+            serves is not None,
+            f"{identifier} names no finding it serves, so landing it changes no "
+            "finding's evidence and closure has to be assembled by reading",
+        )
+        for finding in [entry.strip() for entry in serves.split(",")]:
+            require(
+                finding in finding_step,
+                f"{identifier} serves {finding!r}, which is not a recorded finding",
+            )
+            require(
+                finding_step[finding] == field(body, "Repair"),
+                f"{identifier} is in {field(body, 'Repair')} and serves {finding}, "
+                f"which is assigned to {finding_step[finding]}; a unit cannot repair a "
+                "finding its own step does not own",
+            )
+            served[finding].append(identifier)
+
+    for row in findings:
+        require(
+            bool(served.get(row["finding_id"])),
+            f"{row['finding_id']} is served by no unit, so nothing landing can ever "
+            "close it",
+        )
+
+    # A finding may only close once every unit serving it has landed. Closure evidence
+    # is not the same as closure: a partially repaired finding may carry evidence and
+    # must not carry `closed`.
+    for row in findings:
+        if row["state"] != "closed":
+            continue
+        outstanding = [
+            identifier
+            for identifier in served[row["finding_id"]]
+            if (field(series[identifier], "Status") or "").strip("`") != "landed"
+        ]
+        require(
+            not outstanding,
+            f"{row['finding_id']} is closed and the units serving it are not all "
+            f"landed: {outstanding}",
+        )
+
     open_findings: dict[str, list[str]] = defaultdict(list)
     for finding in findings:
         if finding["state"] != "closed":
@@ -138,6 +191,14 @@ def main() -> int:
         )
 
     print("repair-task binding: pass")
+    print(
+        "findings="
+        + " ".join(
+            f"{row['finding_id']}:{sum(1 for u in served[row['finding_id']] if (field(series[u], 'Status') or '').strip('`') == 'landed')}"
+            f"/{len(served[row['finding_id']])}"
+            for row in findings
+        )
+    )
     print(
         "steps="
         + " ".join(
