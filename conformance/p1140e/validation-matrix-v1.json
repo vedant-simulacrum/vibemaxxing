@@ -780,7 +780,12 @@
     "server-deletion",
     "source-certification",
     "update-lifecycle",
-    "web-session-family"
+    "web-session-family",
+    "local-auth",
+    "local-collection",
+    "local-connectivity",
+    "local-permission",
+    "local-sync"
   ],
   "platform_profiles": [
     "alpine-3.23-aarch64-headless",
