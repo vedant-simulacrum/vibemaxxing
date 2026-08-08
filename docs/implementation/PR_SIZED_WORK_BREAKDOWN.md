@@ -73,16 +73,16 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 | Status | Units |
 |---|---|
 | `not-started` | 206 |
-| `in-progress` | 16 |
-| `landed` | 32 |
+| `in-progress` | 15 |
+| `landed` | 33 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 93 assertions across 32 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 95 assertions across 33 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 23.
+Startable now — not done, and every dependency done: 22.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,7 +90,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 11 | `PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028` |
+| 1 | 10 | `PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028` |
 | 2 | 6 | `PF-006`, `PF-016`, `PF-017`, `PF-022`, `PF-027`, `PF-030` |
 | 3 | 5 | `PF-007`, `PF-018`, `PF-023`, `PF-031`, `PF-032` |
 | 4 | 2 | `PF-008`, `PF-029` |
@@ -314,12 +314,14 @@ Evidence: unittest tests.ci.test_shell_subsystem_separation
 
 ### PF-014 — Local persistence and migration contract
 Files: `packages/schemas/local-store-v1.sql`, `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `conformance/privacy/p1140b-boundary-canaries-v1.json`
-Acceptance: `packages/schemas/local-store-v1.sql` parses under `sqlite3 -init` with no errors, holds no key material of its own, and the canary fixture proves no log, backup, diagnostic or corruption-report column can hold a forbidden content class.
+Acceptance: `packages/schemas/local-store-v1.sql` parses under SQLite with no errors and holds no key material of its own, which a test asserts against the DDL with comment lines stripped so prose cannot satisfy it; the canary fixture carries a positive and a negative case for each of `log`, `backup`, `diagnostic` and `corruption-report`; every negative case names a forbidden class declared in `egress-allowlist-v1.json` and every canary token is unique, so a leak is attributable to one boundary; `python3 -m unittest tests.ci.test_local_store_contract` exits 0.
 Depends: PF-011
 Repair: P-1140F-3
 Serves: SR-008
 Est: 12-16
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_local_store_contract
 
 Two things changed here under D-384 and are recorded rather than applied silently. The file is `local-store-v1.sql` rather than `local-schema.sql`, which is the versioned name every other schema in that directory uses, and the four units that named the old path now name this one. And the acceptance asked for an encryption key reference per table; the file deliberately has none. Encryption is page-level under a key held by the operating-system keystore, because a key column beside the ciphertext it protects gives no confidentiality at all — the same reasoning D-213 applies to the server keyring — so the validator asserts the absence of key material rather than the presence of a reference. The `sqlite3 -init` parse has not been run.
 

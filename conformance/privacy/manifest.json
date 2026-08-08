@@ -28,7 +28,7 @@
       "fixtures": [
         {
           "path": "conformance/privacy/p1140b-boundary-canaries-v1.json",
-          "sha256": "40c62417005be3979927ca98209e135771dc855991110d522242d7e77e7bc1ff"
+          "sha256": "8979a9eea7f2091859f2ccd1e92de0e0eca78d83402ac8ddf99e1967a09eed03"
         }
       ],
       "expect": "reject",
@@ -36,7 +36,7 @@
       "authority_ref": "docs/privacy/PRIVACY_CONTRACT.md#absolute-server-boundary",
       "negative": true,
       "state": "active",
-      "note": "One fixture, ten boundaries — adapter, ipc, local-store, detector, claim, http, telemetry, notification, moderation and export — each carrying a positive and a reject-before-egress pair. The pairing is enforced today by scripts/repository/validate_planning_artifacts.py; nothing drives the boundaries themselves, because none of them exist."
+      "note": "One fixture, ten boundaries \u2014 adapter, ipc, local-store, detector, claim, http, telemetry, notification, moderation and export \u2014 each carrying a positive and a reject-before-egress pair. The pairing is enforced today by scripts/repository/validate_planning_artifacts.py; nothing drives the boundaries themselves, because none of them exist."
     }
   ]
 }

@@ -26,7 +26,7 @@
       "case_id": "adapter-negative-otel-identity-attributes",
       "boundary": "adapter",
       "input": {
-        "forbidden_field": "otel-identity-attributes",
+        "forbidden_field": "provider-identity-attribute",
         "attributes": [
           "user.email",
           "user.id",
@@ -34,8 +34,8 @@
           "user.account_uuid",
           "organization.id"
         ],
-        "canary": "VMX-PRIVACY-CANARY-02",
-        "note": "Claude Code puts these five on every claude_code.token.usage datapoint by default and no documented vendor setting removes user.email. The collector strips them at the device boundary before aggregation under D-099. Fixtures: conformance/adapters/claude-code-otel/"
+        "canary": "VMX-PRIVACY-CANARY-26",
+        "note": "Claude Code puts these five on every claude_code.token.usage datapoint by default and no documented vendor setting removes user.email. The collector strips them at the device boundary before aggregation under D-099. Fixtures: conformance/adapters/claude-code-otel/ The forbidden class was previously written as 'otel-identity-attributes', which egress-allowlist-v1.json did not declare, so this case named a rule that resolved to nothing. It also shared canary 02 with the IPC case, which defeats the only thing a canary is for: if the token surfaces you must be able to say which boundary leaked."
       },
       "expected": "reject-before-egress",
       "reason_code": "privacy-forbidden-field"
@@ -74,7 +74,7 @@
       "case_id": "local-store-negative-forbidden-content",
       "boundary": "local-store",
       "input": {
-        "forbidden_field": "request_id",
+        "forbidden_field": "request-id",
         "canary": "VMX-PRIVACY-CANARY-03"
       },
       "expected": "reject-before-egress",
@@ -94,7 +94,7 @@
       "case_id": "detector-negative-forbidden-content",
       "boundary": "detector",
       "input": {
-        "forbidden_field": "content_hash",
+        "forbidden_field": "content-hash",
         "canary": "VMX-PRIVACY-CANARY-04"
       },
       "expected": "reject-before-egress",
@@ -154,7 +154,7 @@
       "case_id": "telemetry-negative-forbidden-content",
       "boundary": "telemetry",
       "input": {
-        "forbidden_field": "request_id",
+        "forbidden_field": "request-id",
         "canary": "VMX-PRIVACY-CANARY-07"
       },
       "expected": "reject-before-egress",
@@ -174,7 +174,7 @@
       "case_id": "notification-negative-forbidden-content",
       "boundary": "notification",
       "input": {
-        "forbidden_field": "content_hash",
+        "forbidden_field": "content-hash",
         "canary": "VMX-PRIVACY-CANARY-08"
       },
       "expected": "reject-before-egress",
@@ -219,6 +219,95 @@
       },
       "expected": "reject-before-egress",
       "reason_code": "privacy-forbidden-field"
+    },
+    {
+      "case_id": "log-positive-safe-fields",
+      "boundary": "log",
+      "input": {
+        "registered_id": "registered-reason-code",
+        "count": "3",
+        "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "expected": "accept",
+      "note": "A log line is the surface nobody designs and everybody ships. local-store-v1.sql keeps only last_reason_code, a registered identifier, precisely so a failure cannot be explained by quoting what failed."
+    },
+    {
+      "case_id": "log-negative-forbidden-content",
+      "boundary": "log",
+      "input": {
+        "forbidden_field": "path",
+        "canary": "VMX-PRIVACY-CANARY-22"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field",
+      "note": "A log line is the surface nobody designs and everybody ships. local-store-v1.sql keeps only last_reason_code, a registered identifier, precisely so a failure cannot be explained by quoting what failed."
+    },
+    {
+      "case_id": "backup-positive-safe-fields",
+      "boundary": "backup",
+      "input": {
+        "registered_id": "local-store-v1",
+        "count": "16",
+        "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "expected": "accept",
+      "note": "local_deletion_receipts.residual_risk already records backup-copy-possible, so a backup is an acknowledged path off the device. What it copies must therefore be bounded by the same rule as anything crossing deliberately."
+    },
+    {
+      "case_id": "backup-negative-forbidden-content",
+      "boundary": "backup",
+      "input": {
+        "forbidden_field": "transcript",
+        "canary": "VMX-PRIVACY-CANARY-23"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field",
+      "note": "local_deletion_receipts.residual_risk already records backup-copy-possible, so a backup is an acknowledged path off the device. What it copies must therefore be bounded by the same rule as anything crossing deliberately."
+    },
+    {
+      "case_id": "diagnostic-positive-safe-fields",
+      "boundary": "diagnostic",
+      "input": {
+        "registered_id": "registered-platform-profile",
+        "count": "1",
+        "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "expected": "accept",
+      "note": "A support bundle is assembled under duress by someone trying to fix a problem, which is exactly when a filename or a project name is most tempting to include."
+    },
+    {
+      "case_id": "diagnostic-negative-forbidden-content",
+      "boundary": "diagnostic",
+      "input": {
+        "forbidden_field": "filename",
+        "canary": "VMX-PRIVACY-CANARY-24"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field",
+      "note": "A support bundle is assembled under duress by someone trying to fix a problem, which is exactly when a filename or a project name is most tempting to include."
+    },
+    {
+      "case_id": "corruption-report-positive-safe-fields",
+      "boundary": "corruption-report",
+      "input": {
+        "registered_id": "registered-table-name",
+        "count": "7",
+        "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      "expected": "accept",
+      "note": "A corruption report describes damaged rows. The damaged rows are observations, and quoting one to explain the damage is how the most sensitive record in the store leaves it."
+    },
+    {
+      "case_id": "corruption-report-negative-forbidden-content",
+      "boundary": "corruption-report",
+      "input": {
+        "forbidden_field": "raw-log",
+        "canary": "VMX-PRIVACY-CANARY-25"
+      },
+      "expected": "reject-before-egress",
+      "reason_code": "privacy-forbidden-field",
+      "note": "A corruption report describes damaged rows. The damaged rows are observations, and quoting one to explain the damage is how the most sensitive record in the store leaves it."
     }
-  ]
+  ],
+  "note": "Every negative case names a forbidden class declared in packages/schemas/egress-allowlist-v1.json, and every canary token is unique so a leak can be attributed to one boundary. Four cases previously named the class in snake_case where the allowlist declares kebab-case, so they resolved to nothing \u2014 the same spelling mismatch already recorded against persistence owners, where a naive comparison finds no overlap and a careless one finds no defect."
 }
