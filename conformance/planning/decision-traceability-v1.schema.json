@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/conformance/planning/decision-traceability-v1.schema.json",
+  "title": "VibeMaxxing decision-to-implementation traceability",
+  "description": "One row for every decision in conformance/planning/decisions-v1.json, owned by the P-1140F track. P-1140E froze structural traceability at D-001..D-069 and a later decision must not silently expand a closed program's evidence set, so this is the second matrix PF-063 called for rather than a widening of range(1, 70). The rule it makes checkable comes from docs/planning/decision-traceability/README.md: a decision is covered only when it has a normative owner, an implementation work unit, machine or state ownership, platform behaviour, and executable acceptance evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "rows"],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "implementation_bearing"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^D-[0-9]{3}$"
+          },
+          "implementation_bearing": {
+            "type": "boolean",
+            "description": "Whether the decision constrains the product. A decision about the planning program itself — validator behaviour, document structure, gate process — does not, and saying so is the honest row rather than a manufactured owner."
+          },
+          "reason": {
+            "$ref": "#/$defs/cell",
+            "description": "Why the decision is not implementation-bearing. Required when implementation_bearing is false; an unexplained exclusion cannot be told apart from an omission."
+          },
+          "normative_owner": {
+            "$ref": "#/$defs/cell"
+          },
+          "implementation_owner": {
+            "$ref": "#/$defs/cell",
+            "description": "A work-unit series or a real path. The literal `unassigned` is permitted only alongside owner_gap_reason: a decision that constrains the product but that no unit owns is a real coverage gap, and writing a plausible owner to fill the cell would hide it."
+          },
+          "owner_gap_reason": {
+            "$ref": "#/$defs/cell",
+            "description": "Required when implementation_owner is `unassigned`. What is missing, so the gap is counted rather than papered over."
+          },
+          "machine_or_state_ownership": {
+            "$ref": "#/$defs/cell"
+          },
+          "platform_scope": {
+            "$ref": "#/$defs/cell"
+          },
+          "required_executable_evidence": {
+            "$ref": "#/$defs/cell"
+          }
+        },
+        "allOf": [
+          {
+            "comment": "`unassigned` is a claim that no unit owns the decision, and a claim needs its reason. Describing this in a property description without expressing it here is how a rule becomes decorative.",
+            "if": {
+              "properties": {
+                "implementation_owner": {
+                  "const": "unassigned"
+                }
+              },
+              "required": ["implementation_owner"]
+            },
+            "then": {
+              "required": ["owner_gap_reason"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "implementation_bearing": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "normative_owner",
+                "implementation_owner",
+                "machine_or_state_ownership",
+                "platform_scope",
+                "required_executable_evidence"
+              ],
+              "not": {
+                "required": ["reason"]
+              }
+            },
+            "else": {
+              "required": ["reason"],
+              "not": {
+                "anyOf": [
+                  { "required": ["normative_owner"] },
+                  { "required": ["implementation_owner"] },
+                  { "required": ["machine_or_state_ownership"] },
+                  { "required": ["platform_scope"] },
+                  { "required": ["required_executable_evidence"] }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "cell": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "\\|"
+      },
+      "description": "A literal pipe would shift every column to its right when this row is rendered into the traceability tables."
+    }
+  }
+}

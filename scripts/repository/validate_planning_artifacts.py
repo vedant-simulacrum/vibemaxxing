@@ -38,6 +38,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS = ROOT / "packages" / "schemas"
 CONFORMANCE = ROOT / "conformance"
+PLANNING_SCHEMAS = CONFORMANCE / "planning"
 FORMAT_CHECKER = FormatChecker()
 
 
@@ -1193,6 +1194,73 @@ def validate_cddl_file() -> None:
                 "the evidence bundle is a device-local at-rest record and acquired a "
                 f"wire or attestation affordance: {forbidden}"
             )
+
+
+def validate_decision_traceability() -> None:
+    """Every decision has a traceability row, and no two decisions are the same one.
+
+    P-1140E froze its traceability matrix at `range(1, 70)` and delegated the rest to
+    a validator that never references a `D-` identifier, so every decision from D-070
+    onward had no row at all — 222 of 291. This runs over the register rather than
+    over a fixed list, so a new decision cannot merge without a row.
+
+    The duplicate check is here because the register held fifteen byte-identical
+    pairs, D-320 through D-334 repeating D-380 through D-394 with no `supersedes`
+    marker on either copy. Nothing compared decision text to decision text, so two
+    ids meant the same thing and a reader could cite whichever they found first.
+    """
+    schema = load_json(PLANNING_SCHEMAS / "decision-traceability-v1.schema.json")
+    instance = load_json(PLANNING_SCHEMAS / "decision-traceability-v1.json")
+    errors = sorted(
+        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(
+            instance
+        ),
+        key=lambda error: list(error.path),
+    )
+    if errors:
+        raise ValidationFailure(
+            "decision-traceability-v1.json: "
+            + "; ".join(f"{list(e.path)}: {e.message}" for e in errors[:3])
+        )
+
+    orphan_shards = planning_docs.orphaned_shards()
+    if orphan_shards:
+        raise ValidationFailure(
+            "traceability shards on disk that nothing generates: "
+            + ", ".join(path.name for path in orphan_shards)
+        )
+
+    missing = planning_docs.untraced()
+    if missing:
+        raise ValidationFailure(
+            f"{len(missing)} decision(s) have no traceability row: {missing[:8]}"
+        )
+    orphans = planning_docs.orphaned()
+    if orphans:
+        raise ValidationFailure(
+            f"traceability rows name decisions the register does not hold: {orphans[:8]}"
+        )
+
+    # Keyed on the decision text alone, and only for decisions that are still live.
+    # Keying on the reopen condition too would let a duplicate be resolved by editing
+    # the column nobody reads, which is not the same as resolving it. A `superseded`
+    # twin is the correct record of a merge and is allowed.
+    decisions = load_json(PLANNING_SCHEMAS / "decisions-v1.json")["decisions"]
+    seen: dict[str, str] = {}
+    duplicates: list[str] = []
+    for row in decisions:
+        if row["status"] == "superseded":
+            continue
+        if row["decision"] in seen:
+            duplicates.append(f"{row['id']} repeats {seen[row['decision']]}")
+        else:
+            seen[row["decision"]] = row["id"]
+    if duplicates:
+        raise ValidationFailure(
+            "two live decisions carry the same text, so two ids mean the same thing "
+            "and a reader may cite whichever they find first: "
+            + "; ".join(duplicates[:6])
+        )
 
 
 def validate_planning_doc_generation() -> None:
@@ -3905,6 +3973,7 @@ def main() -> int:
         ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),
         ("VibeProof vector reproducibility", validate_vector_reproducibility),
         ("planning document generation", validate_planning_doc_generation),
+        ("decision traceability coverage", validate_decision_traceability),
         ("Protobuf", validate_protobuf_files),
     ]
     failures: list[str] = []

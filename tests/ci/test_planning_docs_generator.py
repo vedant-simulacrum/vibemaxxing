@@ -39,6 +39,11 @@ TASKS_JSON = ROOT / "conformance" / "planning" / "tasks-v1.json"
 TASKS_SCHEMA = ROOT / "conformance" / "planning" / "tasks-v1.schema.json"
 REGISTER_MD = ROOT / "docs" / "planning" / "DECISION_REGISTER.md"
 CATALOG_MD = ROOT / "docs" / "planning" / "TASK_CATALOG.md"
+TRACEABILITY_JSON = ROOT / "conformance" / "planning" / "decision-traceability-v1.json"
+TRACEABILITY_SCHEMA = (
+    ROOT / "conformance" / "planning" / "decision-traceability-v1.schema.json"
+)
+TRACEABILITY_DIR = ROOT / "docs" / "planning" / "decision-traceability"
 
 
 def load_module(path: Path, name: str):
@@ -230,6 +235,213 @@ class CommittedSourcesValidateTests(unittest.TestCase):
         jsonschema.validate(
             instance=load_json(TASKS_JSON), schema=load_json(TASKS_SCHEMA)
         )
+
+
+class TraceabilityCoverageTests(PlanningDocsFixtureMixin, unittest.TestCase):
+    """PF-063: every decision must have a traceability row, and no row may name a
+    decision the register does not hold. `untraced()` and `orphaned()` are the checks
+    `validate_decision_traceability` runs in CI.
+    """
+
+    def test_every_decision_is_traced_and_no_row_is_orphaned_on_the_real_tree(
+        self,
+    ) -> None:
+        self.assertEqual(self.module.untraced(), [])
+        self.assertEqual(self.module.orphaned(), [])
+
+    def test_a_row_removed_from_the_register_is_reported_as_untraced(self) -> None:
+        """Pick a real row out of the loaded JSON rather than hardcoding a decision
+        id: the register is sparse, and a previously hardcoded id turned out not to
+        exist, silently making that assertion vacuous.
+        """
+        traceability = load_json(TRACEABILITY_JSON)
+        removed = traceability["rows"][0]["id"]
+        traceability["rows"] = traceability["rows"][1:]
+
+        patched = self.directory / "decision-traceability-v1.json"
+        patched.write_text(json.dumps(traceability), encoding="utf-8")
+
+        with patch.object(self.module, "TRACEABILITY_JSON", patched):
+            self.assertEqual(self.module.untraced(), [removed])
+            # The register itself is untouched, so nothing is orphaned by this edit.
+            self.assertEqual(self.module.orphaned(), [])
+
+    def test_a_row_for_an_unknown_decision_is_reported_as_orphaned(self) -> None:
+        traceability = load_json(TRACEABILITY_JSON)
+        decisions = {row["id"] for row in load_json(DECISIONS_JSON)["decisions"]}
+        self.assertNotIn(
+            "D-999",
+            decisions,
+            "fixture assumption: D-999 must not be a real decision id",
+        )
+        traceability["rows"].append(
+            {
+                "id": "D-999",
+                "implementation_bearing": False,
+                "reason": "synthetic row added by a test; not a real decision",
+            }
+        )
+
+        patched = self.directory / "decision-traceability-v1.json"
+        patched.write_text(json.dumps(traceability), encoding="utf-8")
+
+        with patch.object(self.module, "TRACEABILITY_JSON", patched):
+            self.assertEqual(self.module.orphaned(), ["D-999"])
+            # Every real decision is still covered; the extra row does not remove
+            # coverage for anything.
+            self.assertEqual(self.module.untraced(), [])
+
+
+class TraceabilityShardNamingTests(PlanningDocsFixtureMixin, unittest.TestCase):
+    """PF-063 regression: grouping the tail by row count named each file after the ids
+    it happened to hold, so appending one decision renamed the final shard and left the
+    old name behind. The grid fixes that; these tests prove filenames are stable as the
+    register grows and that a leftover file from the old scheme is caught.
+    """
+
+    def test_appending_a_decision_does_not_rename_any_existing_shard(self) -> None:
+        """The regression this guards against only shows up when the new row lands in
+        the *same* grid bucket as an already-populated one — a brand-new trailing
+        bucket (as a `D-999`-style id would create) is a new file either way, old
+        scheme or new. So this extends the highest existing tail id by one instead,
+        landing in the same bucket the last real row already occupies, which is
+        exactly what triggered the original defect when D-609 was added.
+
+        The new id is built from an arithmetic offset rather than written as a
+        literal `D-NNN` token, because a literal non-existent decision id in this
+        file would itself be flagged as a dangling cross-reference.
+        """
+        before = {path.name for path, _ in self.module.traceability_documents()}
+
+        traceability = load_json(TRACEABILITY_JSON)
+        highest = max(int(row["id"].split("-")[1]) for row in traceability["rows"])
+        synthetic_id = "D-" + f"{highest + 1:03d}"
+        traceability["rows"].append(
+            {
+                "id": synthetic_id,
+                "implementation_bearing": False,
+                "reason": "synthetic row added by a test; not a real decision",
+            }
+        )
+        patched = self.directory / "decision-traceability-v1.json"
+        patched.write_text(json.dumps(traceability), encoding="utf-8")
+
+        with patch.object(self.module, "TRACEABILITY_JSON", patched):
+            after = {path.name for path, _ in self.module.traceability_documents()}
+
+        # Every filename that existed before must still exist unchanged. Because the
+        # synthetic row extends the same bucket the highest real row already
+        # occupies, a grid-stable implementation produces the identical shard set —
+        # no new file at all.
+        self.assertTrue(
+            before <= after,
+            f"a pre-existing shard was renamed or dropped: {before - after}",
+        )
+        new_files = after - before
+        self.assertEqual(
+            new_files,
+            set(),
+            "appending one decision into an already-populated bucket must not "
+            f"produce a new or renamed shard, got {new_files}",
+        )
+
+    def test_orphaned_shards_names_a_leftover_file_from_the_old_scheme(self) -> None:
+        expected = {path.name for path, _ in self.module.traceability_documents()}
+
+        shard_directory = self.directory / "decision-traceability"
+        shard_directory.mkdir()
+        for name in expected:
+            (shard_directory / name).write_text("stale placeholder", encoding="utf-8")
+        # "999" is this repository's synthetic-id sentinel (see SYNTHETIC_SENTINEL in
+        # validate_cross_references.py), so this filename is exempt from the
+        # dangling-decision-reference check while still being obviously not a real
+        # generated shard name.
+        leftover = shard_directory / "D-999-D-999.md"
+        leftover.write_text("orphaned by a rename", encoding="utf-8")
+
+        with patch.object(self.module, "TRACEABILITY_DIR", shard_directory):
+            orphans = self.module.orphaned_shards()
+
+        self.assertEqual(orphans, [leftover])
+
+    def test_the_frozen_legacy_shards_keep_their_exact_filenames(self) -> None:
+        """P-1140E already used D-001-D-020.md, D-021-D-040.md, D-041-D-061.md and
+        D-062-D-069.md; PF-063 must not move that content under a new name.
+        """
+        generated = {path.name for path, _ in self.module.traceability_documents()}
+        legacy_names = {
+            f"{first}-{last}.md" for first, last in self.module.LEGACY_GROUPS
+        }
+        self.assertTrue(legacy_names <= generated)
+
+
+class TraceabilitySchemaTests(unittest.TestCase):
+    """The schema is the only thing standing between an empty implementation-owner
+    cell and a row that looks covered but isn't. These prove both branches of the
+    implementation_bearing conditional are actually enforced, not just documented.
+    """
+
+    def setUp(self) -> None:
+        self.schema = load_json(TRACEABILITY_SCHEMA)
+        self.data = load_json(TRACEABILITY_JSON)
+
+    def test_a_bearing_row_with_an_empty_required_cell_is_rejected(self) -> None:
+        row = next(r for r in self.data["rows"] if r["implementation_bearing"])
+        row["normative_owner"] = ""
+
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(instance=self.data, schema=self.schema)
+
+    def test_a_non_bearing_row_carrying_an_implementation_field_is_rejected(
+        self,
+    ) -> None:
+        row = next(r for r in self.data["rows"] if not r["implementation_bearing"])
+        row["normative_owner"] = "smuggled in despite implementation_bearing: false"
+
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(instance=self.data, schema=self.schema)
+
+    def test_the_two_unassigned_owner_rows_carry_an_owner_gap_reason(self) -> None:
+        """D-101 and D-103 are the only rows using the escape hatch the schema's
+        description names: `implementation_owner: "unassigned"` is permitted only
+        alongside `owner_gap_reason`, so a real gap is counted rather than papered
+        over with a plausible-looking owner.
+
+        NOTE: this is a data-level assertion only. The JSON Schema itself has no
+        conditional (`if`/`then`) tying `owner_gap_reason` to
+        `implementation_owner == "unassigned"` — `owner_gap_reason` is not in any
+        `required` list, so a row can set `implementation_owner: "unassigned"` and
+        omit `owner_gap_reason` and still validate. See the schema round-trip test
+        below, which demonstrates this rather than asserting a rejection that the
+        schema does not actually perform.
+        """
+        unassigned = [
+            row
+            for row in self.data["rows"]
+            if row.get("implementation_owner") == "unassigned"
+        ]
+        self.assertEqual({row["id"] for row in unassigned}, {"D-101", "D-103"})
+        for row in unassigned:
+            self.assertTrue(
+                row.get("owner_gap_reason"),
+                f"{row['id']} uses implementation_owner: unassigned with no "
+                "owner_gap_reason",
+            )
+
+    def test_an_unassigned_owner_without_a_reason_is_rejected(self) -> None:
+        """`unassigned` claims no unit owns the decision, and a claim needs its reason.
+
+        The schema described this rule in a property description and did not express
+        it, so removing `owner_gap_reason` validated cleanly — a description is not a
+        check, which is the defect class this repository keeps finding. The `if`/`then`
+        now enforces it, and this test is what would notice if it were removed again.
+        """
+        row = next(r for r in self.data["rows"] if r["id"] == "D-101")
+        self.assertEqual(row["implementation_owner"], "unassigned")
+        row.pop("owner_gap_reason", None)
+
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(instance=self.data, schema=self.schema)
 
 
 if __name__ == "__main__":

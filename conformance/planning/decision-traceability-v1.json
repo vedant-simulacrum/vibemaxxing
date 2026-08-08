@@ -1,0 +1,2363 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "id": "D-001",
+      "implementation_bearing": true,
+      "normative_owner": "Project authority/product spec",
+      "implementation_owner": "F epic and identity/data initialization",
+      "machine_or_state_ownership": "Empty production database; no legacy import endpoint or migration",
+      "platform_scope": "Server/web/native",
+      "required_executable_evidence": "Clean-install tests; old account/score fixtures rejected from competitive import"
+    },
+    {
+      "id": "D-002",
+      "implementation_bearing": true,
+      "normative_owner": "Product spec/UX contract",
+      "implementation_owner": "G/L/R epics",
+      "machine_or_state_ownership": "Ranking/social APIs and event types",
+      "platform_scope": "Web, macOS, Windows, Linux",
+      "required_executable_evidence": "End-to-end social competition journeys and usability tests"
+    },
+    {
+      "id": "D-003",
+      "implementation_bearing": true,
+      "normative_owner": "Design system and approved UI baseline",
+      "implementation_owner": "`packages/ui`",
+      "machine_or_state_ownership": "Design tokens/components; visual fixtures",
+      "platform_scope": "Responsive web and desktop shells",
+      "required_executable_evidence": "Visual regression, accessibility and design review"
+    },
+    {
+      "id": "D-004",
+      "implementation_bearing": true,
+      "normative_owner": "Accounting contract",
+      "implementation_owner": "A and R epics",
+      "machine_or_state_ownership": "Canonical token components and ranking metric enum",
+      "platform_scope": "All sources/server/web",
+      "required_executable_evidence": "Accounting golden vectors and ranking rebuild equivalence"
+    },
+    {
+      "id": "D-005",
+      "implementation_bearing": true,
+      "normative_owner": "Accounting/pricing contract",
+      "implementation_owner": "A and R epics",
+      "machine_or_state_ownership": "Server-owned pricing interpretations and line items",
+      "platform_scope": "Server/web/native display",
+      "required_executable_evidence": "Pricing fixtures, immutable historical interpretation and mandatory `Estimated` UI tests"
+    },
+    {
+      "id": "D-006",
+      "implementation_bearing": true,
+      "normative_owner": "Privacy contract",
+      "implementation_owner": "F, N, S and O epics",
+      "machine_or_state_ownership": "Closed schemas, process ACLs, observability allowlist",
+      "platform_scope": "All supported platforms and server",
+      "required_executable_evidence": "Packet capture, privacy canaries, log/telemetry scans, reviewer-access tests"
+    },
+    {
+      "id": "D-007",
+      "implementation_bearing": true,
+      "normative_owner": "Accounting/competition contract",
+      "implementation_owner": "Import subsystem and the R epic",
+      "machine_or_state_ownership": "Imported facts stored separately with `competitive=false`",
+      "platform_scope": "Native/server/web",
+      "required_executable_evidence": "Attempts to rank imported fixtures fail; private analytics remain visible"
+    },
+    {
+      "id": "D-008",
+      "implementation_bearing": true,
+      "normative_owner": "Integrity/evidence profiles",
+      "implementation_owner": "P, S and R epics",
+      "machine_or_state_ownership": "Server appraisal enum and Imported analytics state",
+      "platform_scope": "Server/web/native",
+      "required_executable_evidence": "Client cannot set state; appraisal/filter/UI tests"
+    },
+    {
+      "id": "D-009",
+      "implementation_bearing": true,
+      "normative_owner": "Project authority",
+      "implementation_owner": "Local native/runtime implementation only",
+      "machine_or_state_ownership": "No remote coding-control service/API",
+      "platform_scope": "macOS, Windows, Linux, headless",
+      "required_executable_evidence": "Architecture scan and API inventory prove absence of remote control plane"
+    },
+    {
+      "id": "D-010",
+      "implementation_bearing": true,
+      "normative_owner": "Stack decision/implementation handoff",
+      "implementation_owner": "Rust local/protocol; Go server; TS web; PostgreSQL migrations",
+      "machine_or_state_ownership": "Generated contracts across language boundaries",
+      "platform_scope": "All",
+      "required_executable_evidence": "Clean builds, generated-code drift checks, cross-language contract tests"
+    },
+    {
+      "id": "D-011",
+      "implementation_bearing": true,
+      "normative_owner": "VibeProof protocol",
+      "implementation_owner": "P epic",
+      "machine_or_state_ownership": "CDDL, deterministic CBOR, COSE Sign1 and key profile",
+      "platform_scope": "Rust/Go; TS diagnostic only",
+      "required_executable_evidence": "Exact-byte vectors, independent verification, malformed/fuzz corpus"
+    },
+    {
+      "id": "D-012",
+      "implementation_bearing": true,
+      "normative_owner": "Protocol crate bakeoff ADR",
+      "implementation_owner": "P epic",
+      "machine_or_state_ownership": "Internal encoder/verifier traits isolate selected crates",
+      "platform_scope": "Rust and Go",
+      "required_executable_evidence": "Differential parser, resource, fuzz and maintenance evaluation before selection"
+    },
+    {
+      "id": "D-013",
+      "implementation_bearing": true,
+      "normative_owner": "Native runtime/security contracts",
+      "implementation_owner": "N/D/O platform units",
+      "machine_or_state_ownership": "Capability matrix and evidence ceilings",
+      "platform_scope": "macOS, Windows, Linux, WSL/container/CI",
+      "required_executable_evidence": "Platform-specific sandbox/permission/restore tests; no equal-strength claim"
+    },
+    {
+      "id": "D-014",
+      "implementation_bearing": true,
+      "normative_owner": "Native IPC contract",
+      "implementation_owner": "N epic and repaired Protobuf",
+      "machine_or_state_ownership": "Peer identity, ACL, handshake, nonce, deadline, sequence and size limits",
+      "platform_scope": "Unix sockets/XPC/named pipes",
+      "required_executable_evidence": "Unauthorized peer, replay, oversized, stale-version and DoS tests"
+    },
+    {
+      "id": "D-015",
+      "implementation_bearing": true,
+      "normative_owner": "Device identity/protocol",
+      "implementation_owner": "P and S epics",
+      "machine_or_state_ownership": "Device lineage, keys, sequence, commitments, rotations and revocations",
+      "platform_scope": "All client platforms/server",
+      "required_executable_evidence": "Rotation, loss, clone, restore, fork and revocation campaigns"
+    },
+    {
+      "id": "D-016",
+      "implementation_bearing": true,
+      "normative_owner": "Superseded by D-028",
+      "implementation_owner": "No active implementation",
+      "machine_or_state_ownership": "None",
+      "platform_scope": "None",
+      "required_executable_evidence": "Traceability validator confirms no mandatory-passkey requirement"
+    },
+    {
+      "id": "D-017",
+      "implementation_bearing": true,
+      "normative_owner": "Server/ranking contract",
+      "implementation_owner": "S and R epics",
+      "machine_or_state_ownership": "Immutable claims/appraisals/corrections, outbox and projections",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Transaction race tests, crash points, idempotency and rebuild hash equivalence"
+    },
+    {
+      "id": "D-018",
+      "implementation_bearing": true,
+      "normative_owner": "Ranking contract",
+      "implementation_owner": "R epic",
+      "machine_or_state_ownership": "SQL window rank and stable presentation cursor",
+      "platform_scope": "Server/web",
+      "required_executable_evidence": "Tie fixtures, pagination stability and correction/rebuild tests"
+    },
+    {
+      "id": "D-019",
+      "implementation_bearing": true,
+      "normative_owner": "Pricing contract",
+      "implementation_owner": "A and R epics",
+      "machine_or_state_ownership": "Immutable dataset/rules/aliases/effective intervals",
+      "platform_scope": "Server/web",
+      "required_executable_evidence": "Historical pricing fixtures and rebuild without retroactive mutation"
+    },
+    {
+      "id": "D-020",
+      "implementation_bearing": true,
+      "normative_owner": "Superseded by D-052",
+      "implementation_owner": "No launch implementation",
+      "machine_or_state_ownership": "Future-reserved hooks only",
+      "platform_scope": "None at launch",
+      "required_executable_evidence": "Route/schema/task scan proves country absent from launch build"
+    },
+    {
+      "id": "D-021",
+      "implementation_bearing": true,
+      "normative_owner": "Social integrity/moderation contracts",
+      "implementation_owner": "M epic",
+      "machine_or_state_ownership": "Progressive action enums, case ledger, appeal/reversal records",
+      "platform_scope": "Server/web/native notifications",
+      "required_executable_evidence": "Authorization, false-positive, appeal, reversal and ranking rebuild tests"
+    },
+    {
+      "id": "D-022",
+      "implementation_bearing": true,
+      "normative_owner": "Universal compatibility contract",
+      "implementation_owner": "V epic",
+      "machine_or_state_ownership": "Immutable certification result bundles and generated support registry",
+      "platform_scope": "All client platforms/web",
+      "required_executable_evidence": "Exact source/version/platform fixtures; unsupported cases displayed honestly"
+    },
+    {
+      "id": "D-023",
+      "implementation_bearing": true,
+      "normative_owner": "Superseded by D-030",
+      "implementation_owner": "No active three-adapter cap",
+      "machine_or_state_ownership": "None",
+      "platform_scope": "None",
+      "required_executable_evidence": "Registry and launch gate contain no fixed three-adapter requirement"
+    },
+    {
+      "id": "D-024",
+      "implementation_bearing": true,
+      "normative_owner": "Operations/updater contract",
+      "implementation_owner": "O epic",
+      "machine_or_state_ownership": "TUF root/roles, target metadata, release-set graph and client trusted state",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "Official TUF conformance plus rollback/freeze/mix-and-match/expiry compromise campaigns"
+    },
+    {
+      "id": "D-025",
+      "implementation_bearing": true,
+      "normative_owner": "Privacy/operations contracts",
+      "implementation_owner": "F, O and S epics",
+      "machine_or_state_ownership": "Typed telemetry allowlist; no open attribute maps",
+      "platform_scope": "Client/server/operations",
+      "required_executable_evidence": "Canary injection into every log/metric/trace path and retention tests"
+    },
+    {
+      "id": "D-026",
+      "implementation_bearing": true,
+      "normative_owner": "Project authority/architecture ADR policy",
+      "implementation_owner": "Architecture review gate",
+      "machine_or_state_ownership": "Dependency manifest and ADR requirement",
+      "platform_scope": "Repository-wide",
+      "required_executable_evidence": "Dependency/architecture scanner flags forbidden classes without accepted ADR"
+    },
+    {
+      "id": "D-027",
+      "implementation_bearing": true,
+      "normative_owner": "Project authority/task catalog",
+      "implementation_owner": "P-1104 gate",
+      "machine_or_state_ownership": "Repository phase metadata and branch protection policy after implementation opens",
+      "platform_scope": "Repository-wide",
+      "required_executable_evidence": "Doctor validates phase; implementation workflows stay disabled before approval"
+    },
+    {
+      "id": "D-028",
+      "implementation_bearing": true,
+      "normative_owner": "Authentication contract",
+      "implementation_owner": "Identity and authentication units",
+      "machine_or_state_ownership": "OAuth transactions, linked identities, optional authenticators and sessions",
+      "platform_scope": "Web/native/server",
+      "required_executable_evidence": "OAuth replay/CSRF/PKCE/recovery tests; ordinary accounts work without passkeys"
+    },
+    {
+      "id": "D-029",
+      "implementation_bearing": true,
+      "normative_owner": "Product scope/implementation handoff",
+      "implementation_owner": "Phased epics F through O",
+      "machine_or_state_ownership": "Feature flags may stage internal access but not redefine launch matrix",
+      "platform_scope": "All",
+      "required_executable_evidence": "Release candidate feature-matrix audit against launch contract"
+    },
+    {
+      "id": "D-030",
+      "implementation_bearing": true,
+      "normative_owner": "Universal compatibility contract",
+      "implementation_owner": "V epic and adapter SDK",
+      "machine_or_state_ownership": "Capability, support ceiling, import and unsupported states",
+      "platform_scope": "macOS, Windows, Linux, WSL/container/CI where supported",
+      "required_executable_evidence": "Conformance runner across representative source families and fallback behavior"
+    },
+    {
+      "id": "D-031",
+      "implementation_bearing": true,
+      "normative_owner": "Native architecture",
+      "implementation_owner": "N/D/O/U native units",
+      "machine_or_state_ownership": "Daemon, collector, sync, CLI, shell, local controls and hosted web contracts",
+      "platform_scope": "macOS menu bar; Windows/Linux tray; headless CLI",
+      "required_executable_evidence": "Install/start/update/uninstall and UX journeys on every supported platform"
+    },
+    {
+      "id": "D-032",
+      "implementation_bearing": true,
+      "normative_owner": "Accounting/integrity contract",
+      "implementation_owner": "A epic plus verifier eligibility",
+      "machine_or_state_ownership": "No productivity/usefulness field; authentic usage fact only",
+      "platform_scope": "All sources/server",
+      "required_executable_evidence": "Pointless-but-genuine fixtures accepted; fabricated/duplicate fixtures rejected"
+    },
+    {
+      "id": "D-033",
+      "implementation_bearing": true,
+      "normative_owner": "Operations/open-source contract",
+      "implementation_owner": "O epic",
+      "machine_or_state_ownership": "Repository visibility/release checklist",
+      "platform_scope": "GitHub/release process",
+      "required_executable_evidence": "History/secret/license/security review before visibility change and launch"
+    },
+    {
+      "id": "D-034",
+      "implementation_bearing": true,
+      "normative_owner": "Operations contract",
+      "implementation_owner": "Planning workflow and the O epic",
+      "machine_or_state_ownership": "Workflow allowlist by repository phase",
+      "platform_scope": "GitHub Actions/local validation",
+      "required_executable_evidence": "Planning phase runs only read-only validators; product workflows remain absent/disabled"
+    },
+    {
+      "id": "D-035",
+      "implementation_bearing": true,
+      "normative_owner": "Superseded by D-053",
+      "implementation_owner": "No launch SLM work",
+      "machine_or_state_ownership": "None in launch dependency graph",
+      "platform_scope": "None at launch",
+      "required_executable_evidence": "Dependency scan proves launch does not require detector model/runtime"
+    },
+    {
+      "id": "D-036",
+      "implementation_bearing": true,
+      "normative_owner": "Authentication contract",
+      "implementation_owner": "Identity and authentication units",
+      "machine_or_state_ownership": "Provider-specific OAuth transaction and subject records",
+      "platform_scope": "Web, macOS, Windows, Linux, server",
+      "required_executable_evidence": "Current-provider integration tests, native binding and outage/revocation handling"
+    },
+    {
+      "id": "D-037",
+      "implementation_bearing": true,
+      "normative_owner": "Accounting/UX contract",
+      "implementation_owner": "R epic",
+      "machine_or_state_ownership": "Raw token metric plus filter identity; no normalization multiplier",
+      "platform_scope": "Server/web/native",
+      "required_executable_evidence": "Cross-model fixtures preserve raw totals and display comparability disclosures"
+    },
+    {
+      "id": "D-038",
+      "implementation_bearing": true,
+      "normative_owner": "Superseded by D-042/D-045/D-049",
+      "implementation_owner": "No active completion claim",
+      "machine_or_state_ownership": "Historical only",
+      "platform_scope": "Repository",
+      "required_executable_evidence": "Status/reference checks reject stale completion language"
+    },
+    {
+      "id": "D-039",
+      "implementation_bearing": true,
+      "normative_owner": "Operations architecture",
+      "implementation_owner": "O epic",
+      "machine_or_state_ownership": "Modular Go services, PostgreSQL, optional Redis, object storage and cloud abstraction",
+      "platform_scope": "Cloud/server",
+      "required_executable_evidence": "Provider-neutral deployment/restore/load tests and ADR before provider lock-in"
+    },
+    {
+      "id": "D-040",
+      "implementation_bearing": true,
+      "normative_owner": "Licensing/governance ADR-009",
+      "implementation_owner": "O epic",
+      "machine_or_state_ownership": "License headers, dependency notices, DCO and contribution metadata",
+      "platform_scope": "Repository/public release",
+      "required_executable_evidence": "Automated license inventory plus human counsel/dependency review"
+    },
+    {
+      "id": "D-041",
+      "implementation_bearing": true,
+      "normative_owner": "Repository governance/documentation map",
+      "implementation_owner": "F epic and repository doctor",
+      "machine_or_state_ownership": "Canonical-path manifest and duplicate-owner checks",
+      "platform_scope": "Repository-wide",
+      "required_executable_evidence": "Clean-checkout reference/duplication validation"
+    },
+    {
+      "id": "D-042",
+      "implementation_bearing": true,
+      "normative_owner": "Superseded by D-045/D-049",
+      "implementation_owner": "No active phase path",
+      "machine_or_state_ownership": "Historical only",
+      "platform_scope": "Repository",
+      "required_executable_evidence": "Status validator rejects this as current authority"
+    },
+    {
+      "id": "D-043",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-007, provisional pending P-1140C",
+      "implementation_owner": "P and S epics",
+      "machine_or_state_ownership": "Batch challenge, checkpoint, sequence and gap state machines",
+      "platform_scope": "Rust/Go/server",
+      "required_executable_evidence": "Exact replay, atomic rejection, gap, fork and offline fixtures before acceptance"
+    },
+    {
+      "id": "D-044",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-008/identity policy",
+      "implementation_owner": "G epic",
+      "machine_or_state_ownership": "Normalized handle, skeleton, reservation, redirect and policy version",
+      "platform_scope": "Server/web/native",
+      "required_executable_evidence": "Unicode corpus, confusable, rename, redirect and non-reuse tests"
+    },
+    {
+      "id": "D-045",
+      "implementation_bearing": true,
+      "normative_owner": "Superseded by D-049",
+      "implementation_owner": "No active completion claim",
+      "machine_or_state_ownership": "Historical only",
+      "platform_scope": "Repository",
+      "required_executable_evidence": "Canonical status and task checks prevent stale phase use"
+    },
+    {
+      "id": "D-046",
+      "implementation_bearing": true,
+      "normative_owner": "T20 contracts, provisional",
+      "implementation_owner": "V epic and P-1131",
+      "machine_or_state_ownership": "Rolling cohort records, multidimensional certifications and optimization evidence",
+      "platform_scope": "Source/platform specific",
+      "required_executable_evidence": "Real benchmark/conformance evidence before any T20 product claim"
+    },
+    {
+      "id": "D-047",
+      "implementation_bearing": true,
+      "normative_owner": "Status/artifact maturity contract",
+      "implementation_owner": "Every PR and the O epic",
+      "machine_or_state_ownership": "Artifact maturity metadata and evidence links",
+      "platform_scope": "Repository-wide",
+      "required_executable_evidence": "Validator blocks prototype/specification from satisfying implementation gates"
+    },
+    {
+      "id": "D-048",
+      "implementation_bearing": true,
+      "normative_owner": "Approved design baseline",
+      "implementation_owner": "UI package and U epic",
+      "machine_or_state_ownership": "Tokens, components and visual regression references",
+      "platform_scope": "Web and desktop-shell presentations",
+      "required_executable_evidence": "Pixel/visual regression, responsive and accessibility review"
+    },
+    {
+      "id": "D-049",
+      "implementation_bearing": true,
+      "normative_owner": "Project status/task catalog",
+      "implementation_owner": "P-1140B..E and P-1104",
+      "machine_or_state_ownership": "Phase/gate state in authority files and workflow policy",
+      "platform_scope": "Repository-wide",
+      "required_executable_evidence": "Doctor confirms all repair gates and explicit authorization before implementation"
+    },
+    {
+      "id": "D-050",
+      "implementation_bearing": true,
+      "normative_owner": "Integrity/VibeProof contracts",
+      "implementation_owner": "P and S epics",
+      "machine_or_state_ownership": "EvidenceClaim excludes public state; VerifierAppraisal owns state/profile",
+      "platform_scope": "Rust/Go/server/web",
+      "required_executable_evidence": "Malicious client state injection rejected; appraisal reproducibility tests"
+    },
+    {
+      "id": "D-051",
+      "implementation_bearing": true,
+      "normative_owner": "Accounting/evidence contracts",
+      "implementation_owner": "A/N/P/R/V units",
+      "machine_or_state_ownership": "Source profile, local commitment, delayed-sync policy and evidence filters",
+      "platform_scope": "Local/cloud sources on all client OSes",
+      "required_executable_evidence": "Offline/local high-volume, uncertainty, downgrade and period-assignment fixtures"
+    },
+    {
+      "id": "D-052",
+      "implementation_bearing": true,
+      "normative_owner": "Launch scope",
+      "implementation_owner": "API/schema/UI/task removal under P-1140D",
+      "machine_or_state_ownership": "No launch country resources; future namespace isolated",
+      "platform_scope": "All launch surfaces",
+      "required_executable_evidence": "Route, schema, migration, UI and launch-matrix scan proves absence"
+    },
+    {
+      "id": "D-053",
+      "implementation_bearing": true,
+      "normative_owner": "Threat/social integrity contracts",
+      "implementation_owner": "Post-launch only",
+      "machine_or_state_ownership": "Separate detector result schema and advisory policy if later approved",
+      "platform_scope": "Local sandbox per supported OS",
+      "required_executable_evidence": "No launch dependency; later lift, privacy, injection, evasion and sandbox tests"
+    },
+    {
+      "id": "D-054",
+      "implementation_bearing": true,
+      "normative_owner": "Ranked identity contract",
+      "implementation_owner": "M epic and identity units",
+      "machine_or_state_ownership": "Eligibility, linked subjects, investigation, restriction, merge and appeal ledgers",
+      "platform_scope": "Server/web/native account surfaces",
+      "required_executable_evidence": "Duplicate/collusion/shared-device false-positive campaigns and reversible outcomes"
+    },
+    {
+      "id": "D-055",
+      "implementation_bearing": true,
+      "normative_owner": "Authentication contract",
+      "implementation_owner": "Identity and authentication units",
+      "machine_or_state_ownership": "GitHub/X provider records only; Google enum absent from launch schema",
+      "platform_scope": "Server/web/native",
+      "required_executable_evidence": "Provider integration and capability tests; schema scan rejects unsupported provider"
+    },
+    {
+      "id": "D-056",
+      "implementation_bearing": true,
+      "normative_owner": "Protocol governance",
+      "implementation_owner": "P and F epics",
+      "machine_or_state_ownership": "Protocol v1 draft can be replaced before production version lock",
+      "platform_scope": "Repository/protocol",
+      "required_executable_evidence": "Breaking-change checker plus migration policy once first production protocol ships"
+    },
+    {
+      "id": "D-057",
+      "implementation_bearing": true,
+      "normative_owner": "Project/threat/native architecture",
+      "implementation_owner": "N/D/V implementation without kernel/proxy path",
+      "machine_or_state_ownership": "Privilege capability registry explicitly excludes default kernel and hosted proxy",
+      "platform_scope": "macOS, Windows, Linux/server",
+      "required_executable_evidence": "Architecture/dependency scan and packet-flow tests prove no mandatory proxy/kernel component"
+    },
+    {
+      "id": "D-058",
+      "implementation_bearing": true,
+      "normative_owner": "Compatibility/release contracts",
+      "implementation_owner": "V and O epics",
+      "machine_or_state_ownership": "Artifact digest, source commit, provenance, certification bundle and release-set identity",
+      "platform_scope": "Every distributed platform/artifact",
+      "required_executable_evidence": "Tampered artifact/name/version substitution and provenance verification campaigns"
+    },
+    {
+      "id": "D-059",
+      "implementation_bearing": true,
+      "normative_owner": "Product scope/launch contract",
+      "implementation_owner": "Full F..O launch dependency graph",
+      "machine_or_state_ownership": "Feature matrix and launch decision record",
+      "platform_scope": "Web, server, macOS, Windows, Linux",
+      "required_executable_evidence": "End-to-end release-candidate matrix with no placeholders or country dependency"
+    },
+    {
+      "id": "D-060",
+      "implementation_bearing": true,
+      "normative_owner": "Repository governance",
+      "implementation_owner": "Closed PR #17; no implementation unit",
+      "machine_or_state_ownership": "PR state and supersession record",
+      "platform_scope": "Repository",
+      "required_executable_evidence": "PR/reference scan confirms no merge/dependency on superseded branch"
+    },
+    {
+      "id": "D-061",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-010/native lifecycle",
+      "implementation_owner": "N daemon units and the O epic",
+      "machine_or_state_ownership": "Service registration, daemon desired/health state, child supervision and restart records",
+      "platform_scope": "macOS LaunchAgent; Windows service/task; Linux systemd-user/fallback; explicit headless classifications",
+      "required_executable_evidence": "Reboot/login/logout/sleep/crash/hang/offline/disk/update/uninstall matrix with queue and continuity invariants"
+    },
+    {
+      "id": "D-062",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-011 and cross-platform audit",
+      "implementation_owner": "O epic and N/U platform units",
+      "machine_or_state_ownership": "macOS release-profile registry, Universal 2/architecture artifacts, LaunchAgent and Keychain capability state",
+      "platform_scope": "macOS Apple silicon and Intel",
+      "required_executable_evidence": "Native build/install/update/rollback/uninstall, LaunchAgent, Keychain, permission, sleep/login/logout and privacy-canary matrix on every advertised tuple"
+    },
+    {
+      "id": "D-063",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-011 and cross-platform audit",
+      "implementation_owner": "O epic and N/U platform units",
+      "machine_or_state_ownership": "Windows release-profile registry, native x64/ARM64 artifacts, service/task and CNG/TPM/DPAPI capability state",
+      "platform_scope": "Maintained Windows desktop and applicable Server profiles",
+      "required_executable_evidence": "Native x64 and ARM64 build/install/service/update tests, multi-user/DACL/TPM/hibernate/privacy matrix on every advertised tuple"
+    },
+    {
+      "id": "D-064",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-011 and cross-platform audit",
+      "implementation_owner": "O epic and N/U Linux units",
+      "machine_or_state_ownership": "Linux distro/package/architecture/init/desktop profile registry and key-backend capability state",
+      "platform_scope": "Maintained Linux desktop, headless and remote profiles",
+      "required_executable_evidence": "Package, service, linger, key-backend, desktop/headless, update/rollback/uninstall and privacy matrix for every advertised profile"
+    },
+    {
+      "id": "D-065",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-011 and environment-profile contracts",
+      "implementation_owner": "N platform units, D lineage, V adapters, O packaging",
+      "machine_or_state_ownership": "Distinct WSL/container/CI environment identity, duplicate domain, lifecycle class and evidence ceiling",
+      "platform_scope": "WSL, containers and CI/ephemeral runners",
+      "required_executable_evidence": "Host/guest and replica dedup, clone/retry/matrix-job, runner identity, immutable-image, privacy and lifecycle tests before global eligibility claims"
+    },
+    {
+      "id": "D-066",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-011 and project authority",
+      "implementation_owner": "Scope removal across U/O/API/release planning",
+      "machine_or_state_ownership": "No native platform resources, routes, packages or launch gates for Android, iOS, iPadOS or ChromeOS",
+      "platform_scope": "Explicitly out of scope",
+      "required_executable_evidence": "Repository/schema/work-unit/package scan proves no native implementation or launch dependency; hosted web remains ordinary browser surface only"
+    },
+    {
+      "id": "D-067",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-012",
+      "implementation_owner": "N daemon/platform units, the O epic and privileged packaging/security review",
+      "machine_or_state_ownership": "Separate privileged supervisor identity, ACLs, typed IPC and lifecycle state; user claim lineage remains separate",
+      "platform_scope": "Optional macOS, Windows and Linux machine-wide profiles",
+      "required_executable_evidence": "Least-privilege, cross-user, IPC spoof/replay, substitution, update/rollback, privacy and uninstall review for every privileged profile"
+    },
+    {
+      "id": "D-068",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-013 and operations/release contract",
+      "implementation_owner": "O epic and N update coordination",
+      "machine_or_state_ownership": "Signed update policy/deadline, release-set compatibility, maintenance lease, blocked-version and rollback state",
+      "platform_scope": "All competitive platform/environment profiles",
+      "required_executable_evidence": "TUF/metadata attacks, artifact/provenance tamper, interrupted update, active-work handoff, rollback, offline-deadline, container and CI expiry tests"
+    },
+    {
+      "id": "D-069",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-014 and D-034/D-047",
+      "implementation_owner": "UI prototype workflow only; no product implementation unit",
+      "machine_or_state_ownership": "Read-only workflow scope, synthetic fixtures, short-lived prototype artifacts and explicit maturity label",
+      "platform_scope": "Repository UI prototype on GitHub Actions runner",
+      "required_executable_evidence": "Path-scope, no-secret/no-production-data, deterministic Storybook build/capture and artifact classification checks; outputs never close product gates"
+    },
+    {
+      "id": "D-070",
+      "implementation_bearing": true,
+      "normative_owner": "Ranked identity eligibility contract and ADR-020",
+      "implementation_owner": "PF-008, O-010 and R-002",
+      "machine_or_state_ownership": "consolidation-case machine; contributions recomputed from non-overlapping claims",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "overlapping-claim fixture consolidates to strictly less than the sum of both account totals"
+    },
+    {
+      "id": "D-071",
+      "implementation_bearing": true,
+      "normative_owner": "Social integrity and UX contract",
+      "implementation_owner": "G-006, G-007 and G-008",
+      "machine_or_state_ownership": "board_invites role restriction, membership revision and board_membership_events",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "an admin-role invite is refused and a promotion attempted inside invite acceptance fails"
+    },
+    {
+      "id": "D-072",
+      "implementation_bearing": true,
+      "normative_owner": "Integrity model and device lineage contract",
+      "implementation_owner": "PF-010, S-013 and P-007",
+      "machine_or_state_ownership": "lineage fork case, post-fork quarantine and new lineage generation",
+      "platform_scope": "Server, Native",
+      "required_executable_evidence": "a branching fork fixture quarantines every post-fork branch while pre-fork claims stay accepted"
+    },
+    {
+      "id": "D-073",
+      "implementation_bearing": true,
+      "normative_owner": "Social integrity and UX contract with ADR-019",
+      "implementation_owner": "G-009, G-010 and G-011",
+      "machine_or_state_ownership": "device presence pulses, account presence projection and independent visibility policy",
+      "platform_scope": "Server, Web, Native",
+      "required_executable_evidence": "pulse-timing fixtures drive the 30, 90 and 300 second online, idle and offline transitions"
+    },
+    {
+      "id": "D-074",
+      "implementation_bearing": true,
+      "normative_owner": "Release and data lifecycle contract with ADR-018",
+      "implementation_owner": "L-004, L-006 and L-007",
+      "machine_or_state_ownership": "compatibility graph, migration chain and irreversible-migration marker",
+      "platform_scope": "Server, macOS, Windows, Linux",
+      "required_executable_evidence": "rollback across an irreversible migration is refused and snapshot restore is exercised"
+    },
+    {
+      "id": "D-075",
+      "implementation_bearing": true,
+      "normative_owner": "Idempotency contract in openapi-v1.yaml",
+      "implementation_owner": "PF-049, S-003 and S-004",
+      "machine_or_state_ownership": "idempotency-ledger with committed, conflict and expired states",
+      "platform_scope": "Server",
+      "required_executable_evidence": "replay after the retention window returns 410 rather than re-executing the mutation"
+    },
+    {
+      "id": "D-076",
+      "implementation_bearing": true,
+      "normative_owner": "Privacy contract and native runtime storage contract",
+      "implementation_owner": "M-007, M-008 and W-009",
+      "machine_or_state_ownership": "deletion_effects per domain and local_deletion_receipts per device outcome",
+      "platform_scope": "Server, Web, Native",
+      "required_executable_evidence": "offline and unreachable device fixtures render per-device outcomes with no global erasure claim"
+    },
+    {
+      "id": "D-077",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-016 and evidence/attestation profiles",
+      "implementation_owner": "PF-042, PF-043 and V-006",
+      "machine_or_state_ownership": "server-assigned appraisal result carrying the awarded evidence class",
+      "platform_scope": "Server, Native",
+      "required_executable_evidence": "a client-asserted source-bound label is rejected and locally observed evidence cannot be elevated"
+    },
+    {
+      "id": "D-078",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-016",
+      "implementation_owner": "PF-053, V-005 and G-017",
+      "machine_or_state_ownership": "board-scope corroboration input held separate from individual claim appraisal",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "an organization-retrieved aggregate fixture alters no individual claim, no raw score and no hardened state"
+    },
+    {
+      "id": "D-079",
+      "implementation_bearing": true,
+      "normative_owner": "state-machine-registry-v1.json identifier schema",
+      "implementation_owner": "PF-038 and PF-067",
+      "machine_or_state_ownership": "one kebab-case state spelling across registry, SQL CHECK and OpenAPI enums",
+      "platform_scope": "Server, Web, Native",
+      "required_executable_evidence": "validate_state_vocabularies.py fails on any per-boundary spelling difference"
+    },
+    {
+      "id": "D-080",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-017",
+      "implementation_owner": "X-001",
+      "machine_or_state_ownership": "region-pinned deployment configuration; no aggregate state",
+      "platform_scope": "Server",
+      "required_executable_evidence": "deployment configuration check asserts every provisioned resource sits in a declared EU region"
+    },
+    {
+      "id": "D-081",
+      "implementation_bearing": true,
+      "normative_owner": "Ranked identity eligibility contract",
+      "implementation_owner": "PF-005, O-009 and S-006",
+      "machine_or_state_ownership": "linked identity provider account-creation timestamp and its eligibility precondition",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "eligibility fixture rejects a provider account under 90 days and the new field appears in the data map and erasure path"
+    },
+    {
+      "id": "D-082",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-020",
+      "implementation_owner": "PF-021, R-004 and R-006",
+      "machine_or_state_ownership": "confidence weight applied at ranking projection over immutable raw claim totals",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "ranking rebuild equivalence vectors prove the weight never rewrites an accepted claim"
+    },
+    {
+      "id": "D-083",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-020",
+      "implementation_owner": "R-003 and R-008",
+      "machine_or_state_ownership": "ranking view definitions with no eligibility-filtered second board",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "board inventory test fails if a second default board or a single-profile board exists"
+    },
+    {
+      "id": "D-084",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-020 and evidence/attestation profiles",
+      "implementation_owner": "M-001, M-002 and G-012",
+      "machine_or_state_ownership": "moderation case effects, appeal reversal and the retracted exceptional state",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "the public projection carries no sanction marker, the sanctioned account receives an inbox notice, and a successful appeal fully reverses the ranking effect"
+    },
+    {
+      "id": "D-085",
+      "implementation_bearing": true,
+      "normative_owner": "Erasure and key destruction contract with ADR-022",
+      "implementation_owner": "PF-029, M-007 and M-009",
+      "machine_or_state_ownership": "erasure_domains, erasure_keys and append-only erasure_records",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "erasure drill leaves sealed generations unrenumbered and the retained pseudonym unattributable after key destruction"
+    },
+    {
+      "id": "D-086",
+      "implementation_bearing": true,
+      "normative_owner": "Social integrity and UX contract",
+      "implementation_owner": "G-012, G-013 and W-005",
+      "machine_or_state_ownership": "notification inbox as authority with no launch channel subscription",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "delivery test asserts no push or email channel is registered and no path maps provider acceptance to a read"
+    },
+    {
+      "id": "D-087",
+      "implementation_bearing": true,
+      "normative_owner": "Accounting and evidence contracts",
+      "implementation_owner": "R-008, W-003 and W-006",
+      "machine_or_state_ownership": "imported evidence class excluded from every ranking view",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "imported fixtures appear only as an owner-visible lifetime statistic and are absent from every board and period standing"
+    },
+    {
+      "id": "D-088",
+      "implementation_bearing": true,
+      "normative_owner": "Product scope freeze and ranking contract",
+      "implementation_owner": "R-001, R-003, G-005, G-017 and G-018",
+      "machine_or_state_ownership": "period registry and ranking view instances for six scopes across six periods",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "matrix test enumerates all thirty-six scope-period views and fails on a missing one"
+    },
+    {
+      "id": "D-089",
+      "implementation_bearing": true,
+      "normative_owner": "Adapter one contract",
+      "implementation_owner": "V-001, V-004 and V-006",
+      "machine_or_state_ownership": "selected local-runtime registry row and its certified compatibility tuple",
+      "platform_scope": "Native, macOS, Windows, Linux",
+      "required_executable_evidence": "certification runner emits a signed bundle for the Claude Code tuple and a second selected row fails the registry validator"
+    },
+    {
+      "id": "D-090",
+      "implementation_bearing": false,
+      "reason": "critical-path sequencing; the protocol requirement is owned by D-011 and the crate bakeoff by D-012"
+    },
+    {
+      "id": "D-091",
+      "implementation_bearing": false,
+      "reason": "repository governance and review policy with no product surface"
+    },
+    {
+      "id": "D-092",
+      "implementation_bearing": false,
+      "reason": "operations posture and restatement of SLO documents rather than product behaviour"
+    },
+    {
+      "id": "D-093",
+      "implementation_bearing": true,
+      "normative_owner": "Superseded by D-360",
+      "implementation_owner": "No active implementation",
+      "machine_or_state_ownership": "None",
+      "platform_scope": "None",
+      "required_executable_evidence": "cost and operations artifact scan finds no active ceiling claim citing the superseded figure"
+    },
+    {
+      "id": "D-094",
+      "implementation_bearing": true,
+      "normative_owner": "Superseded by D-360",
+      "implementation_owner": "No active implementation",
+      "machine_or_state_ownership": "None",
+      "platform_scope": "None",
+      "required_executable_evidence": "artifact scan confirms no document presents the three-way conflict as open"
+    },
+    {
+      "id": "D-095",
+      "implementation_bearing": false,
+      "reason": "recorded risk acceptance in ADR-019; the presence and privacy controls are owned by their own decisions"
+    },
+    {
+      "id": "D-096",
+      "implementation_bearing": true,
+      "normative_owner": "VibeProof v1 protocol contract and vibeproof-claim-v1.cddl",
+      "implementation_owner": "PF-001, PF-002 and P-001 through P-009",
+      "machine_or_state_ownership": "one normative claim profile; the eleven-field shadow profile retired",
+      "platform_scope": "Native, Server",
+      "required_executable_evidence": "cross-language differential suite runs against conformance/vibeproof/v1 and the shadow corpus is absent"
+    },
+    {
+      "id": "D-097",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-018",
+      "implementation_owner": "S-002 and S-020",
+      "machine_or_state_ownership": "goose migration ledger applied as an operator step, never at API startup",
+      "platform_scope": "Server",
+      "required_executable_evidence": "up and down migrations run against postgres:16 and a startup path that applies migrations fails the test"
+    },
+    {
+      "id": "D-098",
+      "implementation_bearing": true,
+      "normative_owner": "Adapter one OTel contract",
+      "implementation_owner": "PF-041, V-004 and V-008",
+      "machine_or_state_ownership": "source observation identity with observer precedence; JSONL capped at private analytics",
+      "platform_scope": "Native, macOS, Windows, Linux",
+      "required_executable_evidence": "dual-observation fixtures show the OTLP observation supersedes the fallback and the two are never summed"
+    },
+    {
+      "id": "D-099",
+      "implementation_bearing": true,
+      "normative_owner": "Adapter one OTel contract and privacy contract",
+      "implementation_owner": "PF-041, V-004 and F-006",
+      "machine_or_state_ownership": "otlp-attribute-disposition allowlist applied inside the receiver before the observation queue",
+      "platform_scope": "Native, macOS, Windows, Linux",
+      "required_executable_evidence": "validate_adapter_one_boundary plus canary scan of disk, logs and diagnostics over the claude-code-otel fixtures"
+    },
+    {
+      "id": "D-100",
+      "implementation_bearing": false,
+      "reason": "recorded research finding whose consequences are implemented under D-078 and ADR-020"
+    },
+    {
+      "id": "D-101",
+      "implementation_bearing": true,
+      "normative_owner": "Privacy contract and the DATA_MAP Article 30 record",
+      "implementation_owner": "unassigned",
+      "machine_or_state_ownership": "No server consent aggregate exists; DATA_MAP names the purposes",
+      "platform_scope": "Server, Web, Native",
+      "required_executable_evidence": "signup fixture records one consent per purpose and a withdrawal test proves no basis is swapped afterwards",
+      "owner_gap_reason": "no work unit covers consent capture or withdrawal, and planning-schema.sql has no server consent aggregate"
+    },
+    {
+      "id": "D-102",
+      "implementation_bearing": false,
+      "reason": "risk acceptance recorded in ADR-021; default board visibility is owned by the boards contract"
+    },
+    {
+      "id": "D-103",
+      "implementation_bearing": true,
+      "normative_owner": "Private beta admission and ranked identity eligibility contracts",
+      "implementation_owner": "unassigned",
+      "machine_or_state_ownership": "No persistence owner exists for a declared age",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "registration fixture rejects a declared age under 16 regardless of member state",
+      "owner_gap_reason": "openapi-v1.yaml names the age gate in redeemInvite, but no work unit implements it and no column persists a declared age"
+    },
+    {
+      "id": "D-104",
+      "implementation_bearing": true,
+      "normative_owner": "Privacy contract and native runtime storage contract",
+      "implementation_owner": "N-001 and N-003",
+      "machine_or_state_ownership": "source_consents in local-store-v1.sql, one row per agent source",
+      "platform_scope": "Native, macOS, Windows, Linux",
+      "required_executable_evidence": "refusing one source leaves the rest of the daemon running and no source is read before its consent row exists"
+    },
+    {
+      "id": "D-105",
+      "implementation_bearing": false,
+      "reason": "designates DATA_MAP as the record of processing activities, a documentation obligation"
+    },
+    {
+      "id": "D-106",
+      "implementation_bearing": false,
+      "reason": "legal representation and jurisdiction admission decision with no work unit or product surface"
+    },
+    {
+      "id": "D-107",
+      "implementation_bearing": false,
+      "reason": "legal applicability analysis satisfied by publishing PRIVACY.md and by breach notification procedure"
+    },
+    {
+      "id": "D-108",
+      "implementation_bearing": true,
+      "normative_owner": "DATA_MAP and privacy contract",
+      "implementation_owner": "M-003 and M-004",
+      "machine_or_state_ownership": "export manifest domains covering observed data only",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "export manifest fixture contains every portable domain and no derived rank, weight or appraisal field"
+    },
+    {
+      "id": "D-109",
+      "implementation_bearing": false,
+      "reason": "record of four unmet release gates rather than a product requirement"
+    },
+    {
+      "id": "D-140",
+      "implementation_bearing": false,
+      "reason": "contract-document serialization and pinned-path decision internal to the repository"
+    },
+    {
+      "id": "D-141",
+      "implementation_bearing": true,
+      "normative_owner": "reason-codes-v1.json and openapi-v1.yaml",
+      "implementation_owner": "PF-045, PF-038 and S-016",
+      "machine_or_state_ownership": "each reason code bound to one HTTP status and one registered state machine",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "response-matrix validation fails on an operation with no declared 4xx or an unregistered reason code"
+    },
+    {
+      "id": "D-142",
+      "implementation_bearing": true,
+      "normative_owner": "Idempotency block of openapi-v1.yaml",
+      "implementation_owner": "PF-049, S-003 and S-004",
+      "machine_or_state_ownership": "idempotency-ledger keyed per principal and operation with a stored request digest",
+      "platform_scope": "Server, Web, Native",
+      "required_executable_evidence": "replay returns the byte-identical stored response, a differing digest returns 409 and an aged record returns 410"
+    },
+    {
+      "id": "D-143",
+      "implementation_bearing": true,
+      "normative_owner": "evidence-profile-policy-v1.json and openapi-v1.yaml",
+      "implementation_owner": "PF-046, R-008 and W-006",
+      "machine_or_state_ownership": "public_state values hardened, standard and imported as the only vocabulary crossing the API",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "an exhaustive switch fails to compile on a fourth value and a grep for verified or attested returns nothing in the web surfaces"
+    },
+    {
+      "id": "D-144",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-020",
+      "implementation_owner": "PF-021, R-006 and W-003",
+      "machine_or_state_ownership": "RankEntry publishing credited_token_burn with raw burn and weight confined to the owner projection",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "public leaderboard response schema rejects token_burn_total, confidence_weight_hundredths and score"
+    },
+    {
+      "id": "D-180",
+      "implementation_bearing": true,
+      "normative_owner": "PRIVATE_BETA_ADMISSION",
+      "implementation_owner": "PF-069 specifies it; no redemption handler unit exists",
+      "machine_or_state_ownership": "invite-code machine over invite_codes and invite_redemptions",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "two concurrent redemptions of one code leave exactly one insert and redeemInvite resolves against the reason registry in both directions"
+    },
+    {
+      "id": "D-181",
+      "implementation_bearing": false,
+      "reason": "scoping of the ADR-021 risk acceptance with no change to product behaviour"
+    },
+    {
+      "id": "D-182",
+      "implementation_bearing": false,
+      "reason": "publication sequencing that satisfies no gate and changes no artifact content"
+    },
+    {
+      "id": "D-183",
+      "implementation_bearing": false,
+      "reason": "critical-path sequencing reaffirmation; the protocol substance stays with D-011 and D-012"
+    },
+    {
+      "id": "D-184",
+      "implementation_bearing": false,
+      "reason": "applicability of an existing scope freeze; each named feature is owned by its own decision"
+    },
+    {
+      "id": "D-190",
+      "implementation_bearing": true,
+      "normative_owner": "VibeProof canonical profile and vibeproof-claim-v1.cddl",
+      "implementation_owner": "P-003, P-005 and P-006",
+      "machine_or_state_ownership": "COSE protected header algorithm -19 in CDDL, COSE_Key and the signed vectors",
+      "platform_scope": "Native, Server",
+      "required_executable_evidence": "vector regeneration fails on algorithm -8 and Go verification rejects the deprecated identifier"
+    },
+    {
+      "id": "D-191",
+      "implementation_bearing": true,
+      "normative_owner": "VibeProof canonical profile",
+      "implementation_owner": "P-002, P-004 and P-006",
+      "machine_or_state_ownership": "canonical map key ordering by bytewise order of the encoded key",
+      "platform_scope": "Native, Server",
+      "required_executable_evidence": "encoder vectors include a key set where core and length-first ordering diverge"
+    },
+    {
+      "id": "D-192",
+      "implementation_bearing": true,
+      "normative_owner": "VibeProof canonical profile and the D-012 bakeoff",
+      "implementation_owner": "PF-068, P-003 and P-005",
+      "machine_or_state_ownership": "verification acceptance set pinned to the cofactored ZIP-215 rules",
+      "platform_scope": "Native, Server",
+      "required_executable_evidence": "the divergence-case corpus makes a cofactorless Go verifier fail rather than pass silently"
+    },
+    {
+      "id": "D-193",
+      "implementation_bearing": true,
+      "normative_owner": "VibeProof canonical profile",
+      "implementation_owner": "P-002 and P-008",
+      "machine_or_state_ownership": "integer-only aggregates at a fixed stated scale",
+      "platform_scope": "Native, Server",
+      "required_executable_evidence": "the canonical encoder refuses a float input and the malformed corpus carries float-bearing rejection cases"
+    },
+    {
+      "id": "D-194",
+      "implementation_bearing": true,
+      "normative_owner": "VibeProof conformance corpus",
+      "implementation_owner": "P-006 and generate_vibeproof_vectors.py",
+      "machine_or_state_ownership": "recorded seed as the sole source of the committed vectors",
+      "platform_scope": "Native, Server",
+      "required_executable_evidence": "regeneration from the recorded seed byte-matches the committed vector file"
+    },
+    {
+      "id": "D-195",
+      "implementation_bearing": true,
+      "normative_owner": "state-machine-registry-v1.json and planning-schema.sql",
+      "implementation_owner": "PF-004, PF-038 and S-002",
+      "machine_or_state_ownership": "one persistence owner table for every registered machine",
+      "platform_scope": "Server",
+      "required_executable_evidence": "validate_state_vocabularies.py fails when a named owner has no table and the DDL applies to postgres:16"
+    },
+    {
+      "id": "D-196",
+      "implementation_bearing": false,
+      "reason": "sets what the planning state-graph validator checks rather than how any machine behaves"
+    },
+    {
+      "id": "D-200",
+      "implementation_bearing": false,
+      "reason": "sets the required fields for work-unit entries in the planning breakdown"
+    },
+    {
+      "id": "D-201",
+      "implementation_bearing": false,
+      "reason": "defines how work-unit status is recorded and checked against the tree"
+    },
+    {
+      "id": "D-202",
+      "implementation_bearing": false,
+      "reason": "requires every planning-schema table to be named by a work unit, a planning-coverage rule"
+    },
+    {
+      "id": "D-203",
+      "implementation_bearing": false,
+      "reason": "defines the mechanical closure of the P-1105 readiness gate, a gate-process rule"
+    },
+    {
+      "id": "D-204",
+      "implementation_bearing": false,
+      "reason": "replaces prose dependency phrases with unit IDs in the planning breakdown"
+    },
+    {
+      "id": "D-205",
+      "implementation_bearing": true,
+      "normative_owner": "Binding product rules on the device boundary",
+      "implementation_owner": "X-017 product analytics, with F-010 and P-010 specified but unauthorized",
+      "machine_or_state_ownership": "No client event stream, analytics derived from server-held fixed-schema aggregates",
+      "platform_scope": "Server",
+      "required_executable_evidence": "N-020 egress suite passes unchanged and every analytics field resolves in the observability allowlist"
+    },
+    {
+      "id": "D-206",
+      "implementation_bearing": false,
+      "reason": "defines how a landed work unit is evidenced in the planning breakdown"
+    },
+    {
+      "id": "D-207",
+      "implementation_bearing": false,
+      "reason": "absorbs duplicate work-unit identifiers and marks superseded ones, a register convention"
+    },
+    {
+      "id": "D-210",
+      "implementation_bearing": true,
+      "normative_owner": "docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md and ADR-022",
+      "implementation_owner": "M-007 per-domain erasure effects and M-009 tombstones",
+      "machine_or_state_ownership": "erasure_records append-only chain and per-domain key state",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Erasure fixture proving key destruction, live-record deletion and an unchanged sealed generation in one serializable transaction"
+    },
+    {
+      "id": "D-211",
+      "implementation_bearing": true,
+      "normative_owner": "Ranking generation contract authored by PF-052",
+      "implementation_owner": "R-004 generation-keyed entries and R-005 atomic promotion",
+      "machine_or_state_ownership": "Sealed ranking generation with frozen content_hash and frozen aggregates",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Erasure-against-sealed-generation fixture showing unchanged content_hash, frozen counts and an entry that renders nothing"
+    },
+    {
+      "id": "D-212",
+      "implementation_bearing": true,
+      "normative_owner": "Ranking cursor contract authored by PF-052",
+      "implementation_owner": "R-006 immutable snapshots and viewer-bound cursors",
+      "machine_or_state_ownership": "Cursor anchored on ranking_view_id, generation and position with no subject identifier",
+      "platform_scope": "Server/web",
+      "required_executable_evidence": "Stale-cursor pagination test across an erased anchor and a superseded generation with no restart or renumbering"
+    },
+    {
+      "id": "D-213",
+      "implementation_bearing": true,
+      "normative_owner": "docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md",
+      "implementation_owner": "M-007 per-domain erasure effects",
+      "machine_or_state_ownership": "One AES-256-GCM key per erasure domain with material present exactly when destruction time is absent",
+      "platform_scope": "Server",
+      "required_executable_evidence": "key_commitment verification test plus a DDL check-constraint case rejecting both key states at once"
+    },
+    {
+      "id": "D-214",
+      "implementation_bearing": true,
+      "normative_owner": "docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md",
+      "implementation_owner": "M-009 restore reapplication and X-004 backup and tombstone drills",
+      "machine_or_state_ownership": "Append-only erasure journal outside the backup set and erasure_restore_receipts",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Restore drill replaying the journal before traffic, with a receipt row the check constraint rejects if written early"
+    },
+    {
+      "id": "D-215",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/planning-schema.sql with the PF-048 indexing and partitioning plan",
+      "implementation_owner": "S-002 migration runner and S-011 immutable claims",
+      "machine_or_state_ownership": "Range partitions on minute_scores, notifications and audit_events, none on claims",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Migration apply test asserting the partitions, the concurrent index builds and the three global uniqueness invariants on claims"
+    },
+    {
+      "id": "D-216",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/data-disposition-v1.json with docs/privacy/DATA_MAP.md as the Article 30 record",
+      "implementation_owner": "PF-050 retention registry population and M-007 retention enforcement",
+      "machine_or_state_ownership": "One retention and disposition row per persistence owner in the planning DDL",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Registry validator failing on a missing table, an unresolved policy key, an actorless expires_at or a journal window not one day past the backup window"
+    },
+    {
+      "id": "D-217",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-020 with the binding product rules",
+      "implementation_owner": "R-004 generation-keyed entries and W-003 leaderboard UX",
+      "machine_or_state_ownership": "credited_token_burn on public shapes and token_burn_total on SelfRankEntry only",
+      "platform_scope": "Server/web",
+      "required_executable_evidence": "Response-shape test proving no public surface returns the raw figure or the confidence weight"
+    },
+    {
+      "id": "D-218",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/planning-schema.sql",
+      "implementation_owner": "R-002 immutable score contributions and R-010 corrections",
+      "machine_or_state_ownership": "minute_scores, period_scores and ranking_corrections column vocabulary",
+      "platform_scope": "Server",
+      "required_executable_evidence": "DDL scan proving no column named score, with registry persistence owners still resolving to tables"
+    },
+    {
+      "id": "D-220",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-015 and packages/schemas/openapi-v1.yaml",
+      "implementation_owner": "PF-039 session scheme decision and O-006 session and refresh rotation",
+      "machine_or_state_ownership": "Per-operation security requirements over bearerAuth, sessionCookie, refreshCookie, csrfToken and deviceProof",
+      "platform_scope": "Server/web/native",
+      "required_executable_evidence": "Contract check that every operation declares its own requirement, plus an OAUTH_ISSUER_MISMATCH negative case at both completion operations"
+    },
+    {
+      "id": "D-221",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-015",
+      "implementation_owner": "O-006 web and native session and refresh-family rotation",
+      "machine_or_state_ownership": "Single-use refresh handle with no idempotency record",
+      "platform_scope": "Server/web/native",
+      "required_executable_evidence": "Replayed refresh handle rejected as an incident, plus the validator idempotency-exception list check"
+    },
+    {
+      "id": "D-222",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/openapi-v1.yaml",
+      "implementation_owner": "PF-044 pagination repair and R-012 pagination concurrency suite",
+      "machine_or_state_ownership": "Opaque cursor bound to its snapshot_id and issuing principal",
+      "platform_scope": "Server/web",
+      "required_executable_evidence": "Schema check that all seventeen page-returning operations declare cursor and limit, plus a foreign-cursor rejection case"
+    },
+    {
+      "id": "D-223",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/reason-codes-v1.json",
+      "implementation_owner": "S-016 error taxonomy and reason-code mapping",
+      "machine_or_state_ownership": "Eleven operation classes derived from the OpenAPI document plus explicit operation lists",
+      "platform_scope": "Server",
+      "required_executable_evidence": "validate_planning_artifacts.py failing on class-membership drift, an unclaimed 4xx status or a required code omitted"
+    },
+    {
+      "id": "D-224",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/reason-codes-v1.json with packages/schemas/state-machine-registry-v1.json",
+      "implementation_owner": "S-016 error taxonomy and reason-code mapping",
+      "machine_or_state_ownership": "device-enrollment for two codes, fifteen still naming the unregistered vibeproof-v1",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Registry cross-resolution check plus a transport-field check that the fifteen never reach an HTTP status"
+    },
+    {
+      "id": "D-225",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/openapi-v1.yaml x-idempotency-contract",
+      "implementation_owner": "S-003 typed idempotency persistence and S-004 exact response replay",
+      "machine_or_state_ownership": "Idempotency record states reserved, committed, conflict, expired and failed",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Replay returning a byte-identical body under Idempotency-Replayed, with 409 conflict, 410 expiry and lease-expiry reuse cases"
+    },
+    {
+      "id": "D-226",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/evidence-profile-policy-v1.json",
+      "implementation_owner": "PF-046 disclosure projection, partial, with W-006 evidence and disclosure UX",
+      "machine_or_state_ownership": "evidence_class on PublicProfile, RankEntry, AccountProfile and ClaimRecord",
+      "platform_scope": "Server/web",
+      "required_executable_evidence": "Response-shape test that self-only fields never appear on a viewer-facing shape, plus a copy scan for provider-confirmation wording"
+    },
+    {
+      "id": "D-227",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/openapi-v1.yaml with the approved design baseline",
+      "implementation_owner": "PF-047 schema expansion and W-003 and W-004 UX",
+      "machine_or_state_ownership": "RankEntry, PublicProfile, AccountProfile and SelfRankEntry response shapes",
+      "platform_scope": "Server/web",
+      "required_executable_evidence": "Contract test that RankEntry carries no score and SelfRankEntry alone carries the raw figures, plus avatar_id resolution against packages/ui"
+    },
+    {
+      "id": "D-228",
+      "implementation_bearing": true,
+      "normative_owner": "Evidence vocabulary under D-008 and ADR-020",
+      "implementation_owner": "packages/ui/src/concepts/product-storyboards.tsx",
+      "machine_or_state_ownership": "Copy strings only, no component logic or styling",
+      "platform_scope": "Web",
+      "required_executable_evidence": "Banned-phrase scan over packages/ui returning no match for the four strings"
+    },
+    {
+      "id": "D-230",
+      "implementation_bearing": true,
+      "normative_owner": "docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md",
+      "implementation_owner": "OS-001 origin validation and CORS and OS-014 origin and loopback machine contract",
+      "machine_or_state_ownership": "packages/schemas/origin-policy-v1.json allowlist, preflight values and check order",
+      "platform_scope": "Server/web",
+      "required_executable_evidence": "go test -run Origin covering a non-allowlisted preflight and a foreign-Origin mutation, plus grep for localhost over a production build artifact"
+    },
+    {
+      "id": "D-231",
+      "implementation_bearing": true,
+      "normative_owner": "docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md",
+      "implementation_owner": "OS-002 loopback listener hardening and OS-014 machine contract",
+      "machine_or_state_ownership": "Loopback session token, recorded random port and probe counter in local state",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "DNS-rebinding test with a foreign Host header, a bind-verification failure case and a probe rate-limit test"
+    },
+    {
+      "id": "D-232",
+      "implementation_bearing": true,
+      "normative_owner": "docs/architecture/API_EDGE_CONTRACT.md with values in packages/schemas/policy-defaults-v1.json",
+      "implementation_owner": "OS-003 rate limiter",
+      "machine_or_state_ownership": "Per-operation-class and per-principal-class counters under an aggregate admission ceiling",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Per-class limit tests, a first-subject-rights-request-always-admitted case and a header-silence check for adaptive limits"
+    },
+    {
+      "id": "D-233",
+      "implementation_bearing": true,
+      "normative_owner": "docs/architecture/API_EDGE_CONTRACT.md",
+      "implementation_owner": "OS-004 client retry, backoff and circuit breaking",
+      "machine_or_state_ownership": "Retry budget window, circuit state and daemon offline transition at 24 hours",
+      "platform_scope": "Web/native",
+      "required_executable_evidence": "Jitter distribution, budget exhaustion and circuit-open tests plus a retry-safety matrix keyed on the specification rather than the HTTP method"
+    },
+    {
+      "id": "D-234",
+      "implementation_bearing": true,
+      "normative_owner": "docs/architecture/API_EDGE_CONTRACT.md with ADR-013 for emergency removal",
+      "implementation_owner": "OS-011 deprecation mechanics",
+      "machine_or_state_ownership": "One path-versioned major surface with Deprecation, Sunset and Link headers",
+      "platform_scope": "Server/web/native",
+      "required_executable_evidence": "Deprecation header and 180-day window test, plus an unknown-field and unknown-reason-code tolerance test in the generated clients"
+    },
+    {
+      "id": "D-235",
+      "implementation_bearing": true,
+      "normative_owner": "docs/architecture/API_EDGE_CONTRACT.md and ADR-015",
+      "implementation_owner": "OS-012 clock discipline",
+      "machine_or_state_ownership": "Server measured offset reviewed at 250 ms and refusing finalization beyond 2000 ms",
+      "platform_scope": "Server/native",
+      "required_executable_evidence": "Skew fixtures at the 300-second bound, a refusal case at the 2000 ms server offset and a scan proving no interval is a wall-clock subtraction"
+    },
+    {
+      "id": "D-236",
+      "implementation_bearing": true,
+      "normative_owner": "docs/operations/OBSERVABILITY_PRIVACY.md with packages/schemas/observability-allowlist-v1.yaml",
+      "implementation_owner": "OS-005 structured logging",
+      "machine_or_state_ownership": "Log field allowlist and per-environment pseudonymisation salt rotating every 90 days",
+      "platform_scope": "Server/web/native",
+      "required_executable_evidence": "Compile-time allowlist check, a static-literal message lint and a test that a client-supplied request identifier is discarded"
+    },
+    {
+      "id": "D-237",
+      "implementation_bearing": true,
+      "normative_owner": "docs/operations/OBSERVABILITY_PRIVACY.md",
+      "implementation_owner": "OS-006 metric instrumentation",
+      "machine_or_state_ownership": "Eighteen named metrics and four span boundaries that are logged and never exported",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Metric inventory test, a privacy-canary non-zero alert test and a readiness test failing outside the declared migration range"
+    },
+    {
+      "id": "D-238",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-018 and the operations contract",
+      "implementation_owner": "X-001 cloud-portable reference deployment, with X-013 staging contradicted by this row",
+      "machine_or_state_ownership": "Four environments local, ci, preview and production with no standing staging",
+      "platform_scope": "Server/web",
+      "required_executable_evidence": "Environment inventory check, a restore drill against an ephemeral ci database and a check that production deployment is manually dispatched against a tagged release set"
+    },
+    {
+      "id": "D-239",
+      "implementation_bearing": true,
+      "normative_owner": "The operations contract with cadences in packages/schemas/policy-defaults-v1.json",
+      "implementation_owner": "OS-013 secret rotation runbook and first rotation",
+      "machine_or_state_ownership": "Per-class rotation cadence with retained verification generations",
+      "platform_scope": "Server",
+      "required_executable_evidence": "First rotation executed end to end, a history scan for committed secrets and a check that no cloud CI credential outlives one hour"
+    },
+    {
+      "id": "D-240",
+      "implementation_bearing": false,
+      "reason": "sets test placement and coverage policy for how work is verified, with no work unit and no product behaviour of its own"
+    },
+    {
+      "id": "D-241",
+      "implementation_bearing": true,
+      "normative_owner": "docs/engineering/PERFORMANCE_BUDGETS.md",
+      "implementation_owner": "OS-010 load test harness",
+      "machine_or_state_ownership": "Six named scenarios with derived loads and pass conditions",
+      "platform_scope": "Server",
+      "required_executable_evidence": "k6 scenario runs against an ephemeral ci stack before each ring expansion, with a check that results are never cited for the 100,000 scale target"
+    },
+    {
+      "id": "D-242",
+      "implementation_bearing": true,
+      "normative_owner": "Conformance manifest format owned by OS-008",
+      "implementation_owner": "OS-008 manifest format and validator and OS-009 conformance runners",
+      "machine_or_state_ownership": "Per-suite manifest of authorities, subjects and digest-pinned cases with permanent case identifiers",
+      "platform_scope": "Server/native",
+      "required_executable_evidence": "Manifest validation failing a suite with no negative case, plus a runner case distinguishing a shared wrong answer from a divergence"
+    },
+    {
+      "id": "D-243",
+      "implementation_bearing": true,
+      "normative_owner": "The operations contract",
+      "implementation_owner": "X-005 incident response and abuse operations and X-015 runbooks and on-call",
+      "machine_or_state_ownership": "Four commitments plus observations with review triggers and three alert classes",
+      "platform_scope": "Server",
+      "required_executable_evidence": "N-020 egress suite and the deterministic duplicate and replay fixtures passing on each release, plus alert-condition tests for the six observations"
+    },
+    {
+      "id": "D-244",
+      "implementation_bearing": true,
+      "normative_owner": "docs/engineering/LOCAL_DEVELOPMENT.md",
+      "implementation_owner": "OS-007 local development stack",
+      "machine_or_state_ownership": "Loopback-bound C-locale PostgreSQL container with a named volume",
+      "platform_scope": "macOS, Linux",
+      "required_executable_evidence": "Planning validators running with and without a database URL, plus a check that no compose file or shared development credential is committed"
+    },
+    {
+      "id": "D-245",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/reason-codes-v1.json, blocked on the D-224 repair",
+      "implementation_owner": "S-016 error taxonomy and reason-code mapping",
+      "machine_or_state_ownership": "conformance/adversarial/anti-cheat-registry-v1.json fault-to-code mapping",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Registry check that clock-rollback and future-timestamp faults no longer resolve to CLAIM_SEQUENCE_UNEXPECTED"
+    },
+    {
+      "id": "D-260",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/accounting-arithmetic-v1.json",
+      "implementation_owner": "A-003 category containment and source authority and A-007 checked arithmetic and bounds",
+      "machine_or_state_ownership": "Unsigned 64-bit quantities carried as decimal strings in canonical component order",
+      "platform_scope": "Native/server",
+      "required_executable_evidence": "A-010 order-invariance vectors plus rejection cases for overflow, containment cycles, two containers and undeclared source fields"
+    },
+    {
+      "id": "D-261",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/accounting-arithmetic-v1.json canonical digest rule",
+      "implementation_owner": "A-001 profile loader and digest verification with P-002 deterministic CBOR",
+      "machine_or_state_ownership": "content_sha256 omitted from its own preimage across the five record kinds",
+      "platform_scope": "Native/server",
+      "required_executable_evidence": "Cross-language digest vectors over the three registered profiles and rejection cases for float and boolean preimage members"
+    },
+    {
+      "id": "D-262",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/accounting-profile.schema.json",
+      "implementation_owner": "A-005 retry, cancellation and nested-agent reconciliation",
+      "machine_or_state_ownership": "Attempt identity and the per-enum control that prevents the double count",
+      "platform_scope": "Native",
+      "required_executable_evidence": "Per-value fixtures proving the deduplication control and an unknown cancellation remainder recorded as absent rather than zero"
+    },
+    {
+      "id": "D-263",
+      "implementation_bearing": true,
+      "normative_owner": "Accounting contract correction rule",
+      "implementation_owner": "R-002 immutable score contributions and R-010 corrections and rebuild equivalence",
+      "machine_or_state_ownership": "Append-only directed contributions with generation supersession",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Rebuild equivalence fixtures plus a rejection case for retractions summing past the additions they correct"
+    },
+    {
+      "id": "D-264",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/producer-accounting-binding-v1.schema.json",
+      "implementation_owner": "PF-041 OpenTelemetry accounting profile and V-003 compatibility tuple and capability probe runtime",
+      "machine_or_state_ownership": "Certification state driving effective_ceiling on every producer binding",
+      "platform_scope": "Native/server",
+      "required_executable_evidence": "Check that every binding below active resolves to private-analytics and that no empty certification implies an exercised tuple"
+    },
+    {
+      "id": "D-265",
+      "implementation_bearing": true,
+      "normative_owner": "Source receipt contract authored by PF-042",
+      "implementation_owner": "N-008 commitment, receipt and queue stores",
+      "machine_or_state_ownership": "One device-local receipt per NormalizedAccountingEvent",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "N-020 egress suite proving no receipt field crosses the boundary, plus a V-008 case where the receipt explains a discarded observation"
+    },
+    {
+      "id": "D-266",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/evidence-bundle-v1.cddl",
+      "implementation_owner": "N-001 local schema and encrypted storage with N-008 receipt stores",
+      "machine_or_state_ownership": "At-rest bundle binding claim bytes, receipt, profile, arithmetic and privacy decision by digest",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "Diff proving no new field in packages/schemas/egress-allowlist-v1.json plus a digest-binding test over tampered members"
+    },
+    {
+      "id": "D-267",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/appraisal-result-v1.schema.json with packages/schemas/appraisal-policy-v1.json",
+      "implementation_owner": "PF-043 appraisal contracts and S-011 immutable claims and appraisals",
+      "machine_or_state_ownership": "Appraisal record with validity interval and supersession chain",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Validator comparing unbound_fields and dropped_columns against the DDL, plus a CBOR-to-JSON dimension ordinal agreement test"
+    },
+    {
+      "id": "D-268",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/appraisal-policy-v1.json binding packages/schemas/evidence-profile-policy-v1.json by digest",
+      "implementation_owner": "PF-043 appraisal contracts and S-014 compatibility and certification policy persistence",
+      "machine_or_state_ownership": "Wire ordinals, verifier implementation digest and the E1-S and E1-R limbs",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Digest-binding check failing on an unmirrored edit to the bound file, plus a limb-to-base-enum mapping test"
+    },
+    {
+      "id": "D-269",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/observer-equivalence-v1.json",
+      "implementation_owner": "A-006 duplicate-domain engine and V-008 multi-observer duplicate reconciliation",
+      "machine_or_state_ownership": "duplicate_domain_commitment preimage restricted to source-derived facts",
+      "platform_scope": "Native/server",
+      "required_executable_evidence": "Two-observer fixtures that must collide, a quarantine case for disagreeing collectors and a scan rejecting observer-derived preimage inputs"
+    },
+    {
+      "id": "D-280",
+      "implementation_bearing": true,
+      "normative_owner": "PF-069 private-beta invite aggregate",
+      "implementation_owner": "PF-069 specification, redemption handler unit not yet authored",
+      "machine_or_state_ownership": "invite-code machine over invite_codes and invite_redemptions",
+      "platform_scope": "Server/web",
+      "required_executable_evidence": "redeemInvite 4xx set resolving against the reason registry in both directions, plus a rejected multi-use code fixture",
+      "owner_gap_reason": "PF-069 specifies the invite aggregate; the redemption handler unit is not authored"
+    },
+    {
+      "id": "D-281",
+      "implementation_bearing": true,
+      "normative_owner": "PF-069 private-beta invite aggregate",
+      "implementation_owner": "PF-069 specification, issuance tool not yet authored",
+      "machine_or_state_ownership": "Code stored only as a salted SHA-256 digest, never in plaintext",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Entropy and encoding vectors plus a Crockford confusable-folding test in which a mistyped variant still redeems",
+      "owner_gap_reason": "PF-069 specifies the invite aggregate; the issuance tool unit is not authored"
+    },
+    {
+      "id": "D-282",
+      "implementation_bearing": true,
+      "normative_owner": "PF-069 private-beta invite aggregate",
+      "implementation_owner": "PF-069 specification, serializable redemption transaction not yet authored",
+      "machine_or_state_ownership": "invite_redemptions primary key on invite_code_id with unique account_id",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Concurrent redemption test where exactly one insert commits at every isolation level, plus check-constraint cases binding invite_codes.state to its timestamp set",
+      "owner_gap_reason": "PF-069 specifies the invite aggregate; the serializable redemption transaction is not authored"
+    },
+    {
+      "id": "D-283",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/security/PRIVATE_BETA_ADMISSION.md` with `docs/architecture/API_EDGE_CONTRACT.md`",
+      "implementation_owner": "PF-069, with the admission path in Epic O",
+      "machine_or_state_ownership": "`invite-code` states and the four admission reason codes in `reason-codes-v1.json`",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Ordered-gate tests asserting no reason code is emitted before authentication and that unknown, expired, revoked and spent codes return one indistinguishable 422"
+    },
+    {
+      "id": "D-284",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/privacy/DATA_MAP.md` with `docs/security/PRIVATE_BETA_ADMISSION.md`",
+      "implementation_owner": "PF-069",
+      "machine_or_state_ownership": "`invite_redemptions` as a single depth-one row per admitted account with no ancestry column",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Schema test proving no issuer or ancestry field is reachable from an invitee response, plus an Article 30 test that the edge carries a lawful basis and a retention window"
+    },
+    {
+      "id": "D-285",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/security/PRIVATE_BETA_ADMISSION.md`",
+      "implementation_owner": "PF-069 issuance tool; no unit owns an administrative HTTP route",
+      "machine_or_state_ownership": "`invite_outstanding_max` enforced by the issuing tool and deliberately not by a database constraint",
+      "platform_scope": "Server",
+      "required_executable_evidence": "OpenAPI scan proving no administrative operation exists, plus a tool test refusing issuance past the outstanding-code quota",
+      "owner_gap_reason": "PF-069 specifies issuance; no unit owns the administrative HTTP route"
+    },
+    {
+      "id": "D-286",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/security/PRIVATE_BETA_ADMISSION.md` with `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`",
+      "implementation_owner": "PF-069, with the `auth-start` rate-limit class in OS-003",
+      "machine_or_state_ownership": "Edge-side lockout counter beside the rate-limit buckets, with no persistence owner",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Rate-limit and lockout tests at 10 attempts per hour per address and 5 consecutive failures for 24 hours, plus a check that no path treats redemption as evidence about a person"
+    },
+    {
+      "id": "D-287",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/data-disposition-v1.json` with `docs/privacy/PRIVACY_CONTRACT.md`",
+      "implementation_owner": "PF-069, with the erasure effects in M-007",
+      "machine_or_state_ownership": "`invite-code` terminal `retired` and redemption deletion in one transaction",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Erasure test asserting the redemption row is gone, the code reads `retired`, and a second redemption of that code fails"
+    },
+    {
+      "id": "D-288",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/openapi-v1.yaml` with `docs/security/PRIVATE_BETA_ADMISSION.md`",
+      "implementation_owner": "PF-069 admission middleware, surfaced through W-001",
+      "machine_or_state_ownership": "`AccountProfile.admitted` as a boolean that discloses no invite state",
+      "platform_scope": "Server and web",
+      "required_executable_evidence": "Route test asserting exactly the six named operations answer without a redemption and every other operation answers 403 `INVITE_REQUIRED`"
+    },
+    {
+      "id": "D-300",
+      "implementation_bearing": false,
+      "reason": "proposes a severity regrading of planning findings that awaits owner approval and changes no registry, count or gate record"
+    },
+    {
+      "id": "D-320",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-380, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-321",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-381, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-322",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-382, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-323",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-383, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-324",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-384, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-325",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-385, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-326",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-386, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-327",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-387, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-328",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-388, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-329",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-389, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-330",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-390, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-331",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-391, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-332",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-392, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-333",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-393, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-334",
+      "implementation_bearing": false,
+      "reason": "byte-identical duplicate of D-394, which is the copy every artifact cites"
+    },
+    {
+      "id": "D-340",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/architecture/VIBEPROOF_V1_PROTOCOL.md` ZIP-215 pin",
+      "implementation_owner": "PF-068, consumed by P-003",
+      "machine_or_state_ownership": "None; a conformance fixture with no aggregate or machine",
+      "platform_scope": "Native and server",
+      "required_executable_evidence": "`python3 -m unittest tests.ci.test_ed25519_divergence_corpus` asserting each of non-canonical `A`, non-canonical `R`, small-order `A` and `S >= l` is separated by at least one case"
+    },
+    {
+      "id": "D-341",
+      "implementation_bearing": true,
+      "normative_owner": "`conformance/vibeproof/v1/README.md` corpus contract",
+      "implementation_owner": "PF-068 generator `scripts/repository/generate_ed25519_divergence_corpus.py`",
+      "machine_or_state_ownership": "Per-case `confirmed` or `unconfirmed` verdict bound to a SHA-256 over the case bytes",
+      "platform_scope": "None",
+      "required_executable_evidence": "`generate_ed25519_divergence_corpus.py --check` refusing to write when a recorded oracle result contradicts the computed verdict or the bound digest moves"
+    },
+    {
+      "id": "D-342",
+      "implementation_bearing": true,
+      "normative_owner": "`conformance/vibeproof/v1/README.md` with the D-012 crate bakeoff",
+      "implementation_owner": "PF-068 oracle module `conformance/vibeproof/v1/zip215-oracle/`; product verifier selection stays in Epic P",
+      "machine_or_state_ownership": "None; oracle module isolated from every product path",
+      "platform_scope": "None",
+      "required_executable_evidence": "Import-graph check proving no product path reaches the oracle module, plus a test failing when a contrast implementation is recorded as the ZIP-215 verdict"
+    },
+    {
+      "id": "D-343",
+      "implementation_bearing": true,
+      "normative_owner": "`conformance/vibeproof/v1/README.md` corpus contract",
+      "implementation_owner": "PF-068",
+      "machine_or_state_ownership": "`against_strict_rfc8032` and `against_observed_cofactorless` as two separate per-case facts",
+      "platform_scope": "None",
+      "required_executable_evidence": "`run_ed25519_oracles.py` refresh that reruns both contrast oracles and fails when an observed verdict moves from the recorded run"
+    },
+    {
+      "id": "D-344",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/architecture/VIBEPROOF_V1_PROTOCOL.md`",
+      "implementation_owner": "PF-068 corpus, consumed by P-003 alongside the exact-byte vectors",
+      "machine_or_state_ownership": "None; a test-only signer seed shared with `conformance/vibeproof/v1/exact-byte-vectors.json`",
+      "platform_scope": "Native and server",
+      "required_executable_evidence": "P-003 acceptance run over both the divergence corpus and the exact-byte vectors, failing when either file is unconsumed"
+    },
+    {
+      "id": "D-345",
+      "implementation_bearing": false,
+      "reason": "corrects a work-unit dependency edge in the breakdown, which is scheduling metadata rather than product behaviour"
+    },
+    {
+      "id": "D-360",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/decisions/ADR-017-HOSTING_REGION_AND_RESIDENCY.md`",
+      "implementation_owner": "X-016, measured by X-009 and X-014",
+      "machine_or_state_ownership": "None; operator cost figures with no product aggregate",
+      "platform_scope": "Server",
+      "required_executable_evidence": "`python3 scripts/ci/check_cost_model.py` requiring a measured driver per component and failing when a credit balance stands in for a steady-state figure"
+    },
+    {
+      "id": "D-361",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/decisions/ADR-017-HOSTING_REGION_AND_RESIDENCY.md`",
+      "implementation_owner": "X-001",
+      "machine_or_state_ownership": "None; deployment configuration rather than a mutable aggregate",
+      "platform_scope": "Server",
+      "required_executable_evidence": "`terraform validate` and `terraform plan` against the reference configuration in an EU region, plus the X-004 restore-elsewhere drill"
+    },
+    {
+      "id": "D-362",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/decisions/ADR-017-HOSTING_REGION_AND_RESIDENCY.md`",
+      "implementation_owner": "X-001",
+      "machine_or_state_ownership": "None; managed-service exclusion list checked against the plan",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Plan check failing on any managed service outside managed PostgreSQL, containers and object storage on the critical path"
+    },
+    {
+      "id": "D-363",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/decisions/ADR-017-HOSTING_REGION_AND_RESIDENCY.md`",
+      "implementation_owner": "X-016",
+      "machine_or_state_ownership": "None; a funding runway rather than a persisted state",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Cost-model check that fails when a budget gate is satisfied by credits rather than by a measured steady-state cost"
+    },
+    {
+      "id": "D-380",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/security/AUTHENTICATION_AND_RECOVERY.md` with `packages/schemas/recovery-case-v1.schema.json`",
+      "implementation_owner": "PF-007, executed by O-008 and O-013",
+      "machine_or_state_ownership": "`recovery-case` machine over `recovery_cases`, cooling-off check constraint and live-case partial unique index",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Constraint tests proving an apply before `cooling_off_ends_at` and a second live case are both unwritable, and that an applied case revoked every session family"
+    },
+    {
+      "id": "D-381",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/security/RANKED_IDENTITY_ELIGIBILITY.md`",
+      "implementation_owner": "PF-008, executed by O-009",
+      "machine_or_state_ownership": "`identity-investigation` machine over `identity_investigations`, integrity-private with no `reversed` state",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Projection tests proving no surface discloses an open case, plus a state test that a conclusion reverses nothing without an `appeals` outcome"
+    },
+    {
+      "id": "D-382",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/consolidation-plan-v1.schema.json` with `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`",
+      "implementation_owner": "PF-008, executed by O-010",
+      "machine_or_state_ownership": "`consolidation_cases` and `consolidation_contributions`, `applied` non-terminal and `reversed` appending inverse contributions",
+      "platform_scope": "Server",
+      "required_executable_evidence": "`validate_planning_artifacts.py` refusing a combined-total field, plus an overlapping-claims fixture counting a duplicate domain commitment once"
+    },
+    {
+      "id": "D-383",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/security/INTEGRITY_MODEL.md`",
+      "implementation_owner": "PF-010, persisted by S-008",
+      "machine_or_state_ownership": "`lineage_fork_cases` and `lineage_fork_branches`, `unresolved` non-terminal, quarantined claims held",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Constraint tests that a resumed generation is strictly greater than the fork generation and that two survivors in one case are unwritable, over `conformance/vibeproof/v1/fork-and-rotation-vectors.json`"
+    },
+    {
+      "id": "D-384",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md` with `packages/schemas/local-store-v1.sql`",
+      "implementation_owner": "PF-014, implemented by N-001 and N-002",
+      "machine_or_state_ownership": "SQLite device store, commitment written before a claim is offered, per-device deletion receipt",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "`python3 -m unittest tests.ci.test_local_store_contract` plus the N-001 raw-file canary scan over `p1140b-boundary-canaries-v1.json`"
+    },
+    {
+      "id": "D-385",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/presence-pulse-v1.schema.json` with `packages/schemas/policy-defaults-v1.json`",
+      "implementation_owner": "PF-026, implemented by G-009 and G-010",
+      "machine_or_state_ownership": "`presence` machine thresholds and `presence_events` at `no-retention`",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Validator run asserting the three resolved values 30, 90 and 300 against their `const` bindings, failing when a value moves without its meaning"
+    },
+    {
+      "id": "D-386",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/projection-authorization-v1.json` with `docs/privacy/PRIVACY_CONTRACT.md`",
+      "implementation_owner": "PF-033, applied by G-011 and G-015",
+      "machine_or_state_ownership": "Nine named inputs, `blocks.established_at`, no cached authorization result",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Race test proving a revision recheck at emit time fails closed, and a notification test proving authorization is rechecked at delivery rather than creation"
+    },
+    {
+      "id": "D-387",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/compatibility-tuple-v1.schema.json` with `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`",
+      "implementation_owner": "PF-015, exercised by V-003",
+      "machine_or_state_ownership": "Tuple digest over six dimensions, observation mode drawn from `observer-equivalence-v1.json`",
+      "platform_scope": "Native and server",
+      "required_executable_evidence": "`python3 -m unittest tests.ci.test_compatibility_tuple_digest`, extended with a case refusing an open-ended upper version bound"
+    },
+    {
+      "id": "D-388",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/integrations/ADAPTER_CERTIFICATION_POLICY.md` with `packages/schemas/certification-result-v1.schema.json`",
+      "implementation_owner": "PF-016, exercised by V-006 and V-010",
+      "machine_or_state_ownership": "`source-certification` machine over `source_certifications` with append-only `certification_results`",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Check-constraint tests that any state other than `active` cannot sit beside a ceiling above `private-analytics` and that a passing result with zero negative cases is unwritable"
+    },
+    {
+      "id": "D-389",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/install-plan-v1.schema.json` with `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`",
+      "implementation_owner": "PF-032, implemented by L-008, L-009 and L-010",
+      "machine_or_state_ownership": "`platform_install_plans` and `platform_install_operations`, each operation naming its reversal or declaring none",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "Schema tests pinning `verify-release-signature` at sequence 1 and requiring `requires_privileged_consent` on any plan containing `register-privileged-supervisor`"
+    },
+    {
+      "id": "D-390",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/tuf-trust-v1.schema.json` with `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`",
+      "implementation_owner": "PF-030, implemented by L-001",
+      "machine_or_state_ownership": "`tuf_metadata` keyed on device and role, signature count against threshold as a check constraint",
+      "platform_scope": "Native and server",
+      "required_executable_evidence": "Hostile-metadata fixtures per role asserting the rollback, freeze and below-threshold refusals, and that expiry is enforced rather than warned about"
+    },
+    {
+      "id": "D-391",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/compatibility-graph-v1.schema.json`",
+      "implementation_owner": "PF-031, implemented by L-004",
+      "machine_or_state_ownership": "`compatibility_edges`, one row per relation across six independently versioned interfaces",
+      "platform_scope": "Native and server",
+      "required_executable_evidence": "Schema tests refusing an empty range, a derived `breaking` flag, and a sunset with no deprecation notice outside the three D-234 carve-outs"
+    },
+    {
+      "id": "D-392",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/migration-chain-v1.schema.json`",
+      "implementation_owner": "PF-031, implemented by L-004 and L-007",
+      "machine_or_state_ownership": "`storage_migrations` rollback class beside each `schema_migrations` version, `down_sql_present` held separately",
+      "platform_scope": "Native and server",
+      "required_executable_evidence": "Constraint test requiring a snapshot digest for `snapshot-required`, plus a case proving a present down section does not yield a reversible class"
+    },
+    {
+      "id": "D-393",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/disclosure-projection-v1.json`",
+      "implementation_owner": "PF-046, consumed by W-001",
+      "machine_or_state_ownership": "Per-shape audience classification with `SelfRankEntry` as the narrow shape and no per-response redaction",
+      "platform_scope": "Server and web",
+      "required_executable_evidence": "`validate_planning_artifacts.py` resolving every field against `openapi-v1.yaml` and failing on an unclassified or narrower field, plus a test pinning `token_burn_total` and the three ADR-020 weights to `self`"
+    },
+    {
+      "id": "D-394",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/ui-state-projection-v1.json`",
+      "implementation_owner": "W-010, bound to PF-033",
+      "machine_or_state_ownership": "Each exceptional state resolved to a registered machine, a viewer-authorization input, or declared client-local",
+      "platform_scope": "Web",
+      "required_executable_evidence": "Matrix test asserting `blocked` and `private` render indistinguishably from an absent subject and that no filtered count is emitted for `empty`"
+    },
+    {
+      "id": "D-400",
+      "implementation_bearing": false,
+      "reason": "governs the P-1140F authority validator and the gate record's ceiling structure, not product behaviour"
+    },
+    {
+      "id": "D-401",
+      "implementation_bearing": false,
+      "reason": "defines a planning validation failure for unrecognised finding states in the semantic-findings register"
+    },
+    {
+      "id": "D-410",
+      "implementation_bearing": false,
+      "reason": "governs npm workspace ordering inside the repository verification harness, not product behaviour"
+    },
+    {
+      "id": "D-411",
+      "implementation_bearing": false,
+      "reason": "governs justification bookkeeping in the verification coverage baseline"
+    },
+    {
+      "id": "D-420",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/notification-delivery-v1.schema.json`",
+      "implementation_owner": "PF-027, implemented by G-012",
+      "machine_or_state_ownership": "`notification-delivery` machine with four pre-inbox states held internal",
+      "platform_scope": "Server and web",
+      "required_executable_evidence": "API test asserting `Notification.state` never emits `created`, `grouped`, `ready` or `suppressed`"
+    },
+    {
+      "id": "D-421",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/notification-delivery-v1.schema.json` with `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`",
+      "implementation_owner": "PF-027, implemented by G-012 and rendered by W-010",
+      "machine_or_state_ownership": "`notifications` and `notification_events` carrying references only",
+      "platform_scope": "Server and web",
+      "required_executable_evidence": "`validate_planning_artifacts.py` refusing the title, body, message, summary, preview and rendered-text field names in schema, DDL and API"
+    },
+    {
+      "id": "D-422",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`",
+      "implementation_owner": "PF-027, implemented by G-014",
+      "machine_or_state_ownership": "Four category flags on `notification_preferences` decide creation; quiet hours decide transport only",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Test proving a quiet-hours window never withholds an inbox row, and that no best-effort transport is wired at launch"
+    },
+    {
+      "id": "D-423",
+      "implementation_bearing": true,
+      "normative_owner": "`packages/schemas/notification-delivery-v1.schema.json`",
+      "implementation_owner": "PF-027, implemented by G-013",
+      "machine_or_state_ownership": "`notification_deliveries` outcomes with `notifications.read_at` as the only read",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Schema test that no read column exists, a `server-inbox` attempt carries only `accepted`, and a push or email row without a copied opt-in timestamp is unwritable"
+    },
+    {
+      "id": "D-424",
+      "implementation_bearing": true,
+      "normative_owner": "`docs/privacy/PRIVACY_CONTRACT.md` with `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`",
+      "implementation_owner": "PF-029, implemented by M-008",
+      "machine_or_state_ownership": "`local_deletion_commands` and `local_deletion_receipts` with per-device outcomes",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "`grep -in 'forensic' docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md` returning no erasure claim, plus tests that a `partial` or `refused` receipt drives the command to `failed` and an unanswered command reports `unreachable`"
+    },
+    {
+      "id": "D-425",
+      "implementation_bearing": true,
+      "normative_owner": "docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md and packages/schemas/data-disposition-v1.json",
+      "implementation_owner": "M-008 for the two repaired here, M-007 and S-020 for the six enumerated aggregates",
+      "machine_or_state_ownership": "Local deletion command and receipt rows retaining device_id with no reference",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Article 17 erasure executed against a real database commits while every retain-classified child row survives"
+    },
+    {
+      "id": "D-440",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/origin-policy-v1.json with docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md and ADR-015",
+      "implementation_owner": "OS-014 and OS-001",
+      "machine_or_state_ownership": "Origin allowlist enum, Origin parameter on the twenty-two csrfToken operations, preflight response component",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Disallowed Origin on each csrfToken operation refused 403 ORIGIN_NOT_ALLOWED, and the OpenAPI projection compared field by field against the record"
+    },
+    {
+      "id": "D-441",
+      "implementation_bearing": false,
+      "reason": "conformance suite manifests and their planning validator are records about the test corpus and change no suite status or product behaviour"
+    },
+    {
+      "id": "D-442",
+      "implementation_bearing": false,
+      "reason": "a recorded negative-case gap is a planning record of what a suite cannot yet prove"
+    },
+    {
+      "id": "D-460",
+      "implementation_bearing": false,
+      "reason": "coverage floors and their measured baseline govern the repository's own verification program"
+    },
+    {
+      "id": "D-461",
+      "implementation_bearing": false,
+      "reason": "load scenarios carry claim_scope specification-only and bind rates to policy keys without producing product behaviour"
+    },
+    {
+      "id": "D-462",
+      "implementation_bearing": false,
+      "reason": "records the deliberate absence of a scale scenario, which is a verification-program omission rather than a product obligation"
+    },
+    {
+      "id": "D-480",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/data-disposition-v1.json and ADR-022",
+      "implementation_owner": "M-006 and M-007 with S-020 migrations",
+      "machine_or_state_ownership": "Nine retain-unlinked tables keeping the erased identifier without a foreign key",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Parent delete for an Article 17 erasure commits with all nine child rows present"
+    },
+    {
+      "id": "D-481",
+      "implementation_bearing": false,
+      "reason": "widens the scope of the schema-lint rule enforcing D-480, which is where the product obligation sits"
+    },
+    {
+      "id": "D-500",
+      "implementation_bearing": false,
+      "reason": "reporting rule for superseded citations inside validate_cross_references.py"
+    },
+    {
+      "id": "D-501",
+      "implementation_bearing": false,
+      "reason": "scopes that citation rule to the live normative surface and exempts archival trees"
+    },
+    {
+      "id": "D-520",
+      "implementation_bearing": false,
+      "reason": "duplicate-family and status checking of the specification inventory table"
+    },
+    {
+      "id": "D-540",
+      "implementation_bearing": false,
+      "reason": "records the repository's actual public visibility and corrects documents that asserted otherwise"
+    },
+    {
+      "id": "D-541",
+      "implementation_bearing": false,
+      "reason": "retroactive pre-publication repository audit with four of five limbs still owed"
+    },
+    {
+      "id": "D-560",
+      "implementation_bearing": false,
+      "reason": "declares which authorities a reason code may name so the registry is readable, changing no refusal behaviour"
+    },
+    {
+      "id": "D-561",
+      "implementation_bearing": true,
+      "normative_owner": "docs/security/AUTHENTICATION_AND_RECOVERY.md",
+      "implementation_owner": "O-013 and O-008 with W-002 for the enrolment screen",
+      "machine_or_state_ownership": "Ranked identity retired terminally on exhausted device and recovery-code set, with no appeal transition",
+      "platform_scope": "Server, Web, Native",
+      "required_executable_evidence": "Exhausting every device and code leaves no reachable recovery path, and the enrolment screen renders the warning on the same view that issues the codes"
+    },
+    {
+      "id": "D-562",
+      "implementation_bearing": true,
+      "normative_owner": "docs/security/AUTHENTICATION_AND_RECOVERY.md and ADR-007",
+      "implementation_owner": "S-008, S-009 and S-013",
+      "machine_or_state_ownership": "Lineage continuity with the newest checkpoint authoritative and the older device forced to re-enrol",
+      "platform_scope": "Server, Native",
+      "required_executable_evidence": "Two devices presenting one lineage resolve to the newest checkpoint and the older receives a re-enrol refusal rather than quarantine"
+    },
+    {
+      "id": "D-563",
+      "implementation_bearing": true,
+      "normative_owner": "docs/security/RANKED_IDENTITY_ELIGIBILITY.md",
+      "implementation_owner": "O-007 and O-009",
+      "machine_or_state_ownership": "Linked provider identity eligibility evaluated at link time",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Linking a provider account younger than ninety days is refused at link, and claims from an account linked past the threshold rank without a second age check"
+    },
+    {
+      "id": "D-564",
+      "implementation_bearing": true,
+      "normative_owner": "docs/security/RANKED_IDENTITY_ELIGIBILITY.md and packages/schemas/consolidation-plan-v1.schema.json",
+      "implementation_owner": "O-010 and O-011",
+      "machine_or_state_ownership": "Consolidation retiring the newer ranked identity with no score summation",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Consolidation fixture over two identities retires the newer one and leaves both score totals unsummed"
+    },
+    {
+      "id": "D-565",
+      "implementation_bearing": true,
+      "normative_owner": "docs/security/PRIVATE_BETA_ADMISSION.md",
+      "implementation_owner": "PF-069 specifies the invite aggregate, and no product work unit yet owns beta invite issuance",
+      "machine_or_state_ownership": "Invite-code lineage as the sole one-identity-per-person input at beta",
+      "platform_scope": "Server",
+      "required_executable_evidence": "A second ranked identity claimed under an already-redeemed invite lineage is refused, and a code scan finds no statistical or biometric dedup signal in the path"
+    },
+    {
+      "id": "D-566",
+      "implementation_bearing": true,
+      "normative_owner": "docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md and docs/integrations/ADAPTER_CERTIFICATION_POLICY.md",
+      "implementation_owner": "V-004, V-006 and V-010 with X-008 for expansion",
+      "machine_or_state_ownership": "Support registry keyed by source/accounting tuple with per-tuple certification state and no fixed provider allowlist",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "An uncertified agent tuple yields private analytics only, and the registry refuses a coverage claim with no certification bound to the exact tuple"
+    },
+    {
+      "id": "D-567",
+      "implementation_bearing": true,
+      "normative_owner": "docs/integrations/ADAPTER_CERTIFICATION_POLICY.md",
+      "implementation_owner": "V-001, V-004 and V-006",
+      "machine_or_state_ownership": "At least one certified local-model source/accounting tuple in the support registry at launch",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "Certification runner emits a signed result bundle for one local-model tuple and claims captured under it rank competitively"
+    },
+    {
+      "id": "D-568",
+      "implementation_bearing": true,
+      "normative_owner": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md and packages/schemas/presence-pulse-v1.schema.json",
+      "implementation_owner": "G-009, G-010 and G-011 with W-005",
+      "machine_or_state_ownership": "Account presence projection carrying a server-derived last-active timestamp",
+      "platform_scope": "Server, Web, Native",
+      "required_executable_evidence": "Presence projection returns a timestamp rather than a binary flag, and an unauthorized viewer receives neither form"
+    },
+    {
+      "id": "D-569",
+      "implementation_bearing": true,
+      "normative_owner": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md and packages/schemas/projection-authorization-v1.json",
+      "implementation_owner": "G-003, G-015 and G-016",
+      "machine_or_state_ownership": "Directional-block evaluated deny-hard at read time across every live projection",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "Blocked-viewer sweep across every live surface returns nothing, while the blocker's sealed generation entry is unchanged and stays pseudonymous"
+    },
+    {
+      "id": "D-570",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-013 with packages/schemas/compatibility-graph-v1.schema.json",
+      "implementation_owner": "S-017, L-012 and W-007",
+      "machine_or_state_ownership": "Minimum supported client version with a refusal carrying an upgrade action",
+      "platform_scope": "Server, Web, Native",
+      "required_executable_evidence": "A client below the floor receives an actionable upgrade refusal, and no request from it is accepted in degraded form"
+    },
+    {
+      "id": "D-571",
+      "implementation_bearing": false,
+      "reason": "deprioritises legal and privacy paperwork for private beta and leaves the technical privacy boundary unchanged"
+    },
+    {
+      "id": "D-572",
+      "implementation_bearing": false,
+      "reason": "regrades P-1140F finding severity, which is gate-process work"
+    },
+    {
+      "id": "D-573",
+      "implementation_bearing": false,
+      "reason": "requires a prototype artifact to restate the quarantine notice the authority record already assigns it"
+    },
+    {
+      "id": "D-580",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/openapi-v1.yaml and packages/schemas/projection-authorization-v1.json",
+      "implementation_owner": "G-001 and G-003 with W-004",
+      "machine_or_state_ownership": "Profile projection requiring a viewer identity for subject-visibility and directional-block evaluation",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "Unauthenticated getPublicProfile returns 401, and a blocked viewer cannot recover the profile by logging out"
+    },
+    {
+      "id": "D-581",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/openapi-v1.yaml#x-public-operations",
+      "implementation_owner": "S-001 route authorization with O-006 session enforcement",
+      "machine_or_state_ownership": "Ten declared public operations under auth-bootstrap, global-board or reference-data",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Unauthenticated call to every operation absent from x-public-operations returns 401, and the declaration set is compared against the security blocks rather than restated"
+    },
+    {
+      "id": "D-582",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/openapi-v1.yaml#x-idempotency-contract",
+      "implementation_owner": "S-003 and S-004",
+      "machine_or_state_ownership": "idempotency_records keyed on principal_type, principal_id, operation_id and idempotency_key",
+      "platform_scope": "Server",
+      "required_executable_evidence": "One key reused across two operations returns each operation's own recorded body, and a test compares the table key against the declared scope"
+    },
+    {
+      "id": "D-583",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/openapi-v1.yaml#x-idempotency-contract and packages/schemas/state-machine-registry-v1.json",
+      "implementation_owner": "S-003 and S-004",
+      "machine_or_state_ownership": "Idempotency ledger admitting replayable-failure, abandoned and a non-terminal committed that expires at the retention window",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Crash before commit yields abandoned and a safe failure yields replayable-failure, with a retry distinguishing the two"
+    },
+    {
+      "id": "D-584",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/openapi-v1.yaml#x-idempotency-contract",
+      "implementation_owner": "S-003",
+      "machine_or_state_ownership": "principal_type over account and bound device enrollment, with principal_id carrying no foreign key",
+      "platform_scope": "Server",
+      "required_executable_evidence": "A web session and a native session for one account reusing one key produce two rows, and the check constraint rejects an undeclared principal type"
+    },
+    {
+      "id": "D-585",
+      "implementation_bearing": true,
+      "normative_owner": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md and packages/schemas/projection-authorization-v1.json#directional-block",
+      "implementation_owner": "G-002, G-003 and G-015",
+      "machine_or_state_ownership": "Friendship and rivalry rows unchanged by a block, with block effects evaluated at read time",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "Block then unblock restores visibility for both parties, and no relationship row changes across either transition"
+    },
+    {
+      "id": "D-586",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/state-machine-registry-v1.json and docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md",
+      "implementation_owner": "G-002 and G-004",
+      "machine_or_state_ownership": "friend_requests.state and rival_edges.state with no blocked value and no transition into one",
+      "platform_scope": "Server",
+      "required_executable_evidence": "State vocabulary validation finds no blocked value in either machine, and a block leaves both state columns untouched"
+    },
+    {
+      "id": "D-590",
+      "implementation_bearing": false,
+      "reason": "requires every tracked markdown file to be declared in the documentation map"
+    },
+    {
+      "id": "D-591",
+      "implementation_bearing": false,
+      "reason": "narrows the D-590 check to table rows, a parse-scope correction to a documentation rule"
+    },
+    {
+      "id": "D-592",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-007 and packages/schemas/device-lineage.schema.json",
+      "implementation_owner": "S-008, S-009 and S-013",
+      "machine_or_state_ownership": "device_sequences keyed on lineage_id with one counter per lineage",
+      "platform_scope": "Server",
+      "required_executable_evidence": "A cloned device store enrolling as a second row contends for the lineage sequence and trips the D-072 fork quarantine"
+    },
+    {
+      "id": "D-593",
+      "implementation_bearing": true,
+      "normative_owner": "ADR-007 and packages/schemas/device-lineage.schema.json",
+      "implementation_owner": "S-008 and S-009",
+      "machine_or_state_ownership": "continuity_state owned solely by device_lineages, with claim_challenges carrying lineage_id",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Schema scan finds no continuity_state outside device_lineages, and a challenge is consumed against the lineage that must answer it"
+    },
+    {
+      "id": "D-594",
+      "implementation_bearing": false,
+      "reason": "binds each P-1140F unit to the finding it repairs"
+    },
+    {
+      "id": "D-595",
+      "implementation_bearing": false,
+      "reason": "records closure evidence and repair-in-progress status on six findings"
+    },
+    {
+      "id": "D-596",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/local-trust-domains-v1.json and docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md",
+      "implementation_owner": "N-003 through N-007 with N-015 and N-017",
+      "machine_or_state_ownership": "Eight local roles, each with an OS-verifiable peer identity per platform and a declared capability list",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "Peer identity verification test per role on each platform, and a role declaring no capability fails the schema"
+    },
+    {
+      "id": "D-597",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/local-trust-domains-v1.json and docs/privacy/PRIVACY_CONTRACT.md",
+      "implementation_owner": "N-003, N-004 and N-020",
+      "machine_or_state_ownership": "Explicit network scope per role, with exactly one transcript-content reader at scope none",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "Content-egress adversarial suite proves the content-reading process opens no socket, and the check refuses any role holding both capabilities"
+    },
+    {
+      "id": "D-598",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/local-control-v1.proto and docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+      "implementation_owner": "N-006 and N-007 with N-017",
+      "machine_or_state_ownership": "Per-role envelope arms replacing the universal oneof, with the privileged supervisor limited to health and lifecycle",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "A role-confusion attempt encoding another role's body cannot be decoded into that role's arm and is refused"
+    },
+    {
+      "id": "D-599",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/reason-codes-v1.json local-channel transport and docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+      "implementation_owner": "N-006 and N-007",
+      "machine_or_state_ownership": "role_grant_generation on the envelope with three local-channel refusal codes",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "A peer surviving a daemon restart is refused IPC_ROLE_GRANT_STALE, and no local-channel code appears on the HTTP wire or carries a status"
+    },
+    {
+      "id": "D-600",
+      "implementation_bearing": true,
+      "normative_owner": "docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md and packages/schemas/state-machine-registry-v1.json",
+      "implementation_owner": "N-015 and N-016",
+      "machine_or_state_ownership": "interactive-shell holding process and connection state only, with collection, sync, auth, permission and connectivity as separate single-row projections",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "Paused collection with the network offline is representable at once, and the shell transition table stays total over its own states"
+    },
+    {
+      "id": "D-601",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/local-store-v1.sql",
+      "implementation_owner": "N-001 and N-016",
+      "machine_or_state_ownership": "Five device-local projections persisted in the SQLite half of the storage contract",
+      "platform_scope": "macOS, Windows, Linux",
+      "required_executable_evidence": "State vocabulary validation resolves each projection's persistence owner to local-store-v1.sql, and no server table declares them"
+    },
+    {
+      "id": "D-602",
+      "implementation_bearing": true,
+      "normative_owner": "docs/privacy/PRIVACY_CONTRACT.md and packages/schemas/egress-allowlist-v1.json",
+      "implementation_owner": "F-006 with N-020 and X-003",
+      "machine_or_state_ownership": "Canary coverage over log, backup, diagnostic and corruption-report surfaces",
+      "platform_scope": "All",
+      "required_executable_evidence": "Planted canary token absent from every generated log, backup, diagnostic and corruption report, with a positive case proving the scan can detect it"
+    },
+    {
+      "id": "D-603",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/egress-allowlist-v1.json",
+      "implementation_owner": "F-006 and X-003",
+      "machine_or_state_ownership": "Declared forbidden classes in kebab-case including provider-identity-attribute, with one token per case",
+      "platform_scope": "All",
+      "required_executable_evidence": "Every canary case resolves to a declared forbidden class, and no token is shared between two cases"
+    },
+    {
+      "id": "D-604",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/compatibility-tuple-v1.schema.json",
+      "implementation_owner": "V-003 with S-014 and L-004",
+      "machine_or_state_ownership": "Compatibility tuple identity as SHA-256 over the deterministic CBOR encoding",
+      "platform_scope": "Server, Native",
+      "required_executable_evidence": "Two records holding identical values in opposite key order at every nesting level produce one digest, and a re-serialised tuple resolves its own certification"
+    },
+    {
+      "id": "D-605",
+      "implementation_bearing": false,
+      "reason": "pins closure_evidence to a commit, a provenance-format rule for the findings record"
+    },
+    {
+      "id": "D-606",
+      "implementation_bearing": false,
+      "reason": "removes dates from live document filenames and repins the records that cite them"
+    },
+    {
+      "id": "D-607",
+      "implementation_bearing": false,
+      "reason": "separates frozen from live artifacts under conformance/p1140e and generates the coverage arrays"
+    },
+    {
+      "id": "D-608",
+      "implementation_bearing": false,
+      "reason": "generates the decision register and task catalog from their JSON sources"
+    },
+    {
+      "id": "D-609",
+      "implementation_bearing": false,
+      "reason": "governs the planning track's own traceability record, not product behaviour"
+    }
+  ]
+}

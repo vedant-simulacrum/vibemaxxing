@@ -125,7 +125,7 @@ Syntax validity, schema parsing, fixture loading, symbolic race plans, prototype
 | Open-source release | operations contract; D-033/D-040 | future governance/release checklist | planned-missing | license/dependency review, security policy, contribution path and public docs |
 | Environments and promotion | `docs/operations/ENVIRONMENTS_AND_SECRETS.md`; D-238 | future deployment workflow definitions | present-provisional | four environments, no staging; the restore drill runs in an ephemeral `ci` database |
 | Secrets custody and rotation | `docs/operations/ENVIRONMENTS_AND_SECRETS.md`; D-239 | provider secret store selected under ADR-017 | present-provisional | cadence per class; dual control unsatisfiable under D-091 and recorded as such |
-| Service expectations and alerting | `docs/operations/SLOS_AND_ALERTS.md`; D-263 | policy registry thresholds; future alert definitions | present-provisional | four commitments, six observations; recovery-point conflict owned by D-094 and open |
+| Service expectations and alerting | `docs/operations/SLOS_AND_ALERTS.md`; D-263 | policy registry thresholds; future alert definitions | present-provisional | four commitments, six observations; recovery-point ceiling resolved by D-360 |
 | Local development environment | `docs/engineering/LOCAL_DEVELOPMENT.md`; D-264 | proposed `compose.yaml` and `make` targets | planned-missing | specification only; the file lands with the first service |
 
 ## API edge, origin and time specifications
