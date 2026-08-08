@@ -1008,7 +1008,7 @@ create table service_instances (
 
 create table shell_sessions (
   shell_session_id uuid primary key,
-  state text not null check (state in ('absent','headless','starting','connected','daemon-unavailable','stale','paused','offline','degraded','auth-required','update-required','update-blocked','permission-repair','exiting','crashed')),
+  state text not null check (state in ('absent','headless','starting','connected','daemon-unavailable','stale','exiting','crashed')),
   revision integer not null default 1 check (revision > 0),
   created_at timestamptz not null
 );
