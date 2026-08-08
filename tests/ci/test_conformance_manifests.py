@@ -79,11 +79,15 @@ class ConformanceManifestTests(unittest.TestCase):
         self.validator.validate_conformance_manifests()
 
     def test_every_suite_declares_a_manifest(self) -> None:
+        # The exempt set is read from the validator rather than repeated here. It
+        # was a second copy of the same list, so adding a records directory made
+        # this test fail for a reason that had nothing to do with what it checks.
+        exempt = set(self.validator.CONFORMANCE_EXEMPT_SUITES)
         count = len(list((self.root / "conformance").glob("**/manifest.json")))
         directories = [
             child
             for child in (self.root / "conformance").iterdir()
-            if child.is_dir() and child.name not in {"p1140e", "p1140f"}
+            if child.is_dir() and child.name not in exempt
         ]
         self.assertEqual(count, len(directories))
 

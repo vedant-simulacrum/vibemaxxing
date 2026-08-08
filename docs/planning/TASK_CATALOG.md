@@ -14,6 +14,8 @@ P-001 through P-1130 produced useful planning inputs. Where P-1140 work repairs 
 
 ## Active planning-repair program
 
+<!-- generated: task-catalog -->
+
 ### P-1140A — authority reset and launch-scope alignment
 
 Status: `complete-planning`
@@ -129,6 +131,8 @@ Scope:
 - aligned API, SQL, state, event, policy, reason, and fixture vocabularies;
 - planning-safe validation;
 - one new exact review head with zero active semantic P0/P1 findings.
+
+<!-- end generated: task-catalog -->
 
 ## P-1140F acceptance
 

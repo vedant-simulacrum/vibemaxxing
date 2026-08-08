@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "programs": [
+    {
+      "id": "P-1140A",
+      "title": "authority reset and launch-scope alignment",
+      "status": "complete-planning",
+      "body": "Authority hierarchy, scope corrections, decision traceability, implementation-handoff ownership, and repository consolidation were established. Country leaderboards remain post-launch, native mobile/ChromeOS are out of scope, SLM remains post-launch advisory research, and implementation remains gated."
+    },
+    {
+      "id": "P-1140B",
+      "title": "core trust, privacy, and accounting contracts",
+      "status": "complete-planning",
+      "body": "Typed source observations, normalized accounting, local detector results, local IPC, device lineage, accounting profiles, server-owned appraisal/pricing, and deny-by-default egress contracts are present. Their semantic implementation dependencies are reopened under P-1140F."
+    },
+    {
+      "id": "P-1140C",
+      "title": "VibeProof v1 protocol rewrite",
+      "status": "complete-planning",
+      "body": "Closed deterministic CBOR/COSE contracts, exact vectors, replay/continuity/rotation/recovery plans, and malformed/resource cases are present as normative planning authority. Later executable Rust/Go prototypes do not conform to that authority and are tracked under P-1140F-1."
+    },
+    {
+      "id": "P-1140D",
+      "title": "identity, API, ranking, social, native, and release contracts",
+      "status": "complete-planning",
+      "body": "Candidate contracts are present, but their semantic readiness is reopened under P-1140F. `complete-planning` here means the candidate contract set exists, not that it is implementation-ready."
+    },
+    {
+      "id": "P-1140E",
+      "title": "structural cross-contract validation",
+      "status": "complete-planning",
+      "body": "P-1140E proves structural repository consistency only. It does not prove semantic correctness, standards conformance, authorization safety, privacy, runtime behavior, database transactions, platform behavior, or implementation readiness."
+    },
+    {
+      "id": "P-1140F",
+      "title": "semantic review and standards mapping",
+      "status": "in-progress-planning",
+      "body": "Canonical prose record: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`.\n\nMachine-readable authorities:\n\n- finding state: `conformance/p1140f/semantic-findings-v1.json`;\n- artifact maturity and evidence ceilings: `conformance/p1140f/artifact-authority-v1.json`;\n- exact-head review state: `conformance/p1140f/review-target-v1.json`.\n\nP-1140F has 13 active P1 clusters, SR-005 through SR-017. Current semantic work is organized into five dependency-ordered tasks."
+    }
+  ],
+  "steps": [
+    {
+      "id": "P-1140F-1",
+      "title": "re-establish protocol and repository authority",
+      "status": "in-progress-planning",
+      "body": "Scope:\n\n- quarantine or remove the unsigned 11-field shadow protocol from normative/product paths;\n- retain CDDL, COSE, and `conformance/vibeproof/v1/` as sole VibeProof v1 authority;\n- enforce artifact maturity and evidence ceilings;\n- rename misleading evaluation suites and fixtures;\n- make status, task, semantic and review records consume the structured registries;\n- register every mutable authority and persistence owner.\n\nBlocks: all later P-1140F tasks."
+    },
+    {
+      "id": "P-1140F-2",
+      "title": "identity, OAuth, lineage, replay, and recovery",
+      "status": "blocked-planning",
+      "body": "Dependencies: P-1140F-1.\n\nScope:\n\n- one account-bound OAuth transaction authority;\n- linked-identity, provider-loss, compromise, and recovery lifecycle;\n- duplicate-account consolidation and canonical ranked identity;\n- lineage-scoped continuity;\n- canonical challenge, checkpoint, rotation, fork, appeal, and reversal semantics."
+    },
+    {
+      "id": "P-1140F-3",
+      "title": "local trust boundary, adapters, source evidence, and accounting inputs",
+      "status": "blocked-planning",
+      "body": "Dependencies: P-1140F-2.\n\nScope:\n\n- process trust domains, role-bound IPC, process generations, local persistence, and platform supervision;\n- atomic compatibility tuples and signed certification lifecycle;\n- source receipts, evidence bundles and immutable verifier appraisals under SR-017;\n- deterministic observation-to-profile selection;\n- nested/multi-observer deduplication and checked arithmetic;\n- ACP/OTel/proxy/wrapper paths remain private until exact certification."
+    },
+    {
+      "id": "P-1140F-4",
+      "title": "server product state and privacy projection",
+      "status": "blocked-planning",
+      "body": "Dependencies: P-1140F-2 and P-1140F-3.\n\nScope:\n\n- exact idempotent replay and ambiguous-commit recovery;\n- ranking authorization, immutable generations, periods, ties, contributions, appraisals, and corrections;\n- friendship, directional blocks, rivals, boards, roles, ownership, presence, and notifications;\n- export, deletion, retention, legal hold, per-device completion, and backup tombstones;\n- current authorization for historical snapshots, cursors, grants, and delivery."
+    },
+    {
+      "id": "P-1140F-5",
+      "title": "release trust and exact-head semantic closure",
+      "status": "blocked-planning",
+      "body": "Dependencies: P-1140F-1 through P-1140F-4.\n\nScope:\n\n- TUF-backed release authorization;\n- component, compatibility, provenance, native-signing, update-class, migration, health, and rollback contracts;\n- aligned API, SQL, state, event, policy, reason, and fixture vocabularies;\n- planning-safe validation;\n- one new exact review head with zero active semantic P0/P1 findings."
+    }
+  ]
+}

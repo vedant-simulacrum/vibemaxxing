@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/conformance/planning/tasks-v1.schema.json",
+  "title": "VibeMaxxing planning task catalog",
+  "description": "The source of docs/planning/TASK_CATALOG.md. The program and step blocks are generated from this file by scripts/repository/generate_planning_docs.py. The rendered `Status:` line is what validate_repair_task_binding.py parses to decide whether a step may claim completion while it still owns unlanded units, so the status vocabulary is constrained here rather than left to prose.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "programs", "steps"],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "programs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/block",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^P-1140[A-F]$"
+          }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/block",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^P-1140F-[1-5]$"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "status", "body"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "complete-planning",
+            "in-progress-planning",
+            "blocked-planning"
+          ],
+          "description": "COMPLETION_CLAIMS in validate_repair_task_binding.py refuses `complete`, `closed`, `done` and `resolved` while a step owns unlanded units or unclosed findings. `in-progress-planning` and `blocked-planning` claim nothing."
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Markdown rendered verbatim beneath the heading and status line. Must not contain a level-4 heading: the steps are nested under P-1140F, and a `####` here would make a step's block part of a program's body, which is how the first extraction duplicated all five steps.",
+          "not": {
+            "pattern": "(?m)^#### "
+          }
+        }
+      }
+    }
+  }
+}
