@@ -76,7 +76,7 @@
     {
       "finding_id": "SR-008",
       "severity": "P1",
-      "state": "open",
+      "state": "repair-in-progress",
       "title": "Local daemon, shell, IPC, and platform supervision",
       "repair_task": "P-1140F-3",
       "finding_class": "contradiction",
@@ -89,7 +89,9 @@
         "packages/schemas/local-control-v1.proto#LifecycleRequest",
         "packages/schemas/state-machine-registry-v1.json#interactive-shell"
       ],
-      "closure_evidence": [],
+      "closure_evidence": [
+        "PF-011 at HEAD of planning/pf-011-trust-domains: all eight local roles are declared once in packages/schemas/local-trust-domains-v1.json with an OS peer identity per platform, a session boundary, an explicit network scope and capability, data-class and prohibition lists. PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md tabulated six and omitted the interactive shell and the privileged supervisor \u2014 the only role taking arbitrary operator input and the only one running elevated. The separation the privacy boundary rests on is enforced: exactly one role may read transcript-content and its network scope is none. The local channel protocol, shell/subsystem separation and local persistence remain open under PF-012, PF-013 and PF-014."
+      ],
       "reviewed_commit": null,
       "review_verdict": "pending"
     },

@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "profile_id": "local-trust-domains-v1",
+  "normative_owner": "docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md",
+  "supporting_authorities": [
+    "docs/architecture/NATIVE_CLIENT_AND_DAEMON.md",
+    "docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+    "docs/decisions/ADR-012-OPTIONAL_PRIVILEGED_SUPERVISION.md"
+  ],
+  "note": "Eight local roles, each named once, with the identity the operating system can actually check. PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md carried six process rows and omitted the privileged supervisor and the interactive shell \u2014 the two roles that most need one, since the supervisor is the only component that runs with elevated privilege and the shell is the only one that takes arbitrary operator input. A role absent from this file has no declared capability, and a capability nothing declares is one nothing can refuse.",
+  "data_classes": {
+    "transcript-content": "Prompts, responses, code, diffs, tool contents, filenames, paths and project names. AGENTS.md forbids this crossing the device boundary under any circumstance.",
+    "normalized-events": "Deterministic accounting events derived from observation, carrying counts and identifiers but no content.",
+    "safe-claim": "A signed claim ready for submission. Fixed-schema aggregate accounting only.",
+    "device-key": "The competitive device signing key.",
+    "lifecycle-metadata": "Service state, configuration and audit metadata.",
+    "release-metadata": "TUF metadata, signatures and release manifests.",
+    "operator-input": "Interactive commands typed by the person at the machine."
+  },
+  "roles": [
+    {
+      "role_id": "vibemaxxing-daemon",
+      "executable": "vibemaxxing-daemon",
+      "os_peer_identity": {
+        "macos": "code-signing team identifier and bundle identifier, verified over the connected peer via SecCode",
+        "windows": "Authenticode publisher plus the service SID of the registered service",
+        "linux": "SO_PEERCRED uid and the absolute executable path resolved through /proc/pid/exe"
+      },
+      "session_boundary": "per-user",
+      "privilege": "unprivileged",
+      "network": "none",
+      "state_machine": "daemon-lifecycle",
+      "capabilities": [
+        "own service lifecycle",
+        "coordinate enrollment, rotation and policy-mediated signing",
+        "arbitrate the local channel and authenticate every peer"
+      ],
+      "may_read": [
+        "lifecycle-metadata",
+        "normalized-events"
+      ],
+      "may_write": [
+        "lifecycle-metadata"
+      ],
+      "forbidden": [
+        "transcript-content",
+        "general outbound network",
+        "raw device-key export"
+      ]
+    },
+    {
+      "role_id": "vibeproof-collector",
+      "executable": "vibeproof-collector",
+      "os_peer_identity": {
+        "macos": "code-signing team identifier and bundle identifier, verified over the connected peer via SecCode",
+        "windows": "Authenticode publisher plus the parent daemon service SID",
+        "linux": "SO_PEERCRED uid and the absolute executable path resolved through /proc/pid/exe"
+      },
+      "session_boundary": "per-user",
+      "privilege": "unprivileged",
+      "network": "none",
+      "state_machine": null,
+      "capabilities": [
+        "read allowlisted adapter sources",
+        "normalize observations deterministically",
+        "request signing through the daemon"
+      ],
+      "may_read": [
+        "transcript-content"
+      ],
+      "may_write": [
+        "normalized-events"
+      ],
+      "forbidden": [
+        "any network",
+        "raw device-key access",
+        "writing transcript-content anywhere it survives normalization"
+      ],
+      "note": "The only role permitted to read transcript-content, and the boundary the whole privacy claim rests on: it has no network capability at all, so content has no path off the device even in principle."
+    },
+    {
+      "role_id": "vibeproof-sync",
+      "executable": "vibeproof-sync",
+      "os_peer_identity": {
+        "macos": "code-signing team identifier and bundle identifier, verified over the connected peer via SecCode",
+        "windows": "Authenticode publisher plus the parent daemon service SID",
+        "linux": "SO_PEERCRED uid and the absolute executable path resolved through /proc/pid/exe"
+      },
+      "session_boundary": "per-user",
+      "privilege": "unprivileged",
+      "network": "egress-allowlist",
+      "state_machine": null,
+      "capabilities": [
+        "reach the provider and VibeMaxxing egress allowlist",
+        "submit safe claims",
+        "request submit-signing over authenticated IPC"
+      ],
+      "may_read": [
+        "safe-claim"
+      ],
+      "may_write": [
+        "lifecycle-metadata"
+      ],
+      "forbidden": [
+        "transcript-content",
+        "normalized-events",
+        "raw device-key access"
+      ],
+      "note": "The only role with network capability, and it cannot read transcript-content. The two capabilities are deliberately never held by one process."
+    },
+    {
+      "role_id": "vibemaxxing-cli",
+      "executable": "vibemaxxing",
+      "os_peer_identity": {
+        "macos": "code-signing team identifier, verified over the connected peer via SecCode",
+        "windows": "Authenticode publisher plus the invoking user token",
+        "linux": "SO_PEERCRED uid and the absolute executable path resolved through /proc/pid/exe"
+      },
+      "session_boundary": "per-invocation",
+      "privilege": "unprivileged",
+      "network": "login-and-update",
+      "state_machine": null,
+      "capabilities": [
+        "install, diagnose and control through IPC",
+        "reach login and update endpoints when invoked"
+      ],
+      "may_read": [
+        "lifecycle-metadata"
+      ],
+      "may_write": [],
+      "forbidden": [
+        "transcript-content",
+        "raw device-key access",
+        "implicit source scan"
+      ]
+    },
+    {
+      "role_id": "vibemaxxing-desktop-shell",
+      "executable": "vibemaxxing-desktop-shell",
+      "os_peer_identity": {
+        "macos": "code-signing team identifier and bundle identifier, verified over the connected peer via SecCode",
+        "windows": "Authenticode publisher plus the interactive user token",
+        "linux": "SO_PEERCRED uid and the absolute executable path resolved through /proc/pid/exe"
+      },
+      "session_boundary": "per-user",
+      "privilege": "unprivileged",
+      "network": "hosted-dashboard-and-login",
+      "state_machine": null,
+      "capabilities": [
+        "render status obtained through IPC",
+        "present consent UI",
+        "reach the hosted dashboard and login endpoints"
+      ],
+      "may_read": [
+        "lifecycle-metadata"
+      ],
+      "may_write": [],
+      "forbidden": [
+        "transcript-content",
+        "raw device-key access"
+      ],
+      "note": "Not a parent, owner or watchdog of the daemon. Closing it does not stop collection."
+    },
+    {
+      "role_id": "vibemaxxing-shell",
+      "executable": "vibemaxxing-shell",
+      "os_peer_identity": {
+        "macos": "code-signing team identifier, verified over the connected peer via SecCode",
+        "windows": "Authenticode publisher plus the invoking user token",
+        "linux": "SO_PEERCRED uid and the absolute executable path resolved through /proc/pid/exe"
+      },
+      "session_boundary": "per-invocation",
+      "privilege": "unprivileged",
+      "network": "none",
+      "state_machine": "interactive-shell",
+      "capabilities": [
+        "accept operator input",
+        "issue the same IPC control operations the CLI may issue"
+      ],
+      "may_read": [
+        "operator-input",
+        "lifecycle-metadata"
+      ],
+      "may_write": [],
+      "forbidden": [
+        "transcript-content",
+        "raw device-key access"
+      ],
+      "note": "Absent from the privilege matrix before PF-011, despite being the only role that takes arbitrary operator input. Its capability set is deliberately not a superset of the CLI's: an interactive session must not be able to do more than a scripted one."
+    },
+    {
+      "role_id": "updater-helper",
+      "executable": "vibemaxxing-updater",
+      "os_peer_identity": {
+        "macos": "code-signing team identifier plus a privileged-helper label registered through SMJobBless",
+        "windows": "Authenticode publisher plus the update service SID",
+        "linux": "SO_PEERCRED uid and the absolute executable path resolved through /proc/pid/exe"
+      },
+      "session_boundary": "system-wide",
+      "privilege": "privileged",
+      "network": "update-endpoints",
+      "state_machine": "update-lifecycle",
+      "capabilities": [
+        "verify release metadata against the TUF root",
+        "install and roll back atomically within policy"
+      ],
+      "may_read": [
+        "release-metadata"
+      ],
+      "may_write": [
+        "release-metadata"
+      ],
+      "forbidden": [
+        "transcript-content",
+        "normalized-events",
+        "safe-claim",
+        "device-key"
+      ],
+      "note": "Privileged and deliberately blind to every product data class. It moves files and verifies signatures; it never sees what the product collects."
+    },
+    {
+      "role_id": "privileged-supervisor",
+      "executable": "vibemaxxing-supervisor",
+      "os_peer_identity": {
+        "macos": "code-signing team identifier plus a privileged-helper label registered through SMJobBless",
+        "windows": "Authenticode publisher plus the supervisor service SID running as LocalSystem",
+        "linux": "SO_PEERCRED uid 0 and the absolute executable path resolved through /proc/pid/exe"
+      },
+      "session_boundary": "system-wide",
+      "privilege": "privileged",
+      "network": "none",
+      "state_machine": "privileged-supervisor",
+      "capabilities": [
+        "restart the daemon under a recorded consent",
+        "repair platform service registration"
+      ],
+      "may_read": [
+        "lifecycle-metadata"
+      ],
+      "may_write": [
+        "lifecycle-metadata"
+      ],
+      "forbidden": [
+        "transcript-content",
+        "normalized-events",
+        "safe-claim",
+        "device-key",
+        "any network"
+      ],
+      "note": "Optional under ADR-012 and absent from the privilege matrix before PF-011, despite being the only component that runs elevated. Every capability it holds is a lifecycle capability recorded against a consent; it can restart the daemon and cannot read anything the daemon collects."
+    }
+  ]
+}

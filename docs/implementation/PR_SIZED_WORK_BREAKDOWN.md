@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 209 |
+| `not-started` | 208 |
 | `in-progress` | 16 |
-| `landed` | 29 |
+| `landed` | 30 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 87 assertions across 29 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 89 assertions across 30 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 22.
+Startable now — not done, and every dependency done: 25.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-011`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-012`, `PF-013`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -251,12 +251,14 @@ Status: not-started
 
 ### PF-011 — Native process and trust-domain model
 Files: `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md`, `packages/schemas/local-trust-domains-v1.json` (new)
-Acceptance: every one of the eight named roles appears exactly once in the trust-domain file with an executable identity, an OS peer identity, a user/session boundary and an explicit capability and data-class list; a role absent from the file fails `validate_planning_coverage.py`.
+Acceptance: every one of the eight named roles appears exactly once in `packages/schemas/local-trust-domains-v1.json` with an executable identity, an OS peer identity for macOS, Windows and Linux, a session boundary, a declared `network` scope and explicit capability, data-class and prohibition lists; a role absent from the file, a role declared twice, an undeclared data class, or any role that both reads `transcript-content` and declares a network scope other than `none` fails `validate_planning_coverage.py`; `python3 -m unittest tests.ci.test_local_trust_domains` exits 0.
 Depends: PF-004
 Repair: P-1140F-3
 Serves: SR-008
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_coverage.py
+Evidence: unittest tests.ci.test_local_trust_domains
 
 - daemon, collector, sync, shell, CLI, dashboard, updater, privileged supervisor;
 - executable identity, OS peer identity, user/session boundary, artifact/release identity;
