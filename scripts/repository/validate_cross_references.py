@@ -805,9 +805,16 @@ def render_report(report: Report, stream) -> None:
 # A record of the past cites superseded decisions because that is its job: the
 # register explains what changed, `docs/history/` is archival by definition,
 # `decision-traceability/` maps decisions to the units that implemented them,
-# and `conformance/p1140e/` is a completed gate's evidence, frozen at the head
-# it was taken against. Flagging those would produce an exemption list longer
-# than the rule, which is the failure mode this check exists to prevent.
+# and `conformance/p1140e/` holds a completed gate's decision bindings for
+# D-001..D-069. Flagging those would produce an exemption list longer than the
+# rule, which is the failure mode this check exists to prevent.
+#
+# Note what this does *not* say. `conformance/p1140e/` is not frozen as a whole,
+# and describing it that way was wrong: `validation-matrix-v1.json` carries three
+# coverage arrays that must equal live registries, and `state-machine-fixtures-v1.json`
+# and `platform-validation-plan-v1.json` are held to the same equality. Those track
+# the present deliberately. The exemption here rests on the decision bindings being
+# historical, not on the directory being immutable — see D-607.
 #
 # What is checked is the live normative surface: the documents an engineer
 # reads to learn what the product does today.
