@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "profile_id": "compatibility-tuple-digest-v1",
+  "normative_owner": "packages/schemas/compatibility-tuple-v1.schema.json",
+  "note": "The tuple schema states that its digest is SHA-256 over the RFC 8949 core deterministic CBOR encoding of the record with tuple_digest omitted, so that two implementations cannot disagree about the identity of a tuple. Nothing proved it. These two records hold identical values in opposite key order at every level; a reader that preserved insertion order would produce two digests and two identities for one certified tuple, which is the failure that would let a certification be evaded by re-serialising it.",
+  "expected_digest": "f1c21833e5c97376897cbce2bc48aba611ca9110ab8c8da7e5615ab2091ff9dc",
+  "orderings": [
+    {
+      "ordering_id": "insertion-order",
+      "tuple": {
+        "artifact": {
+          "adapter_id": "claude-code",
+          "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "source": {
+          "source_product_id": "claude-code",
+          "version_min": "1.0.0",
+          "version_max_exclusive": "2.0.0"
+        },
+        "observation_mode": "otel",
+        "platform_profile_id": "macos-arm64-14",
+        "accounting": {
+          "accounting_profile_id": "claude-code-otel-v1",
+          "accounting_profile_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "arithmetic_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "privacy_binding": {
+          "attribute_allowlist_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "strip_list_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        }
+      }
+    },
+    {
+      "ordering_id": "reversed-at-every-level",
+      "tuple": {
+        "privacy_binding": {
+          "strip_list_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "attribute_allowlist_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "accounting": {
+          "arithmetic_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "accounting_profile_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "accounting_profile_id": "claude-code-otel-v1"
+        },
+        "platform_profile_id": "macos-arm64-14",
+        "observation_mode": "otel",
+        "source": {
+          "version_max_exclusive": "2.0.0",
+          "version_min": "1.0.0",
+          "source_product_id": "claude-code"
+        },
+        "artifact": {
+          "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "adapter_id": "claude-code"
+        }
+      }
+    }
+  ]
+}

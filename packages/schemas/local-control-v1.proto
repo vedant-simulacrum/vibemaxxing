@@ -4,6 +4,16 @@ package vibemaxxing.local.v1;
 
 // Every bytes field below has a fixed semantic and runtime size limit. No body
 // contains JSON, CBOR, an opaque domain object, or caller-defined metadata.
+// The framing is shared; the body is not. Every message a role may send is reachable
+// only through that role's own oneof, so a collector sending a LocalDeletionRequest is
+// not a rejected message — it is an unrepresentable one.
+//
+// Envelope previously carried a single universal `oneof body` holding all fifteen
+// bodies, with `sender_role` a field the sender fills in. Any role could therefore
+// encode any message and label itself anything, while
+// docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md states that role confusion is
+// rejected. The wire format made the thing the document promised to prevent the
+// default shape of the protocol.
 message Envelope {
   uint32 protocol_major = 1;
   uint32 protocol_minor = 2;
@@ -14,22 +24,95 @@ message Envelope {
   uint64 monotonic_message_sequence = 7;
   uint64 deadline_monotonic_ns = 8;
   bytes authenticated_challenge_response = 9; // exactly 32 bytes
+  uint64 role_grant_generation = 10;       // daemon-assigned; stale grants are refused
+  // `sender_role` must select the matching arm. It is retained rather than derived so
+  // a mismatch is a detectable protocol violation with a reason code, instead of an
+  // ambiguity resolved by whichever field the reader happens to trust.
+  oneof role_body {
+    CollectorToDaemon collector_to_daemon = 20;
+    DaemonToCollector daemon_to_collector = 21;
+    SyncToDaemon sync_to_daemon = 22;
+    DaemonToSync daemon_to_sync = 23;
+    ControlToDaemon control_to_daemon = 24;
+    DaemonToControl daemon_to_control = 25;
+    SupervisorToDaemon supervisor_to_daemon = 26;
+    DaemonToSupervisor daemon_to_supervisor = 27;
+  }
+}
+
+// COLLECTOR. Reads source content and submits normalized observations. It has no
+// queue, receipt, export or deletion capability: those belong to control roles, and
+// local-trust-domains-v1.json records that the collector has no network at all.
+message CollectorToDaemon {
   oneof body {
-    HealthRequest health_request = 20;
-    HealthResponse health_response = 21;
-    LifecycleRequest lifecycle_request = 22;
-    LifecycleResponse lifecycle_response = 23;
-    SourceObservationSubmission source_observation_submission = 24;
-    NormalizedEventAcknowledgement normalized_event_acknowledgement = 25;
-    ClaimConstructionRequest claim_construction_request = 26;
-    ClaimConstructionResult claim_construction_result = 27;
-    QueueSummaryRequest queue_summary_request = 28;
-    QueueSummaryResponse queue_summary_response = 29;
-    ReceiptSummaryRequest receipt_summary_request = 30;
-    ReceiptSummaryResponse receipt_summary_response = 31;
-    LocalExportRequest local_export_request = 32;
-    LocalDeletionRequest local_deletion_request = 33;
-    LocalOperationResult local_operation_result = 34;
+    HealthRequest health_request = 1;
+    SourceObservationSubmission source_observation_submission = 2;
+    ClaimConstructionRequest claim_construction_request = 3;
+  }
+}
+message DaemonToCollector {
+  oneof body {
+    HealthResponse health_response = 1;
+    NormalizedEventAcknowledgement normalized_event_acknowledgement = 2;
+    ClaimConstructionResult claim_construction_result = 3;
+  }
+}
+
+// SYNC. Holds the only egress allowlist and may not construct claims or observe
+// sources; it reads what is already queued and reports what was acknowledged.
+message SyncToDaemon {
+  oneof body {
+    HealthRequest health_request = 1;
+    QueueSummaryRequest queue_summary_request = 2;
+    ReceiptSummaryRequest receipt_summary_request = 3;
+  }
+}
+message DaemonToSync {
+  oneof body {
+    HealthResponse health_response = 1;
+    QueueSummaryResponse queue_summary_response = 2;
+    ReceiptSummaryResponse receipt_summary_response = 3;
+  }
+}
+
+// CONTROL. The CLI, the desktop shell and the interactive shell present the same
+// surface, because an interactive session must not be able to do more than a scripted
+// one. They may inspect and may request export and deletion; they may not submit
+// observations or construct claims.
+message ControlToDaemon {
+  oneof body {
+    HealthRequest health_request = 1;
+    LifecycleRequest lifecycle_request = 2;
+    QueueSummaryRequest queue_summary_request = 3;
+    ReceiptSummaryRequest receipt_summary_request = 4;
+    LocalExportRequest local_export_request = 5;
+    LocalDeletionRequest local_deletion_request = 6;
+  }
+}
+message DaemonToControl {
+  oneof body {
+    HealthResponse health_response = 1;
+    LifecycleResponse lifecycle_response = 2;
+    QueueSummaryResponse queue_summary_response = 3;
+    ReceiptSummaryResponse receipt_summary_response = 4;
+    LocalOperationResult local_operation_result = 5;
+  }
+}
+
+// PRIVILEGED SUPERVISOR. Elevated, and therefore the narrowest surface of all: it may
+// ask after health and restart the daemon under a recorded consent. It cannot read a
+// queue, a receipt, an observation or a claim, which matches its blindness to every
+// product data class in local-trust-domains-v1.json.
+message SupervisorToDaemon {
+  oneof body {
+    HealthRequest health_request = 1;
+    LifecycleRequest lifecycle_request = 2;
+  }
+}
+message DaemonToSupervisor {
+  oneof body {
+    HealthResponse health_response = 1;
+    LifecycleResponse lifecycle_response = 2;
   }
 }
 

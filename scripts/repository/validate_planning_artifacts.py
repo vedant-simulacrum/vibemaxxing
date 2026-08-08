@@ -190,6 +190,15 @@ def validate_json_schemas_and_examples() -> None:
         "notification",
         "moderation",
         "export",
+        # PF-014. The four surfaces that carry content by accident rather than by
+        # design, and the four the acceptance for the local store names. A log line, a
+        # backup, a support bundle and a corruption report are each assembled while
+        # something is going wrong, which is when quoting the thing that went wrong is
+        # most tempting and least examined.
+        "log",
+        "backup",
+        "diagnostic",
+        "corruption-report",
     }
     covered_boundaries = {case["boundary"] for case in privacy_cases["cases"]}
     if covered_boundaries != required_privacy_boundaries:
@@ -879,10 +888,20 @@ def validate_p1140d_contracts() -> None:
         "account-consolidation",
         "lineage-fork-case",
         "source-certification",
+        # PF-013 split five subsystem projections out of interactive-shell, which had
+        # collapsed collection, sync, auth, permission and connectivity into one state
+        # variable. They persist in local-store-v1.sql and never leave the device.
+        "local-collection",
+        "local-sync",
+        "local-auth",
+        "local-permission",
+        "local-connectivity",
     }
     if set(machine_ids) != required_machines:
         raise ValidationFailure(
-            f"state-machine set mismatch: missing={sorted(required_machines - set(machine_ids))}"
+            "state-machine set mismatch: "
+            f"missing={sorted(required_machines - set(machine_ids))} "
+            f"unexpected={sorted(set(machine_ids) - required_machines)}"
         )
     for machine in machines:
         states = set(machine["states"])

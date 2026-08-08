@@ -72,17 +72,32 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 208 |
-| `in-progress` | 16 |
-| `landed` | 30 |
+| `not-started` | 206 |
+| `in-progress` | 14 |
+| `landed` | 34 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 89 assertions across 30 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 97 assertions across 34 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 25.
+Startable now — not done, and every dependency done: 24.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-012`, `PF-013`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+
+### P-1140F repair schedule
+
+Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what can be started today; the number of waves is the longest remaining chain. Landing a unit in wave 1 may promote several units into it.
+
+| Wave | Units | Ready |
+|---|---|---|
+| 1 | 12 | `PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
+| 2 | 6 | `PF-006`, `PF-018`, `PF-022`, `PF-027`, `PF-031`, `PF-032` |
+| 3 | 2 | `PF-007`, `PF-023` |
+| 4 | 2 | `PF-008`, `PF-029` |
+| 5 | 1 | `PF-033` |
+| 6 | 1 | `PF-034` |
+| 7 | 1 | `PF-035` |
+| 8 | 1 | `PF-036` |
 
 Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -265,13 +280,17 @@ Evidence: unittest tests.ci.test_local_trust_domains
 - allowed capabilities and data classes per role.
 
 ### PF-012 — Local channel protocol
-Files: `packages/schemas/local-control-v1.proto`, `conformance/sandbox/local-channel-vectors-v1.json` (new), `docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md`
-Acceptance: `local-control-v1.proto` declares one request and one response message per role rather than a universal union; the vector file contains a same-user impersonation case and a stale-process case, each with the expected rejection reason drawn from `packages/schemas/reason-codes-v1.json`.
+Files: `packages/schemas/local-control-v1.proto`, `conformance/local-channel/local-channel-vectors-v1.json` (new), `conformance/local-channel/manifest.json` (new), `conformance/local-channel/README.md` (new), `packages/schemas/reason-codes-v1.json`, `docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md`
+Acceptance: `local-control-v1.proto` declares one request and one response message per role rather than a universal union, and no role's arm reaches another role's body; the vector file contains a same-user impersonation case and a stale-process case, each with the expected rejection reason drawn from `packages/schemas/reason-codes-v1.json`, plus one accepted case so the refusals are not satisfied by a channel that refuses everything; `python3 -m unittest tests.ci.test_local_channel` exits 0 and fails when the universal union is restored.
+
+The vectors are in `conformance/local-channel/` rather than `conformance/sandbox/` as this unit originally named. The sandbox suite's `reason_authority` is `packages/schemas/origin-policy-v1.json`, because a loopback refusal is an origin decision; a local-channel refusal is a peer-identity decision drawing on `reason-codes-v1.json`. One suite cannot carry two reason authorities, and bending the sandbox's would have made its existing loopback cases resolve against the wrong vocabulary.
 Depends: PF-011
 Repair: P-1140F-3
 Serves: SR-008
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_local_channel
 
 - handshake, daemon-assigned role, generation, nonce, sequence window, capability grant, deadline, revocation;
 - typed request/response per role rather than one universal message union;
@@ -279,12 +298,14 @@ Status: not-started
 
 ### PF-013 — Shell and subsystem state separation
 Files: `packages/schemas/state-machine-registry-v1.json`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`
-Acceptance: `interactive-shell` declares only process and connection states, and daemon, collection, sync, auth, permission, update and connectivity are separate machines; `validate_state_vocabularies.py` reports every state of all seven reachable.
+Acceptance: `interactive-shell` declares only the eight process and connection states, and daemon, collection, sync, auth, permission, update and connectivity are seven separate machines; `validate_state_vocabularies.py` reports every state of all seven reachable; the five new projections persist in `local-store-v1.sql` and not in `planning-schema.sql`, since none is a fixed-schema aggregate accounting figure or an integrity claim; `python3 -m unittest tests.ci.test_shell_subsystem_separation` exits 0, including a case asserting that paused collection and an offline network are now simultaneously representable.
 Depends: PF-011
 Repair: P-1140F-3
 Serves: SR-008
 Est: 8-12
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_shell_subsystem_separation
 
 - shell owns process/connection state only;
 - daemon, collection, sync, auth, permission, update and connectivity are independent projections;
@@ -293,12 +314,14 @@ Status: not-started
 
 ### PF-014 — Local persistence and migration contract
 Files: `packages/schemas/local-store-v1.sql`, `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `conformance/privacy/p1140b-boundary-canaries-v1.json`
-Acceptance: `packages/schemas/local-store-v1.sql` parses under `sqlite3 -init` with no errors, holds no key material of its own, and the canary fixture proves no log, backup, diagnostic or corruption-report column can hold a forbidden content class.
+Acceptance: `packages/schemas/local-store-v1.sql` parses under SQLite with no errors and holds no key material of its own, which a test asserts against the DDL with comment lines stripped so prose cannot satisfy it; the canary fixture carries a positive and a negative case for each of `log`, `backup`, `diagnostic` and `corruption-report`; every negative case names a forbidden class declared in `egress-allowlist-v1.json` and every canary token is unique, so a leak is attributable to one boundary; `python3 -m unittest tests.ci.test_local_store_contract` exits 0.
 Depends: PF-011
 Repair: P-1140F-3
 Serves: SR-008
 Est: 12-16
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_local_store_contract
 
 Two things changed here under D-384 and are recorded rather than applied silently. The file is `local-store-v1.sql` rather than `local-schema.sql`, which is the versioned name every other schema in that directory uses, and the four units that named the old path now name this one. And the acceptance asked for an encryption key reference per table; the file deliberately has none. Encryption is page-level under a key held by the operating-system keystore, because a key column beside the ciphertext it protects gives no confidentiality at all — the same reasoning D-213 applies to the server keyring — so the validator asserts the absence of key material rather than the presence of a reference. The `sqlite3 -init` parse has not been run.
 
@@ -307,12 +330,14 @@ Two things changed here under D-384 and are recorded rather than applied silentl
 
 ### PF-015 — Atomic compatibility tuple
 Files: `packages/schemas/compatibility-tuple-v1.schema.json` (new), `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`, `conformance/adapters/agent-registry-v1.schema.json`
-Acceptance: the tuple schema requires all nine components and a canonical digest; two independently ordered serialisations of the same tuple produce the same digest in a fixture that records both inputs and the expected digest.
+Acceptance: the tuple schema requires all nine components and a canonical digest; `conformance/adapters/compatibility-tuple-digest-v1.json` records two serialisations of one tuple in opposite key order at every level, including nested maps, together with the expected digest, and both produce it; changing any one of observation mode, platform profile, source version floor, accounting arithmetic or privacy strip list produces a different digest; `python3 -m unittest tests.ci.test_compatibility_tuple_digest` exits 0, including a case asserting the two recorded orderings are genuinely different.
 Depends: PF-004
 Repair: P-1140F-3
 Serves: SR-009
 Est: 8-12
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_compatibility_tuple_digest
 
 The schema landed under D-387 and requires every component, with the nine observation modes taken from `packages/schemas/observer-equivalence-v1.json` rather than spelled a second time. The digest half has not: no fixture records two orderings of one tuple and the expected digest, so the canonical-digest claim is stated in the description and not yet exercised.
 

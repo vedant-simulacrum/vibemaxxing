@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "suite_id": "local-channel",
+  "case_prefix": "LC",
+  "authority": "docs/security/LOCAL_IPC_AND_DEVICE_IDENTITY.md",
+  "supporting_authorities": [
+    "packages/schemas/local-control-v1.proto",
+    "packages/schemas/local-trust-domains-v1.json",
+    "packages/schemas/reason-codes-v1.json"
+  ],
+  "decisions": [
+    "D-596",
+    "D-598",
+    "D-599"
+  ],
+  "note": "LOCAL_IPC_AND_DEVICE_IDENTITY.md states that role confusion and stale handshakes are rejected. Before PF-012 the protocol had neither a shape that made role confusion unrepresentable nor a reason code with which to refuse it: Envelope carried one universal oneof holding every body, and sender_role was a field the sender filled in. These vectors state the two refusals the document already promised, so a case fails by disagreeing rather than by being absent.",
+  "cases": [
+    {
+      "case_id": "LC-201",
+      "title": "same-user impersonation",
+      "given": {
+        "peer_uid": "same as the daemon's own uid",
+        "peer_executable": "/tmp/not-the-collector",
+        "claimed_role": "COLLECTOR",
+        "role_body": "collector_to_daemon"
+      },
+      "action": "connect and send source_observation_submission",
+      "expect": "reject",
+      "expect_reason_code": "IPC_PEER_IDENTITY_REJECTED",
+      "note": "The attacker runs as the same user, so uid alone proves nothing \u2014 every role in local-trust-domains-v1.json runs per-user and shares that uid. The executable identity is what separates them: SecCode on macOS, the Authenticode publisher plus service SID on Windows, and the resolved /proc/pid/exe on Linux. A check that stopped at SO_PEERCRED uid would accept this."
+    },
+    {
+      "case_id": "LC-202",
+      "title": "stale process after a role grant is reissued",
+      "given": {
+        "peer_uid": "same as the daemon's own uid",
+        "peer_executable": "the genuine collector",
+        "claimed_role": "COLLECTOR",
+        "role_grant_generation": 4,
+        "daemon_current_generation": 5
+      },
+      "action": "resume an established connection and send source_observation_submission",
+      "expect": "reject",
+      "expect_reason_code": "IPC_ROLE_GRANT_STALE",
+      "note": "A genuine collector from before a daemon restart or a revocation. Its executable identity verifies and its grant does not. Without a generation the daemon cannot tell a survivor from a current peer, which is what makes revocation meaningful rather than advisory."
+    },
+    {
+      "case_id": "LC-203",
+      "title": "role confusion is unrepresentable, not merely refused",
+      "given": {
+        "peer_executable": "the genuine collector",
+        "claimed_role": "COLLECTOR",
+        "attempted_body": "local_deletion_request"
+      },
+      "action": "encode a deletion request inside the collector arm",
+      "expect": "reject",
+      "expect_reason_code": "IPC_ROLE_MISMATCH",
+      "note": "CollectorToDaemon has no local_deletion_request arm, so this cannot be encoded at all. The case is retained because a sender may still set sender_role to one role and select another role's arm on the envelope, which remains detectable and is what this code names."
+    },
+    {
+      "case_id": "LC-204",
+      "title": "the supervisor cannot read a queue",
+      "given": {
+        "peer_executable": "the genuine privileged supervisor",
+        "claimed_role": "PRIVILEGED_SUPERVISOR",
+        "attempted_body": "queue_summary_request"
+      },
+      "action": "encode a queue summary request inside the supervisor arm",
+      "expect": "reject",
+      "expect_reason_code": "IPC_ROLE_MISMATCH",
+      "note": "The elevated role has the narrowest surface: health and lifecycle only. This is the case where the universal oneof was most dangerous, because a compromised supervisor could previously encode any message in the protocol while running as root."
+    },
+    {
+      "case_id": "LC-205",
+      "title": "a well-formed collector submission is accepted",
+      "given": {
+        "peer_executable": "the genuine collector",
+        "claimed_role": "COLLECTOR",
+        "role_body": "collector_to_daemon",
+        "role_grant_generation": 5,
+        "daemon_current_generation": 5
+      },
+      "action": "send source_observation_submission",
+      "expect": "accept",
+      "expect_reason_code": null,
+      "note": "The positive case. Without it the four refusals above are satisfied by a channel that refuses everything."
+    }
+  ]
+}

@@ -58,6 +58,11 @@ An internal state is one a client must never be shown. Every omission from an AP
 | `daemon-lifecycle` | `daemon-lifecycle` | `service_instances.state` | — | — |
 | `privileged-supervisor` | `privileged-supervisor` | `privileged_supervisor_instances.state` | — | — |
 | `interactive-shell` | `interactive-shell` | `shell_sessions.state` | — | — |
+| `local-collection` | `local-collection` | — | — | — |
+| `local-sync` | `local-sync` | — | — | — |
+| `local-auth` | `local-auth` | — | — | — |
+| `local-permission` | `local-permission` | — | — | — |
+| `local-connectivity` | `local-connectivity` | — | — | — |
 | `update-lifecycle` | `update-lifecycle` | `update_installations.state`, `update_policies.state` | — | — |
 | `release-trust` | `release-trust` | `release_sets.state` | — | — |
 | `platform-certification` | `platform-certification` | `platform_profiles.validation_state` | `CompatibilityProfile.validation_state` | — |
@@ -212,6 +217,21 @@ Server deletion and local deletion are distinct:
 `packages/schemas/platform-profile-registry-v1.json` freezes exact candidate tuples as of 2026-07-24. Every row is `advertised=false` and sits in the `platform-certification` machine's initial state `planned` — still spelled `planned-validation-required` in that registry's frozen `certification_state` constant, as recorded under Open items. A profile becomes public only through the `platform-certification` machine after immutable results pass: `planned` → `candidate` → `exercised` → `certified` → `published`, with `blocked`, `degraded` and `suspended` as the withdrawal paths.
 
 The registry includes macOS 26/15/14 on Apple silicon and compatible Intel; Windows 11 25H2 x64/ARM64; Windows Server 2025 x64; exact maintained Linux distribution/architecture/environment/package/init tuples; WSL2 Ubuntu 26.04; signed immutable OCI x64/arm64; and ephemeral CI x64/arm64. Windows Server ARM64 is not advertised without an applicable first-party release profile. Android, iOS, iPadOS and ChromeOS remain explicitly outside native scope.
+
+Under PF-013 the shell owns process and connection state alone: `absent`, `headless`,
+`starting`, `connected`, `daemon-unavailable`, `stale`, `exiting` and `crashed`. It
+previously carried fifteen states covering six other subsystems — collection was
+`paused`, connectivity was `offline` and `degraded`, authentication was
+`auth-required`, updates were `update-required` and `update-blocked`, and permissions
+were `permission-repair`. One state variable cannot hold six independent facts, so a
+device whose collection was paused *and* whose network was offline had no representable
+shell state and the transition table had to pretend one of the two had not happened.
+
+Collection, sync, auth, permission and connectivity are now separate single-row
+projections persisting in `packages/schemas/local-store-v1.sql`, not
+`planning-schema.sql`: none of them is a fixed-schema aggregate accounting figure or an
+integrity claim, and those are the only things `AGENTS.md` permits across the device
+boundary. Update state was already its own machine, and so was the daemon.
 
 Daemon, shell, collector and sync lifecycles are independent. `interactive-shell` is the authoritative registry machine for the menu-bar/tray process and its authenticated IPC relationship to the daemon. Closing or crashing shell never stops the OS-supervised daemon. Pausing collection or sync does not terminate the daemon. Crash loop, permission loss, key denial, disk exhaustion, sleep/reboot/login/logout, offline operation, update/rollback and uninstall are explicit failure cases.
 
