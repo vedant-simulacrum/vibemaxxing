@@ -21,6 +21,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import generate_vibeproof_vectors as vibeproof_vectors  # noqa: E402
+import generate_planning_docs as planning_docs  # noqa: E402
 
 import psycopg
 import yaml
@@ -1192,6 +1193,24 @@ def validate_cddl_file() -> None:
                 "the evidence bundle is a device-local at-rest record and acquired a "
                 f"wire or attestation affordance: {forbidden}"
             )
+
+
+def validate_planning_doc_generation() -> None:
+    """The register and catalog must equal what their JSON sources render.
+
+    Both documents were hand-maintained Markdown that validators reached by
+    substring matching, which is why the phase gate could once only be moved by
+    editing its own validator. The structure now lives in `conformance/planning/`
+    and the Markdown is output. If this fails, someone edited a generated block,
+    and the register no longer says what its source says.
+    """
+    stale = planning_docs.stale()
+    if stale:
+        raise ValidationFailure(
+            "planning documents are stale: "
+            + ", ".join(path.name for path in stale)
+            + "; run scripts/repository/generate_planning_docs.py"
+        )
 
 
 def validate_vector_reproducibility() -> None:
@@ -2660,7 +2679,15 @@ def validate_origin_policy() -> None:
             )
 
 
-CONFORMANCE_EXEMPT_SUITES = ("p1140e", "p1140f")
+# Directories under `conformance/` that are records rather than suites.
+#
+# A manifest under D-441 declares a set of cases and what executing them proves.
+# These three hold planning state that validators read — gate authorization,
+# semantic findings, the decision register and task catalog — and there is nothing
+# in them to execute, so a manifest could only describe an empty run. The criterion
+# is stated here because the list was previously three bare names, and an exemption
+# whose reason is not written down cannot be told apart from an oversight.
+CONFORMANCE_EXEMPT_SUITES = ("p1140e", "p1140f", "planning")
 
 # The two registries an `expect_reason_code` may resolve in, and where the codes live in
 # each. `reason-codes-v1.json` is the API wire vocabulary and requires every code to bind
@@ -3877,6 +3904,7 @@ def main() -> int:
         ("CDDL grammar parse and required rules", validate_cddl_file),
         ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),
         ("VibeProof vector reproducibility", validate_vector_reproducibility),
+        ("planning document generation", validate_planning_doc_generation),
         ("Protobuf", validate_protobuf_files),
     ]
     failures: list[str] = []

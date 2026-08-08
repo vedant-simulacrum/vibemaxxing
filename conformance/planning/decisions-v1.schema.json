@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/conformance/planning/decisions-v1.schema.json",
+  "title": "VibeMaxxing decision register",
+  "description": "The source of docs/planning/DECISION_REGISTER.md. The Markdown table is generated from this file by scripts/repository/generate_planning_docs.py; editing the table by hand fails the drift check. Statuses are constrained here rather than only in the prose line the register carries, because that line was previously the sole definition and was read back out of the document it governed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "decisions"],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "decisions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "decision", "status", "validation_or_reopen"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^D-[0-9]{3}$"
+          },
+          "decision": {
+            "type": "string",
+            "minLength": 1,
+            "not": {
+              "pattern": "\\|"
+            },
+            "description": "A literal pipe would shift every column to its right when the generated table is parsed back, which is the defect validate_decision_register exists to catch."
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "provisional",
+              "research-required",
+              "deferred",
+              "rejected",
+              "superseded"
+            ]
+          },
+          "validation_or_reopen": {
+            "type": "string",
+            "minLength": 1,
+            "not": {
+              "pattern": "\\|"
+            },
+            "description": "What would reopen the decision. Empty is not permitted: a decision that cannot be reopened by anything is not falsifiable."
+          }
+        }
+      }
+    }
+  }
+}

@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 205 |
+| `not-started` | 204 |
 | `in-progress` | 13 |
-| `landed` | 36 |
+| `landed` | 37 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 108 assertions across 36 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 115 assertions across 37 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 22.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-063`, `OS-001`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -973,11 +973,20 @@ Files: `conformance/planning/decisions-v1.json` (new), `conformance/planning/dec
 Acceptance: the Markdown register and catalog are generated from JSON and byte-identical to the committed files; a validator fails on drift between source and generated output.
 Depends: PF-053, PF-055
 Est: 12-16
-Status: not-started
+Status: landed
+Evidence: exists conformance/planning/decisions-v1.json
+Evidence: exists conformance/planning/decisions-v1.schema.json
+Evidence: exists conformance/planning/tasks-v1.json
+Evidence: exists conformance/planning/tasks-v1.schema.json
+Evidence: validator scripts/repository/generate_planning_docs.py --check
+Evidence: contains 1 docs/planning/DECISION_REGISTER.md :: <!-- generated: decision-register -->
+Evidence: contains 1 docs/planning/TASK_CATALOG.md :: <!-- generated: task-catalog -->
 
-`conformance/p1140f/*.json` is the pattern that works in this repository: validators read structure. But the register now holds **132 rows running to D-205**, and every planning gate lives in a Markdown table that validators reach by substring matching — `validate_p1140f_authority.py:131` greps prose for a count, and `doctor.py` asserts that literal strings appear somewhere in a document. That is why the phase gate could only be moved by editing its own validator.
+`conformance/p1140f/*.json` is the pattern that works in this repository: validators read structure. But every planning gate lived in a Markdown table that validators reach by substring matching — `validate_p1140f_authority.py:131` greps prose for a count, and `doctor.py` asserts that literal strings appear somewhere in a document. That is why the phase gate could only be moved by editing its own validator.
 
-The register has grown by 55 rows since this unit was written, which raises rather than lowers its priority: the numbering is already sparse — D-109 is followed by D-140, D-144 by D-180 — and nothing enforces that a decision's status, its reopen condition and the artifact it governs stay consistent.
+This unit's own prose said the register held **132 rows running to D-205**. It holds **290 rows running to D-607** — the figure had aged past double while sitting in the document that exists to stop figures aging. Corrected here rather than left as another count nothing derives.
+
+Reading the register against itself found what the sparse numbering was hiding. `## Register rules` sits *between* the D-144 and D-180 rows, so in Markdown terms the table ends at D-144: the remaining 146 rows follow a heading with no table header and do not render as a table at all. Nothing caught it because `validate_decision_register` matches rows with a regex rather than parsing a table, so it read all 290 either way. The rules section is now part of the preamble and the table is contiguous.
 
 Make JSON the source and generate the Markdown, so prose can no longer drift from state and validators can assert on structure. `validate_work_unit_status.py` is the smaller precedent for exactly this shape: JSON-free, but the derived block in the work breakdown is generated and drift fails the build. This unit is what lets PF-063 assert on the whole register.
 
