@@ -763,7 +763,12 @@
     "interactive-shell",
     "invite-code",
     "lineage-fork-case",
+    "local-auth",
+    "local-collection",
+    "local-connectivity",
     "local-deletion-command",
+    "local-permission",
+    "local-sync",
     "model-alias-resolution",
     "moderation-case",
     "native-session-family",
@@ -780,12 +785,7 @@
     "server-deletion",
     "source-certification",
     "update-lifecycle",
-    "web-session-family",
-    "local-auth",
-    "local-collection",
-    "local-connectivity",
-    "local-permission",
-    "local-sync"
+    "web-session-family"
   ],
   "platform_profiles": [
     "alpine-3.23-aarch64-headless",
