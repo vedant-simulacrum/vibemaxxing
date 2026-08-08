@@ -54,6 +54,7 @@ Files: `a.md`
 Acceptance: it works.
 Depends: none
 Repair: P-1140F-1
+Serves: SR-005
 Est: 4
 Status: landed
 Evidence: validator scripts/repository/validate_repair_task_binding.py
@@ -63,6 +64,7 @@ Files: `b.md`
 Acceptance: it works.
 Depends: PF-001
 Repair: P-1140F-2
+Serves: SR-006
 Est: 4
 Status: not-started
 """
@@ -77,7 +79,9 @@ FINDINGS = {
 }
 
 
-class RepairTaskBindingTests(unittest.TestCase):
+class BindingFixture:
+    """Shared setup only. Carries no tests, so inheriting it does not re-run them."""
+
     def setUp(self) -> None:
         self.validator = load_validator()
         self.root = Path(tempfile.mkdtemp(prefix="repair-binding-"))
@@ -100,6 +104,8 @@ class RepairTaskBindingTests(unittest.TestCase):
         ):
             return self.validator.main()
 
+
+class RepairTaskBindingTests(BindingFixture, unittest.TestCase):
     def test_a_consistent_binding_passes(self) -> None:
         self.assertEqual(self.run_validator(), 0)
 
@@ -155,8 +161,8 @@ class RepairTaskBindingTests(unittest.TestCase):
     def test_a_step_claiming_completion_with_an_open_finding_fails(self) -> None:
         """Landing every unit is not closure; the findings are the gate."""
         landed = BREAKDOWN.replace(
-            "Depends: PF-001\nRepair: P-1140F-2\nEst: 4\nStatus: not-started",
-            "Depends: PF-001\nRepair: P-1140F-2\nEst: 4\nStatus: landed",
+            "Serves: SR-006\nEst: 4\nStatus: not-started",
+            "Serves: SR-006\nEst: 4\nStatus: landed",
         )
         self.write(
             CATALOG.replace(
@@ -189,6 +195,58 @@ class RepairTaskBindingTests(unittest.TestCase):
     def test_an_in_progress_step_with_unlanded_units_is_allowed(self) -> None:
         """Only completion claims are checked; honest in-progress states pass."""
         self.assertEqual(self.run_validator(), 0)
+
+
+class ServesBindingTests(BindingFixture, unittest.TestCase):
+    """`Serves:` ties a unit to the finding it repairs, not just to the step.
+
+    Steps are too coarse: P-1140F-4 owns twelve units and five findings, so landing
+    one unit implied nothing about any particular finding, and closure evidence had to
+    be assembled by reading. That is the bookkeeping that goes wrong quietly.
+    """
+
+    def test_a_unit_serving_no_finding_fails(self) -> None:
+        self.write(CATALOG, BREAKDOWN.replace("Serves: SR-006\n", ""), FINDINGS)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("names no finding it serves", str(raised.exception))
+
+    def test_a_unit_serving_a_finding_from_another_step_fails(self) -> None:
+        """The binding has to agree with itself or it explains nothing."""
+        self.write(CATALOG, BREAKDOWN.replace("Serves: SR-006", "Serves: SR-005"), FINDINGS)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("cannot repair a finding its own step does not own", str(raised.exception))
+
+    def test_a_finding_served_by_no_unit_fails(self) -> None:
+        """Nothing landing could ever close it, so it would sit open forever."""
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"].append(
+            {"finding_id": "SR-007", "state": "open", "repair_task": "P-1140F-2"}
+        )
+
+        self.write(CATALOG, BREAKDOWN, findings)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("served by no unit", str(raised.exception))
+
+    def test_a_finding_closed_while_a_unit_serving_it_is_unlanded_fails(self) -> None:
+        """Carrying closure evidence is not the same as being closed."""
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][1]["state"] = "closed"
+
+        self.write(CATALOG, BREAKDOWN, findings)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("units serving it are not all landed", str(raised.exception))
 
 
 if __name__ == "__main__":

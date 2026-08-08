@@ -31,6 +31,8 @@ Every unit must carry these five lines verbatim, in this order, immediately unde
 - `Est:` — hours, as an integer or a range. A unit estimated above 16 hours must be split.
 - `Status:` — one of `not-started`, `in-progress`, `landed`, `unverifiable`, or `superseded-by <ID>`.
 
+`Serves:` names the P-1140F finding or findings a unit repairs. `Repair:` binds a unit to a step and each finding is assigned to a step, but that was too coarse to say which unit serves which finding: P-1140F-4 owns twelve units and five findings, so landing one implied nothing about any particular finding and closure evidence had to be assembled by reading. `scripts/repository/validate_repair_task_binding.py` requires the two bindings to agree, refuses a finding no unit serves, and refuses a finding recorded `closed` while a unit serving it is unlanded. Carrying closure evidence is not the same as being closed.
+
 Two fields are conditional. `Evidence:` is required on a `landed` unit, may repeat, and is forbidden anywhere else. `Reason:` is required on an `unverifiable` unit.
 
 A unit missing any of the five is not ready to start, regardless of how well its prose reads.
@@ -103,6 +105,7 @@ Acceptance: `python3 scripts/repository/validate_artifact_quarantine.py` exits 0
 The original criterion was `grep -rn 'VibeProof v1' crates/vibeproof-core apps/api/cmd/api` returning no line that omits the word `prototype`. It passed before any quarantine work was done, because `crates/vibeproof-core/README.md` was a two-line stub that mentioned nothing. A criterion phrased as the absence of a bad mention is satisfied by the absence of any mention, so it measured silence and reported compliance. The replacement requires the notice to be present and to agree with the record, which silence cannot satisfy.
 Depends: none
 Repair: P-1140F-1
+Serves: SR-005
 Est: 6-8
 Status: landed
 Evidence: validator scripts/repository/validate_artifact_quarantine.py
@@ -122,6 +125,7 @@ Files: `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`, `docs/architecture/VIBEPROO
 Acceptance: `python3 scripts/repository/generate_vibeproof_vectors.py --check` exits 0, and every CDDL rule name in `vibeproof-claim-v1.cddl` appears in exactly one of the two vector files; a second occurrence in a third file fails the check.
 Depends: PF-001
 Repair: P-1140F-1
+Serves: SR-005
 Est: 8-12
 Status: not-started
 
@@ -134,6 +138,7 @@ Files: `conformance/p1140f/artifact-authority-v1.json`, `evals/suites/suites.yam
 Acceptance: `python3 scripts/ci/run_evals.py --validate-registry` exits 0 and fails when a suite declares an `evidence_ceiling` its fixtures cannot support; every suite in `suites.yaml` carries an `authority_class` drawn from the registry vocabulary.
 Depends: PF-001
 Repair: P-1140F-1
+Serves: SR-005
 Est: 8-10
 Status: not-started
 
@@ -146,6 +151,7 @@ Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/plan
 Acceptance: `python3 scripts/repository/validate_state_vocabularies.py` exits 0 with every registry machine naming a `persistence_owner` that resolves to a `create table` in `planning-schema.sql`, and fails when one does not; every machine additionally declares `revision_model`, `transaction_boundary` and `outbox`, and the validator fails on each of the four combinations `outbox_events.unique(aggregate_id, aggregate_revision)` forbids — publishing without a revision, publishing outside the aggregate transaction, a device-local aggregate publishing, and a local-only aggregate in a server transaction; `python3 -m unittest tests.ci.test_state_vocabularies` exits 0 with a case per rule.
 Depends: none
 Repair: P-1140F-1
+Serves: SR-005
 Est: 12-16
 Status: landed
 Evidence: validator scripts/repository/validate_state_vocabularies.py
@@ -162,6 +168,7 @@ Files: `packages/schemas/oauth-provider-registry-v1.json` (new), `packages/schem
 Acceptance: the registry validates against its schema; every provider row carries issuer, authorization and token endpoints, client identifier, exact redirect URI, PKCE method, RFC 9207 `iss` capability, scope set, device-flow capability, revision and expiry; the mix-up fixture contains at least one rejected case per provider.
 Depends: PF-004
 Repair: P-1140F-2
+Serves: SR-006
 Est: 8-12
 Status: not-started
 
@@ -173,6 +180,7 @@ Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql
 Acceptance: the `oauth_transactions` table and the `oauth-transaction` registry machine share one vocabulary under `validate_state_vocabularies.py`; `grep -n 'authorization_code' packages/schemas/openapi-v1.yaml` returns no operation that mutates identity without a transaction reference.
 Depends: PF-005
 Repair: P-1140F-2
+Serves: SR-006
 Est: 10-14
 Status: not-started
 
@@ -185,6 +193,7 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-r
 Acceptance: the `linked-identity` machine declares all eight states, every one is reachable and no terminal state has an outgoing transition under `validate_state_vocabularies.py`; `linked_identities` carries a durable provider-subject column with a uniqueness constraint.
 Depends: PF-006
 Repair: P-1140F-2
+Serves: SR-006
 Est: 10-14
 Status: not-started
 
@@ -198,6 +207,7 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml
 Acceptance: `ranked_identities` is a separate table from `accounts` with a survivor reference; the consolidation-plan schema validates a fixture covering identities, devices, claims, social state, boards, moderation, exports and deletions; no path in the API sums two accounts' scores.
 Depends: PF-007
 Repair: P-1140F-2
+Serves: SR-006
 Est: 12-16
 Status: in-progress
 
@@ -213,6 +223,7 @@ Files: `packages/schemas/device-lineage.schema.json`, `packages/schemas/vibeproo
 Acceptance: one identifier spelling for a challenge and one for a lineage resolves across CDDL, OpenAPI and SQL, with no camelCase variant in any of the three; `python3 scripts/repository/validate_cross_references.py` exits 0; `device_sequences` keys on `lineage_id` and references no device row, `claim_challenges` carries a `lineage_id` foreign key, and `continuity_state` has exactly one owner in `device_lineages`; `device_lineages` is declared before both dependants so the file applies to `postgres:16`, which `validate_planning_artifacts.py` proves when `PLANNING_DATABASE_URL` is set; `python3 -m unittest tests.ci.test_lineage_continuity` exits 0 and fails when the sequence is keyed on the device row again.
 Depends: PF-004
 Repair: P-1140F-2
+Serves: SR-007
 Est: 10-14
 Status: landed
 Evidence: validator scripts/repository/validate_state_vocabularies.py
@@ -227,6 +238,7 @@ Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/plan
 Acceptance: the fork fixture contains a lineage that branches, and a decoder run over it quarantines every post-fork branch while accepting every pre-fork claim; `device_key_events` records both authorizations for an ordinary rotation.
 Depends: PF-009
 Repair: P-1140F-2
+Serves: SR-007
 Est: 12-16
 Status: not-started
 
@@ -242,6 +254,7 @@ Files: `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`, `docs/architecture/PLATF
 Acceptance: every one of the eight named roles appears exactly once in the trust-domain file with an executable identity, an OS peer identity, a user/session boundary and an explicit capability and data-class list; a role absent from the file fails `validate_planning_coverage.py`.
 Depends: PF-004
 Repair: P-1140F-3
+Serves: SR-008
 Est: 10-14
 Status: not-started
 
@@ -254,6 +267,7 @@ Files: `packages/schemas/local-control-v1.proto`, `conformance/sandbox/local-cha
 Acceptance: `local-control-v1.proto` declares one request and one response message per role rather than a universal union; the vector file contains a same-user impersonation case and a stale-process case, each with the expected rejection reason drawn from `packages/schemas/reason-codes-v1.json`.
 Depends: PF-011
 Repair: P-1140F-3
+Serves: SR-008
 Est: 10-14
 Status: not-started
 
@@ -266,6 +280,7 @@ Files: `packages/schemas/state-machine-registry-v1.json`, `docs/architecture/NAT
 Acceptance: `interactive-shell` declares only process and connection states, and daemon, collection, sync, auth, permission, update and connectivity are separate machines; `validate_state_vocabularies.py` reports every state of all seven reachable.
 Depends: PF-011
 Repair: P-1140F-3
+Serves: SR-008
 Est: 8-12
 Status: not-started
 
@@ -279,6 +294,7 @@ Files: `packages/schemas/local-store-v1.sql`, `docs/architecture/NATIVE_RUNTIME_
 Acceptance: `packages/schemas/local-store-v1.sql` parses under `sqlite3 -init` with no errors, holds no key material of its own, and the canary fixture proves no log, backup, diagnostic or corruption-report column can hold a forbidden content class.
 Depends: PF-011
 Repair: P-1140F-3
+Serves: SR-008
 Est: 12-16
 Status: in-progress
 
@@ -292,6 +308,7 @@ Files: `packages/schemas/compatibility-tuple-v1.schema.json` (new), `docs/integr
 Acceptance: the tuple schema requires all nine components and a canonical digest; two independently ordered serialisations of the same tuple produce the same digest in a fixture that records both inputs and the expected digest.
 Depends: PF-004
 Repair: P-1140F-3
+Serves: SR-009
 Est: 8-12
 Status: in-progress
 
@@ -305,6 +322,7 @@ Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/cert
 Acceptance: the `certification` machine declares all eight states with one vocabulary across registry, SQL and API under `validate_state_vocabularies.py`; the result schema requires suite and case digests, a validity interval and a signer reference, and rejects a bundle missing any of them.
 Depends: PF-015
 Repair: P-1140F-3
+Serves: SR-009
 Est: 10-14
 Status: in-progress
 
@@ -319,6 +337,7 @@ Files: `packages/schemas/source-observation.schema.json`, `packages/schemas/norm
 Acceptance: every example under `packages/schemas/examples/` and `conformance/adapters/claude-code-otel/` validates, and a normalized event that names no operation identity, observer identity or cumulative/incremental flag is rejected by the schema.
 Depends: PF-015
 Repair: P-1140F-3
+Serves: SR-017
 Est: 10-14
 Status: not-started
 
@@ -332,6 +351,7 @@ Files: `packages/schemas/accounting-profile.schema.json`, `conformance/accountin
 Acceptance: every reconciliation vector produces the same result under two array orderings; a vector with two equal-authority contradicting sources produces the recorded deterministic outcome; an event exceeding the declared period bound is rejected rather than saturating.
 Depends: PF-017
 Repair: P-1140F-3
+Serves: SR-009
 Est: 12-16
 Status: not-started
 
@@ -346,6 +366,7 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml
 Acceptance: `idempotency_records` keys on exactly the `key_scope` declared in `openapi-v1.yaml#x-idempotency-contract`, which a test asserts by comparing the two rather than restating either; the `idempotency-ledger` machine declares `executing`, `committed`, `replayable-failure`, `conflict`, `expired` and `abandoned`, all six reachable from the initial state, with `committed` non-terminal because it expires; `python3 -m unittest tests.ci.test_idempotency_ledger` exits 0 and fails when `operation_id` leaves the key.
 Depends: PF-004
 Repair: P-1140F-4
+Serves: SR-012
 Est: 8-12
 Status: landed
 Evidence: validator scripts/repository/validate_state_vocabularies.py
@@ -361,6 +382,7 @@ Files: `conformance/p1140e/sql-race-plans-v1.json`, `packages/schemas/planning-s
 Acceptance: `sql-race-plans-v1.json` contains a plan for each of crash-before-commit, crash-after-commit, dropped response, takeover and expiry, each naming the exact rows a correct implementation leaves behind; `python3 scripts/repository/validate_p1140e_contracts.py` exits 0.
 Depends: PF-019
 Repair: P-1140F-4
+Serves: SR-012
 Est: 10-14
 Status: not-started
 
@@ -373,6 +395,7 @@ Files: `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/openapi
 Acceptance: `ranking-view-v1.schema.json` separates the ranking definition from the audience; every operation carrying `security: []` is declared in `openapi-v1.yaml#x-public-operations` with one of the three admissible reasons, exactly one of which is `global-board`; `getPublicProfile` requires a session and returns 401 without one; `python3 -m unittest tests.ci.test_public_operations` exits 0 with a case per way the declaration can rot.
 Depends: PF-004
 Repair: P-1140F-4
+Serves: SR-010, SR-015
 Est: 12-16
 Status: in-progress
 
@@ -386,6 +409,7 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml
 Acceptance: `ranking_projection_generations` carries exactly one active pointer enforced by a partial unique index; every entry key in `score_snapshots` includes the generation; a cursor fixture records the viewer, the authorization revision and the expiry, and a cursor replayed by another viewer is rejected.
 Depends: PF-021
 Repair: P-1140F-4
+Serves: SR-010
 Est: 12-16
 Status: not-started
 
@@ -400,6 +424,7 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml
 Acceptance: the `period` machine declares `open`, `frozen`, `closed`, `corrected` and `archived` with all five reachable; `minute_scores` and `period_scores` are append-only by constraint; a rebuild from `ranking_corrections` reproduces the recorded totals in a fixture.
 Depends: PF-022
 Repair: P-1140F-4
+Serves: SR-010
 Est: 12-16
 Status: not-started
 
@@ -414,6 +439,7 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml
 Acceptance: `friend_edges` stores one canonical ordered pair with a check constraint, `blocks` is directional with no symmetry constraint, and neither `friend_requests.state` nor `rival_edges.state` admits `blocked`; the `friendship` and `rivalry` machines declare no `blocked` state and no transition into one, with every remaining state reachable and every terminal state a sink; `conformance/social/block-independence-vectors.json` states six cases with inputs, expected relationship rows and expected visibility, registered in the suite manifest with two negative cases; `python3 -m unittest tests.ci.test_block_independence` exits 0 and fails when a terminal `blocked` state is reintroduced.
 Depends: PF-004
 Repair: P-1140F-4
+Serves: SR-011
 Est: 10-14
 Status: landed
 Evidence: validator scripts/repository/validate_state_vocabularies.py
@@ -429,6 +455,7 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml
 Acceptance: `boards` and `board_memberships` are written in one transaction in the recorded SQL plan; a partial unique index enforces exactly one owner per board; `board_invites` cannot grant an admin or owner role, which a rejected fixture case proves.
 Depends: PF-024
 Repair: P-1140F-4
+Serves: SR-011
 Est: 10-14
 Status: not-started
 
@@ -443,6 +470,7 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-r
 Acceptance: `presence_leases` records a device-bound lease generation; the `presence` machine transitions to `idle` at 90 seconds and `offline` at 300 seconds with those exact numbers in `packages/schemas/policy-defaults-v1.json`; a two-device merge fixture yields the same result under both device orderings.
 Depends: PF-011, PF-024
 Repair: P-1140F-4
+Serves: SR-011
 Est: 10-14
 Status: not-started
 
@@ -457,6 +485,7 @@ Files: `packages/schemas/notification-delivery-v1.schema.json`, `packages/schema
 Acceptance: `notification_events` is unique on recipient, type, source aggregate and source revision, and `notifications` carries the recipient projection with an authorization revision; the `notification-delivery` machine can express `retracted`; a delivery attempt row records `queued`, `deferred`, `accepted`, `acknowledged`, `failed` or `expired` and never maps `accepted` to a read.
 Depends: PF-024, PF-026
 Repair: P-1140F-4
+Serves: SR-011
 Est: 12-16
 Status: in-progress
 
@@ -473,6 +502,7 @@ Files: `packages/schemas/export-manifest-v1.schema.json`, `packages/schemas/open
 Acceptance: the manifest schema requires version, included and excluded domains, per-domain counts, checksums and an encryption reference, and rejects a manifest missing any; `exports` and `export_artifacts` carry a snapshot cutoff and a revocable grant with an expiry.
 Depends: PF-004, PF-019
 Repair: P-1140F-4
+Serves: SR-013
 Est: 10-14
 Status: not-started
 
@@ -486,6 +516,7 @@ Files: `packages/schemas/local-deletion-v1.schema.json`, `packages/schemas/plann
 Acceptance: `deletion_jobs`, `deletion_effects`, `local_deletion_commands` and `local_deletion_receipts` cover every domain named in `docs/privacy/DATA_MAP.md`, with a per-device outcome of `complete`, `pending`, `expired`, `unreachable` or `waived`; `grep -in 'forensic' docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md` returns no claim of erasure.
 Depends: PF-023, PF-024, PF-027, PF-028
 Repair: P-1140F-4
+Serves: SR-013
 Est: 12-16
 Status: in-progress
 
@@ -504,6 +535,7 @@ Files: `packages/schemas/release-set-v1.schema.json`, `docs/operations/OPERATION
 Acceptance: the release-set schema requires a TUF role reference, a target path, an architecture, a hash, a provenance reference, a native signature reference, a compatibility tuple and an update class per component, and rejects a manifest that is not itself an authenticated target.
 Depends: PF-015
 Repair: P-1140F-5
+Serves: SR-014
 Est: 8-12
 Status: not-started
 
@@ -516,6 +548,7 @@ Files: `packages/schemas/planning-schema.sql`, `docs/operations/OPERATIONS_OPEN_
 Acceptance: `update_policies` and `update_installations` express an ordered migration chain and a compatibility window; a fixture records one reversible and one irreversible migration, and the irreversible case has no rollback edge in the `update-lifecycle` machine.
 Depends: PF-014, PF-030
 Repair: P-1140F-5
+Serves: SR-014
 Est: 10-14
 Status: not-started
 
@@ -529,6 +562,7 @@ Files: `packages/schemas/platform-profile-registry-v1.json`, `docs/architecture/
 Acceptance: `platform-profile-registry-v1.json` validates against its schema with a row for macOS, Windows, Linux, WSL, container and CI, each naming its supervision mechanism, its session and restart limitation, and its competitive eligibility separately from its installability.
 Depends: PF-011, PF-030
 Repair: P-1140F-5
+Serves: SR-014
 Est: 10-14
 Status: not-started
 
@@ -542,6 +576,7 @@ Files: `packages/schemas/privacy-projection-v1.json` (new), `docs/privacy/PRIVAC
 Acceptance: every viewer-visible field in the OpenAPI document appears exactly once in the projection file with the authorization revision that gates it; a fixture proves a block, a board removal and a deletion each invalidate the cursors, grants and caches the file names.
 Depends: PF-021, PF-024, PF-026, PF-027, PF-028, PF-029
 Repair: P-1140F-4
+Serves: SR-015
 Est: 12-16
 Status: not-started
 
@@ -554,6 +589,7 @@ Files: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `scripts/repository/va
 Acceptance: `python3 scripts/repository/validate_planning_coverage.py` exits 0 with every file under `packages/schemas/` and `conformance/` present in the inventory and every inventory row resolving to a file; `grep -in 'closed-world\|complete' docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md` returns no maturity claim.
 Depends: PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033
 Repair: P-1140F-5
+Serves: SR-016
 Est: 12-16
 Status: not-started
 
@@ -569,6 +605,7 @@ Files: `scripts/repository/validate_p1140e_contracts.py`, `conformance/p1140e/va
 Acceptance: `python3 scripts/repository/validate_p1140e_contracts.py` exits non-zero on each of six injected defects — missing owner, unreachable lifecycle, SQL/state/API vocabulary mismatch, missing generation key, missing authority revision, and a content digest that does not match — and 0 on the clean tree; the summary line names the check as structural.
 Depends: PF-034
 Repair: P-1140F-5
+Serves: SR-016
 Est: 10-14
 Status: in-progress
 
@@ -585,6 +622,7 @@ Files: `conformance/p1140f/review-target-v1.json`, `conformance/p1140f/semantic-
 Acceptance: mechanical part: `review-target-v1.json` pins a commit that `git cat-file -e` resolves, every one of SR-005..SR-017 carries a closure verdict, and `python3 scripts/repository/validate_p1140f_authority.py` exits 0 with zero open P0 or P1. The review judgement itself is not mechanizable and must not be presented as though the validator produced it.
 Depends: PF-001, PF-002, PF-003, PF-004, PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033, PF-034, PF-035
 Repair: P-1140F-5
+Serves: SR-016
 Est: 12-16
 Status: not-started
 
