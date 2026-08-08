@@ -879,10 +879,20 @@ def validate_p1140d_contracts() -> None:
         "account-consolidation",
         "lineage-fork-case",
         "source-certification",
+        # PF-013 split five subsystem projections out of interactive-shell, which had
+        # collapsed collection, sync, auth, permission and connectivity into one state
+        # variable. They persist in local-store-v1.sql and never leave the device.
+        "local-collection",
+        "local-sync",
+        "local-auth",
+        "local-permission",
+        "local-connectivity",
     }
     if set(machine_ids) != required_machines:
         raise ValidationFailure(
-            f"state-machine set mismatch: missing={sorted(required_machines - set(machine_ids))}"
+            "state-machine set mismatch: "
+            f"missing={sorted(required_machines - set(machine_ids))} "
+            f"unexpected={sorted(set(machine_ids) - required_machines)}"
         )
     for machine in machines:
         states = set(machine["states"])

@@ -514,6 +514,86 @@
         "transition_id": "certification-activate",
         "expected": "reject-without-mutation"
       }
+    },
+    {
+      "machine_id": "local-auth",
+      "positive": {
+        "case_id": "local-auth-valid-transition",
+        "from": "auth-required",
+        "transition_id": "auth-established",
+        "expected_to": "authenticated",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "local-auth-invalid-transition",
+        "from": "authenticated",
+        "transition_id": "auth-established",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "local-collection",
+      "positive": {
+        "case_id": "local-collection-valid-transition",
+        "from": "collecting",
+        "transition_id": "collection-pause",
+        "expected_to": "paused",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "local-collection-invalid-transition",
+        "from": "paused",
+        "transition_id": "collection-pause",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "local-connectivity",
+      "positive": {
+        "case_id": "local-connectivity-valid-transition",
+        "from": "offline",
+        "transition_id": "connectivity-online",
+        "expected_to": "online",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "local-connectivity-invalid-transition",
+        "from": "online",
+        "transition_id": "connectivity-online",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "local-permission",
+      "positive": {
+        "case_id": "local-permission-valid-transition",
+        "from": "repair-required",
+        "transition_id": "permission-granted",
+        "expected_to": "granted",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "local-permission-invalid-transition",
+        "from": "granted",
+        "transition_id": "permission-granted",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
+      "machine_id": "local-sync",
+      "positive": {
+        "case_id": "local-sync-valid-transition",
+        "from": "syncing",
+        "transition_id": "sync-pause",
+        "expected_to": "paused",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "local-sync-invalid-transition",
+        "from": "paused",
+        "transition_id": "sync-pause",
+        "expected": "reject-without-mutation"
+      }
     }
   ]
 }

@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 207 |
+| `not-started` | 206 |
 | `in-progress` | 16 |
-| `landed` | 31 |
+| `landed` | 32 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 91 assertions across 31 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 93 assertions across 32 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 24.
+Startable now — not done, and every dependency done: 23.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-013`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,7 +90,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 12 | `PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-013`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028` |
+| 1 | 11 | `PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028` |
 | 2 | 6 | `PF-006`, `PF-016`, `PF-017`, `PF-022`, `PF-027`, `PF-030` |
 | 3 | 5 | `PF-007`, `PF-018`, `PF-023`, `PF-031`, `PF-032` |
 | 4 | 2 | `PF-008`, `PF-029` |
@@ -298,12 +298,14 @@ Evidence: unittest tests.ci.test_local_channel
 
 ### PF-013 — Shell and subsystem state separation
 Files: `packages/schemas/state-machine-registry-v1.json`, `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md`
-Acceptance: `interactive-shell` declares only process and connection states, and daemon, collection, sync, auth, permission, update and connectivity are separate machines; `validate_state_vocabularies.py` reports every state of all seven reachable.
+Acceptance: `interactive-shell` declares only the eight process and connection states, and daemon, collection, sync, auth, permission, update and connectivity are seven separate machines; `validate_state_vocabularies.py` reports every state of all seven reachable; the five new projections persist in `local-store-v1.sql` and not in `planning-schema.sql`, since none is a fixed-schema aggregate accounting figure or an integrity claim; `python3 -m unittest tests.ci.test_shell_subsystem_separation` exits 0, including a case asserting that paused collection and an offline network are now simultaneously representable.
 Depends: PF-011
 Repair: P-1140F-3
 Serves: SR-008
 Est: 8-12
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_shell_subsystem_separation
 
 - shell owns process/connection state only;
 - daemon, collection, sync, auth, permission, update and connectivity are independent projections;

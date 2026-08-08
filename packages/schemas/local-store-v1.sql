@@ -230,3 +230,49 @@ create index outbox_claims_due_idx on outbox_claims (next_attempt_at) where stat
 create index accounting_events_commitment_idx on accounting_events (duplicate_domain_commitment);
 create index observations_source_idx on observations (source_id, observed_at);
 create index source_receipt_considerations_observation_idx on source_receipt_considerations (observation_id);
+
+-- SUBSYSTEM PROJECTIONS (PF-013).
+--
+-- `interactive-shell` carried fifteen states covering six different subsystems:
+-- collection was `paused`, connectivity was `offline` and `degraded`, authentication
+-- was `auth-required`, updates were `update-required` and `update-blocked`, and
+-- permissions were `permission-repair`. One state variable cannot hold six independent
+-- facts. A device whose collection is paused *and* whose network is offline had no
+-- representable shell state, and the transition table had to pretend one of the two
+-- had not happened.
+--
+-- Each subsystem is now its own single-row projection, so the combinations are
+-- expressible and the shell owns process and connection state alone. They live here
+-- rather than in `planning-schema.sql` because they never leave the device: none of
+-- them is a fixed-schema aggregate accounting figure or an integrity claim, and those
+-- are the only things AGENTS.md permits across the boundary.
+
+create table local_collection_state (
+  singleton integer primary key check (singleton = 1),
+  state text not null check (state in ('collecting','paused','stopped')),
+  changed_at text not null
+);
+
+create table local_sync_state (
+  singleton integer primary key check (singleton = 1),
+  state text not null check (state in ('syncing','paused','backing-off','stopped')),
+  changed_at text not null
+);
+
+create table local_auth_state (
+  singleton integer primary key check (singleton = 1),
+  state text not null check (state in ('authenticated','auth-required','locked-out')),
+  changed_at text not null
+);
+
+create table local_permission_state (
+  singleton integer primary key check (singleton = 1),
+  state text not null check (state in ('granted','repair-required','denied')),
+  changed_at text not null
+);
+
+create table local_connectivity_state (
+  singleton integer primary key check (singleton = 1),
+  state text not null check (state in ('online','degraded','offline')),
+  changed_at text not null
+);

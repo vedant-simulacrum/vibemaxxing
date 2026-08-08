@@ -354,13 +354,6 @@ BINDINGS: tuple[Binding, ...] = (
             "connected",
             "daemon-unavailable",
             "stale",
-            "paused",
-            "offline",
-            "degraded",
-            "auth-required",
-            "update-required",
-            "update-blocked",
-            "permission-repair",
             "exiting",
             "crashed",
         ),
@@ -543,6 +536,39 @@ BINDINGS: tuple[Binding, ...] = (
         states=("accepted", "corrected", "retracted", "quarantined"),
         api=("ClaimRecord.state",),
         note="Claims are append-only facts; the state is derived, never a stored column.",
+    ),
+    # PF-013. Five subsystem projections split out of interactive-shell, which had
+    # collapsed six independent facts into one state variable. They persist in
+    # local-store-v1.sql and never leave the device.
+    Binding(
+        aggregate="local-collection",
+        machine="local-collection",
+        states=("collecting", "paused", "stopped"),
+        sql=(),
+    ),
+    Binding(
+        aggregate="local-sync",
+        machine="local-sync",
+        states=("syncing", "paused", "backing-off", "stopped"),
+        sql=(),
+    ),
+    Binding(
+        aggregate="local-auth",
+        machine="local-auth",
+        states=("authenticated", "auth-required", "locked-out"),
+        sql=(),
+    ),
+    Binding(
+        aggregate="local-permission",
+        machine="local-permission",
+        states=("granted", "repair-required", "denied"),
+        sql=(),
+    ),
+    Binding(
+        aggregate="local-connectivity",
+        machine="local-connectivity",
+        states=("online", "degraded", "offline"),
+        sql=(),
     ),
 )
 
@@ -817,6 +843,13 @@ def contract_table(text: str) -> dict[str, dict[str, tuple[str, ...]]]:
 # ---------------------------------------------------------------------------
 
 
+
+def local_store_tables() -> set[str]:
+    """Tables declared by the SQLite half of the storage contract."""
+    text = (SCHEMAS / "local-store-v1.sql").read_text(encoding="utf-8")
+    return set(re.findall(r"create table (\w+)", text))
+
+
 def validate(report: Report) -> None:
     registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
     machines = {machine["machine_id"]: machine for machine in registry["machines"]}
@@ -841,12 +874,28 @@ def validate(report: Report) -> None:
     # twenty-six did. Nothing noticed because the registry stores owners in
     # kebab-case and the DDL declares them in snake_case, so a naive comparison
     # finds no overlap at all and a careless one finds no defect.
+    # A `local-only` machine persists on the device, and PF-013 added five subsystem
+    # projections that never leave it. Requiring them in planning-schema.sql would have
+    # meant declaring server tables for state AGENTS.md does not permit across the
+    # boundary: none of collection, sync, auth, permission or connectivity state is a
+    # fixed-schema aggregate accounting figure or an integrity claim, and those are the
+    # only things that may cross. `local-store-v1.sql` is the SQLite half of the storage
+    # contract and is where they belong.
+    local_bodies = local_store_tables()
     for machine_id, machine in sorted(machines.items()):
+        device_local = machine["transaction_boundary"] == "device-local"
         for owner in machine["persistence_owner"]:
+            table = owner.replace("-", "_")
+            if device_local and table in local_bodies:
+                continue
             report.check(
-                owner.replace("-", "_") in bodies,
-                f"{machine_id} names persistence owner {owner!r}, "
-                f"which planning-schema.sql does not define",
+                table in bodies,
+                f"{machine_id} names persistence owner {owner!r}, which "
+                + (
+                    "neither planning-schema.sql nor local-store-v1.sql defines"
+                    if device_local
+                    else "planning-schema.sql does not define"
+                ),
             )
 
     # 0b. State-graph integrity, for every machine rather than every bound one.
