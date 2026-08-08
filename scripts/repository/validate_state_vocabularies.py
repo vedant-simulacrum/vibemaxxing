@@ -544,31 +544,31 @@ BINDINGS: tuple[Binding, ...] = (
         aggregate="local-collection",
         machine="local-collection",
         states=("collecting", "paused", "stopped"),
-        sql=(),
+        sql=("local_collection_state.state",),
     ),
     Binding(
         aggregate="local-sync",
         machine="local-sync",
         states=("syncing", "paused", "backing-off", "stopped"),
-        sql=(),
+        sql=("local_sync_state.state",),
     ),
     Binding(
         aggregate="local-auth",
         machine="local-auth",
         states=("authenticated", "auth-required", "locked-out"),
-        sql=(),
+        sql=("local_auth_state.state",),
     ),
     Binding(
         aggregate="local-permission",
         machine="local-permission",
         states=("granted", "repair-required", "denied"),
-        sql=(),
+        sql=("local_permission_state.state",),
     ),
     Binding(
         aggregate="local-connectivity",
         machine="local-connectivity",
         states=("online", "degraded", "offline"),
-        sql=(),
+        sql=("local_connectivity_state.state",),
     ),
 )
 
@@ -627,6 +627,16 @@ SQL_LOCAL_VOCABULARIES: dict[str, tuple[str, ...]] = {
     # The server row is the transported form of the device row; a second spelling
     # for the same fact is the duplication SR-009 exists to remove.
     "local_deletion_receipts.outcome": ("complete", "partial", "refused", "expired"),
+    # Device-side outbox rows, not an aggregate: one claim's delivery attempt, whose
+    # lifetime ends when the server acknowledges it. Surfaced once the persistence
+    # check began reading the device half of the storage contract.
+    "outbox_claims.state": (
+        "pending",
+        "in-flight",
+        "acknowledged",
+        "rejected",
+        "superseded",
+    ),
     "evidence_assessments.public_state": (
         "hardened",
         "standard",
@@ -684,6 +694,166 @@ OUTCOME_MIRRORS: dict[str, str] = {
 TRANSIENT_API_ENUMS: dict[str, tuple[tuple[str, ...], str | None]] = {
     "ClaimBatchResult.state": (("accepted", "rejected"), None),
     "OAuthCompletion.state": (("consumed",), "oauth-transaction"),
+}
+
+# Why an aggregate binds no machine, no SQL column or no API enum.
+#
+# Coverage was driven by whether a field happened to be filled in, so an aggregate
+# whose `sql=` was never populated was indistinguishable from one that legitimately
+# has no persistence — and all five `local-*` aggregates sat at `sql=()` while
+# `local-store-v1.sql` defined the very tables they name. An omission must now be
+# stated, and stating it is what makes the count of unchecked aggregates readable.
+#
+# Mirrored in the recorded-absence table of AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md;
+# the two are compared entry for entry, so neither can drift.
+RECORDED_ABSENCES: dict[tuple[str, str], str] = {
+    (
+        "session-member",
+        "machine",
+    ): "Member rows of a token family; the family machines own the transitions.",
+    (
+        "board-container",
+        "machine",
+    ): "A two-value archive flag; its mutable concepts have machines of their own.",
+    (
+        "claim-record",
+        "machine",
+    ): "Claims are immutable facts; the registry indexes mutable concepts.",
+    (
+        "claim-record",
+        "sql",
+    ): "Append-only; the state is derived from later records, never stored.",
+    (
+        "device-authorization-grant",
+        "machine",
+    ): "Open: mutable, but the OAuth flow owns its transitions and they are unspecified.",
+    (
+        "identity-link",
+        "machine",
+    ): "Open: mutable, but the enrollment flow owns its transitions and they are unspecified.",
+    (
+        "oauth-transaction",
+        "api",
+    ): "OAuthCompletion.state echoes the terminal value only; see TRANSIENT_API_ENUMS.",
+    (
+        "web-session-family",
+        "api",
+    ): "Families are server-internal; a client sees only its own session member.",
+    (
+        "native-session-family",
+        "api",
+    ): "Families are server-internal; a client sees only its own session member.",
+    (
+        "idempotency-ledger",
+        "api",
+    ): "Replay is observed through the replayed response, never as a state value.",
+    (
+        "ranking-projection",
+        "api",
+    ): "Generation build state is operational; a client sees a sealed generation or none.",
+    (
+        "friendship",
+        "api",
+    ): "The API exposes the edge, not the machine; the viewer's own side is derived.",
+    (
+        "rivalry",
+        "api",
+    ): "The API exposes the edge, not the machine; the viewer's own side is derived.",
+    (
+        "board-membership",
+        "api",
+    ): "Membership is exposed as presence in a board's member list, not as a state value.",
+    (
+        "board-invitation",
+        "api",
+    ): "An invitee sees the invitation or does not; intermediate states are server-side.",
+    (
+        "invite-code",
+        "api",
+    ): "Private-beta admission under D-180. The invitee is told whether it worked, not its state.",
+    (
+        "presence-lease",
+        "api",
+    ): "PresenceLease.availability is a declared coarser projection; see PROJECTIONS.",
+    (
+        "account-lifecycle",
+        "api",
+    ): "Exposed through the account's own surface as capability, not as a lifecycle enum.",
+    (
+        "recovery-case",
+        "api",
+    ): "Account recovery under D-380. No operation exposes the case.",
+    (
+        "identity-investigation",
+        "api",
+    ): "Integrity-private under D-381; a public state value would publish the sanction.",
+    (
+        "account-consolidation",
+        "api",
+    ): "D-070 consolidation under D-382; the participant reads the effect, not the case.",
+    (
+        "lineage-fork-case",
+        "api",
+    ): "D-072 fork and clone resolution under D-383; quarantine is read through evidence class.",
+    (
+        "source-certification",
+        "api",
+    ): "D-387. Certification is server-assigned; exposing it would let a client select it.",
+    (
+        "update-lifecycle",
+        "api",
+    ): "Local-only; the server is never told what a device has installed.",
+    (
+        "release-trust",
+        "api",
+    ): "Local-only; trust in a release is evaluated on the device against TUF metadata.",
+    (
+        "local-deletion-command",
+        "api",
+    ): "Local-only; never persisted server-side and never exposed by the API.",
+    (
+        "daemon-lifecycle",
+        "api",
+    ): "Local-only; never persisted server-side and never exposed by the API.",
+    (
+        "privileged-supervisor",
+        "api",
+    ): "Local-only; never persisted server-side and never exposed by the API.",
+    (
+        "interactive-shell",
+        "api",
+    ): "Local-only; never persisted server-side and never exposed by the API.",
+    (
+        "local-collection",
+        "api",
+    ): "Local-only; never persisted server-side and never exposed by the API.",
+    (
+        "local-sync",
+        "api",
+    ): "Local-only; never persisted server-side and never exposed by the API.",
+    (
+        "local-auth",
+        "api",
+    ): "Local-only; never persisted server-side and never exposed by the API.",
+    (
+        "local-permission",
+        "api",
+    ): "Local-only; never persisted server-side and never exposed by the API.",
+    (
+        "local-connectivity",
+        "api",
+    ): "Local-only; never persisted server-side and never exposed by the API.",
+}
+
+# A state column that is neither bound to an aggregate nor a declared sub-entity
+# vocabulary must still be accounted for, or extending the persistence check to the
+# device half would simply not see it. Each entry names the unit that owns the hole.
+SQL_COLUMNS_WITHOUT_VOCABULARY: dict[str, str] = {
+    "source_receipts.certification_state": (
+        "Device-side receipt column with no CHECK constraint, so it can hold any "
+        "value. The source-certification vocabulary it should mirror is owned by "
+        "PF-017 and PF-018; recorded here rather than guessed at."
+    ),
 }
 
 # Client-facing fields that deliberately collapse a machine into a coarser vocabulary.
@@ -843,11 +1013,97 @@ def contract_table(text: str) -> dict[str, dict[str, tuple[str, ...]]]:
 # ---------------------------------------------------------------------------
 
 
+def local_store_text() -> str:
+    return (SCHEMAS / "local-store-v1.sql").read_text(encoding="utf-8")
+
 
 def local_store_tables() -> set[str]:
     """Tables declared by the SQLite half of the storage contract."""
-    text = (SCHEMAS / "local-store-v1.sql").read_text(encoding="utf-8")
-    return set(re.findall(r"create table (\w+)", text))
+    return set(re.findall(r"create table (\w+)", local_store_text()))
+
+
+def contract_absences(text: str) -> dict[tuple[str, str], str]:
+    """Parse the recorded-absence table out of the authoritative contract document.
+
+    The contract said "the reason is given under Open items" for every `—` cell, and
+    nothing compared the two. Thirty-nine cells recorded `—`; Open items explained
+    four. A promise no validator executes is the same defect as a check phrased as an
+    absence, so the reasons now live in a table this parses and compares.
+    """
+    rows: dict[tuple[str, str], str] = {}
+    inside = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("| Aggregate | Absent binding | Reason |"):
+            inside = True
+            continue
+        if inside:
+            if not stripped.startswith("|"):
+                break
+            cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+            if len(cells) != 3 or set(cells[0]) <= {"-", ":"}:
+                continue
+            rows[(cells[0].strip("`"), cells[1].strip("`"))] = cells[2]
+    if not inside:
+        raise Failure("contract document contains no recorded-absence table")
+    return rows
+
+
+def coverage(binding: Binding) -> int:
+    """How many of the three owners this aggregate is actually compared against."""
+    return sum((bool(binding.machine), bool(binding.sql), bool(binding.api)))
+
+
+def check_absence_reasons(report: Report, contract_text: str) -> None:
+    """An unpopulated binding must be indistinguishable from nothing but itself.
+
+    `validate_state_vocabularies.py` reported an aggregate count, and an aggregate
+    counted whether it was compared against three owners or none. Five `local-*`
+    aggregates carried `sql=()` while `local-store-v1.sql` defined the tables they
+    name, so the number that was supposed to measure coverage went up when coverage
+    was removed. Requiring a reason for every absence is what stops that: the reason
+    is a claim, and a claim about an owner that exists is refutable.
+    """
+    absences = {
+        (binding.aggregate, axis)
+        for binding in BINDINGS
+        for axis, bound in (
+            ("machine", bool(binding.machine)),
+            ("sql", bool(binding.sql)),
+            ("api", bool(binding.api)),
+        )
+        if not bound
+    }
+
+    for aggregate, axis in sorted(absences):
+        report.check(
+            (aggregate, axis) in RECORDED_ABSENCES,
+            f"{aggregate}: binds no {axis} and records no reason. An omission that is "
+            "not stated cannot be told apart from one that was never noticed",
+        )
+
+    # A reason for an axis that is bound is a justification outliving its hole.
+    for aggregate, axis in sorted(RECORDED_ABSENCES):
+        report.check(
+            (aggregate, axis) in absences,
+            f"{aggregate}: records a reason for an absent {axis} binding, but the "
+            f"{axis} binding is populated; the reason has outlived the gap it excused",
+        )
+
+    documented = contract_absences(contract_text)
+    only_in_document = sorted(set(documented) - absences)
+    only_in_validator = sorted(absences - set(documented))
+    report.check(
+        not only_in_document and not only_in_validator,
+        "recorded-absence table mismatch: "
+        f"only-in-document={only_in_document} only-in-validator={only_in_validator}",
+    )
+    for key in sorted(set(documented) & set(RECORDED_ABSENCES)):
+        report.check(
+            documented[key] == RECORDED_ABSENCES[key],
+            f"{key[0]}: the contract's recorded reason for its absent {key[1]} binding "
+            "differs from the validator's",
+        )
 
 
 def validate(report: Report) -> None:
@@ -857,6 +1113,17 @@ def validate(report: Report) -> None:
     bodies = table_bodies(sql_text)
     checks = sql_check_sets(bodies)
     declared_state_columns = sql_state_columns(bodies)
+
+    # The device half of the storage contract was read for table names only, so a
+    # column in it could not be bound and could not be found missing. Both halves are
+    # now resolved the same way; a server aggregate still cannot bind a device column,
+    # because rule 5 checks the column against the vocabulary either way and the
+    # privacy boundary is enforced by what the tables hold, not by this validator.
+    local_bodies_full = table_bodies(local_store_text())
+    local_checks = sql_check_sets(local_bodies_full)
+    local_state_columns_declared = sql_state_columns(local_bodies_full)
+    checks = {**checks, **local_checks}
+    declared_state_columns = declared_state_columns | local_state_columns_declared
     spec = yaml.safe_load(OPENAPI_PATH.read_text(encoding="utf-8"))
     enums = api_enums(spec)
     contract = contract_table(CONTRACT_PATH.read_text(encoding="utf-8"))
@@ -1074,6 +1341,8 @@ def validate(report: Report) -> None:
     for column in sorted(declared_state_columns | set(SQL_LOCAL_VOCABULARIES)):
         if column in used_sql:
             continue
+        if column in SQL_COLUMNS_WITHOUT_VOCABULARY:
+            continue
         if column not in SQL_LOCAL_VOCABULARIES:
             report.check(
                 False,
@@ -1205,7 +1474,6 @@ def validate(report: Report) -> None:
         )
 
 
-
 def check_concurrency_model(report: Report) -> None:
     """The outbox contract is a schema constraint, not a naming convention.
 
@@ -1275,6 +1543,7 @@ def main() -> int:
     try:
         validate(report)
         check_concurrency_model(report)
+        check_absence_reasons(report, CONTRACT_PATH.read_text(encoding="utf-8"))
     except Failure as failure:
         print(f"state vocabulary validation: FAIL\n- {failure}", file=sys.stderr)
         return 1
@@ -1286,14 +1555,26 @@ def main() -> int:
     machine_bound = sum(1 for binding in BINDINGS if binding.machine)
     sql_bound = sum(len(binding.sql) for binding in BINDINGS)
     api_bound = sum(len(binding.api) for binding in BINDINGS)
+    three_way = sum(1 for binding in BINDINGS if coverage(binding) == 3)
+    two_way = sum(1 for binding in BINDINGS if coverage(binding) == 2)
+    one_way = sum(1 for binding in BINDINGS if coverage(binding) == 1)
     print(
         "state vocabulary validation: PASS "
         f"({len(BINDINGS)} aggregates, {machine_bound} bound registry machines, "
         f"{sql_bound} bound SQL columns, {len(SQL_LOCAL_VOCABULARIES)} declared sub-entity "
         f"vocabularies, {api_bound} bound API enums)"
     )
+    # The aggregate count says how many aggregates are declared, not how many are
+    # checked against three owners. Reporting the three depths separately is the point
+    # of PF-067: a green run on 42 aggregates of which one is compared against a single
+    # owner must not read as 42 three-way agreements.
     print(
-        "claim_scope=vocabulary-agreement-only; transitions and workers remain unimplemented"
+        f"coverage={three_way} three-way, {two_way} two-way, {one_way} format-only; "
+        f"{len(RECORDED_ABSENCES)} absent bindings each carry a recorded reason"
+    )
+    print(
+        "claim_scope=vocabulary-agreement-only; transitions and workers remain "
+        "unimplemented, and a recorded reason is an explanation rather than a check"
     )
     return 0
 

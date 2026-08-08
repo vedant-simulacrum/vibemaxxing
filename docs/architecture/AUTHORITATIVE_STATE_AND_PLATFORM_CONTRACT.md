@@ -28,7 +28,9 @@ For every aggregate:
 - the SQL `check` set on the aggregate's state column is **identical** to it — persistence must be able to hold every state a worker can reach;
 - the OpenAPI enum is identical to it **minus the declared internal states** in the table below.
 
-An internal state is one a client must never be shown. Every omission from an API enum must appear in the `Internal-only` column; there is no other way to omit a state. Where an aggregate has no registry machine, no SQL column or no API enum, the table records `—` and the reason is given under Open items.
+An internal state is one a client must never be shown. Every omission from an API enum must appear in the `Internal-only` column; there is no other way to omit a state. Where an aggregate has no registry machine, no SQL column or no API enum, the table records `—` and the reason appears in the recorded-absence table below.
+
+That rule previously said the reason was "given under Open items", and nothing compared the two. Thirty-nine cells recorded `—`; Open items explained four. The reasons therefore live in a table the validator parses and compares entry for entry against its own `RECORDED_ABSENCES`, so a `—` without a reason fails, and a reason for a binding that is in fact populated fails too. The second half matters as much as the first: five `local-*` aggregates carried an explicit empty `sql=()` while `local-store-v1.sql` already defined the tables they name, so a justification can outlive the gap it was written for.
 
 ### Binding table
 
@@ -58,11 +60,11 @@ An internal state is one a client must never be shown. Every omission from an AP
 | `daemon-lifecycle` | `daemon-lifecycle` | `service_instances.state` | — | — |
 | `privileged-supervisor` | `privileged-supervisor` | `privileged_supervisor_instances.state` | — | — |
 | `interactive-shell` | `interactive-shell` | `shell_sessions.state` | — | — |
-| `local-collection` | `local-collection` | — | — | — |
-| `local-sync` | `local-sync` | — | — | — |
-| `local-auth` | `local-auth` | — | — | — |
-| `local-permission` | `local-permission` | — | — | — |
-| `local-connectivity` | `local-connectivity` | — | — | — |
+| `local-collection` | `local-collection` | `local_collection_state.state` | — | — |
+| `local-sync` | `local-sync` | `local_sync_state.state` | — | — |
+| `local-auth` | `local-auth` | `local_auth_state.state` | — | — |
+| `local-permission` | `local-permission` | `local_permission_state.state` | — | — |
+| `local-connectivity` | `local-connectivity` | `local_connectivity_state.state` | — | — |
 | `update-lifecycle` | `update-lifecycle` | `update_installations.state`, `update_policies.state` | — | — |
 | `release-trust` | `release-trust` | `release_sets.state` | — | — |
 | `platform-certification` | `platform-certification` | `platform_profiles.validation_state` | `CompatibilityProfile.validation_state` | — |
@@ -102,6 +104,49 @@ An internal state is one a client must never be shown. Every omission from an AP
 - `local_deletion_receipts.outcome` repeats, deliberately and exactly, the vocabulary the device-side receipt in `packages/schemas/local-store-v1.sql` already declares. The server row is the transported form of the device row. A second spelling for the same fact is the duplication SR-009 exists to remove.
 - `appeal_decisions.decision` records the outcome only — `upheld`, `partially-upheld`, `reversed`. Its previous values `needs_information` and `expired` were appeal *workflow* states and now live in `appeals.state`, which is where the `appeal` machine puts them. Because the outcome is not a state, moving it out of `Appeal.state` would otherwise have removed the appellant's only way to tell `upheld` from `partially-upheld` from `reversed`. `Appeal.decision` publishes it instead: an optional enum, present exactly when `appeals.state` is `approved`, and required by the validator to equal the `appeal_decisions.decision` vocabulary. A `denied` appeal has no decision row and no `decision` field.
 - `platform_certifications.state` records one certification run against one release set. It is not the profile lifecycle; that is `platform_profiles.validation_state`, bound to the `platform-certification` machine.
+
+### Recorded absences
+
+Every `—` in the binding table above appears here exactly once, with the reason that cell is empty. `scripts/repository/validate_state_vocabularies.py` compares this table to its `RECORDED_ABSENCES` in both directions and on the reason text, so this document and the validator cannot disagree about what is unchecked.
+
+An absence is not a defect. Not stating one is: an aggregate whose binding was never populated is otherwise indistinguishable from an aggregate that legitimately has no such owner, and the aggregate count rises either way.
+
+| Aggregate | Absent binding | Reason |
+|---|---|---|
+| `account-consolidation` | `api` | D-070 consolidation under D-382; the participant reads the effect, not the case. |
+| `account-lifecycle` | `api` | Exposed through the account's own surface as capability, not as a lifecycle enum. |
+| `board-container` | `machine` | A two-value archive flag; its mutable concepts have machines of their own. |
+| `board-invitation` | `api` | An invitee sees the invitation or does not; intermediate states are server-side. |
+| `board-membership` | `api` | Membership is exposed as presence in a board's member list, not as a state value. |
+| `claim-record` | `machine` | Claims are immutable facts; the registry indexes mutable concepts. |
+| `claim-record` | `sql` | Append-only; the state is derived from later records, never stored. |
+| `daemon-lifecycle` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `device-authorization-grant` | `machine` | Open: mutable, but the OAuth flow owns its transitions and they are unspecified. |
+| `friendship` | `api` | The API exposes the edge, not the machine; the viewer's own side is derived. |
+| `idempotency-ledger` | `api` | Replay is observed through the replayed response, never as a state value. |
+| `identity-investigation` | `api` | Integrity-private under D-381; a public state value would publish the sanction. |
+| `identity-link` | `machine` | Open: mutable, but the enrollment flow owns its transitions and they are unspecified. |
+| `interactive-shell` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `invite-code` | `api` | Private-beta admission under D-180. The invitee is told whether it worked, not its state. |
+| `lineage-fork-case` | `api` | D-072 fork and clone resolution under D-383; quarantine is read through evidence class. |
+| `local-auth` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `local-collection` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `local-connectivity` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `local-deletion-command` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `local-permission` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `local-sync` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `native-session-family` | `api` | Families are server-internal; a client sees only its own session member. |
+| `oauth-transaction` | `api` | OAuthCompletion.state echoes the terminal value only; see TRANSIENT_API_ENUMS. |
+| `presence-lease` | `api` | PresenceLease.availability is a declared coarser projection; see PROJECTIONS. |
+| `privileged-supervisor` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `ranking-projection` | `api` | Generation build state is operational; a client sees a sealed generation or none. |
+| `recovery-case` | `api` | Account recovery under D-380. No operation exposes the case. |
+| `release-trust` | `api` | Local-only; trust in a release is evaluated on the device against TUF metadata. |
+| `rivalry` | `api` | The API exposes the edge, not the machine; the viewer's own side is derived. |
+| `session-member` | `machine` | Member rows of a token family; the family machines own the transitions. |
+| `source-certification` | `api` | D-387. Certification is server-assigned; exposing it would let a client select it. |
+| `update-lifecycle` | `api` | Local-only; the server is never told what a device has installed. |
+| `web-session-family` | `api` | Families are server-internal; a client sees only its own session member. |
 
 ### Open items
 
