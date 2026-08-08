@@ -969,9 +969,9 @@
     },
     {
       "id": "D-241",
-      "decision": "Six load scenarios are specified with derived loads and readable pass conditions: beta-steady at the 20 requests per second that 200 participants generate, beta-peak at ten times that, offline-drain with 50 devices each carrying a 24-hour backlog, leaderboard-thunder with 2000 anonymous readers arriving inside a minute, ratelimit-breach with one principal at ten times its class limit alongside steady load, and a 12-hour soak. They run before each beta ring expansion and before public launch rather than per pull request, against a ci-provisioned ephemeral stack. k6 is the runner, and its AGPL-3.0 licence is acceptable because it is invoked as a separate process and is never linked into or distributed with a product artifact. These scenarios say nothing about the 100,000 ranked-identity scale target and passing them may never be cited as evidence for it; D-094 owns that conflict, and a scenario set at that scale is deliberately unspecified because there is no budget line to run one",
+      "decision": "Six load scenarios are specified with derived loads and readable pass conditions: beta-steady at the 20 requests per second that 200 participants generate, beta-peak at ten times that, offline-drain with 50 devices each carrying a 24-hour backlog, leaderboard-thunder with 2000 anonymous readers arriving inside a minute, ratelimit-breach with one principal at ten times its class limit alongside steady load, and a 12-hour soak. They run before each beta ring expansion and before public launch rather than per pull request, against a ci-provisioned ephemeral stack. k6 is the runner, and its AGPL-3.0 licence is acceptable because it is invoked as a separate process and is never linked into or distributed with a product artifact. These scenarios say nothing about the 100,000 ranked-identity scale target and passing them may never be cited as evidence for it; D-360 resolved the ceiling that conflict rested on, and a scenario set at that scale is deliberately unspecified because there is no budget line to run one",
       "status": "accepted",
-      "validation_or_reopen": "the participant population moves materially off 200, or D-094 resolves and a funded scale test becomes possible"
+      "validation_or_reopen": "the participant population moves materially off 200, or a funded scale test becomes possible"
     },
     {
       "id": "D-242",
@@ -981,7 +981,7 @@
     },
     {
       "id": "D-243",
-      "decision": "The seven proposed service level objectives are restated rather than retained. Four commitments remain, each met by a mechanism that runs whether or not anyone is awake: zero forbidden content across the device boundary, a 100% deterministic duplicate and replay fixture pass every release, accepted claims never silently altered, and evidence status assigned only by the server verifier. Everything else becomes an observation with a review trigger and no response time: monthly availability reviewed below 99.0% rather than committed at 99.9%, ingestion p95 above 1000 ms, leaderboard p95 above 600 ms, freshness above 300 seconds, backup age above 26 hours, and monthly spend above 80 USD. Alerts have three classes, immediate, daily-digest and ticket, with no pager, no rotation and no acknowledgement requirement, and each immediate condition has one containment action executable from a phone. The recovery position is stated honestly: at a daily snapshot the recovery point objective is 24 hours, at which the operations contract's no-loss line does not hold, and D-094 owns that conflict unresolved",
+      "decision": "The seven proposed service level objectives are restated rather than retained. Four commitments remain, each met by a mechanism that runs whether or not anyone is awake: zero forbidden content across the device boundary, a 100% deterministic duplicate and replay fixture pass every release, accepted claims never silently altered, and evidence status assigned only by the server verifier. Everything else becomes an observation with a review trigger and no response time: monthly availability reviewed below 99.0% rather than committed at 99.9%, ingestion p95 above 1000 ms, leaderboard p95 above 600 ms, freshness above 300 seconds, backup age above 26 hours, and monthly spend above 80 USD. Alerts have three classes, immediate, daily-digest and ticket, with no pager, no rotation and no acknowledgement requirement, and each immediate condition has one containment action executable from a phone. The recovery position is stated honestly: at a daily snapshot the recovery point objective is 24 hours, at which the operations contract's no-loss line does not hold, and D-360 resolved the ceiling that conflict rested on",
       "status": "accepted",
       "validation_or_reopen": "a paid tier, a second maintainer or an external obligation creates a real availability commitment, which is the same reopen condition as D-092"
     },
@@ -1204,92 +1204,92 @@
     {
       "id": "D-320",
       "decision": "Account recovery is an aggregate with a cooling-off window enforced by a check constraint. The `recovery-case` machine, the `recovery_cases` table and `packages/schemas/recovery-case-v1.schema.json` are its lifecycle, persistence and record. A case verifies a locally-held factor — a recovery code, an optional authenticator or an enrolled device — and never a provider, because under D-100 no provider exposes an individual-account attestation that could be one. Opening a case notifies every live session immediately and the participant who still holds access cancels it, which is the whole reason the window exists; applying before `cooling_off_ends_at` is unrepresentable rather than discouraged, and an applied case that did not revoke every session family and quarantine every enrolled device cannot be written. A live-case partial unique index stops an attacker opening a second case to outlast the notice on the first. The count of notified sessions is recorded and the list is not, because a list of the victim's devices on a case the attacker can reach is a map",
-      "status": "accepted",
-      "validation_or_reopen": "a measured rate of legitimate participants locked out for the length of the window, which moves the window rather than removing the constraint that enforces it"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-380, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-321",
       "decision": "An integrity investigation is a separate aggregate from the ranked identity it investigates, with its own `identity-investigation` machine and its own `identity_investigations` persistence. It is `integrity-private`: the participant reads the effect on their standing and is never told a case is open, for the same reason the `ranked-identity-eligibility` machine already marks four of its states internal. Concluding a case never reverses anything by itself — a reversal is an `appeals` outcome that moves the identity — which is why the machine has no `reversed` state and why its terminal states are all conclusions. There is deliberately no statistical trigger: D-053 keeps small-language-model and statistical detection local, advisory and post-launch, so nothing statistical can open a server-side case. A partial unique index permits one open case per identity, because two open cases are two operators reaching two conclusions about one subject",
-      "status": "accepted",
-      "validation_or_reopen": "a deterministic control appears that genuinely needs a second concurrent case, which would need the conflict between two conclusions resolved first"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-381, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-322",
       "decision": "D-070 consolidation is a case plus a set of claim-level contributions and never a pair of totals. `consolidation_cases` holds the survivor, the absorbed identity and the lifecycle; `consolidation_contributions` holds one row per considered claim with its original period attribution, its raw `token_burn_total` and a disposition; `packages/schemas/consolidation-plan-v1.schema.json` is the record, and its result object deliberately has no combined-total field, which `scripts/repository/validate_planning_artifacts.py` enforces by refusing the name. A duplicate domain commitment is unique inside a case, so an overlapping contribution counts once under D-269, and an excluded claim is recorded with why rather than omitted. `applied` is not terminal: a successful appeal reaches `reversed`, which appends inverse contributions under D-263 rather than editing an accepted claim, and does not un-retire the absorbed identity, because its account may have been deleted in the interval and resurrecting it is exactly what D-085 forbids",
-      "status": "accepted",
-      "validation_or_reopen": "a consolidation class appears that cannot be expressed as a set of claim-level contributions, which would need a new arithmetic rather than a summed total"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-382, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-323",
       "decision": "D-072 fork and clone resolution is an aggregate with an explicit branch set. `lineage_fork_cases` carries the fork generation, the survivor and the resumed generation; `lineage_fork_branches` carries every branch including the quarantined ones, because a resolution that recorded only the survivor could not explain what it quarantined and the resolution is appealable. Two rules are constraints rather than worker discipline: a resumed generation is strictly greater than the fork generation, so a resolution cannot replay the fork it resolved, and one survivor exists per case. Quarantined claims are held rather than deleted, for the same reason. `unresolved` is not terminal, because a denied appeal returns the case to it and a later appeal is still possible",
-      "status": "accepted",
-      "validation_or_reopen": "cryptographic or recovery evidence requires a safer fork-resolution protocol, which is the D-072 reopen condition"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-383, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-324",
       "decision": "Local device persistence has an executable contract, `packages/schemas/local-store-v1.sql`, separate from `packages/schemas/planning-schema.sql` because one is SQLite on the participant's machine and the other is PostgreSQL on the server, and a single file would invite one to be read as the other. It carries the four properties the inventory recorded as missing: page encryption under an operating-system keystore with no key column anywhere in the schema, a commitment written before a claim is offered so a crash between the two loses nothing, write-ahead logging with full synchronous durability and a single writer, and a per-device deletion receipt that records residual risk rather than asserting a forensic erase. No column holds a prompt, a response, a transcript, code, a filename, a path, a project or repository name, or a content-derived hash, and nothing in it is transmissible: only the fixed-schema aggregate claim crosses the boundary, so the evidence bundle it holds is an at-rest record under D-266",
-      "status": "accepted",
-      "validation_or_reopen": "the first native crate lands and measures a durability or contention cost the contract's settings cannot meet, which is a benchmark result rather than an argument"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-384, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-325",
       "decision": "Two presence policy keys are misnamed and the binding is stated rather than the keys renamed. `presence_lease_expiry_seconds` holds 90 and is the D-073 idle threshold; `presence_idle_after_seconds` holds 300 and is the D-073 offline threshold; only `presence_heartbeat_seconds` says what it does. The names are not corrected because `scripts/repository/validate_planning_artifacts.py` requires those exact spellings and three other artifacts cite them, so a rename is a wider edit than the defect justifies today. What closes the ambiguity instead is `packages/schemas/presence-pulse-v1.schema.json`, which binds each threshold to its key by `const` and whose validator asserts the resolved values are 30, 90 and 300, so a future edit that changes a value without changing the meaning fails. The pulse record itself is not a presence history: ADR-019 accepts a live-sampling risk on the stated basis that none is stored, so `presence_events` keeps `no-retention` and rows are discarded when their lease generation closes",
-      "status": "accepted",
-      "validation_or_reopen": "the keys are renamed by the track that owns the policy registry, at which point the `const` bindings follow and this row is superseded"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-385, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-333",
       "decision": "The privacy and evidence disclosure projection is a record rather than the difference between two response shapes. `packages/schemas/disclosure-projection-v1.json` classifies every property of seven API schemas by audience — `self`, `authorized-viewer`, `public` — and by whether it is observed, derived, server-assigned or non-personal, which is the WP242 rev.01 line D-108 uses to decide Article 20 portability. The validator resolves every field against `packages/schemas/openapi-v1.yaml` and fails when one is missing, when one is unclassified, or when a field is narrower than the shape carrying it. That last rule is the substantive one: a narrower field on a wider shape is a per-response redaction, and a redaction that fails open publishes the field, so narrowing is expressed by a separate shape — which is what `SelfRankEntry` is for. `token_burn_total` and the three ADR-020 weight numbers are pinned to `self` by name, so D-144 is a check rather than a convention. This completes the PF-046 record D-226 recorded as unauthored",
-      "status": "accepted",
-      "validation_or_reopen": "a response shape needs a viewer-by-viewer rule that a per-shape audience cannot express, which would be a new mechanism and not a wider audience value"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-393, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-334",
       "decision": "The eight exceptional surface states are enumerated and each one is derived from something named. `packages/schemas/ui-state-projection-v1.json` holds them: `loading`, `empty` and `stale` are client-local and derived from nothing the server sends; `blocked` and `private` resolve to inputs of the current-viewer-authorization profile; `retracted`, `appeal` and `recovery` resolve to registered machines and to states those machines declare, which the validator checks. Two disclosure rules are carried as data. `blocked` and `private` are both `indistinguishable-from-absent`, because two distinguishable refusals let a viewer determine which one applies and one of them is a fact about a relationship the other party did not disclose. `empty` is deliberately not distinguishable from a page every entry of which the viewer is unauthorized to see, since a count of what was filtered discloses what was filtered. `appeal` omits `screening` because the binding table marks it internal: an automated pre-review pass is not a decision and gives the appellant nothing to act on",
-      "status": "accepted",
-      "validation_or_reopen": "a ninth exceptional state is found that a surface must render, which extends the enumeration rather than being folded into a neighbour"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-394, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-330",
       "decision": "TUF trust has a published role policy and a persisted client state, which is the half SR-014 records as missing. `packages/schemas/tuf-trust-v1.schema.json` carries both and `tuf_metadata` is the client state's persistence owner, keyed on device and role with one row per pair. The security properties of the protocol are client-side, so what is persisted is the client's own view: the trusted version, its digest, the version and digest it replaced, the signature count and the threshold. Three refusals are named attacks rather than error conditions — older-than-trusted is rollback, past-expiry is freeze, below-threshold is key compromise — and a check constraint makes a row recording fewer signatures than its threshold unrepresentable. Root and targets keys are offline and the schema refuses to say otherwise. The four expiry cadences D-239 fixes now exist as policy keys, so the numbers resolve rather than sitting in prose. Two limits are recorded: D-091 makes a root threshold above one unsatisfiable with a single maintainer, and no reason code exists for a local refusal because the registry's three transports are all server-side and registering one under a transport it does not use would be worse than leaving the column unpopulated",
-      "status": "accepted",
-      "validation_or_reopen": "a second maintainer makes a real threshold possible, or a local-refusal transport is added to the reason registry, either of which fills a gap this row records rather than hides"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-390, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-331",
       "decision": "Compatibility is a graph over six interfaces that version independently — VibeProof protocol, HTTP API, local IPC, local storage, server schema and platform profile — and not one number. A client can be current on the API and behind on the IPC contract in the same moment, and the answer to whether it may run differs per interface. `compatibility_edges` is the persistence owner and `packages/schemas/compatibility-graph-v1.schema.json` is the record. Ranges are closed on the left and open on the right, so an empty range is unrepresentable rather than merely unlikely. `breaking` is recorded and never derived, because D-234 makes adding a member to a closed state vocabulary a major-version change and no arithmetic over two version numbers can see that. A sunset without a deprecation notice is refused unless it names one of the three D-234 carve-outs, which turns the 180-day window from a stated intention into a constraint",
-      "status": "accepted",
-      "validation_or_reopen": "a seventh interface starts versioning independently, which extends the enumeration rather than collapsing it"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-391, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-332",
       "decision": "A migration carries a rollback class, and the class is not inferred from whether a down section exists. `storage_migrations` is the persistence owner and `packages/schemas/migration-chain-v1.schema.json` is the record. Three classes: `binary-reversible`, where the previous binary reads and writes the post-migration shape so a rollback is a binary swap; `forward-only`, where it does not, so recovery is roll-forward or restoration of a verified pre-migration snapshot; and `snapshot-required`, which is forward-only plus a recorded snapshot digest that a check constraint requires. `down_sql_present` is a separate column because D-097 requires every goose migration to carry a down section and a present down section is not reversibility — dropping a column back is syntactically valid and loses everything written into it. Conflating the two is how a forward-only migration acquires a rollback plan nobody tested, and it is the failure mode D-074 exists to prevent. A forward-only step names the operations that made it one, so the judgement can be re-examined rather than trusted",
-      "status": "accepted",
-      "validation_or_reopen": "implementation evidence proves a safer equivalent recovery mechanism, which is the D-074 reopen condition"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-392, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-327",
       "decision": "The atomic compatibility tuple has a schema, `packages/schemas/compatibility-tuple-v1.schema.json`, and a digest computed the way D-261 computes every other planning policy digest. Six dimensions make it atomic: the collector artifact by SHA-256 under D-058, the source product with a bounded version range, the observation mode, the platform profile, the accounting profile and arithmetic by digest, and the privacy binding by digest. An open-ended upper version bound is refused, because certifying software that does not exist yet is not certification. The privacy binding is inside the tuple rather than beside it, because a certification is a statement about a boundary as much as about an arithmetic and a changed strip list is a different tuple under D-099. The observation-mode vocabulary is the nine values `packages/schemas/observer-equivalence-v1.json` already declares, in that spelling, rather than a second list — a first draft of this schema invented six of its own and that is the duplication SR-009 exists to remove",
-      "status": "accepted",
-      "validation_or_reopen": "a dimension appears whose change does not require recertification, which would move it out of the tuple rather than widen the tuple's meaning"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-387, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-328",
       "decision": "Certification has a lifecycle, a signed result and a revocation path, and the registry cannot advertise a tuple it has not exercised. The `source-certification` machine carries `candidate`, `testing`, `active`, `degraded`, `suspended`, `expired`, `superseded` and `retired`; `source_certifications` is its persistence owner and `certification_results` holds the append-only signed bundles. It is named `source-certification` and not `certification` because `platform-certification` already exists and certifies an operating-system profile, which is a different subject. Two rules are check constraints rather than registry discipline: any state other than `active` is pinned to a `private-analytics` ceiling, in the schema as well as in the DDL, so an expired or suspended tuple cannot sit beside a hardened ceiling even by mistake; and a passing result with zero negative cases is unrepresentable, because a suite that has never failed carries no information about the thing it passed. Every certification reachable from this repository today is `candidate`",
-      "status": "accepted",
-      "validation_or_reopen": "a certification class appears that genuinely needs a ninth state, or an evidence ceiling is shown to be safe outside the active state"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-388, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-329",
       "decision": "A platform installation plan is a typed, ordered sequence of named operating-system operations rather than a script or a generic lifecycle verb. `platform_install_plans` and `platform_install_operations` are the persistence owners and `packages/schemas/install-plan-v1.schema.json` is the record. Ten operations and eight reversals are enumerated; each operation names the reversal a rollback runs or declares it has none, because a rollback that discovers the answer at run time is D-074's failure mode rather than its contract. `verify-release-signature` is fixed at sequence 1 by the schema and by nothing softer, so no plan can place a filesystem write before the check that decides whether the release is genuine. Each operation names its exact mechanism — `launchd-user`, `systemd-system`, `windows-service` — because D-013 forbids claiming equal strength across platforms and an unnamed mechanism is that claim by omission. A plan containing `register-privileged-supervisor` carries `requires_privileged_consent`, since D-067 makes machine-wide supervision separately consented",
-      "status": "accepted",
-      "validation_or_reopen": "a platform requires an operation the enumeration cannot express, which extends the list rather than admitting a script"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-389, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-326",
       "decision": "Current viewer authorization is a rule with named inputs, named surfaces and a fixed evaluation order, held by `packages/schemas/projection-authorization-v1.json`. Nine inputs each name the table they read and the column that changes when they change; the validator fails when either does not resolve. Deny inputs are evaluated before widen inputs, so a widen can never overtake a deny by arriving first, which two orders would otherwise decide differently for a viewer who is both a friend and blocked. No authorization result is cached anywhere, because a cached decision is the SR-015 defect rather than an optimisation of it. A race is resolved by rechecking the revisions that were read against the revisions present when the response is emitted and failing closed, because a participant who pressed block is entitled to assume it took effect and a retry costs one request. `blocks` gains an `established_at` column, since the existence of a row detects a change and cannot order two. Notification delivery rechecks at delivery time rather than creation time, which is the case SR-015 names most directly; the sealed export package is the single snapshot-time exception, and it is one because the subject and the viewer are the same person",
-      "status": "accepted",
-      "validation_or_reopen": "a surface is found that cannot recheck at read or delivery time, which would need its own decision rather than a second cache policy"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-386, which carries byte-identical text and is the copy every artifact cites; reopened only if the two are found to differ"
     },
     {
       "id": "D-380",
@@ -1746,6 +1746,12 @@
       "decision": "The decision register and task catalog are generated from `conformance/planning/decisions-v1.json` and `tasks-v1.json`; the Markdown is output. Both documents were the source, and every planning gate in them was reached by substring matching, which is why the phase gate could once only be moved by editing its own validator. Generating them found a defect the row-matching validator could not: `## Register rules` sat between the D-144 and D-180 rows, so the table ended at D-144 in Markdown terms and the remaining 146 rows followed a heading with no table header. `validate_decision_register` read all 290 regardless because it matches rows rather than parsing a table. The rules are now preamble and the table is contiguous. Statuses and the step-status vocabulary are constrained by schema rather than by the prose line the register carried about itself",
       "status": "accepted",
       "validation_or_reopen": "a generated document needs prose interleaved with its rows, which would mean the block model is wrong rather than the source"
+    },
+    {
+      "id": "D-609",
+      "decision": "Decision-to-implementation traceability covers the whole register and is owned by the P-1140F track. P-1140E froze its matrix at D-001..D-069 and delegated the rest to a validator that never references a `D-` identifier, so 222 of 291 decisions had no row at all — the uncovered tail was three times the covered head. Widening `range(1, 70)` would make a closed program's evidence set mutable, so `conformance/planning/decision-traceability-v1.json` is a second matrix rather than an expansion of the first, and the shards under `docs/planning/decision-traceability/` are generated from it. A decision that governs the planning program rather than the product records `implementation_bearing: false` with a reason, because an absent row and a deliberately excluded one are otherwise indistinguishable; an implementation-bearing decision no unit owns records `unassigned` with an `owner_gap_reason`, so the gap is counted rather than filled with a plausible name. Building it found that D-320 through D-334 are byte-identical to D-380 through D-394 with no supersedes marker on either copy, and that the 320-series is cited by nothing while the 380-series is cited across the repository, so the 320-series is marked superseded",
+      "status": "accepted",
+      "validation_or_reopen": "an owner gap closes and its row names a real unit, or a decision is added that the coverage check refuses because it has no row"
     }
   ]
 }

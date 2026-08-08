@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 204 |
+| `not-started` | 203 |
 | `in-progress` | 13 |
-| `landed` | 37 |
+| `landed` | 38 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 115 assertions across 37 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 120 assertions across 38 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 22.
+Startable now — not done, and every dependency done: 21.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-063`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `OS-001`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -99,7 +99,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 | 7 | 1 | `PF-035` |
 | 8 | 1 | `PF-036` |
 
-Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 196 of 260. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -991,11 +991,20 @@ Reading the register against itself found what the sparse numbering was hiding. 
 Make JSON the source and generate the Markdown, so prose can no longer drift from state and validators can assert on structure. `validate_work_unit_status.py` is the smaller precedent for exactly this shape: JSON-free, but the derived block in the work breakdown is generated and drift fails the build. This unit is what lets PF-063 assert on the whole register.
 
 ### PF-063 — Complete decision traceability coverage
-Files: `scripts/repository/validate_p1140e_contracts.py`, `docs/planning/decision-traceability/`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
-Acceptance: every accepted implementation-bearing decision has a traceability row with an implementation owner, machine or state ownership, platform scope, and executable evidence requirement; the traceability validator covers the whole register rather than a frozen prefix of it.
+Files: `conformance/planning/decision-traceability-v1.json` (new), `conformance/planning/decision-traceability-v1.schema.json` (new), `scripts/repository/generate_planning_docs.py`, `scripts/repository/validate_planning_artifacts.py`, `docs/planning/decision-traceability/`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `docs/project/DOCUMENTATION.md`
+Acceptance: every accepted implementation-bearing decision has a traceability row with an implementation owner, machine or state ownership, platform scope, and executable evidence requirement; the traceability validator covers the whole register rather than a frozen prefix of it, so a decision added without a row fails the build.
 Depends: PF-062
 Est: 4-6
-Status: not-started
+Status: landed
+Evidence: exists conformance/planning/decision-traceability-v1.json
+Evidence: exists conformance/planning/decision-traceability-v1.schema.json
+Evidence: validator scripts/repository/generate_planning_docs.py --check
+Evidence: contains 1 scripts/repository/validate_planning_artifacts.py :: def validate_decision_traceability
+Evidence: absent docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md :: D-094
+
+The `Files:` line named three paths and the estimate said 4-6 hours, both written when the uncovered tail was assumed small. It was 222 of 291 decisions — three times the covered head, not the "69 traced and 63 not" the prose below described.
+
+`validate_p1140e_contracts.py` is deliberately **not** in the repair. Widening its `range(1, 70)` would make a closed program's evidence set mutable, which the prose below already argues against; coverage of the whole register is a second matrix owned by the P-1140F track, exactly as that paragraph says. Naming the P-1140E validator in `Files:` contradicted the unit's own reasoning.
 
 Reference resolution itself is closed. `scripts/repository/validate_cross_references.py` resolves every decision, finding, ADR, program, work-unit, path, `$ref`, and `operationId` citation in the repository and exits non-zero on any that dangles; `tests/ci/test_cross_references.py` proves it fires per class. The 128 dangling work-unit citations that motivated this unit — a superseded two-digit numbering across 72 identifiers, including the `I-`, `PL-` and `U-` prefixes that never existed in the breakdown, and `D-01` through `D-10` used as work-unit identifiers in the same files where `D-001` onward are decisions — were deleted rather than remapped, because no unit they named survives.
 
