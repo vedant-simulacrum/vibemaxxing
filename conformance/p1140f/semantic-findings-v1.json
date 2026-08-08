@@ -281,7 +281,7 @@
       ],
       "conflicting_artifacts": [
         "conformance/p1140f/REPAIR_HEAD_REVIEW.md#e1320a6730a62a7345ad44d149a9344d3d17c1c9",
-        "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md#41ecb77856991ee033afcfe52d24eb42cd6ecb47",
+        "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md#41ecb77856991ee033afcfe52d24eb42cd6ecb47",
         "evals/suites/suites.yaml#ranking-accounting",
         "packages/schemas/state-machine-registry-v1.json"
       ],

@@ -13,7 +13,7 @@ The P-1140E validator found no remaining P0/P1 contradiction within the reposito
 
 This result does **not** establish that the underlying OAuth, identity, protocol, replay, SQL, ranking, social, platform, release, privacy, or anti-cheat contracts are semantically correct, standards-conformant, secure, implementable, or independently reviewed. It does not make the implementation handoff active and it does not satisfy P-1104.
 
-The separate semantic-readiness gate is `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`.
+The separate semantic-readiness gate is `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`.
 
 ## Structural review matrix
 

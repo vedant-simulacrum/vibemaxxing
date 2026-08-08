@@ -70,7 +70,7 @@ REQUIRED = [
     "docs/planning/TASK_CATALOG.md",
     "docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md",
     "docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md",
-    "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md",
+    "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md",
     "docs/implementation/IMPLEMENTATION_HANDOFF.md",
     "docs/implementation/PR_SIZED_WORK_BREAKDOWN.md",
     "conformance/p1140f/semantic-findings-v1.schema.json",

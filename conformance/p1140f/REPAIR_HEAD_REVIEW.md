@@ -22,7 +22,7 @@ This record captures the repaired planning-contract head. It is not a security c
 
 1. GitHub Actions `Planning checks` passes on this exact commit, including PostgreSQL DDL validation.
 2. An independent semantic reviewer confirms the four repairs satisfy the P-1140F criteria and finds no semantic P0/P1.
-3. Only then may `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md` transition to `complete-planning`; P-1104 remains a separate explicit user decision.
+3. Only then may `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md` transition to `complete-planning`; P-1104 remains a separate explicit user decision.
 
 ## Reviewer verdict template
 

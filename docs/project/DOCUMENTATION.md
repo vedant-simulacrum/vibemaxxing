@@ -12,7 +12,7 @@ This is the sole canonical documentation map. Do not create competing indexes, m
 6. `docs/planning/TASK_CATALOG.md`
 7. `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
 8. `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`
-9. `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`
+9. `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`
 10. relevant ADRs, normative contracts, schemas, registries and fixtures
 11. `docs/implementation/IMPLEMENTATION_HANDOFF.md` and `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md` only for planning future work or after explicit P-1104 authorization
 
@@ -38,7 +38,7 @@ The technical-specification completeness authority is `docs/planning/SCHEMA_AND_
 - Task and gate state: `docs/planning/TASK_CATALOG.md`
 - Technical-specification inventory: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
 - Structural review: `docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`
-- Semantic review: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`
+- Semantic review: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`
 - Scope/product: `docs/planning/PRODUCT_SCOPE_FREEZE.md`, `docs/product/PRODUCT_SPEC.md`
 - Accounting/time/pricing: `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
 - Adapter stages and VibeProof boundary: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
@@ -102,7 +102,7 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 | Directory | Role | Files |
 |---|---|---|
 | `project/` | **Top authority.** Product, phase, and this map | `PROJECT.md`, `STATUS.md`, `DOCUMENTATION.md` |
-| `planning/` | Decisions, gates, scope, policy | `DECISION_REGISTER.md`, `TASK_CATALOG.md`, `SCHEMA_AND_INTERFACE_INVENTORY.md`, `ARTIFACT_POLICY.md`, `PRODUCT_SCOPE_FREEZE.md`, `REPOSITORY_OPERATIONS.md`, `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`, `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md`, `SR_SEVERITY_REGRADING_PROPOSAL.md` (proposal, no authority), `CROSS_PLATFORM_COMPLETENESS_AUDIT.md`, `ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, `decision-traceability/` (`D-001-D-020.md`, `D-021-D-040.md`, `D-041-D-061.md`, `D-062-D-069.md`, `README.md`) |
+| `planning/` | Decisions, gates, scope, policy | `DECISION_REGISTER.md`, `TASK_CATALOG.md`, `SCHEMA_AND_INTERFACE_INVENTORY.md`, `ARTIFACT_POLICY.md`, `PRODUCT_SCOPE_FREEZE.md`, `REPOSITORY_OPERATIONS.md`, `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`, `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`, `SR_SEVERITY_REGRADING_PROPOSAL.md` (proposal, no authority), `CROSS_PLATFORM_COMPLETENESS_AUDIT.md`, `ANTI_CHEAT_IMPLEMENTATION_PLAN.md`, `decision-traceability/` (`D-001-D-020.md`, `D-021-D-040.md`, `D-041-D-061.md`, `D-062-D-069.md`, `README.md`) |
 | `decisions/` | Accepted ADRs | `ADR-001` … `ADR-022` |
 | `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `API_EDGE_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
 | `decisions/` | Accepted ADRs | `ADR-001` … `ADR-022` |
@@ -165,7 +165,7 @@ Seven documents were added for surfaces an audit found either entirely absent fr
 
 Known duplication that genuinely remains, recorded rather than silently carried. Each cluster needs a single owner chosen and the rest merged or marked:
 
-- Anti-cheat material spans `research/ANTI_CHEAT_SYSTEMS_RESEARCH_2026-07-23.md`, `planning/ANTI_CHEAT_IMPLEMENTATION_PLAN_2026-07-23.md`, `security/ANTI_CHEAT_ATTACK_CATALOG.md`, `security/ANTI_CHEAT_RESEARCH_PROGRAM.md`, and `security/ADVERSARIAL_TABLETOPS.md`.
+- Anti-cheat material spans `research/ANTI_CHEAT_SYSTEMS_RESEARCH_2026-07-23.md`, `planning/ANTI_CHEAT_IMPLEMENTATION_PLAN.md`, `security/ANTI_CHEAT_ATTACK_CATALOG.md`, `security/ANTI_CHEAT_RESEARCH_PROGRAM.md`, and `security/ADVERSARIAL_TABLETOPS.md`.
 - `style-guide/COMPONENT_INVENTORY.md` records an unresolved naming overlap between the proposed generic `Notice`/`Dialog` and the implemented `ProductNotice`/`ProductDialog`. An owner must decide whether these are one concept or two.
 - `style-guide/UI_FOUNDATIONS.md` §17 records the token, radius, type-scale, motion and logo values on which the retired `design.md` disagreed with `BRAND.md`. The approved column governs; the disagreement is kept visible rather than deleted.
 

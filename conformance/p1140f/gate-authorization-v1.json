@@ -16,7 +16,7 @@
   "registry_summary_documents": [
     "docs/project/STATUS.md",
     "docs/planning/TASK_CATALOG.md",
-    "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md"
+    "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md"
   ],
   "open_p1_claim_patterns": [
     "([0-9]+) active P1 clusters",
@@ -56,7 +56,7 @@
           "forbids": []
         },
         {
-          "path": "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md",
+          "path": "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md",
           "requires": ["SR-005", "SR-017", "in-progress-planning"],
           "forbids": []
         },
@@ -118,7 +118,7 @@
           "forbids": ["| P-1104 | Enter implementation phase | blocked-approval |"]
         },
         {
-          "path": "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING_2026-07-24.md",
+          "path": "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md",
           "requires": ["P-1104: authorized-open", "gate-authorization-v1.json"],
           "forbids": ["P-1104: blocked", "product implementation: unauthorized"]
         },
