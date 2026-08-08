@@ -623,12 +623,6 @@ SQL_LOCAL_VOCABULARIES: dict[str, tuple[str, ...]] = {
     ),
     "verifier_appraisals.continuity_state": ("continuous", "gap-declared", "broken"),
     "verifier_appraisals.integrity_state": ("verified", "degraded", "failed"),
-    "device_sequences.continuity_state": (
-        "continuous",
-        "gap-declared",
-        "broken",
-        "revoked",
-    ),
     "device_lineages.continuity_state": (
         "continuous",
         "gap-declared",
