@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/local-trust-domains-v1.schema.json",
+  "title": "Local trust domains",
+  "description": "Every local role, with the identity the operating system can actually verify over a connected peer. A role absent from this file has no declared capability, and a capability nothing declares is one nothing can refuse.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_id",
+    "normative_owner",
+    "supporting_authorities",
+    "note",
+    "data_classes",
+    "roles"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "profile_id": {
+      "const": "local-trust-domains-v1"
+    },
+    "normative_owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "supporting_authorities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "note": {
+      "type": "string",
+      "minLength": 40
+    },
+    "data_classes": {
+      "description": "Each class carries a sentence saying what it is, so a capability list is readable without a second document.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 20
+      }
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role_id",
+          "executable",
+          "os_peer_identity",
+          "session_boundary",
+          "privilege",
+          "network",
+          "state_machine",
+          "capabilities",
+          "may_read",
+          "may_write",
+          "forbidden"
+        ],
+        "properties": {
+          "role_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "executable": {
+            "type": "string",
+            "minLength": 1
+          },
+          "os_peer_identity": {
+            "description": "How each platform identifies the peer on the other end of a local channel. Named per platform because the mechanisms are not interchangeable and a single prose sentence would hide that.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "macos",
+              "windows",
+              "linux"
+            ],
+            "properties": {
+              "macos": {
+                "type": "string",
+                "minLength": 20
+              },
+              "windows": {
+                "type": "string",
+                "minLength": 20
+              },
+              "linux": {
+                "type": "string",
+                "minLength": 20
+              }
+            }
+          },
+          "session_boundary": {
+            "enum": [
+              "per-user",
+              "per-invocation",
+              "system-wide"
+            ]
+          },
+          "privilege": {
+            "enum": [
+              "unprivileged",
+              "privileged"
+            ]
+          },
+          "state_machine": {
+            "description": "The registry machine owning this role's lifecycle, or null when the role has no persisted lifecycle of its own.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "capabilities": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 5
+            }
+          },
+          "may_read": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "may_write": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "forbidden": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 3
+            }
+          },
+          "note": {
+            "type": "string",
+            "minLength": 20
+          },
+          "network": {
+            "description": "Declared rather than inferred. An earlier version of the check read network capability out of the prose capability list, and 'read allowlisted adapter sources' matched on the word allowlist \u2014 a source allowlist read as a network one. A capability the privacy boundary depends on is not something to substring-match.",
+            "enum": [
+              "none",
+              "egress-allowlist",
+              "login-and-update",
+              "hosted-dashboard-and-login",
+              "update-endpoints"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

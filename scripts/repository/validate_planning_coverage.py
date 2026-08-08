@@ -6,6 +6,7 @@ covered surface is implemented, correct, or launch-ready.
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -68,6 +69,76 @@ REPAIR_TARGETS = {
 }
 
 
+# The eight local roles. `docs/architecture/NATIVE_CLIENT_AND_DAEMON.md` names the
+# product's processes in prose and PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md tabulated six
+# of them, omitting the interactive shell and the privileged supervisor — the only
+# role that takes arbitrary operator input and the only one that runs elevated. A role
+# with no declared capability is one nothing can refuse.
+LOCAL_TRUST_ROLES = (
+    "vibemaxxing-daemon",
+    "vibeproof-collector",
+    "vibeproof-sync",
+    "vibemaxxing-cli",
+    "vibemaxxing-desktop-shell",
+    "vibemaxxing-shell",
+    "updater-helper",
+    "privileged-supervisor",
+)
+
+# The separation the product's privacy claim rests on. AGENTS.md forbids transcript
+# content crossing the device boundary; that holds only if no single process can both
+# read content and reach the network. Each role declares `network` explicitly, because
+# the first version of this check inferred it from the prose capability list and
+# "read allowlisted adapter sources" matched on the word allowlist — a source allowlist
+# read as a network one, failing the committed state. A capability the privacy boundary
+# depends on is not something to substring-match.
+CONTENT_CLASS = "transcript-content"
+NO_NETWORK = "none"
+
+
+def check_local_trust_domains(errors: list[str]) -> None:
+    profile = json.loads(
+        (SCHEMAS / "local-trust-domains-v1.json").read_text(encoding="utf-8")
+    )
+    roles = {role["role_id"]: role for role in profile["roles"]}
+
+    for role_id in LOCAL_TRUST_ROLES:
+        if role_id not in roles:
+            errors.append(
+                f"local trust domain missing for {role_id}: it holds capabilities no "
+                "file declares, so nothing can refuse them"
+            )
+    for role_id in sorted(set(roles) - set(LOCAL_TRUST_ROLES)):
+        errors.append(
+            f"local trust domain declares {role_id}, which is not a named local role"
+        )
+    if len(roles) != len(profile["roles"]):
+        errors.append("a local role is declared more than once")
+
+    declared = set(profile["data_classes"])
+    for role_id, role in sorted(roles.items()):
+        for data_class in role["may_read"] + role["may_write"]:
+            if data_class not in declared:
+                errors.append(
+                    f"{role_id} names data class {data_class!r}, which "
+                    "local-trust-domains-v1.json does not define"
+                )
+        reads_content = CONTENT_CLASS in role["may_read"]
+        if reads_content and role["network"] != NO_NETWORK:
+            errors.append(
+                f"{role_id} may read {CONTENT_CLASS} and holds a network capability. "
+                "The privacy boundary is the separation of those two, not a promise "
+                "about what the process chooses to send"
+            )
+
+    readers = [r for r, role in roles.items() if CONTENT_CLASS in role["may_read"]]
+    if readers != ["vibeproof-collector"]:
+        errors.append(
+            f"{CONTENT_CLASS} is readable by {readers}; exactly one role may read it "
+            "and it is the collector, which has no network capability at all"
+        )
+
+
 def fail(messages: list[str]) -> None:
     if messages:
         print("planning coverage: FAIL", file=sys.stderr)
@@ -125,6 +196,8 @@ def main() -> None:
     if "board_one_active_owner" not in sql or "check (account_id_a < account_id_b)" not in sql:
         errors.append("repaired social SQL lacks canonical pair or single-owner constraints")
 
+    check_local_trust_domains(errors)
+
     for label, (relative_path, marker) in REPAIR_TARGETS.items():
         text = (ROOT / relative_path).read_text(encoding="utf-8")
         if marker.lower() not in text.lower():
@@ -134,7 +207,8 @@ def main() -> None:
     print(
         "planning coverage: PASS "
         f"({len(REQUIRED_PATHS)} current API paths, {len(REQUIRED_TABLES)} current tables, "
-        f"{len(REPAIR_TARGETS)} repaired authority targets)"
+        f"{len(REPAIR_TARGETS)} repaired authority targets, "
+        f"{len(LOCAL_TRUST_ROLES)} local trust domains)"
     )
     print("artifact maturity: repaired P-1140D planning contract; declared coverage only, not implementation evidence")
 

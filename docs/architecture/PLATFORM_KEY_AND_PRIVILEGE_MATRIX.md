@@ -19,12 +19,31 @@ Every executable has an explicit capability manifest covering network, source ob
 | `vibemaxxing-cli` | login/update endpoints only when invoked | no implicit source scan | no raw key access | control and diagnostics through IPC | user-authorized install/update commands |
 | `vibemaxxing-desktop-shell` | hosted-dashboard and login endpoints only | forbidden | no raw key access | status through IPC only | user consent UI only |
 | updater helper | update endpoints only | forbidden | release-verification keys only | updater state only | atomic install/rollback within policy |
+| `vibemaxxing-shell` | none | forbidden | no raw key access | status and control through IPC only | none |
+| privileged supervisor | none | forbidden | no key access of any kind | lifecycle metadata only, under a recorded consent | none |
 
 Crash reports, logs and diagnostics use an allowlist and never include prompts, responses, code, paths, repository names, filenames, tool bodies, credentials or arbitrary environment variables.
 
 ## Key protection classes by platform
 
 A concrete release records the exercised class from `EVIDENCE_AND_ATTESTATION_PROFILES.md`; platform names do not imply a class automatically.
+
+These eight rows are the whole set. `packages/schemas/local-trust-domains-v1.json` is
+the machine-readable form, carrying each role's OS peer identity per platform, its
+session boundary, its declared network scope and its data classes, and
+`scripts/repository/validate_planning_coverage.py` fails when a named role is missing
+from it.
+
+The last two rows were absent before PF-011, which was the wrong two to omit: the
+interactive shell is the only role that takes arbitrary operator input, and the
+privileged supervisor is the only component that runs elevated. Both now state that
+they hold no key access and no network, and the supervisor's lifecycle capability is
+recorded against a consent.
+
+The invariant the privacy claim rests on is enforced rather than described: exactly
+one role may read transcript content, and its declared network scope is `none`. A role
+that could both read content and reach the network would make the device boundary a
+promise about behaviour instead of a property of the process layout.
 
 ### macOS
 
