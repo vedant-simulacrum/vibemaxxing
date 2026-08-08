@@ -84,6 +84,21 @@ Startable now — not done, and every dependency done: 24.
 
 `PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-013`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `PF-062`, `PF-064`, `PF-067`, `OS-001`, `OS-009`.
 
+### P-1140F repair schedule
+
+Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what can be started today; the number of waves is the longest remaining chain. Landing a unit in wave 1 may promote several units into it.
+
+| Wave | Units | Ready |
+|---|---|---|
+| 1 | 12 | `PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-013`, `PF-014`, `PF-015`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028` |
+| 2 | 6 | `PF-006`, `PF-016`, `PF-017`, `PF-022`, `PF-027`, `PF-030` |
+| 3 | 5 | `PF-007`, `PF-018`, `PF-023`, `PF-031`, `PF-032` |
+| 4 | 2 | `PF-008`, `PF-029` |
+| 5 | 1 | `PF-033` |
+| 6 | 1 | `PF-034` |
+| 7 | 1 | `PF-035` |
+| 8 | 1 | `PF-036` |
+
 Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->

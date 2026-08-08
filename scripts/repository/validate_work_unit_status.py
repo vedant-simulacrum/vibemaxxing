@@ -532,6 +532,40 @@ def startable(units: list[Unit]) -> list[str]:
     return ready
 
 
+def repair_waves(units: list[Unit]) -> list[list[str]]:
+    """Group the P-1140F repair units into dependency waves.
+
+    Derived rather than written down. A hand-maintained schedule is stale the moment a
+    unit lands, and a stale plan is worse than none because it still reads like one.
+    Wave N is every unlanded unit whose dependencies are all in waves before it, so the
+    first wave is what can be started today and the count of waves is the longest chain
+    remaining.
+    """
+    series = {unit.unit_id: unit for unit in units if unit.unit_id.startswith("PF-")}
+    series = {
+        unit_id: unit
+        for unit_id, unit in series.items()
+        if int(unit_id.split("-")[1]) <= 36
+    }
+    done = {u for u, unit in series.items() if unit.status_word == "landed"}
+    remaining = sorted(set(series) - done)
+
+    waves: list[list[str]] = []
+    placed = set(done)
+    while len(placed) < len(series):
+        wave = sorted(
+            unit_id
+            for unit_id in remaining
+            if unit_id not in placed
+            and {d for d in series[unit_id].depends if d in series} <= placed
+        )
+        if not wave:  # a cycle; check_cycles reports it with a better message
+            break
+        waves.append(wave)
+        placed |= set(wave)
+    return waves
+
+
 def render_block(units: list[Unit]) -> str:
     counts = {value: 0 for value in STATUS_VALUES}
     for unit in units:
@@ -559,6 +593,26 @@ def render_block(units: list[Unit]) -> str:
         f"Startable now — not done, and every dependency done: {len(ready)}.",
         "",
         ", ".join(f"`{unit_id}`" for unit_id in ready) + ".",
+        "",
+        "### P-1140F repair schedule",
+        "",
+        "Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is "
+        "what can be started today; the number of waves is the longest remaining "
+        "chain. Landing a unit in wave 1 may promote several units into it.",
+        "",
+    ]
+    waves = repair_waves(units)
+    if not waves:
+        lines.append("Every P-1140F repair unit has landed.")
+    else:
+        lines += ["| Wave | Units | Ready |", "|---|---|---|"]
+        for index, wave in enumerate(waves, start=1):
+            lines.append(
+                f"| {index} | {len(wave)} | "
+                + ", ".join(f"`{unit_id}`" for unit_id in wave)
+                + " |"
+            )
+    lines += [
         "",
         f"Statuses additionally checkable against artifact presence: {len(checkable)} of {len(units)}. "
         f"The other {len(units) - len(checkable)} declare no new file in `Files:`, so that check "
