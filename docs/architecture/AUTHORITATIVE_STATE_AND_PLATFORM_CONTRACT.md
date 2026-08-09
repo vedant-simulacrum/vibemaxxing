@@ -71,7 +71,7 @@ That rule previously said the reason was "given under Open items", and nothing c
 | `account-lifecycle` | `account-lifecycle` | `accounts.state` | — | — |
 | `device-enrollment` | `device-enrollment` | `devices.state` | `Device.state` | — |
 | `device-authorization-grant` | — | `device_enrollment_grants.state` | `DeviceAuthorizationStatus.state` | — |
-| `identity-link` | — | `linked_identities.state` | `Identity.state` | — |
+| `linked-identity` | `linked-identity` | `linked_identities.state` | `Identity.state` | `candidate`, `superseded` |
 | `claim-record` | — | — | `ClaimRecord.state` | — |
 | `recovery-case` | `recovery-case` | `recovery_cases.state` | — | — |
 | `identity-investigation` | `identity-investigation` | `identity_investigations.state` | — | — |
@@ -113,7 +113,7 @@ An absence is not a defect. Not stating one is: an aggregate whose binding was n
 
 | Aggregate | Absent binding | Reason |
 |---|---|---|
-| `account-consolidation` | `api` | D-070 consolidation under D-382; the participant reads the effect, not the case. |
+| `account-consolidation` | `api` | D-070 consolidation under D-382. getConsolidationPlan publishes the plan and no lifecycle value; a state like `applying` is an operational fact. |
 | `account-lifecycle` | `api` | Exposed through the account's own surface as capability, not as a lifecycle enum. |
 | `board-container` | `machine` | A two-value archive flag; its mutable concepts have machines of their own. |
 | `board-invitation` | `api` | An invitee sees the invitation or does not; intermediate states are server-side. |
@@ -125,7 +125,6 @@ An absence is not a defect. Not stating one is: an aggregate whose binding was n
 | `friendship` | `api` | The API exposes the edge, not the machine; the viewer's own side is derived. |
 | `idempotency-ledger` | `api` | Replay is observed through the replayed response, never as a state value. |
 | `identity-investigation` | `api` | Integrity-private under D-381; a public state value would publish the sanction. |
-| `identity-link` | `machine` | Open: mutable, but the enrollment flow owns its transitions and they are unspecified. |
 | `interactive-shell` | `api` | Local-only; never persisted server-side and never exposed by the API. |
 | `invite-code` | `api` | Private-beta admission under D-180. The invitee is told whether it worked, not its state. |
 | `lineage-fork-case` | `api` | D-072 fork and clone resolution under D-383; quarantine is read through evidence class. |
@@ -150,7 +149,7 @@ An absence is not a defect. Not stating one is: an aggregate whose binding was n
 
 ### Open items
 
-- **No registry machine for board or claim, by design.** `claim-record` does not need one: claims are immutable facts, and the registry indexes mutable concepts. `board-container` does not need one: it is a two-value archive flag whose mutable concepts (`board-membership`, `board-invitation`) already have machines. `device-authorization-grant` and `identity-link` remain open: both are genuinely mutable, but their transitions are owned by the OAuth and enrollment flows and are not yet specified to the level the registry requires.
+- **No registry machine for board or claim, by design.** `claim-record` does not need one: claims are immutable facts, and the registry indexes mutable concepts. `board-container` does not need one: it is a two-value archive flag whose mutable concepts (`board-membership`, `board-invitation`) already have machines. `device-authorization-grant` remains open: it is genuinely mutable, but its transitions are owned by the RFC 8628 device flow and are not yet specified to the level the registry requires. `identity-link` no longer appears here at all. PF-007 gave it the eight-state `linked-identity` machine the provider-loss section of `docs/security/AUTHENTICATION_AND_RECOVERY.md` already described in prose, and renamed the aggregate to the spelling its table and its machine use, because an aggregate with one name in the binding table, another in the DDL and none in the registry is the drift the one-spelling rule exists to stop.
 - **Cancelling a deletion requested from `restricted` returns the account to `active`.** `account-lifecycle` allows `account-request-deletion` from both `active` and `restricted`, because a restricted account keeps its deletion rights, but one state column cannot hold "pending deletion" and "restricted" at once. `account-cancel-deletion` therefore targets `active`, and the restriction must be re-applied from the append-only moderation effects. Modelling restriction as a flag independent of lifecycle would remove this.
 - **`ranked-identity-eligibility` now has persistence.** The machine names `ranked-identities`, `identity-investigations` and `identity-events`, and all three are defined in `planning-schema.sql`. This was one of nineteen machines naming a table the DDL did not define; `validate_state_vocabularies.py` now fails when any declared persistence owner does not resolve, so the class of defect cannot return. The registry stores owners in kebab-case and the DDL declares them in snake_case, which is why a naive comparison had found nothing wrong.
 - **`certification_state` in the platform profile registry.** `platform-profile-registry-v1.schema.json` pins it to the constant `planned-validation-required`, which is the machine's `planned` state under an older spelling. `platform_profiles.validation_state` and `CompatibilityProfile.validation_state` now use `planned`; the frozen constant, its 34 uses in `platform-profile-registry-v1.json` and its uses in `conformance/p1140e/platform-validation-plan-v1.json` remain to be renamed.

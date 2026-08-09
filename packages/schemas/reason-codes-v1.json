@@ -28,8 +28,10 @@
   },
   "operation_classes": {
     "all": [
+      "cancelIdentityUnlink",
       "completeGitHubAuth",
       "completeXAuth",
+      "confirmConsolidation",
       "createAppeal",
       "createBlock",
       "createBoard",
@@ -45,6 +47,7 @@
       "getAppraisal",
       "getClaim",
       "getCompatibility",
+      "getConsolidationPlan",
       "getCurrentRank",
       "getLeaderboard",
       "getMe",
@@ -70,6 +73,7 @@
       "redeemInvite",
       "refreshSession",
       "renewPresence",
+      "reportProviderAccess",
       "requestDeletion",
       "requestExport",
       "revokeAllSessions",
@@ -96,6 +100,8 @@
       "startXAuth"
     ],
     "authenticated": [
+      "cancelIdentityUnlink",
+      "confirmConsolidation",
       "createAppeal",
       "createBlock",
       "createBoard",
@@ -109,6 +115,7 @@
       "enrollDevice",
       "getAppraisal",
       "getClaim",
+      "getConsolidationPlan",
       "getCurrentRank",
       "getMe",
       "getPresence",
@@ -131,6 +138,7 @@
       "redeemInvite",
       "refreshSession",
       "renewPresence",
+      "reportProviderAccess",
       "requestDeletion",
       "requestExport",
       "revokeAllSessions",
@@ -146,6 +154,8 @@
       "submitClaimBatch"
     ],
     "mutating": [
+      "cancelIdentityUnlink",
+      "confirmConsolidation",
       "createAppeal",
       "createBlock",
       "createBoard",
@@ -164,6 +174,7 @@
       "redeemInvite",
       "refreshSession",
       "renewPresence",
+      "reportProviderAccess",
       "requestDeletion",
       "requestExport",
       "revokeAllSessions",
@@ -178,6 +189,8 @@
       "updateMe"
     ],
     "mutating-authenticated": [
+      "cancelIdentityUnlink",
+      "confirmConsolidation",
       "createAppeal",
       "createBlock",
       "createBoard",
@@ -194,6 +207,7 @@
       "redeemInvite",
       "refreshSession",
       "renewPresence",
+      "reportProviderAccess",
       "requestDeletion",
       "requestExport",
       "revokeAllSessions",
@@ -205,6 +219,8 @@
       "updateMe"
     ],
     "recent-auth": [
+      "cancelIdentityUnlink",
+      "confirmConsolidation",
       "createAppeal",
       "createModerationCase",
       "enrollDevice",
@@ -219,6 +235,8 @@
       "unlinkIdentity"
     ],
     "idempotent-durable": [
+      "cancelIdentityUnlink",
+      "confirmConsolidation",
       "createAppeal",
       "createBlock",
       "createBoard",
@@ -233,6 +251,7 @@
       "markNotificationRead",
       "redeemInvite",
       "renewPresence",
+      "reportProviderAccess",
       "requestDeletion",
       "requestExport",
       "revokeAllSessions",
@@ -263,17 +282,22 @@
       "listSessions"
     ],
     "path-addressed": [
+      "cancelIdentityUnlink",
+      "confirmConsolidation",
       "createBoardInvitation",
       "getAppraisal",
       "getClaim",
+      "getConsolidationPlan",
       "getLeaderboard",
       "getPublicProfile",
       "markNotificationRead",
+      "reportProviderAccess",
       "revokeDevice",
       "revokeSession",
       "rotateDeviceKey"
     ],
     "request-body": [
+      "confirmConsolidation",
       "createAppeal",
       "createBlock",
       "createBoard",
@@ -291,6 +315,7 @@
       "redeemInvite",
       "refreshSession",
       "renewPresence",
+      "reportProviderAccess",
       "requestDeletion",
       "requestExport",
       "rotateDeviceKey",
@@ -1465,6 +1490,72 @@
         "completeXAuth"
       ],
       "introduced_in": "1.3.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "OAUTH_REDIRECT_URI_MISMATCH",
+      "class": "oauth",
+      "default_outcome": "rejected_invalid",
+      "user_safe": true,
+      "subsystem": "oauth",
+      "retryable": false,
+      "public_message_key": "reason.oauth_redirect_uri_mismatch",
+      "internal_visibility": "support-and-security",
+      "severity": "high",
+      "appealability": "not-eligible",
+      "state_machine": "oauth-transaction",
+      "transport": "problem",
+      "http_status": 422,
+      "operation_classes": [],
+      "operations": [
+        "completeGitHubAuth",
+        "completeXAuth"
+      ],
+      "introduced_in": "1.7.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "OAUTH_TRANSACTION_EXPIRED",
+      "class": "oauth",
+      "default_outcome": "rejected_expired",
+      "user_safe": true,
+      "subsystem": "oauth",
+      "retryable": false,
+      "public_message_key": "reason.oauth_transaction_expired",
+      "internal_visibility": "support-and-security",
+      "severity": "medium",
+      "appealability": "not-eligible",
+      "state_machine": "oauth-transaction",
+      "transport": "problem",
+      "http_status": 422,
+      "operation_classes": [],
+      "operations": [
+        "completeGitHubAuth",
+        "completeXAuth"
+      ],
+      "introduced_in": "1.7.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "OAUTH_PKCE_VERIFICATION_FAILED",
+      "class": "oauth",
+      "default_outcome": "rejected_invalid",
+      "user_safe": true,
+      "subsystem": "oauth",
+      "retryable": false,
+      "public_message_key": "reason.oauth_pkce_verification_failed",
+      "internal_visibility": "support-and-security",
+      "severity": "high",
+      "appealability": "not-eligible",
+      "state_machine": "oauth-transaction",
+      "transport": "problem",
+      "http_status": 422,
+      "operation_classes": [],
+      "operations": [
+        "completeGitHubAuth",
+        "completeXAuth"
+      ],
+      "introduced_in": "1.7.0",
       "deprecated_in": null
     },
     {

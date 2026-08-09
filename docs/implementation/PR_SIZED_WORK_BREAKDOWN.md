@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 199 |
-| `in-progress` | 9 |
-| `landed` | 46 |
+| `not-started` | 196 |
+| `in-progress` | 8 |
+| `landed` | 50 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 174 assertions across 46 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 196 assertions across 50 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 14.
+Startable now — not done, and every dependency done: 13.
 
-`PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-048`, `OS-001`, `OS-003`, `OS-009`.
+`PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-048`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,10 +90,10 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 10 | `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
-| 2 | 6 | `PF-006`, `PF-018`, `PF-022`, `PF-027`, `PF-031`, `PF-032` |
-| 3 | 2 | `PF-007`, `PF-023` |
-| 4 | 2 | `PF-008`, `PF-029` |
+| 1 | 9 | `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
+| 2 | 5 | `PF-018`, `PF-022`, `PF-027`, `PF-031`, `PF-032` |
+| 3 | 1 | `PF-023` |
+| 4 | 1 | `PF-029` |
 | 5 | 1 | `PF-033` |
 | 6 | 1 | `PF-034` |
 | 7 | 1 | `PF-035` |
@@ -209,38 +209,73 @@ Evidence: unittest tests.ci.test_state_vocabularies
 - record missing and duplicate owners.
 
 ### PF-005 — OAuth provider configuration authority
-Files: `packages/schemas/oauth-provider-registry-v1.json` (new), `packages/schemas/oauth-provider-registry-v1.schema.json` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new), `docs/security/AUTHENTICATION_AND_RECOVERY.md`
-Acceptance: the registry validates against its schema; every provider row carries issuer, authorization and token endpoints, client identifier, exact redirect URI, PKCE method, RFC 9207 `iss` capability, scope set, device-flow capability, revision and expiry; the mix-up fixture contains at least one rejected case per provider.
+Files: `packages/schemas/oauth-provider-registry-v1.json` (new), `packages/schemas/oauth-provider-registry-v1.schema.json` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new), `scripts/repository/validate_oauth_identity_contract.py` (new), `tests/ci/test_oauth_identity_contract.py` (new), `conformance/auth/manifest.json`, `conformance/auth/README.md`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `packages/schemas/README.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `Makefile`
+Acceptance: the registry validates against its schema and every provider row carries `issuer`, `authorization_endpoint`, `token_endpoint`, `client_id_reference`, `redirect_uri`, `pkce_method`, `rfc9207_iss`, `device_flow`, `scopes`, `revision`, `recorded_at` and a `review_due_at` inside a 365-day ceiling; the provider vocabulary is one spelling across the registry, `linked_identities.provider`, `oauth_transactions.provider` and every `provider` enum in `openapi-v1.yaml`; a provider whose `verification.state` is `unverified` may not declare a `supported` capability, and whether its callback declares `iss` is a function of the recorded capability rather than of the provider; the mix-up fixture carries an accepted baseline per provider and a refusal per discriminator, each refusal differing from its baseline in exactly the one field its discriminator names, and every recorded outcome and reason code is *derived* from the registry rather than asserted; `python3 scripts/repository/validate_oauth_identity_contract.py --stage=provider-registry` exits 0 and `python3 -m unittest tests.ci.test_oauth_identity_contract` exits 0 with a case per rule.
 Depends: PF-004
 Repair: P-1140F-2
 Serves: SR-006
 Est: 8-12
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_oauth_identity_contract.py --stage=provider-registry
+Evidence: unittest tests.ci.test_oauth_identity_contract
+Evidence: contains 1 packages/schemas/oauth-provider-registry-v1.json :: "registry_id": "oauth-provider-registry-v1"
+Evidence: contains 16 conformance/auth/provider-mixup-vectors-v1.json :: "case_id"
+Evidence: absent packages/schemas/oauth-provider-registry-v1.json :: "capability": "supported"
+
+**The acceptance was rewritten.** The original required "at least one rejected case per provider", which a corpus of nothing but refusals satisfies — and a decision procedure that refuses everything satisfies it best. It also never said the outcomes had to be *decided*: a fixture recording its own verdicts is a fixture that agrees with itself. The rewritten form requires an accepted baseline per provider, one refusal per discriminator, single-field attributability, and derivation from the registry. `validate_oauth_identity_contract.py` additionally mutates each discriminator against the committed registry itself, because a corpus cannot notice a rule that stopped being applied to it.
+
+**The live defect.** `/auth/github/callback` declared the RFC 9207 `iss` parameter and `/auth/x/callback` did not, while `packages/schemas/reason-codes-v1.json` bound `OAUTH_ISSUER_MISMATCH` to both `completeGitHubAuth` and `completeXAuth`. The asymmetry read as a statement that GitHub supports RFC 9207 and X does not, and no record anywhere said so — the parameter's own description deferred to "the stored provider-capability record", which did not exist, so the rule ADR-015 calls the control that closes the mix-up attack could not be evaluated at all. Both rows now record the capability `unverified`, because no authorization response from either provider has been observed in this repository, and the parameter is declared identically on both. Recording `supported` would have manufactured the control: the validator refuses a capability claimed while the provider's verification state says nothing was read, and a synthetic probe proves the value changes the decision, so the RFC 9207 defence cannot be acquired by writing a word.
+
+Three reason codes were added — `OAUTH_REDIRECT_URI_MISMATCH`, `OAUTH_TRANSACTION_EXPIRED` and `OAUTH_PKCE_VERIFICATION_FAILED` — because three of the seven discriminators had no registered way to refuse. the `conformance/auth/` README claimed the directory held no `manifest.json`, which was already untrue when it was written.
 
 - issuer, endpoints, client, exact redirect, PKCE, RFC 9207 capability, scopes, device-flow capability, revision and expiry;
 - provider-specific positive and mix-up/redirect-confusion fixtures.
 
 ### PF-006 — Canonical OAuth transaction
-Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
-Acceptance: the `oauth_transactions` table and the `oauth-transaction` registry machine share one vocabulary under `validate_state_vocabularies.py`; `grep -n 'authorization_code' packages/schemas/openapi-v1.yaml` returns no operation that mutates identity without a transaction reference.
+Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `scripts/repository/validate_oauth_identity_contract.py`, `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_oauth_identity_contract.py`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+Acceptance: `oauth_transactions` declares every column the transaction binds — provider, provider revision, issuer, exact redirect, PKCE method, state hash, encrypted verifier, intended action, initiating account and session, recent-auth instant, result, failure reason, revision, lifetime and consumption instant — and carries as check constraints the four rules no handler discipline holds: a link is startable only under recent authentication, a link never produces a session, a consumed transaction produced what its action names, and a transaction cannot finish on a different account; `intended_action` is one kebab-case vocabulary shared by the DDL CHECK, `OAuthStartRequest` and `OAuthCompletion`; no identity-mutating operation accepts `authorization_code`, `access_token`, `id_token` or `code`, and `linkIdentity` requires an `oauth_transaction_id`; `oauth_authorization_events` references `oauth_transactions` and its `event_type` set equals the machine's transition identifiers; `OAuthCompletion` conditions `session_id` on the intended action and requires neither unconditionally; `python3 scripts/repository/validate_oauth_identity_contract.py --stage=oauth-transaction` exits 0 and `python3 -m unittest tests.ci.test_oauth_identity_contract` exits 0.
 Depends: PF-005
 Repair: P-1140F-2
 Serves: SR-006
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_oauth_identity_contract.py --stage=oauth-transaction
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_oauth_identity_contract
+Evidence: absent packages/schemas/openapi-v1.yaml :: - authorization_code
+Evidence: contains 1 packages/schemas/planning-schema.sql :: check (intended_action <> 'link-identity' or resulting_session_id is null)
+
+**The acceptance was rewritten.** Both halves were vacuous on the unrepaired tree. The table and the machine already shared one vocabulary — `validate_state_vocabularies.py` had bound them since P-1140D — so the first clause passed before any work was done. The second was a `grep` for a word: `authorization_code` appeared in `IdentityMutationRequest`, so the clause was already false, but it was phrased as a human reading grep output rather than as a check, and a rename to `provider_code` would have satisfied it while changing nothing. It is now phrased over what each request body *requires*, so an operation that grows a new credential field without a transaction reference fails.
+
+**The live defects.** `IdentityMutationRequest` carried a bare `authorization_code` and `linkIdentity` mutated identity from it, so there was a second identity-mutating path that reached no transaction and therefore verified no redirect, no state, no PKCE verifier, no provider revision and no lifetime — every control the transaction exists to apply was optional in practice. `oauth_transactions` held eight columns and bound almost nothing the contract document says a transaction binds. `intended_action` was `sign_in`/`link_identity` on the API and had no CHECK at all in the DDL, so the API held a vocabulary the persistence owner did not, in the snake-versus-kebab spelling this repository has been bitten by four times. The machine declared `monotonic-revision` and the table had no `revision` column for a conditional update to name. `oauth_authorization_events` was a stub with an unreferenced `subject_id` and an unconstrained `event_type`, so it could hold a row about anything and say anything about it. And `OAuthCompletion` required `account_id` and `session_id` unconditionally, so the contract said a link callback mints browser access — which the table now refuses at the constraint level.
+
+Twenty-five other machines declare a revision model whose named persistence owner has no `revision` column. Most are event tables, where the absence is correct because the revision belongs to the aggregate root; the general rule needs to know which owner is the root and is not attempted here. Only `oauth_transactions` is repaired.
 
 - bind action, account/session, recent-auth grant, provider revision, redirect, state, PKCE, expiry and result;
 - remove standalone authorization-code identity mutation semantics;
 - define single consumption and ambiguous callback behavior.
 
 ### PF-007 — Linked identity and recovery lifecycle
-Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/openapi-v1.yaml`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
-Acceptance: the `linked-identity` machine declares all eight states, every one is reachable and no terminal state has an outgoing transition under `validate_state_vocabularies.py`; `linked_identities` carries a durable provider-subject column with a uniqueness constraint.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `scripts/repository/validate_state_vocabularies.py`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_oauth_identity_contract.py`, `tests/ci/test_oauth_identity_contract.py`, `conformance/p1140e/validation-matrix-v1.json`, `conformance/p1140e/state-machine-fixtures-v1.json`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`
+Acceptance: the `linked-identity` machine declares exactly `candidate`, `linked`, `unlink-pending`, `lost`, `compromised`, `recovery-pending`, `unlinked` and `superseded`, `linked_identities.state` holds the same eight, and every state is reachable with no outgoing transition from a terminal one under `validate_state_vocabularies.py`; `linked_identities` carries the durable `provider_subject`, the D-081 `provider_account_created_at` gate input and a `revision`, declares **no** total `unique (provider, provider_subject)` and no `not null` on the subject, ties both personal-data fields to the live states by check constraint so `DATA_MAP.md`'s retention rule is executable, and enforces one live binding through a partial unique index whose predicate is exactly the six non-terminal states; the last-authentication-method invariant is named in the machine as the action on the transition into `unlink-pending` and stated in `AUTHENTICATION_AND_RECOVERY.md`, and dropping either fails; no transition drives a live identity into a terminal state as a moderator, and `superseded` is reachable only by a worker; `recovery-pending` is reachable from both `lost` and `compromised` and returns to `linked`; `unlinkIdentity` requires no provider credential; `python3 scripts/repository/validate_oauth_identity_contract.py --stage=linked-identity` exits 0 and `python3 -m unittest tests.ci.test_oauth_identity_contract` exits 0.
 Depends: PF-006
 Repair: P-1140F-2
 Serves: SR-006
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_oauth_identity_contract.py --stage=linked-identity
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_oauth_identity_contract
+Evidence: contains 1 packages/schemas/planning-schema.sql :: create unique index linked_identities_live_subject_idx
+Evidence: contains 1 packages/schemas/planning-schema.sql :: where state in ('candidate','linked','unlink-pending','lost','compromised','recovery-pending');
+Evidence: absent packages/schemas/planning-schema.sql :: state text not null check (state in ('linked','unlink-pending','unlinked'))
+Evidence: contains 1 packages/schemas/planning-schema.sql :: check ((provider_subject is not null) = (state not in ('unlinked','superseded'))),
+
+**The acceptance was rewritten.** Its second clause — "`linked_identities` carries a durable provider-subject column with a uniqueness constraint" — was satisfied by the unrepaired tree exactly as written: the column and a total `unique (provider, provider_subject)` had both existed since P-1140D. It is worse than vacuous, because the constraint it asked for is half of a live defect. `provider_subject` was `not null` and the uniqueness was total, so a retained `unlinked` row blocked that provider account from ever being linked again, to this account or to any other — **unlinking was silently permanent, product-wide** — and `docs/privacy/DATA_MAP.md`'s commitment to delete the subject "immediately on unlink" could be honoured only by deleting the whole row, which the same constraint is what made necessary. The rewritten clause requires the total constraint and the `not null` to be absent, both personal-data fields to be tied to the live states by check constraint, and a partial index over exactly the six live states. Its first clause was not vacuous but was over-credited: `validate_state_vocabularies.py` proves reachability and terminal integrity for every machine, so once any `linked-identity` machine existed that half was automatic — it never checked *which* eight states.
+
+**The live defects.** The aggregate was named `identity-link` in the binding table, `linked_identities` in the DDL and nothing in the registry: three names for one thing, with a recorded absence saying its transitions were owned by the enrollment flow and unspecified. Three states could express none of the provider-loss behaviour `AUTHENTICATION_AND_RECOVERY.md` requires, so that whole section described behaviour the schema had nowhere to put. D-081 makes the 90-day provider-account gate depend on a provider-reported creation timestamp that nothing persisted, so the gate had no stored input. And the machine declares `identity-unlink-cancel`, `identity-report-lost` and `identity-report-compromised` with actor `user`, and the API declared a route to none of them, so the two states the provider-loss contract exists to describe were unreachable by the only actor who can observe them; `reportProviderAccess` and `cancelIdentityUnlink` are that route, and the second is deliberately not recent-auth-free because it changes which methods can authenticate the account.
+
+The last-method invariant is a count across sibling rows and is not expressible as a `check` or a unique index. Rather than inventing a counter column on `accounts` — a cached number that would become a second authority for a fact the rows already hold — it is recorded in the machine and in the document, and the validator compares the two. That is honest about what is enforced and by what.
 
 - exact linked-identity ID and durable provider subject;
 - candidate, linked, unlink-pending, lost, compromised, recovery-pending, unlinked, superseded;
@@ -248,15 +283,24 @@ Status: not-started
 - token/session/device notification and cooling-off effects.
 
 ### PF-008 — Ranked identity and consolidation authority
-Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`, `packages/schemas/consolidation-plan-v1.schema.json` (new)
-Acceptance: `ranked_identities` is a separate table from `accounts` with a survivor reference; the consolidation-plan schema validates a fixture covering identities, devices, claims, social state, boards, moderation, exports and deletions; no path in the API sums two accounts' scores.
+Files: `packages/schemas/consolidation-plan-v1.schema.json`, `packages/schemas/examples/consolidation-plan.valid.json`, `packages/schemas/examples/consolidation-plan.invalid-summed-total.json`, `packages/schemas/examples/consolidation-plan.invalid-domain-not-covered.json` (new), `packages/schemas/examples/consolidation-plan.invalid-newer-identity-survives.json` (new), `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_state_vocabularies.py`, `scripts/repository/validate_oauth_identity_contract.py`, `tests/ci/test_oauth_identity_contract.py`, `conformance/p1140e/validation-matrix-v1.json`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `docs/security/RANKED_IDENTITY_ELIGIBILITY.md`
+Acceptance: `ranked_identities` is a table distinct from `accounts`, carries `absorbed_into_ranked_identity_id` referencing itself, and `accounts` declares no ranked-identity or score column; `consolidation-plan-v1.schema.json` requires a disposition for all eight of `identities`, `devices`, `claims`, `social`, `boards`, `moderation`, `exports` and `deletions` under `additionalProperties: false`, and a fixture omitting one is refused; the plan records both identities' creation instants and every committed plan satisfies D-564 — the older identity survives — with a fixture written to violate it checked to actually violate it; the participant-driven transitions of `account-consolidation` and `linked-identity` each name a declared operation whose `x-recent-auth` equals the transition's `recent_auth`, and an entry for a transition that is no longer participant-driven fails; no property of `ConsolidationPlanView`, `ConsolidationDomainDisposition`, `ConsolidationConfirmationRequest` or the plan schema names a combined figure for two accounts, and every integer the consolidation surface publishes is a count; `python3 scripts/repository/validate_oauth_identity_contract.py --stage=ranked-identity` exits 0 and `python3 -m unittest tests.ci.test_oauth_identity_contract` exits 0.
 Depends: PF-007
 Repair: P-1140F-2
 Serves: SR-006
 Est: 12-16
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_oauth_identity_contract.py --stage=ranked-identity
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_oauth_identity_contract
+Evidence: contains 8 packages/schemas/consolidation-plan-v1.schema.json :: { "$ref": "#/$defs/domain_disposition" }
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: operationId: confirmConsolidation
 
-The schema and the DDL half landed under D-382: `ranked_identities` carries `absorbed_into_ranked_identity_id`, `consolidation_cases` and `consolidation_contributions` exist, and `packages/schemas/consolidation-plan-v1.schema.json` validates against two fixtures. The unit is not finished. The fixture covers identities, claims and periods and not devices, social state, boards, moderation, exports or deletions, and `packages/schemas/openapi-v1.yaml` declares no consolidation operation at all.
+**The acceptance was rewritten.** Two of its three clauses were vacuous. `ranked_identities` had been a separate table with a survivor reference since D-382, so the first clause passed on the unrepaired tree; it now also refuses a ranked-identity column on `accounts`, which is the way the two aggregates would actually collapse. "No path in the API sums two accounts' scores" was an absence satisfied by emptiness in its purest form: the API declared no consolidation operation at all, so nothing could sum anything, and the clause would have gone on passing forever by the API never growing the surface. It is now phrased over the property names the consolidation surface declares, and the surface has to exist for the check to have anything to read.
+
+**The live defects.** The `account-consolidation` machine declares `consolidation-confirm` with actor `user`, `web-session` authentication and recent authentication required, and no operation reached it — the participant was required by the lifecycle to perform a transition the contract gave them no way to perform, so a case could leave `awaiting-confirmation` only by expiring. The plan covered identities, claims and periods, while `AUTHENTICATION_AND_RECOVERY.md` requires a merge to define ownership of devices, boards, friendships, moderation state and deletion requests as well, so a consolidation could apply while silent about the absorbed account's devices, blocks, board ownership, open moderation case, running export or pending deletion. And D-564 — the older ranked identity survives, the newer is retired without summation — was an accepted owner decision recorded in no machine-readable place at all; nothing named which side of a duplicate was authoritative.
+
+The domain object deliberately has no `not-applicable` disposition. A domain with nothing in it is `retained` with a count of zero, which is a statement; a value meaning "we did not look" would let all eight be covered by declining to answer them.
 
 - separate account and ranked identity;
 - canonical survivor, retired duplicates, private investigation evidence, restrictions, appeal and reversal;
@@ -1901,14 +1945,14 @@ One of the thirteen categories that previously had no unit anywhere. Distinct fr
 ## Epic O — OAuth, sessions and ranked identity
 
 ### O-001 GitHub provider capability implementation
-Files: `apps/api/internal/oauth/github.go` (new), `packages/schemas/oauth-provider-registry-v1.json` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new)
+Files: `apps/api/internal/oauth/github.go` (new), `packages/schemas/oauth-provider-registry-v1.json`, `conformance/auth/provider-mixup-vectors-v1.json`
 Acceptance: `go test ./internal/oauth/ -run GitHub` exits 0 against the recorded provider fixture; every capability the registry row claims — PKCE method, RFC 9207 `iss`, device flow — is exercised by a case, and a claimed capability with no case fails the test rather than being assumed.
 Depends: S-005, PF-005
 Est: 8-12
 Status: not-started
 
 ### O-002 X provider capability implementation
-Files: `apps/api/internal/oauth/x.go` (new), `packages/schemas/oauth-provider-registry-v1.json` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new)
+Files: `apps/api/internal/oauth/x.go` (new), `packages/schemas/oauth-provider-registry-v1.json`, `conformance/auth/provider-mixup-vectors-v1.json`
 Acceptance: `go test ./internal/oauth/ -run XProvider` exits 0 against the recorded provider fixture, under the same claimed-capability-must-have-a-case rule as `O-001`.
 Depends: S-005, PF-005
 Est: 8-12
@@ -1922,14 +1966,14 @@ Est: 10-14
 Status: not-started
 
 ### O-004 Callback issuer/redirect/mix-up protection
-Files: `apps/api/internal/oauth/callback.go` (new), `conformance/auth/provider-mixup-vectors-v1.json` (new)
+Files: `apps/api/internal/oauth/callback.go` (new), `conformance/auth/provider-mixup-vectors-v1.json`
 Acceptance: every vector in the mix-up fixture yields its recorded verdict, including an authorization response from provider B replayed to provider A's callback; a provider that returns no `iss` takes the recorded fallback path rather than trusting the response, asserted by a case for each provider.
 Depends: O-003
 Est: 10-14
 Status: not-started
 
 ### O-005 Limited-input interactive device flow
-Files: `apps/api/internal/oauth/deviceflow.go` (new), `crates/vibemaxxing-cli/src/auth.rs` (new), `packages/schemas/oauth-provider-registry-v1.json` (new)
+Files: `apps/api/internal/oauth/deviceflow.go` (new), `crates/vibemaxxing-cli/src/auth.rs` (new), `packages/schemas/oauth-provider-registry-v1.json`
 Acceptance: a table test asserts the flow starts only for providers whose registry row records device-flow capability; a test that sets `CI=true` expects a refusal, so the flow cannot become a CI default by omission.
 Depends: O-001, O-002, O-003
 Est: 8-12

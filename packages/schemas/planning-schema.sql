@@ -16,14 +16,95 @@ create table account_handles (
   policy_version text not null
 );
 
+-- The linked provider identity. PF-007, SR-006.
+--
+-- One of the three aggregates AGENTS.md keeps separate: an account, a linked provider
+-- identity and a ranked identity are not the same thing, and this is the middle one.
+-- It held three states, no lifecycle in the registry, and a recorded absence saying
+-- its transitions were owned by the enrollment flow and unspecified. The three states
+-- could not express any of what `docs/security/AUTHENTICATION_AND_RECOVERY.md` requires
+-- of a provider that is compromised, suspended, deleted or renamed, so the document's
+-- whole provider-loss section described behaviour the schema could not hold.
+--
+-- `provider_subject` is the durable linkage key while the binding is live. Mutable
+-- usernames are attributes and never identify anything, which is why no handle column
+-- exists here.
+--
+-- `provider_account_created_at` is the D-081 gate input: a linked provider account must
+-- be at least 90 days old, measured from the provider-reported creation timestamp, and
+-- the gate is evaluated at link time. Nothing persisted that timestamp before, so the
+-- gate had no stored input to be evaluated against.
+--
+-- Both fields are personal data, and `docs/privacy/DATA_MAP.md` retains them "until
+-- unlink or account erasure" and deletes the subject "immediately on unlink". The
+-- column was `not null`, which made that promise unimplementable without deleting the
+-- whole row -- and the row could not be deleted, because a total
+-- `unique (provider, provider_subject)` then let an `unlinked` row block its own
+-- provider account from ever being linked again, to this account or to any other.
+-- Unlinking was silently permanent, product-wide, and the privacy commitment and the
+-- uniqueness constraint could not both be honoured. Both fields are now null exactly
+-- when the binding has ended, which is the retention rule expressed as a constraint,
+-- and the uniqueness is partial over the live states so the rule it encodes -- one live
+-- binding per provider subject, never a silent reassignment -- is stated where a reader
+-- sees it rather than resting on how the engine treats nulls.
+--
+-- No recovery-case reference is declared here. `recovery_cases` is created much later
+-- in this file, PostgreSQL resolves a foreign key at statement time, and the two rows
+-- already join on `account_id`; a nullable unenforced uuid would be a reference that
+-- looks checked and is not.
 create table linked_identities (
   identity_id uuid primary key,
   account_id uuid not null references accounts(account_id),
   provider text not null check (provider in ('github','x')),
-  provider_subject text not null,
-  state text not null check (state in ('linked','unlink-pending','unlinked')),
-  unique (provider, provider_subject)
+  -- The stable linkage key while the binding is live, and null once it has ended.
+  -- Never a username.
+  provider_subject text,
+  -- D-081. Captured from the provider at link time; the 90-day gate reads it.
+  provider_account_created_at timestamptz,
+  state text not null check (state in (
+    'candidate','linked','unlink-pending','lost','compromised','recovery-pending',
+    'unlinked','superseded')),
+  -- Set only when this row was replaced by a later binding of the same subject.
+  superseded_by_identity_id uuid references linked_identities(identity_id),
+  linked_at timestamptz,
+  state_changed_at timestamptz not null,
+  ended_at timestamptz,
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null,
+  -- A candidate is a link in flight: it has no confirmed binding yet, so it carries
+  -- neither a link instant nor the gate input the link is refused without.
+  -- A candidate has not linked yet, and `identity-link-abandon` takes an unconfirmed
+  -- candidate straight to `unlinked`, so an ended row may legitimately have no link
+  -- instant. Stating this as one equivalence made an abandoned candidate
+  -- unrepresentable, which would have forced the abandon transition to invent a
+  -- linked_at it never had.
+  check (state <> 'candidate' or linked_at is null),
+  check (state in ('candidate','unlinked') or linked_at is not null),
+  -- `docs/privacy/DATA_MAP.md` retains the provider subject and the D-081 creation
+  -- timestamp "until unlink or account erasure" and deletes the subject "immediately on
+  -- unlink". Both are constraints here rather than promises a worker has to remember.
+  check ((provider_subject is not null) = (state not in ('unlinked','superseded'))),
+  check ((provider_account_created_at is not null)
+         = (state not in ('candidate','unlinked','superseded'))),
+  check ((state in ('unlinked','superseded')) = (ended_at is not null)),
+  check ((state = 'superseded') = (superseded_by_identity_id is not null)),
+  check (superseded_by_identity_id is null or superseded_by_identity_id <> identity_id),
+  check (linked_at is null or linked_at >= created_at),
+  check (ended_at is null or ended_at >= created_at),
+  check (state_changed_at >= created_at)
 );
+
+-- One live binding per provider subject. Ended rows are retained so a re-link after a
+-- recovery can name what it replaced, and so an appeal can read the history.
+create unique index linked_identities_live_subject_idx
+  on linked_identities (provider, provider_subject)
+  where state in ('candidate','linked','unlink-pending','lost','compromised','recovery-pending');
+
+-- At most one live identity per account and provider. Without it an account can hold
+-- two live GitHub rows and the last-authentication-method count is ambiguous.
+create unique index linked_identities_live_provider_idx
+  on linked_identities (account_id, provider)
+  where state in ('candidate','linked','unlink-pending','lost','compromised','recovery-pending');
 
 create table web_sessions (
   session_id uuid primary key,
@@ -49,16 +130,92 @@ create table optional_authenticators (
   public_key bytea not null
 );
 
+-- The OAuth transaction is the only route by which a callback may change identity.
+-- PF-006, SR-006.
+--
+-- It previously held eight columns and bound almost nothing that
+-- `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` says a transaction
+-- binds: no provider revision, no issuer, no redirect, no PKCE method, no initiating
+-- session, no recent-auth instant, no result. The consequence was not that the table
+-- was thin. It was that `packages/schemas/openapi-v1.yaml#IdentityMutationRequest`
+-- took a bare `authorization_code` and `/identities/link` mutated identity from it, so
+-- there was a second identity-mutating path that referenced no transaction at all and
+-- therefore verified no redirect, no state, no PKCE and no lifetime. Everything the
+-- transaction exists to bind was optional in practice.
+--
+-- `provider_revision` records which row of `packages/schemas/oauth-provider-registry-v1.json`
+-- this transaction agreed to, so a configuration change cannot retroactively alter what
+-- an in-flight transaction was started under. `issuer`, `redirect_uri` and `pkce_method`
+-- are copied at creation for the same reason: the callback is compared against what was
+-- stored, never against what the registry says now, and never against anything the
+-- callback itself carries.
+--
+-- Four constraints carry rules the documents state in prose and no code could enforce:
+--
+-- * a link transaction is startable only from an authenticated account under recent
+--   authentication, which is the reauthentication requirement in
+--   `docs/security/AUTHENTICATION_AND_RECOVERY.md`;
+-- * a link transaction never produces a session, so the linking flow cannot be used to
+--   mint browser access;
+-- * a consumed transaction produced the thing its action names — a session for a
+--   sign-in, a linked identity for a link — so `consumed` cannot mean "finished with
+--   no effect";
+-- * a transaction that started on one account cannot finish on another, which is the
+--   silent-reassignment `docs/security/RANKED_IDENTITY_ELIGIBILITY.md` forbids.
 create table oauth_transactions (
   oauth_transaction_id uuid primary key,
   provider text not null check (provider in ('github','x')),
-  state_hash bytea not null unique,
+  -- The registry revision this transaction agreed to, never re-read at callback time.
+  provider_revision integer not null check (provider_revision > 0),
+  -- Copied from the registry at creation. A callback-controlled value never selects
+  -- any of these three.
+  issuer text not null,
+  redirect_uri text not null,
+  pkce_method text not null check (pkce_method = 'S256'),
+  state_hash bytea not null unique check (octet_length(state_hash) = 32),
   pkce_verifier_ciphertext bytea,
-  intended_action text not null,
+  intended_action text not null check (intended_action in ('sign-in','link-identity')),
+  -- Who started it. Null for a sign-in from an unauthenticated browser.
+  initiating_account_id uuid references accounts(account_id),
+  initiating_web_session_id uuid references web_sessions(session_id),
+  recent_auth_at timestamptz,
+  -- What it produced.
+  resulting_account_id uuid references accounts(account_id),
+  resulting_session_id uuid references web_sessions(session_id),
+  resulting_identity_id uuid references linked_identities(identity_id),
+  failure_reason_code text,
   state text not null check (state in ('created','redirected','callback-received','consumed','expired','failed')),
+  revision integer not null default 1 check (revision > 0),
+  created_at timestamptz not null,
   expires_at timestamptz not null,
-  consumed_at timestamptz
+  consumed_at timestamptz,
+  check (expires_at > created_at),
+  check ((state = 'consumed') = (consumed_at is not null)),
+  check ((state = 'failed') = (failure_reason_code is not null)),
+  -- Linking requires an existing authenticated session and reauthentication.
+  check (intended_action <> 'link-identity'
+         or (initiating_account_id is not null
+             and initiating_web_session_id is not null
+             and recent_auth_at is not null)),
+  -- Linking never mints browser access.
+  check (intended_action <> 'link-identity' or resulting_session_id is null),
+  -- A consumed transaction produced what its action names.
+  check (state <> 'consumed' or resulting_account_id is not null),
+  check (state <> 'consumed' or intended_action <> 'sign-in' or resulting_session_id is not null),
+  check (state <> 'consumed' or intended_action <> 'link-identity' or resulting_identity_id is not null),
+  -- A transaction cannot finish on an account other than the one it started on.
+  check (initiating_account_id is null
+         or resulting_account_id is null
+         or resulting_account_id = initiating_account_id)
 );
+
+-- One live transaction per account, provider and action. Without it a client can hold
+-- many redirected link transactions for one provider at once, and the callback that
+-- returns has a set of stored states to match against rather than one.
+create unique index oauth_transactions_live_link_idx
+  on oauth_transactions (initiating_account_id, provider, intended_action)
+  where state in ('created','redirected','callback-received')
+    and initiating_account_id is not null;
 
 create table devices (
   device_id uuid primary key,
@@ -1205,11 +1362,27 @@ create table notification_deliveries (
   check ((failure_reason_code is not null) = (state = 'failed'))
 );
 
+-- The append-only record of what happened to one OAuth transaction. PF-006.
+--
+-- It carried `subject_id uuid not null` with no reference and `event_type text not null`
+-- with no CHECK, so it was a table that could hold a row about anything and say
+-- anything about it. `event_type` is now exactly the transition identifier set of the
+-- `oauth-transaction` machine in `packages/schemas/state-machine-registry-v1.json`, and
+-- `scripts/repository/validate_oauth_identity_contract.py` compares the two sets, so a
+-- transition added to the machine with no way to record it fails rather than passing
+-- unnoticed.
+--
+-- No column here carries a code, a redirect target, a token or a provider handle. The
+-- ledger records that a transition happened and, when it failed, which registered
+-- reason refused it.
 create table oauth_authorization_events (
   oauth_authorization_event_id uuid primary key,
-  subject_id uuid not null,
-  event_type text not null,
-  created_at timestamptz not null
+  oauth_transaction_id uuid not null references oauth_transactions(oauth_transaction_id),
+  event_type text not null check (event_type in (
+    'oauth-begin','oauth-callback','oauth-consume','oauth-expire','oauth-fail')),
+  reason_code text,
+  created_at timestamptz not null,
+  check ((event_type = 'oauth-fail') = (reason_code is not null))
 );
 
 create table pricing_interpretations (

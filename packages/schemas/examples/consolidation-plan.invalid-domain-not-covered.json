@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "case": {
-    "consolidation_case_id": "018f2c60-0000-7000-8000-000000000310",
+    "consolidation_case_id": "018f2c60-0000-7000-8000-000000000311",
     "surviving_ranked_identity_id": "018f2c60-0000-7000-8000-000000000201",
     "absorbed_ranked_identity_id": "018f2c60-0000-7000-8000-000000000210",
     "state": "applied",
@@ -49,18 +49,33 @@
       "disposition": "retained",
       "affected_count": 0,
       "basis": "A running export finishes against the account that requested it. Its artifact is that account's data-subject-rights answer and is not re-scoped by a consolidation."
-    },
-    "deletions": {
-      "disposition": "retained",
-      "affected_count": 0,
-      "basis": "A pending deletion job is not cancelled, redirected or absorbed. An Article 17 erasure deletes live personal records for the account that asked, and a consolidation cannot make one account's deletion request apply to another's rows."
     }
   },
-  "contributions": [],
+  "contributions": [
+    {
+      "consolidation_contribution_id": "018f2c60-0000-7000-8000-000000000302",
+      "claim_id": "018f2c60-0000-7000-8000-000000000401",
+      "period_id": "018f2c60-0000-7000-8000-000000000501",
+      "duplicate_domain_commitment": "3a1f0c9d8b7e6a5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c",
+      "token_burn_total": 128000,
+      "disposition": "absorbed",
+      "created_at": "2026-07-02T09:01:00Z"
+    },
+    {
+      "consolidation_contribution_id": "018f2c60-0000-7000-8000-000000000303",
+      "claim_id": "018f2c60-0000-7000-8000-000000000402",
+      "period_id": "018f2c60-0000-7000-8000-000000000501",
+      "duplicate_domain_commitment": "9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d",
+      "token_burn_total": 64000,
+      "disposition": "excluded-imported",
+      "created_at": "2026-07-02T09:01:00Z"
+    }
+  ],
   "result": {
-    "absorbed_contribution_count": 0,
-    "excluded_contribution_count": 0,
-    "affected_period_count": 0,
-    "combined_token_burn_total": 192000
+    "absorbed_contribution_count": 1,
+    "excluded_contribution_count": 1,
+    "affected_period_count": 1,
+    "erasure_domain_link_established": true,
+    "rebuilt_generation_count": 1
   }
 }

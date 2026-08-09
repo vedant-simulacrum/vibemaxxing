@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/oauth-provider-registry-v1.schema.json",
+  "title": "OAuth provider configuration registry v1",
+  "description": "The preconfigured provider-capability record that docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md and docs/decisions/ADR-015-SESSION_AUTHENTICATION.md both name as the thing an OAuth transaction binds, and that existed in neither as data. ADR-015 makes RFC 9207 issuer validation the control that closes the mix-up attack and says a response arriving without an iss for a provider recorded as supporting it is a failure; the contract document says a provider without RFC 9207 support is bound by its stored transaction provider and its unique provider-specific redirect path instead. Both rules are conditional on a capability record, so until this file existed neither rule could be evaluated and the asymmetry between the two callback operations in packages/schemas/openapi-v1.yaml rested on nothing. Every value here is server-held configuration: no field in this file is ever selected, echoed or influenced by a callback parameter, which is the confused-deputy rule the contract document states. docs/security/AUTHENTICATION_AND_RECOVERY.md is the normative owner.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_id", "claim_scope", "providers"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "registry_id": { "const": "oauth-provider-registry-v1" },
+    "claim_scope": {
+      "description": "What a reader may conclude from this file. It is required rather than optional because every endpoint, scope and capability below is transcribed configuration rather than an observation: nothing in this repository has performed an authorization request against either provider. A record whose verification state is unverified is a statement of intent, and the scope line is where that is said once rather than implied by omission.",
+      "type": "string",
+      "minLength": 1
+    },
+    "providers": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/provider" }
+    }
+  },
+  "$defs": {
+    "capability": {
+      "description": "A provider capability the protocol's behaviour depends on. `supported` and `unsupported` are observations and require a primary source and the date it was read; `unverified` is the absence of an observation and requires the work unit that will make one. An unverified capability may never be relied on as a control: scripts/repository/validate_oauth_identity_contract.py refuses a registry that claims a capability while its provider's verification state records that nothing was observed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability", "basis"],
+      "properties": {
+        "capability": { "enum": ["supported", "unsupported", "unverified"] },
+        "basis": { "type": "string", "minLength": 1 },
+        "primary_source": {
+          "oneOf": [
+            { "type": "string", "pattern": "^https://" },
+            { "type": "null" }
+          ]
+        },
+        "observed_at": {
+          "oneOf": [
+            { "type": "string", "format": "date-time" },
+            { "type": "null" }
+          ]
+        },
+        "verification_owner": {
+          "description": "The work unit in docs/implementation/PR_SIZED_WORK_BREAKDOWN.md that will observe this capability against a live provider.",
+          "type": "string",
+          "pattern": "^[A-Z]{1,2}-[0-9]{3}$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "capability": { "const": "unverified" } },
+            "required": ["capability"]
+          },
+          "then": {
+            "required": ["verification_owner"],
+            "properties": {
+              "primary_source": { "type": "null" },
+              "observed_at": { "type": "null" }
+            }
+          },
+          "else": {
+            "required": ["primary_source", "observed_at"],
+            "properties": {
+              "primary_source": { "type": "string" },
+              "observed_at": { "type": "string" }
+            }
+          }
+        }
+      ]
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "display_name",
+        "issuer",
+        "authorization_endpoint",
+        "token_endpoint",
+        "client_id_reference",
+        "redirect_uri",
+        "start_path",
+        "callback_path",
+        "pkce_method",
+        "rfc9207_iss",
+        "device_flow",
+        "scopes",
+        "verification",
+        "revision",
+        "recorded_at",
+        "review_due_at"
+      ],
+      "properties": {
+        "provider_id": {
+          "description": "The spelling every other artifact uses for this provider: the CHECK literal on linked_identities.provider and oauth_transactions.provider, and the enum member on Identity.provider. One spelling across the four owners is D-079's rule; a second spelling here would be a provider the rest of the system cannot name.",
+          "enum": ["github", "x"]
+        },
+        "display_name": { "type": "string", "minLength": 1 },
+        "issuer": {
+          "description": "The immutable issuer the transaction records at creation. A callback never selects it.",
+          "type": "string",
+          "pattern": "^https://[^\\s]+$"
+        },
+        "authorization_endpoint": { "type": "string", "pattern": "^https://[^\\s]+$" },
+        "token_endpoint": { "type": "string", "pattern": "^https://[^\\s]+$" },
+        "client_id_reference": {
+          "description": "Where the deployment reads the client identifier from. The identifier itself is environment configuration and is never committed: a literal here would be one string that must differ between the local build and production, so the file would be wrong in at least one of them by construction.",
+          "type": "string",
+          "pattern": "^oauth/[a-z0-9-]+/client-id$"
+        },
+        "redirect_uri": {
+          "description": "The exact redirect URI registered with the provider. Exact means byte-equal: no prefix rule, no wildcard and no path suffix, because a redirect matched by prefix is the redirection attack the exactness exists to refuse.",
+          "type": "string",
+          "pattern": "^https://[^\\s?#]+$"
+        },
+        "start_path": {
+          "description": "The OpenAPI path that begins this provider's transaction. Checked against packages/schemas/openapi-v1.yaml rather than trusted.",
+          "type": "string",
+          "pattern": "^/auth/[a-z0-9-]+/start$"
+        },
+        "callback_path": {
+          "description": "The OpenAPI path this provider's authorization response returns to. It is provider-specific by design: the contract document makes the unique provider-specific redirect path the binding that replaces RFC 9207 for a provider without it, so two providers sharing one callback path would remove the only mix-up control the launch configuration actually has.",
+          "type": "string",
+          "pattern": "^/auth/[a-z0-9-]+/callback$"
+        },
+        "pkce_method": {
+          "description": "S256 only. `plain` is admitted by RFC 7636 and is not admitted here: it makes the challenge equal to the verifier, so an attacker who observes the authorization request holds the verifier.",
+          "const": "S256"
+        },
+        "rfc9207_iss": { "$ref": "#/$defs/capability" },
+        "device_flow": {
+          "description": "Whether this provider offers RFC 8628 device authorization. It gates which providers /auth/device/start may name; ADR-015 restricts the device path to registered limited-input profiles and forbids unattended polling.",
+          "$ref": "#/$defs/capability"
+        },
+        "scopes": {
+          "description": "The minimum scope set requested for sign-in and linking. An empty list is admissible and means the default read-only grant; it is not a placeholder for 'not decided yet', which is what the verification state records.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "verification": {
+          "description": "Whether anything in this row has been observed against the live provider. `unverified` is the honest launch state and is not a defect; claiming a capability while it holds is.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "primary_source", "observed_at", "verification_owner"],
+          "properties": {
+            "state": { "enum": ["verified", "unverified"] },
+            "primary_source": {
+              "oneOf": [
+                { "type": "string", "pattern": "^https://" },
+                { "type": "null" }
+              ]
+            },
+            "observed_at": {
+              "oneOf": [
+                { "type": "string", "format": "date-time" },
+                { "type": "null" }
+              ]
+            },
+            "verification_owner": { "type": "string", "pattern": "^[A-Z]{1,2}-[0-9]{3}$" }
+          }
+        },
+        "revision": {
+          "description": "Monotonic per provider. An OAuth transaction records the revision it was created under, so a configuration change cannot retroactively change what an in-flight transaction agreed to.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "recorded_at": { "type": "string", "format": "date-time" },
+        "review_due_at": {
+          "description": "When this row stops being a current statement about the provider. It is a bounded warranty rather than a wall-clock expiry: the validator checks it is later than recorded_at and no more than 365 days after it, so a row cannot be written with a warranty nobody will ever be asked to renew.",
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

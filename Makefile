@@ -31,6 +31,7 @@ validate: $(VENV_PY) ## Run the planning validator suite
 	$(VENV_PY) scripts/repository/validate_repair_task_binding.py
 	$(VENV_PY) scripts/repository/validate_planning_coverage.py
 	$(VENV_PY) scripts/repository/validate_state_vocabularies.py
+	$(VENV_PY) scripts/repository/validate_oauth_identity_contract.py
 	$(VENV_PY) scripts/repository/validate_work_unit_status.py
 	$(VENV_PY) scripts/repository/validate_load_scenarios.py
 	$(VENV_PY) scripts/repository/validate_planning_artifacts.py --allow-no-postgres

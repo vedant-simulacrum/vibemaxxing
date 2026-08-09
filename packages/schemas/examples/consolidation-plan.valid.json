@@ -10,7 +10,51 @@
     "confirmed_at": "2026-07-02T09:00:00Z",
     "applied_at": "2026-07-02T09:01:00Z",
     "expires_at": "2026-07-15T09:00:00Z",
-    "revision": 6
+    "revision": 6,
+    "surviving_ranked_identity_created_at": "2025-11-02T08:00:00Z",
+    "absorbed_ranked_identity_created_at": "2026-03-14T08:00:00Z"
+  },
+  "domain_dispositions": {
+    "identities": {
+      "disposition": "transferred",
+      "affected_count": 1,
+      "basis": "The absorbed ranked identity is retired and names the survivor in absorbed_into_ranked_identity_id. Its linked provider identities move to superseded; the provider subjects are not silently reassigned."
+    },
+    "devices": {
+      "disposition": "transferred",
+      "affected_count": 2,
+      "basis": "Enrolled devices re-bind to the surviving account. Each keeps its own key, lineage and sequence state under D-072, because a lineage is not merged into another lineage."
+    },
+    "claims": {
+      "disposition": "recomputed",
+      "affected_count": 2,
+      "basis": "The surviving standing is rebuilt from the contributions below. No stored account total is added to another, which is the D-070 rule this record exists to make executable."
+    },
+    "social": {
+      "disposition": "retained",
+      "affected_count": 3,
+      "basis": "Friend edges, rival edges and blocks stay on the account that holds them. A block is directional and independent of symmetric friendship, so moving one side would create an edge neither party asked for."
+    },
+    "boards": {
+      "disposition": "retained",
+      "affected_count": 1,
+      "basis": "Board ownership and membership stay put. Transferring an owner role would change a board's administration without its members acting, so an owner who wants to move a board does it explicitly."
+    },
+    "moderation": {
+      "disposition": "retained",
+      "affected_count": 0,
+      "basis": "Open cases, actions and effects stay attached to the account they were opened against. Moving a sanction would let a consolidation clear one, and reversal is an appeals outcome rather than a side effect."
+    },
+    "exports": {
+      "disposition": "retained",
+      "affected_count": 0,
+      "basis": "A running export finishes against the account that requested it. Its artifact is that account's data-subject-rights answer and is not re-scoped by a consolidation."
+    },
+    "deletions": {
+      "disposition": "retained",
+      "affected_count": 0,
+      "basis": "A pending deletion job is not cancelled, redirected or absorbed. An Article 17 erasure deletes live personal records for the account that asked, and a consolidation cannot make one account's deletion request apply to another's rows."
+    }
   },
   "contributions": [
     {

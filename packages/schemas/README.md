@@ -12,6 +12,8 @@ This directory owns planning-grade source interfaces. These files are normative 
 - `local-control-v1.proto` — Local control protocol v1 service definition
 - `local-detector-result.schema.json` — LocalDetectorResult v1 schema
 - `normalized-event.schema.json` — NormalizedAccountingEvent v1 schema
+- `oauth-provider-registry-v1.json` — Preconfigured OAuth provider capability record
+- `oauth-provider-registry-v1.schema.json` — OAuth provider configuration registry v1 schema
 - `observability-allowlist-v1.yaml` — Observability attributes allowlist v1
 - `openapi-v1.yaml` — VibeMaxxing Public API specification, written as YAML under D-140
 - `planning-schema.sql` — P-1140D planning DDL contract

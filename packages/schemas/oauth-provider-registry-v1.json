@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "registry_id": "oauth-provider-registry-v1",
+  "claim_scope": "Transcribed server-held configuration for the two launch providers D-055 fixes. Nothing in this repository has performed an authorization request against either provider, so every capability below is recorded unverified and no control in ADR-015 that is conditional on a capability may be relied on yet. This file proves that the configuration an OAuth transaction binds is declared in one place and agrees with the SQL, OpenAPI and reason-code owners; it proves nothing about either provider's live behaviour.",
+  "providers": [
+    {
+      "provider_id": "github",
+      "display_name": "GitHub",
+      "issuer": "https://github.com",
+      "authorization_endpoint": "https://github.com/login/oauth/authorize",
+      "token_endpoint": "https://github.com/login/oauth/access_token",
+      "client_id_reference": "oauth/github/client-id",
+      "redirect_uri": "https://vibemaxxing.dev/auth/github/callback",
+      "start_path": "/auth/github/start",
+      "callback_path": "/auth/github/callback",
+      "pkce_method": "S256",
+      "rfc9207_iss": {
+        "capability": "unverified",
+        "basis": "No authorization response from GitHub has been observed in this repository, and docs/research/ records no primary-source reading of RFC 9207 support. ADR-015 makes a missing iss a failure only for a provider recorded as supporting it, so recording `supported` here without an observation would manufacture the control it is supposed to prove.",
+        "primary_source": null,
+        "observed_at": null,
+        "verification_owner": "OS-009"
+      },
+      "device_flow": {
+        "capability": "unverified",
+        "basis": "The GitHub App device path is named as an open question in ADR-015's reopening conditions and in the open-research list of docs/security/AUTHENTICATION_AND_RECOVERY.md. Nothing has been polled.",
+        "primary_source": null,
+        "observed_at": null,
+        "verification_owner": "OS-009"
+      },
+      "scopes": ["read:user"],
+      "verification": {
+        "state": "unverified",
+        "primary_source": null,
+        "observed_at": null,
+        "verification_owner": "OS-009"
+      },
+      "revision": 1,
+      "recorded_at": "2026-08-09T00:00:00Z",
+      "review_due_at": "2027-08-09T00:00:00Z"
+    },
+    {
+      "provider_id": "x",
+      "display_name": "X",
+      "issuer": "https://x.com",
+      "authorization_endpoint": "https://x.com/i/oauth2/authorize",
+      "token_endpoint": "https://api.x.com/2/oauth2/token",
+      "client_id_reference": "oauth/x/client-id",
+      "redirect_uri": "https://vibemaxxing.dev/auth/x/callback",
+      "start_path": "/auth/x/start",
+      "callback_path": "/auth/x/callback",
+      "pkce_method": "S256",
+      "rfc9207_iss": {
+        "capability": "unverified",
+        "basis": "No authorization response from X has been observed in this repository. This row and GitHub's are deliberately identical on this field: the two callback operations previously differed in whether they declared `iss` at all, and no record anywhere said why, so the asymmetry was a capability claim nothing backed.",
+        "primary_source": null,
+        "observed_at": null,
+        "verification_owner": "OS-009"
+      },
+      "device_flow": {
+        "capability": "unverified",
+        "basis": "X/Twitter sign-in protocol and long-term API constraints are an open research item in docs/security/AUTHENTICATION_AND_RECOVERY.md. Nothing has been polled.",
+        "primary_source": null,
+        "observed_at": null,
+        "verification_owner": "OS-009"
+      },
+      "scopes": ["users.read", "tweet.read"],
+      "verification": {
+        "state": "unverified",
+        "primary_source": null,
+        "observed_at": null,
+        "verification_owner": "OS-009"
+      },
+      "revision": 1,
+      "recorded_at": "2026-08-09T00:00:00Z",
+      "review_due_at": "2027-08-09T00:00:00Z"
+    }
+  ]
+}

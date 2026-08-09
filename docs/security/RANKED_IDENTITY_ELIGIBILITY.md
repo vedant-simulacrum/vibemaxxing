@@ -96,6 +96,20 @@ The transaction boundary is `consolidation-identity-and-contributions`: retiring
 
 `applied` is not terminal. A successful appeal reaches `reversed`, which appends inverse contributions under D-263 rather than editing an accepted claim, and does not un-retire the absorbed identity: its account may have been deleted in the interval, and resurrecting the identifier is what D-085 forbids.
 
+#### What the plan must cover, and which identity survives
+
+A consolidation touches every domain a duplicate account owns, and the plan record covered three of them — identities, claims and periods. `docs/security/AUTHENTICATION_AND_RECOVERY.md` requires a merge to define ownership of usernames, devices, claims, boards, friendships, moderation state and deletion requests, so a case could apply while saying nothing about the absorbed account's devices, blocks, board ownership, open moderation case, running export or pending deletion. `packages/schemas/consolidation-plan-v1.schema.json` now requires a disposition for all eight — `identities`, `devices`, `claims`, `social`, `boards`, `moderation`, `exports`, `deletions` — with `additionalProperties: false`, so the coverage cannot be satisfied by an empty object and a ninth domain has to be added to the schema rather than invented in a plan.
+
+Each disposition is `transferred`, `retained`, `excluded` or `recomputed`, with a count of affected rows and the rule that produced it. There is deliberately no `not-applicable` value: a domain with nothing in it is `retained` with a count of zero, which is a statement, whereas a value meaning "we did not look" would let every domain be covered by declining to answer. The counts are counts of rows and never quantities; no field anywhere in the path holds a figure derived from two accounts' token burn.
+
+D-564 fixes which side survives: **the older ranked identity survives and the newer is retired, without summation.** The plan records both identities' creation instants so that rule is checkable rather than a sentence in a register. JSON Schema cannot compare two of its own fields, so `scripts/repository/validate_oauth_identity_contract.py` compares them on every committed plan and refuses one where the newer identity survived; a fixture written to violate the ordering is checked to actually violate it, so the rule is exercised in both directions.
+
+#### The participant's route
+
+The machine declares `consolidation-confirm` with actor `user`, `web-session` authentication and recent authentication required, and `packages/schemas/openapi-v1.yaml` declared no consolidation operation at all. The participant was required by the lifecycle to perform a transition the contract gave them no way to perform, so a case could leave `awaiting-confirmation` only by expiring.
+
+`getConsolidationPlan` is the read half and `confirmConsolidation` is the write half. Neither publishes a lifecycle value, which is why `account-consolidation` still records no API state enum: a value like `applying` is an operational fact, and the participant is being asked about the plan rather than about the case. The plan view carries a `plan_digest`, and the confirmation names it, so a plan cannot be substituted between being read and being confirmed. Confirmation moves the case to `applying` and does nothing else; the surviving standing is recomputed from the contributions.
+
 ## Devices and account continuity
 
 One ranked identity may use many registered devices. Each device retains its own key, daemon identity, sequence state, evidence lineage, and revocation state, while all accepted claims accrue to the same ranked account.

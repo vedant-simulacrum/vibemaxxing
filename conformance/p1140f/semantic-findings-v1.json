@@ -5,7 +5,7 @@
     {
       "finding_id": "SR-005",
       "severity": "P1",
-      "state": "repair-in-progress",
+      "state": "repaired-pending-review",
       "title": "Protocol authority and executable drift",
       "repair_task": "P-1140F-1",
       "finding_class": "contradiction",
@@ -22,7 +22,9 @@
       ],
       "closure_evidence": [
         "PF-001 at 0acaba7f25f228477908c2c4bc81a69609f4b682: all five artifacts the authority record classes as prototypes carry the gate, their normative owner and every recorded incompatibility and prohibited use in their own source, enforced by validate_artifact_quarantine.py.",
-        "PF-004 at f98a31502f6863e0c29dc97c0f3b233c919d1b32: every mutable aggregate declares revision_model, transaction_boundary and outbox, with the four combinations outbox_events.unique(aggregate_id, aggregate_revision) forbids rejected by validate_state_vocabularies.py."
+        "PF-004 at f98a31502f6863e0c29dc97c0f3b233c919d1b32: every mutable aggregate declares revision_model, transaction_boundary and outbox, with the four combinations outbox_events.unique(aggregate_id, aggregate_revision) forbids rejected by validate_state_vocabularies.py.",
+        "PF-002 at 2d9935ee7cc5c950b68243a671395776f31e20b8: nothing read a CDDL rule name against a vector file in either direction, so the exact-byte vectors could have encoded a different message entirely and passed. The acceptance was unsatisfiable as written — zero of the 26 rule names appear in either file, because both hold hex. cddl_instance.py now decodes both payloads and header maps, requires each to satisfy its rule with the exact label set, and re-encodes to the committed bytes; the pinned, corpus-pinned and declared-unpinned rule sets must partition the grammar exactly. VIBEPROOF_V1_CANONICAL_PROFILE.md was a second document owning canonical encoding while describing the eleven-field shadow codec, which is this finding in one file.",
+        "PF-003 at 2d9935ee7cc5c950b68243a671395776f31e20b8: the evidence-ceiling check did not exist. run_evals.py admitted authority_class and evidence_ceiling to its allowlist with a comment saying they carry no execution semantics, and read neither; one suite of 27 carried them. All 27 now do, the vocabulary is declared once in artifact-authority-v1.json and read rather than copied, and a manifest binding no fixtures caps at none so absence lowers the ceiling instead of escaping the check. What remains for SR-005 is outside this finding: protocol/vibeproof-v1.cddl is unquarantined while four of its consumers are exploratory prototypes, and registering it needs a notice inside protocol/, which this phase may not write."
       ],
       "reviewed_commit": null,
       "review_verdict": "pending"

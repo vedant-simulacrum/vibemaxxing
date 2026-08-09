@@ -11,6 +11,7 @@ Authorities:
 - `docs/security/AUTHENTICATION_AND_RECOVERY.md`
 - `docs/decisions/ADR-015-SESSION_AUTHENTICATION.md`
 - `packages/schemas/openapi-v1.yaml` for the authentication operations
+- `packages/schemas/oauth-provider-registry-v1.json` for the provider capability record the mix-up vectors are decided against
 - `packages/schemas/state-machine-registry-v1.json` for the session and refresh-family machines
 
 ## Required cases
@@ -30,6 +31,12 @@ Negative, each of which must reject with a registered reason code:
 - a recovery attempt inside the cooling-off period;
 - a request whose signing timestamp is outside the 300-second freshness bound.
 
+## What is here now
+
+`provider-mixup-vectors-v1.json` holds sixteen callback observations under PF-005: two accepted baselines, one per launch provider, and fourteen refusals. Each refusal differs from its provider's baseline in exactly one field, which is what makes the recorded reason code attributable to one discriminator rather than to a generally malformed callback. The seven discriminators are transaction single use, transaction lifetime, the provider-specific callback path, exact redirect match, issuer identification, state binding and PKCE method. `manifest.json` declares one case per vector.
+
 ## Status
 
-**Nothing here executes.** This directory holds no fixture, no `manifest.json` and no runner. The `authentication-recovery` eval suite is `not_applicable` and names `apps/api/internal/auth` and `evals/fixtures/authentication-recovery.json` (new) as the paths whose absence justifies that status; it stays `not_applicable` until both exist. A README is not executable evidence and this one does not change any status.
+**No harness runner executes this suite against a subject.** `runner.state` is `absent` and `OS-009` owns it. The vectors above are decided inside this repository by `scripts/repository/validate_oauth_identity_contract.py`, which evaluates each callback against `packages/schemas/oauth-provider-registry-v1.json` and compares the decision with the recorded expectation. That is a planning check and not conformance: there is no Go subject running the same decision, and cross-implementation agreement is the thing conformance is for.
+
+Nine of the transaction shapes listed above are still unwritten — the refresh-handle replay, the 90-day family cap, the device-code polling bounds and the recovery cooling-off case among them. The `authentication-recovery` eval suite stays `not_applicable`: it names `apps/api/internal/auth` and `evals/fixtures/authentication-recovery.json` (new) as the paths whose absence justifies that status, and neither exists. Nothing in this directory changes it. An earlier version of this section said the directory held no `manifest.json`, which was already untrue when it was written.
