@@ -128,11 +128,12 @@
             ]
           },
           "authority": {
+            "description": "Who is being trusted for this count, and the input to packages/schemas/accounting-arithmetic-v1.json#reconciliation.authority_order. The fourth value was spelled `reconstructed` here and `exact-reconstruction` in the nine other artifacts that carry the same vocabulary, including packages/schemas/normalized-event.schema.json#count_authority and packages/schemas/source-receipt-v1.schema.json#count_authority. The two spellings never overlap, so scripts/repository/validate_planning_artifacts.py's computed comparison of a bound profile's authorities against the event's count_authority reported a contradiction for every reconstruction profile whether or not one existed; it did not fire only because the one binding it runs over happens to bind a provider-reported profile.",
             "enum": [
               "provider-reported",
               "runtime-reported",
               "source-reported",
-              "reconstructed"
+              "exact-reconstruction"
             ]
           }
         }
@@ -295,6 +296,7 @@
       ]
     },
     "contradiction_policy": {
+      "description": "What happens when two readings of one operation disagree and neither outranks the other. This is the recorded deterministic outcome packages/schemas/accounting-arithmetic-v1.json#reconciliation.equal_authority_contradiction defers to: the arithmetic fixes that the disagreement is detected and that it is never resolved by picking one, and the profile fixes which of the three dispositions the operation takes. Picking a survivor between two equally authoritative contradicting sources would make the total depend on which arrived first, which is the array-order dependence conformance/accounting/reconciliation-vectors-v1.json exists to refuse.",
       "enum": [
         "reject",
         "quarantine",

@@ -18,8 +18,12 @@
     "source_event_ref",
     "local_wall_time",
     "monotonic_clock",
+    "operation",
+    "observer",
+    "reading",
     "token_observation",
     "outcome",
+    "retry",
     "sensitivity"
   ],
   "properties": {
@@ -61,11 +65,13 @@
       ]
     },
     "execution_mode": {
+      "description": "The observation mode, and the first half of the exclusivity channel identity packages/schemas/observer-equivalence-v1.json names. The nine values are exactly that record's observation_modes and exactly the execution_mode and capture_mode vocabularies of packages/schemas/source-receipt-v1.schema.json, so a mode always resolves to a precedence rank and an achievable equivalence class. `acp` was absent here while the receipt, the equivalence rule and packages/schemas/producer-accounting-binding-v1.schema.json all carried it and `generic-acp-v1` was a registered binding, so an ACP observation was unrepresentable in the schema every ACP adapter has to write.",
       "enum": [
         "native-event",
         "extension-api",
         "official-hook",
         "otel",
+        "acp",
         "proxy",
         "wrapper",
         "live-log",
@@ -145,6 +151,98 @@
           "pattern": "^(0|[1-9][0-9]{0,19})$"
         },
         "end_ns": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "operation": {
+      "description": "Which execution at the source this observation is about, said in the source's own terms. Before this field existed the schema carried a source_event_ref, which names the record the observer read, and nothing that named the execution the record describes; two observers of one execution therefore had no shared way to say so, and docs/product/TOKEN_ACCOUNTING_SPEC.md listed an `operation_id` that existed in no schema in this repository. identity_source is required and is the discriminator: it states how the identity was obtained rather than leaving a reader to infer it from whether operation_ref happens to be null.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity_source",
+        "operation_ref",
+        "parent_operation_ref"
+      ],
+      "properties": {
+        "identity_source": {
+          "description": "source-assigned: the source named the execution and the observer read that name, which is what packages/schemas/observer-equivalence-v1.json calls the strong class. source-cursor-derived: the source names no execution but exposes an ordered cursor that belongs to it, which is the source-cursor class. absent: no source-derived identity of any kind, which is the weak class and never competes.",
+          "enum": [
+            "source-assigned",
+            "source-cursor-derived",
+            "absent"
+          ]
+        },
+        "operation_ref": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{8,128}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parent_operation_ref": {
+          "description": "The initiating execution when this one is nested, or null. Subagent and parent executions carry different source-assigned identities, so both count and the edge is what stops a parent total that already contains its children from being added to them.",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{8,128}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "observer": {
+      "description": "Who did the observing. With execution_mode this is exactly the channel identity packages/schemas/observer-equivalence-v1.json#exclusivity.channel_identity names, and the exclusivity rule cannot be applied without it: two collector instances sharing one mode over one source runtime is the case that quarantines, and nothing in the observation said which instance produced it. Every field here is forbidden in the equivalence commitment preimage for the same reason it is required here - it identifies the observer, and an observer-derived commitment never collides, which is a client deciding for itself that its observation is not a duplicate.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collector_instance_id",
+        "adapter_instance_id"
+      ],
+      "properties": {
+        "collector_instance_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{8,128}$"
+        },
+        "adapter_instance_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{8,128}$"
+        }
+      }
+    },
+    "reading": {
+      "description": "Whether the numbers in token_observation are a running total or an increment. An OTLP counter is cumulative by default and a receiver that adds two cumulative readings has double counted everything before the second one; nothing in this schema said which it held, so the same payload was admissible under either interpretation. accumulation uses the two values packages/schemas/producer-accounting-binding-v1.schema.json#otel.metrics.temporality already uses, and reset_detection uses that record's three, so a reading does not need a translation table to be read against the binding that produced it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accumulation",
+        "reset_detection",
+        "series_generation"
+      ],
+      "properties": {
+        "accumulation": {
+          "enum": [
+            "cumulative",
+            "delta"
+          ]
+        },
+        "reset_detection": {
+          "enum": [
+            "value-decrease-or-start-time-change",
+            "start-time-change-only",
+            "not-applicable"
+          ]
+        },
+        "series_generation": {
+          "description": "Which run of the series this reading belongs to. A cumulative counter that restarts produces a smaller value than the one before it, and the generation is what separates a restart from a decrease that would otherwise underflow the difference.",
           "type": "string",
           "pattern": "^(0|[1-9][0-9]{0,19})$"
         }
@@ -259,11 +357,13 @@
       ]
     },
     "retry": {
+      "description": "Required rather than optional. An absent retry block and a declared `none` scope are the same bytes to a reader and different facts: the first is a source that said nothing about retries, the second is a source that said there were none. The accounting profile's retry_policy decides which attempts count, and it cannot be applied to an observation that never stated whether this was one.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "scope",
-        "ordinal"
+        "ordinal",
+        "generation"
       ],
       "properties": {
         "scope": {
@@ -275,6 +375,12 @@
           ]
         },
         "ordinal": {
+          "description": "Which attempt within one retry scope. With scope this is the attempt identity packages/schemas/accounting-arithmetic-v1.json names for the each-model-execution and caller-visible-only policies.",
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "generation": {
+          "description": "How many times the source has re-executed this operation identity. The ordinal separates attempts inside one execution; the generation separates one execution of a named operation from a later re-run of the same name, which is the case that makes an operation_ref non-unique over time.",
           "type": "string",
           "pattern": "^(0|[1-9][0-9]{0,19})$"
         }
@@ -312,5 +418,92 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "title": "An absent operation identity is not a null that means anything else",
+      "description": "identity_source is the discriminator and operation_ref is the value. Allowing `absent` beside a populated ref would let an observer supply an identity it did not read from the source, and allowing `source-assigned` beside a null ref would let it claim it read one it did not. Either way the equivalence class the server assigns would be decided by a fact the client made up.",
+      "if": {
+        "type": "object",
+        "required": [
+          "operation"
+        ],
+        "properties": {
+          "operation": {
+            "type": "object",
+            "required": [
+              "identity_source"
+            ],
+            "properties": {
+              "identity_source": {
+                "const": "absent"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "operation": {
+            "properties": {
+              "operation_ref": {
+                "type": "null"
+              },
+              "parent_operation_ref": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "operation": {
+            "properties": {
+              "operation_ref": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "A cumulative reading declares how a reset is detected",
+      "description": "A running total has to be differenced against the previous reading to become an increment, and a counter that restarts produces a smaller value than the one before it. Without a reset rule that decrease is either a negative increment, which the unsigned domain cannot hold, or a silent zero. `not-applicable` is the honest value only for a reading that already is an increment.",
+      "if": {
+        "type": "object",
+        "required": [
+          "reading"
+        ],
+        "properties": {
+          "reading": {
+            "type": "object",
+            "required": [
+              "accumulation"
+            ],
+            "properties": {
+              "accumulation": {
+                "const": "cumulative"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reading": {
+            "properties": {
+              "reset_detection": {
+                "enum": [
+                  "value-decrease-or-start-time-change",
+                  "start-time-change-only"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

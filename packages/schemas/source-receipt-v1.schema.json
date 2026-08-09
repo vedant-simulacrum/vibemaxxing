@@ -180,14 +180,17 @@
           ]
         },
         "state": {
+          "description": "`uncertified` plus the eight states of the `source-certification` machine in packages/schemas/state-machine-registry-v1.json, and nothing else. The previous list carried `revoked`, which no transition of that machine reaches - the machine ends at `retired` - and omitted `testing`, `superseded` and `retired`, which it does. A receipt could therefore record a certification state that no certification can ever hold, and could not record three that one can. `uncertified` is not a state of the machine and is not meant to be: it is the absence of a certification record, which is what every generic binding in conformance/accounting/producer-bindings-v1.json carries.",
           "enum": [
             "uncertified",
             "candidate",
+            "testing",
             "active",
             "degraded",
             "suspended",
             "expired",
-            "revoked"
+            "superseded",
+            "retired"
           ]
         },
         "producer_binding_id": {

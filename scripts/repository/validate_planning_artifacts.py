@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import itertools
 import json
 import os
 import re
@@ -95,6 +96,162 @@ def expect_invalid(schema: dict[str, Any], instance: Any, label: str) -> None:
 def assert_unique(values: list[str], label: str) -> None:
     if len(values) != len(set(values)):
         raise ValidationFailure(f"duplicate values in {label}")
+
+
+# Which schema owns each example-file prefix in `packages/schemas/examples/`. The
+# directory is enumerated against this map, so an example cannot sit there unexecuted
+# and a prefix cannot be declared for a schema that has no example.
+EXAMPLE_SCHEMAS: dict[str, str] = {
+    "adapter-manifest": "adapter-manifest.schema.json",
+    "certification-result": "certification-result-v1.schema.json",
+    "compatibility-graph": "compatibility-graph-v1.schema.json",
+    "compatibility-tuple": "compatibility-tuple-v1.schema.json",
+    "consolidation-plan": "consolidation-plan-v1.schema.json",
+    "fork-resolution": "fork-resolution-v1.schema.json",
+    "install-plan": "install-plan-v1.schema.json",
+    "local-deletion": "local-deletion-v1.schema.json",
+    "migration-chain": "migration-chain-v1.schema.json",
+    "normalized-event": "normalized-event.schema.json",
+    "notification-delivery": "notification-delivery-v1.schema.json",
+    "presence-pulse": "presence-pulse-v1.schema.json",
+    "ranked-identity": "ranked-identity-v1.schema.json",
+    "recovery-case": "recovery-case-v1.schema.json",
+    "source-observation": "source-observation.schema.json",
+    "tuf-trust": "tuf-trust-v1.schema.json",
+}
+
+# A prefix with no negative example proves the happy path exists and nothing about
+# where the boundary is. Each gap is stated, and a gap for a prefix that has since
+# acquired a negative example fails, so the excuse cannot outlive the hole.
+EXAMPLE_NEGATIVE_GAPS: dict[str, str] = {
+    "adapter-manifest": (
+        "The manifest's refusals are exercised through conformance/adapters/, whose "
+        "manifest declares them as cases with digests. A second negative here would "
+        "duplicate that rather than add a boundary."
+    ),
+}
+
+# Negative examples the schema accepts, because the rule they violate compares two of
+# the record's own fields and JSON Schema cannot. Each names the validator that does
+# refuse it, that file must exist, and it must name the example. An entry for an
+# example the schema now refuses fails: two refusals for one fixture means one of them
+# is untested, and the entry would be a justification outliving its hole.
+EXAMPLE_COMPUTED_NEGATIVES: dict[str, str] = {
+    "certification-result.invalid-counts-omit-a-case.json": (
+        "scripts/repository/validate_planning_artifacts.py"
+    ),
+    "consolidation-plan.invalid-newer-identity-survives.json": (
+        "scripts/repository/validate_oauth_identity_contract.py"
+    ),
+}
+
+
+def validate_schema_example_coverage() -> None:
+    """Execute every example in `packages/schemas/examples/`, by enumerating the directory.
+
+    PF-017's acceptance was "every example under packages/schemas/examples/ validates".
+    It was not executable and it was not true: most of the files there are negatives
+    that must *not* validate, and the check nothing performed would have improved if a
+    failing example were deleted. It also would have passed on the unrepaired tree,
+    because it rested on assertion and the unit declared no new file for artifact
+    presence to observe.
+
+    The directory is the input here rather than a list. Every file must carry a prefix
+    this map owns, so a new example cannot arrive unexecuted; every prefix must own at
+    least one file, so a map entry cannot outlive its examples; `.valid` must validate
+    and `.invalid-` must not, so a negative that stops being negative fails; and a
+    prefix with no negative example must declare why, with the reverse check.
+
+    Two negatives are refused by a computed rule rather than by their schema, because
+    the rule compares two of the record's own fields.
+    `consolidation-plan.invalid-newer-identity-survives.json` is refused by
+    `validate_oauth_identity_contract.py` and appears nowhere in this file, so reading
+    this directory against this validator alone made it look orphaned. Both are now
+    declared with the validator that refuses them, and that file has to name the
+    example.
+    """
+    directory = SCHEMAS / "examples"
+    files = sorted(directory.glob("*.json"))
+    if not files:
+        raise ValidationFailure("packages/schemas/examples/ holds no example")
+
+    seen: dict[str, dict[str, int]] = {
+        prefix: {"valid": 0, "invalid": 0} for prefix in EXAMPLE_SCHEMAS
+    }
+    for path in files:
+        prefix, _, rest = path.name.partition(".")
+        schema_name = EXAMPLE_SCHEMAS.get(prefix)
+        if schema_name is None:
+            raise ValidationFailure(
+                f"packages/schemas/examples/{path.name} carries a prefix no schema "
+                "owns, so nothing validates it; add it to EXAMPLE_SCHEMAS or remove it"
+            )
+        if rest.startswith("valid"):
+            kind = "valid"
+        elif rest.startswith("invalid-"):
+            kind = "invalid"
+        else:
+            raise ValidationFailure(
+                f"packages/schemas/examples/{path.name} is neither `.valid` nor "
+                "`.invalid-<reason>`, so no expectation can be read from its name"
+            )
+        seen[prefix][kind] += 1
+        schema = validate_schema_file(SCHEMAS / schema_name)
+        instance = load_json(path)
+        computed_by = EXAMPLE_COMPUTED_NEGATIVES.get(path.name)
+        if kind == "valid":
+            if computed_by is not None:
+                raise ValidationFailure(
+                    f"example {path.name} is not a negative and names a validator that "
+                    "refuses it"
+                )
+            validate_instance(schema, instance, f"example {path.name}")
+        elif computed_by is None:
+            expect_invalid(schema, instance, f"example {path.name}")
+        else:
+            try:
+                validate_instance(schema, instance, f"example {path.name}")
+            except ValidationFailure:
+                raise ValidationFailure(
+                    f"example {path.name} is declared as refused by {computed_by} and "
+                    "its own schema refuses it too; the declaration has outlived the "
+                    "hole it excused, and one of the two refusals is now untested"
+                ) from None
+            refuser = ROOT / computed_by
+            if not refuser.is_file():
+                raise ValidationFailure(
+                    f"example {path.name} names a refusing validator that does not "
+                    f"exist: {computed_by}"
+                )
+            if path.name not in refuser.read_text(encoding="utf-8"):
+                raise ValidationFailure(
+                    f"example {path.name} is declared as refused by {computed_by}, "
+                    "which does not name it; nothing executes this fixture"
+                )
+
+    unknown = sorted(set(EXAMPLE_COMPUTED_NEGATIVES) - {path.name for path in files})
+    if unknown:
+        raise ValidationFailure(
+            f"a computed-negative declaration names an example that is gone: {unknown}"
+        )
+
+    for prefix, counts in sorted(seen.items()):
+        if counts["valid"] == 0:
+            raise ValidationFailure(
+                f"example prefix {prefix} owns no valid example; a schema whose only "
+                "examples are refusals never demonstrates an admissible record"
+            )
+        declared_gap = prefix in EXAMPLE_NEGATIVE_GAPS
+        if counts["invalid"] == 0 and not declared_gap:
+            raise ValidationFailure(
+                f"example prefix {prefix} owns no negative example and declares no "
+                "reason; a happy path alone shows nothing about the boundary"
+            )
+        if counts["invalid"] > 0 and declared_gap:
+            raise ValidationFailure(
+                f"example prefix {prefix} declares a negative-example gap it no longer "
+                "has; the reason has outlived the hole it excused"
+            )
 
 
 def validate_json_schemas_and_examples() -> None:
@@ -4392,6 +4549,586 @@ def validate_accounting_arithmetic() -> None:
         )
 
 
+# The six ways a reconciliation can refuse, and the five dispositions a reading can
+# take. Both are compared against the vector file by set equality in both directions,
+# so a condition the evaluator can reach and no vector exercises fails, and so does a
+# vector for a condition the evaluator no longer reaches. Deleting the failing case is
+# the way a coverage number gets better, and equality is what stops it.
+RECONCILIATION_FAILURE_CONDITIONS = frozenset(
+    {
+        "cumulative-reading-not-differenced",
+        "unranked-count-authority",
+        "unranked-observation-mode",
+        "sum-overflow",
+        "per-event-bound-exceeded",
+        "period-bound-exceeded",
+    }
+)
+
+RECONCILIATION_DISPOSITIONS = frozenset(
+    {
+        "counted",
+        "superseded",
+        "quarantined",
+        "private-analytics",
+        "rejected",
+    }
+)
+
+# `contradiction_policy` names what happens to the operation; these are the words the
+# per-reading disposition vocabulary uses for the same three outcomes.
+CONTRADICTION_DISPOSITION = {
+    "reject": "rejected",
+    "quarantine": "quarantined",
+    "private-analytics": "private-analytics",
+}
+
+
+def evaluate_reconciliation(
+    arithmetic: dict[str, Any],
+    profile: dict[str, Any],
+    mode_rank: dict[str, int],
+    readings: list[dict[str, Any]],
+    period_total_before: str,
+) -> tuple[str, Any]:
+    """Reconcile several readings of one or more operations into one accounted figure.
+
+    A second implementation of `accounting-arithmetic-v1.json#reconciliation`, written
+    against the record rather than against the fixture that carries the answer. Nothing
+    here reads the position of a reading in the array: the admission pass walks the
+    readings in canonical-byte order, the groups are visited in sorted key order, and
+    the survivor within a group is chosen by authority rank, then observation-mode
+    precedence, then the reading's own bytes. That is what makes the result a function
+    of the readings, and `validate_accounting_reconciliation` proves it by running every
+    permutation rather than by asserting it.
+    """
+    rules = arithmetic["reconciliation"]
+    bounds = arithmetic["bounds"]
+    authority_rank = {
+        name: index for index, name in enumerate(rules["authority_order"])
+    }
+    per_event_maximum = int(bounds["per_event_token_burn_maximum"])
+    period_maximum = int(bounds["period_accumulator_maximum"])
+
+    ordered = sorted(readings, key=canonical_cbor)
+
+    burns: dict[str, int] = {}
+    for reading in ordered:
+        if reading["accumulation"] == "cumulative":
+            return ("reject", "cumulative-reading-not-differenced")
+        if reading["count_authority"] not in authority_rank:
+            return ("reject", "unranked-count-authority")
+        if reading["observation_mode"] not in mode_rank:
+            return ("reject", "unranked-observation-mode")
+        total = 0
+        for name in CANONICAL_COMPONENTS:
+            total += int(reading["components"][name])
+            if total > UINT64_MAX:
+                return ("reject", "sum-overflow")
+        if total > per_event_maximum:
+            return ("reject", "per-event-bound-exceeded")
+        burns[reading["reading_id"]] = total
+
+    result: dict[str, str] = {}
+    groups: dict[tuple[str, ...], list[dict[str, Any]]] = {}
+    for reading in ordered:
+        if reading["identity_source"] == "absent":
+            result[reading["reading_id"]] = rules["absent_identity_disposition"]
+            continue
+        key = tuple(
+            "" if reading["group"][name] is None else str(reading["group"][name])
+            for name in rules["group_key"]
+        )
+        groups.setdefault(key, []).append(reading)
+
+    counted_total = 0
+    for key in sorted(groups):
+        members = groups[key]
+        best = min(authority_rank[member["count_authority"]] for member in members)
+        candidates = [
+            member
+            for member in members
+            if authority_rank[member["count_authority"]] == best
+        ]
+        candidate_ids = {member["reading_id"] for member in candidates}
+        for member in members:
+            if member["reading_id"] not in candidate_ids:
+                result[member["reading_id"]] = rules["lower_authority_disposition"]
+
+        shapes = {
+            tuple(int(member["components"][name]) for name in CANONICAL_COMPONENTS)
+            for member in candidates
+        }
+        if len(shapes) > 1:
+            disposition = CONTRADICTION_DISPOSITION[profile["contradiction_policy"]]
+            for member in candidates:
+                result[member["reading_id"]] = disposition
+            continue
+
+        winner = min(
+            candidates,
+            key=lambda member: (
+                mode_rank[member["observation_mode"]],
+                canonical_cbor(member),
+            ),
+        )
+        for member in candidates:
+            result[member["reading_id"]] = rules["lower_authority_disposition"]
+        result[winner["reading_id"]] = "counted"
+        counted_total += burns[winner["reading_id"]]
+        if counted_total > UINT64_MAX:
+            return ("reject", "sum-overflow")
+
+    period_total = int(period_total_before) + counted_total
+    if period_total > period_maximum:
+        return ("reject", "period-bound-exceeded")
+    # The result is returned in a hashable form so that the caller can compare
+    # every permutation with one set membership rather than pairwise.
+    return ("ok", (tuple(sorted(result.items())), counted_total, period_total))
+
+
+def validate_accounting_reconciliation() -> None:
+    """Prove reconciliation is a function of the readings and that its bounds refuse.
+
+    PF-018. The accounting profile said which fields exist and which authority each
+    carries, and nothing said what happens when two readings describe the same
+    operation, so the answer was whichever one an implementation looked at last. Four
+    things are checked here and none of them is read back from a fixture.
+
+    The vocabularies are compared rather than restated. `reconciliation.authority_order`
+    must be the `count_authority` enum of `normalized-event.schema.json` in its own
+    declaration order, and the authority vocabulary of `accounting-profile.schema.json`
+    must be the same set - it was not, because the profile spelled the fourth value
+    `reconstructed` while nine other artifacts spelled it `exact-reconstruction`, two
+    spellings that never overlap. The group key must contain the whole exclusivity unit
+    `observer-equivalence-v1.json` declares plus the operation identity, so grouping
+    cannot silently widen to the device. Every mode that record ranks must be admitted
+    by `certification.capture_mode`, so a reading can always be ordered.
+
+    The outcome map must be total over the observation vocabulary and land inside the
+    event vocabulary, with every unreached event value carrying a reason. That is the
+    check that would have caught `aborted-unknown` being written as `aborted-known`.
+
+    Every vector is recomputed under **every permutation of its readings** rather than
+    under two orderings, up to the six-reading ceiling that keeps the run bounded. An
+    ordering-dependent reconciliation fails here rather than in a season's standings.
+
+    And the failure conditions are compared by set equality in both directions against
+    the conditions the evaluator can reach, so a vector cannot be deleted to make the
+    suite pass and a condition cannot be added without one.
+    """
+    vectors_schema = validate_schema_file(
+        SCHEMAS / "reconciliation-vectors-v1.schema.json"
+    )
+    arithmetic = load_json(SCHEMAS / "accounting-arithmetic-v1.json")
+    rules = arithmetic["reconciliation"]
+    bounds = arithmetic["bounds"]
+
+    event_schema = load_json(SCHEMAS / "normalized-event.schema.json")
+    observation_schema = load_json(SCHEMAS / "source-observation.schema.json")
+    profile_schema = load_json(SCHEMAS / "accounting-profile.schema.json")
+    rule = load_json(SCHEMAS / "observer-equivalence-v1.json")
+
+    event_authorities = event_schema["properties"]["count_authority"]["enum"]
+    if rules["authority_order"] != event_authorities:
+        raise ValidationFailure(
+            "the reconciliation authority order is not the count_authority enum of "
+            f"normalized-event.schema.json in its declaration order: recorded "
+            f"{rules['authority_order']}, declared {event_authorities}"
+        )
+    profile_authorities = set(
+        profile_schema["properties"]["source_fields"]["items"]["properties"][
+            "authority"
+        ]["enum"]
+    )
+    if profile_authorities != set(event_authorities):
+        raise ValidationFailure(
+            "accounting-profile.schema.json and normalized-event.schema.json name "
+            "different count authorities, so a profile's declared authority cannot be "
+            "ranked: only-in-profile="
+            f"{sorted(profile_authorities - set(event_authorities))} "
+            f"only-in-event={sorted(set(event_authorities) - profile_authorities)}"
+        )
+
+    required_key = set(rule["exclusivity"]["unit"]) | {"operation_ref"}
+    if not required_key <= set(rules["group_key"]):
+        raise ValidationFailure(
+            "the reconciliation group key does not contain the exclusivity unit and "
+            f"the operation identity: missing {sorted(required_key - set(rules['group_key']))}"
+        )
+    overlap = set(rules["tie_break_order"]) & set(rules["forbidden_tie_break_inputs"])
+    if overlap:
+        raise ValidationFailure(
+            f"a forbidden tie-break input is also a declared tie-break: {sorted(overlap)}"
+        )
+
+    mode_rank = {
+        mode["mode"]: mode["precedence_rank"] for mode in rule["observation_modes"]
+    }
+    capture_modes = set(
+        event_schema["properties"]["certification"]["properties"]["capture_mode"][
+            "enum"
+        ]
+    )
+    if capture_modes != set(mode_rank):
+        raise ValidationFailure(
+            "normalized-event.schema.json admits capture modes the observer-equivalence "
+            "rule does not rank, or refuses ones it does: "
+            f"only-in-event={sorted(capture_modes - set(mode_rank))} "
+            f"only-in-rule={sorted(set(mode_rank) - capture_modes)}"
+        )
+
+    if int(bounds["per_event_token_burn_maximum"]) >= int(
+        bounds["period_accumulator_maximum"]
+    ):
+        raise ValidationFailure(
+            "the per-event bound is not below the period accumulator maximum, so one "
+            "event alone could fill a period and the period bound would be unreachable"
+        )
+    if int(bounds["period_accumulator_maximum"]) != int(
+        arithmetic["integer_domain"]["maximum"]
+    ):
+        raise ValidationFailure(
+            "the period accumulator maximum is not the integer domain maximum; a "
+            "period total is a quantity in the same domain as every other one here"
+        )
+
+    normalization = arithmetic["outcome_normalization"]
+    observed = [entry["observed"] for entry in normalization["map"]]
+    assert_unique(observed, "outcome normalization domain values")
+    observation_outcomes = observation_schema["properties"]["outcome"]["enum"]
+    if set(observed) != set(observation_outcomes):
+        raise ValidationFailure(
+            "the outcome map is not total over source-observation.schema.json#outcome: "
+            f"only-in-map={sorted(set(observed) - set(observation_outcomes))} "
+            f"only-in-schema={sorted(set(observation_outcomes) - set(observed))}"
+        )
+    event_outcomes = set(event_schema["properties"]["outcome"]["enum"])
+    reached = {entry["normalized"] for entry in normalization["map"]}
+    unadmitted = sorted(reached - event_outcomes)
+    if unadmitted:
+        raise ValidationFailure(
+            f"the outcome map produces values normalized-event.schema.json refuses: {unadmitted}"
+        )
+    assigned = {entry["normalized"] for entry in normalization["normalizer_assigned"]}
+    if assigned != event_outcomes - reached:
+        raise ValidationFailure(
+            "the normalizer-assigned outcomes are not exactly the event outcomes the "
+            "map does not reach: "
+            f"only-declared={sorted(assigned - (event_outcomes - reached))} "
+            f"only-unreached={sorted((event_outcomes - reached) - assigned)}"
+        )
+
+    registry = load_json(CONFORMANCE / "accounting" / "accounting-profiles-v1.json")
+    profiles = {profile["profile_id"]: profile for profile in registry["profiles"]}
+
+    vectors = load_json(CONFORMANCE / "accounting" / "reconciliation-vectors-v1.json")
+    validate_instance(vectors_schema, vectors, "accounting reconciliation vectors")
+    assert_unique(
+        [vector["vector_id"] for vector in vectors["vectors"]],
+        "reconciliation vector IDs",
+    )
+    if vectors["arithmetic_id"] != arithmetic["arithmetic_id"]:
+        raise ValidationFailure(
+            "the reconciliation vectors name an arithmetic record that is not the one "
+            "they are evaluated under"
+        )
+    if vectors["equivalence_rule_id"] != rule["rule_id"]:
+        raise ValidationFailure(
+            "the reconciliation vectors name an equivalence rule that is not the one "
+            "supplying the observation-mode precedence ranks"
+        )
+    expect_invalid(
+        vectors_schema,
+        load_json(
+            CONFORMANCE
+            / "accounting"
+            / "reconciliation-vectors-v1.invalid-arrival-order-field.json"
+        ),
+        "reconciliation vector carrying an arrival-order field",
+    )
+
+    conditions: set[str] = set()
+    dispositions: set[str] = set()
+    for vector in vectors["vectors"]:
+        vector_id = vector["vector_id"]
+        profile = profiles.get(vector["profile_id"])
+        if profile is None:
+            raise ValidationFailure(
+                f"reconciliation vector {vector_id} names an unregistered profile"
+            )
+        readings = vector["readings"]
+        assert_unique(
+            [reading["reading_id"] for reading in readings],
+            f"reconciliation vector {vector_id} reading IDs",
+        )
+        if len(readings) > 6:
+            raise ValidationFailure(
+                f"reconciliation vector {vector_id} carries {len(readings)} readings; "
+                "the ordering-independence check exhausts every permutation and is "
+                "capped at six"
+            )
+
+        outcomes = {
+            evaluate_reconciliation(
+                arithmetic,
+                profile,
+                mode_rank,
+                list(order),
+                vector["period_total_before"],
+            )
+            for order in itertools.permutations(readings)
+        }
+        # `set` over the outcome tuples is the whole ordering-independence claim: two
+        # permutations that disagree produce two members.
+        if len(outcomes) != 1:
+            raise ValidationFailure(
+                f"reconciliation vector {vector_id} depends on the order of its "
+                f"readings: {len(outcomes)} distinct results over "
+                f"{len(list(itertools.permutations(readings)))} permutations"
+            )
+        outcome, detail = next(iter(outcomes))
+
+        if vector["kind"] == "reconciliation-failure":
+            if outcome != "reject":
+                raise ValidationFailure(
+                    f"reconciliation vector {vector_id} was expected to reject and did not"
+                )
+            if detail != vector["expected_failure"]["condition"]:
+                raise ValidationFailure(
+                    f"reconciliation vector {vector_id} rejected for {detail}, not "
+                    f"{vector['expected_failure']['condition']}"
+                )
+            conditions.add(detail)
+            continue
+
+        if outcome == "reject":
+            raise ValidationFailure(
+                f"reconciliation vector {vector_id} rejected unexpectedly: {detail}"
+            )
+        pairs, counted, period_total = detail
+        computed = dict(pairs)
+        recorded = vector["expected"]["dispositions"]
+        if computed != recorded:
+            raise ValidationFailure(
+                f"reconciliation vector {vector_id} dispositions disagree: "
+                f"computed {computed}, recorded {recorded}"
+            )
+        if counted != int(vector["expected"]["counted_token_burn"]):
+            raise ValidationFailure(
+                f"reconciliation vector {vector_id} counted {counted} tokens, not "
+                f"{vector['expected']['counted_token_burn']}"
+            )
+        if period_total != int(vector["expected"]["period_total_after"]):
+            raise ValidationFailure(
+                f"reconciliation vector {vector_id} left the period total at "
+                f"{period_total}, not {vector['expected']['period_total_after']}"
+            )
+        dispositions |= set(recorded.values())
+
+    if conditions != RECONCILIATION_FAILURE_CONDITIONS:
+        raise ValidationFailure(
+            "reconciliation failure coverage mismatch: "
+            f"unexercised={sorted(RECONCILIATION_FAILURE_CONDITIONS - conditions)} "
+            f"unreachable={sorted(conditions - RECONCILIATION_FAILURE_CONDITIONS)}"
+        )
+    if dispositions != RECONCILIATION_DISPOSITIONS:
+        raise ValidationFailure(
+            "reconciliation vectors do not exercise every disposition: "
+            f"missing {sorted(RECONCILIATION_DISPOSITIONS - dispositions)}"
+        )
+
+
+# The nine observation modes. One vocabulary, five artifacts: the observation, the
+# event's capture mode, both receipt vocabularies and the producer binding's tuple mode.
+OBSERVATION_MODES = (
+    "acp",
+    "extension-api",
+    "live-log",
+    "local-runtime",
+    "native-event",
+    "official-hook",
+    "otel",
+    "proxy",
+    "wrapper",
+)
+
+
+def validate_source_observation_identity() -> None:
+    """Prove an observation says which execution it is about, who read it, and how.
+
+    PF-017. `source_event_ref` named the record an observer read and nothing named the
+    execution that record describes, so two observers of one execution had no shared
+    way to say so; `docs/product/TOKEN_ACCOUNTING_SPEC.md` listed an `operation_id` that
+    existed in no schema here. `observer` did not exist, so the exclusivity rule's
+    channel identity - observation mode and collector instance - had one half missing.
+    And nothing said whether a reading was a running total or an increment, which is
+    the difference between counting an OTLP counter once and counting it every export.
+
+    Five checks, each computed from two artifacts rather than restated in one.
+
+    The mode vocabulary is one set across the observation, the event's capture mode,
+    both receipt vocabularies and the producer binding's tuple mode. `acp` was in four
+    of the five and not in `source-observation.schema.json`, while `generic-acp-v1` was
+    a registered binding, so an ACP observation was unrepresentable in the schema every
+    ACP adapter writes.
+
+    The certification-state vocabulary is `uncertified` plus the states of the
+    `source-certification` machine, and nothing else. It carried `revoked`, which no
+    transition of that machine reaches, and omitted `testing`, `superseded` and
+    `retired`, which transitions do. The device column that holds it had no CHECK
+    constraint at all.
+
+    The three new blocks are required on both records, so an event cannot be built
+    without them, and every field of `observer` is refused as an equivalence commitment
+    preimage input - required to identify the channel, forbidden to identify the
+    execution, because an observer-derived commitment never collides and a commitment
+    that never collides is a client deciding its own observation is not a duplicate.
+    """
+    observation = load_json(SCHEMAS / "source-observation.schema.json")
+    event = load_json(SCHEMAS / "normalized-event.schema.json")
+    receipt = load_json(SCHEMAS / "source-receipt-v1.schema.json")
+    binding_schema = load_json(SCHEMAS / "producer-accounting-binding-v1.schema.json")
+    rule = load_json(SCHEMAS / "observer-equivalence-v1.json")
+    machines = {
+        machine["machine_id"]: machine
+        for machine in load_json(SCHEMAS / "state-machine-registry-v1.json")["machines"]
+    }
+
+    mode_vocabularies = {
+        "source-observation.schema.json#execution_mode": observation["properties"][
+            "execution_mode"
+        ]["enum"],
+        "normalized-event.schema.json#certification.capture_mode": event["properties"][
+            "certification"
+        ]["properties"]["capture_mode"]["enum"],
+        "source-receipt-v1.schema.json#certification.capture_mode": receipt[
+            "properties"
+        ]["certification"]["properties"]["capture_mode"]["enum"],
+        "source-receipt-v1.schema.json#observation_reference.execution_mode": receipt[
+            "$defs"
+        ]["observation_reference"]["properties"]["execution_mode"]["enum"],
+        "producer-accounting-binding-v1.schema.json#certification.tuple.mode": (
+            binding_schema["properties"]["certification"]["properties"]["tuple"][
+                "properties"
+            ]["mode"]["enum"]
+        ),
+        "observer-equivalence-v1.json#observation_modes": [
+            mode["mode"] for mode in rule["observation_modes"]
+        ],
+    }
+    for label, values in sorted(mode_vocabularies.items()):
+        if set(values) != set(OBSERVATION_MODES):
+            raise ValidationFailure(
+                f"{label} is not the one observation-mode vocabulary: "
+                f"only-here={sorted(set(values) - set(OBSERVATION_MODES))} "
+                f"missing={sorted(set(OBSERVATION_MODES) - set(values))}"
+            )
+
+    expected_states = {"uncertified"} | set(machines["source-certification"]["states"])
+    certification_vocabularies = {
+        "source-receipt-v1.schema.json#certification.state": receipt["properties"][
+            "certification"
+        ]["properties"]["state"]["enum"],
+        "producer-accounting-binding-v1.schema.json#certification.state": (
+            binding_schema["properties"]["certification"]["properties"]["state"]["enum"]
+        ),
+    }
+    for label, values in sorted(certification_vocabularies.items()):
+        if set(values) != expected_states:
+            raise ValidationFailure(
+                f"{label} is not `uncertified` plus the source-certification machine's "
+                f"states: only-here={sorted(set(values) - expected_states)} "
+                f"missing={sorted(expected_states - set(values))}"
+            )
+
+    for label, schema in (
+        ("source-observation.schema.json", observation),
+        ("normalized-event.schema.json", event),
+    ):
+        for block in ("operation", "observer", "reading"):
+            if block not in schema["required"]:
+                raise ValidationFailure(
+                    f"{label} does not require {block}; an event that names no "
+                    "operation identity, no observer and no accumulation cannot be "
+                    "reconciled with anything, and the schema is what has to refuse it"
+                )
+        if schema["properties"]["operation"]["properties"]["identity_source"][
+            "enum"
+        ] != ["source-assigned", "source-cursor-derived", "absent"]:
+            raise ValidationFailure(
+                f"{label} does not carry the three identity sources that decide the "
+                "equivalence class"
+            )
+        if schema["properties"]["reading"]["properties"]["accumulation"]["enum"] != [
+            "cumulative",
+            "delta",
+        ]:
+            raise ValidationFailure(
+                f"{label} does not carry the cumulative/delta accumulation flag"
+            )
+
+    observer_fields = set(event["properties"]["observer"]["properties"])
+    if observer_fields != set(observation["properties"]["observer"]["properties"]):
+        raise ValidationFailure(
+            "the observation and the event describe the observer with different fields"
+        )
+    forbidden = set(rule["forbidden"]["preimage_inputs"])
+    preimage = {
+        name
+        for entry in rule["equivalence_classes"]
+        for name in entry["preimage_inputs"]
+    }
+    leaked = sorted(observer_fields & preimage)
+    if leaked:
+        raise ValidationFailure(
+            "an observer-identity field is an equivalence commitment preimage input: "
+            f"{leaked}. A commitment derived from who observed never collides, and a "
+            "commitment that never collides is a client deciding its own observation "
+            "is not a duplicate"
+        )
+    unnamed = sorted(observer_fields - forbidden)
+    if unnamed:
+        raise ValidationFailure(
+            "an observer-identity field is not listed in the equivalence rule's "
+            f"forbidden preimage inputs: {unnamed}. Leaving it unnamed means nothing "
+            "refuses it the day somebody adds it to a preimage"
+        )
+
+    # The reset rule is the binding's, and the observation reads it back rather than
+    # declaring a second spelling of the same three values.
+    binding_reset = set(
+        binding_schema["properties"]["otel"]["properties"]["metrics"]["items"][
+            "properties"
+        ]["reset_detection"]["enum"]
+    )
+    for label, schema in (
+        ("source-observation.schema.json", observation),
+        ("normalized-event.schema.json", event),
+    ):
+        declared = set(
+            schema["properties"]["reading"]["properties"]["reset_detection"]["enum"]
+        )
+        if declared != binding_reset:
+            raise ValidationFailure(
+                f"{label}#reading.reset_detection differs from the producer binding's: "
+                f"only-here={sorted(declared - binding_reset)} "
+                f"missing={sorted(binding_reset - declared)}"
+            )
+    binding_temporality = set(
+        binding_schema["properties"]["otel"]["properties"]["metrics"]["items"][
+            "properties"
+        ]["temporality"]["enum"]
+    )
+    declared = set(event["properties"]["reading"]["properties"]["accumulation"]["enum"])
+    if declared != binding_temporality:
+        raise ValidationFailure(
+            "normalized-event.schema.json#reading.accumulation differs from the "
+            f"producer binding's temporality: only-here={sorted(declared - binding_temporality)} "
+            f"missing={sorted(binding_temporality - declared)}"
+        )
+
+
 def evaluate_otel_series(
     binding: dict[str, Any], metric_name: str, series: list[dict[str, Any]]
 ) -> tuple[str, Any]:
@@ -5523,6 +6260,15 @@ def main() -> int:
         ("API error matrix and operation classes", validate_api_error_matrix),
         ("P-1140D state and platform contracts", validate_p1140d_contracts),
         ("accounting arithmetic vectors", validate_accounting_arithmetic),
+        ("schema example directory coverage", validate_schema_example_coverage),
+        (
+            "source observation, operation and observer identity",
+            validate_source_observation_identity,
+        ),
+        (
+            "accounting reconciliation and bounds",
+            validate_accounting_reconciliation,
+        ),
         ("producer bindings and OTel capture vectors", validate_producer_bindings),
         (
             "OTel accounting profile and capture-surface hazards",

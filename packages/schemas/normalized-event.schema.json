@@ -16,6 +16,9 @@
     "accounting_profile",
     "monotonic_interval",
     "wall_time_observation",
+    "operation",
+    "observer",
+    "reading",
     "canonical_tokens",
     "source_observed_categories",
     "count_authority",
@@ -103,9 +106,18 @@
           "maxLength": 128
         },
         "capture_mode": {
-          "type": "string",
-          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
-          "maxLength": 128
+          "description": "The observation mode this capture was taken in, and with observer.collector_instance_id the exclusivity channel identity packages/schemas/observer-equivalence-v1.json names. It was an unconstrained slug, so an event could name a mode no precedence rank exists for and the survivor rule would have nothing to order it by; the nine values are exactly that record's observation_modes and exactly the vocabularies packages/schemas/source-observation.schema.json#execution_mode and packages/schemas/source-receipt-v1.schema.json use.",
+          "enum": [
+            "native-event",
+            "extension-api",
+            "official-hook",
+            "otel",
+            "acp",
+            "proxy",
+            "wrapper",
+            "live-log",
+            "local-runtime"
+          ]
         }
       }
     },
@@ -189,6 +201,95 @@
           "format": "date-time"
         },
         "uncertainty_ms": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "operation": {
+      "description": "Which execution at the source this event accounts for. `event_id` is minted by the collector and `parent_event_id` links two of this collector's own records; neither survives being observed by a second collector, so neither could ever say that two events are about one execution. The source's own name for the execution is what can, and it is carried here with the discriminator that says how it was obtained. This is also the grouping key packages/schemas/accounting-arithmetic-v1.json#reconciliation uses: reconciliation is per operation, and an event with no operation identity cannot be reconciled with anything.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity_source",
+        "operation_ref",
+        "parent_operation_ref"
+      ],
+      "properties": {
+        "identity_source": {
+          "enum": [
+            "source-assigned",
+            "source-cursor-derived",
+            "absent"
+          ]
+        },
+        "operation_ref": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{8,128}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parent_operation_ref": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{8,128}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "observer": {
+      "description": "Which collector instance produced this event. With certification.capture_mode it is the exclusivity channel identity packages/schemas/observer-equivalence-v1.json#exclusivity.channel_identity names, and the tied-channel rule - two instances in one mode over one source runtime deduplicate if their commitment sets are identical and quarantine if they are not - has no input without it. It is forbidden in the equivalence commitment preimage, and forbidden there for the same reason it is required here.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collector_instance_id",
+        "adapter_instance_id"
+      ],
+      "properties": {
+        "collector_instance_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{8,128}$"
+        },
+        "adapter_instance_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{8,128}$"
+        }
+      }
+    },
+    "reading": {
+      "description": "Whether canonical_tokens came from a running total or from an increment, and how a restart of that total was detected. packages/schemas/accounting-profile-otel-v1.json records that the OTLP counter this repository can actually capture is cumulative and that monotonic_interval.generation is the reset counter; none of that reached the event, so an event carrying a cumulative reading and one carrying an already-differenced increment were the same bytes and adding the first to its predecessor double counts every token before it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accumulation",
+        "reset_detection",
+        "series_generation"
+      ],
+      "properties": {
+        "accumulation": {
+          "enum": [
+            "cumulative",
+            "delta"
+          ]
+        },
+        "reset_detection": {
+          "enum": [
+            "value-decrease-or-start-time-change",
+            "start-time-change-only",
+            "not-applicable"
+          ]
+        },
+        "series_generation": {
           "type": "string",
           "pattern": "^(0|[1-9][0-9]{0,19})$"
         }
@@ -284,11 +385,13 @@
       ]
     },
     "outcome": {
+      "description": "The normalized outcome. This vocabulary and packages/schemas/source-observation.schema.json#outcome had three values in common and two each that the other did not have: the observation could say `aborted-unknown` and `unknown`, and the event could say `aborted-known` and `quarantined-unknown`, with no mapping declared anywhere. `aborted-unknown` had to become `aborted-known` under that arrangement, which inverts the fact the source reported. `aborted-unknown` is now carried through unchanged and packages/schemas/accounting-arithmetic-v1.json#outcome_normalization declares the whole map, total over the observation vocabulary and checked in both directions.",
       "enum": [
         "success",
         "failed-after-consumption",
         "cancelled-after-consumption",
         "aborted-known",
+        "aborted-unknown",
         "quarantined-unknown"
       ]
     },
@@ -298,6 +401,7 @@
       "required": [
         "scope",
         "ordinal",
+        "generation",
         "distinct_execution"
       ],
       "properties": {
@@ -310,6 +414,10 @@
           ]
         },
         "ordinal": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "generation": {
           "type": "string",
           "pattern": "^(0|[1-9][0-9]{0,19})$"
         },
@@ -441,6 +549,125 @@
             "properties": {
               "disposition": {
                 "const": "private-analytics"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "An absent operation identity is not a null that means anything else",
+      "description": "The same clause packages/schemas/source-observation.schema.json carries, for the same reason: identity_source states how the identity was obtained and operation_ref carries it, so `absent` beside a populated ref is an identity the collector supplied rather than read, and `source-assigned` beside a null ref is a claim to have read one that was not there. The equivalence class the server assigns follows from this discriminator, and a client that can set the two independently is choosing its own class.",
+      "if": {
+        "type": "object",
+        "required": [
+          "operation"
+        ],
+        "properties": {
+          "operation": {
+            "type": "object",
+            "required": [
+              "identity_source"
+            ],
+            "properties": {
+              "identity_source": {
+                "const": "absent"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "operation": {
+            "properties": {
+              "operation_ref": {
+                "type": "null"
+              },
+              "parent_operation_ref": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "operation": {
+            "properties": {
+              "operation_ref": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "An operation with no source-derived identity is private analytics",
+      "description": "packages/schemas/observer-equivalence-v1.json calls this the weak class and says it never competes: nothing distinguishes a duplicate from a distinct execution, so counting it competitively would let a second observer of one execution add the same tokens again. The disposition is pinned in the schema for the same reason the uncertified clause above is - a collector that omits it is indistinguishable from one that decided.",
+      "if": {
+        "type": "object",
+        "required": [
+          "operation"
+        ],
+        "properties": {
+          "operation": {
+            "type": "object",
+            "required": [
+              "identity_source"
+            ],
+            "properties": {
+              "identity_source": {
+                "const": "absent"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "rule_result": {
+            "properties": {
+              "disposition": {
+                "const": "private-analytics"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "A cumulative reading declares how a reset is detected",
+      "description": "An event whose canonical_tokens are a running total has to be differenced before it is added to anything, and a counter that restarts reads smaller than the reading before it. `not-applicable` is the honest value only for a reading that already is an increment.",
+      "if": {
+        "type": "object",
+        "required": [
+          "reading"
+        ],
+        "properties": {
+          "reading": {
+            "type": "object",
+            "required": [
+              "accumulation"
+            ],
+            "properties": {
+              "accumulation": {
+                "const": "cumulative"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reading": {
+            "properties": {
+              "reset_detection": {
+                "enum": [
+                  "value-decrease-or-start-time-change",
+                  "start-time-change-only"
+                ]
               }
             }
           }

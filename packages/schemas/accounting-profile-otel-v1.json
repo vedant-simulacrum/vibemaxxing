@@ -184,6 +184,29 @@
       "rule": "starts_at and ends_at from the datapoint's unix-nano times. uncertainty_ms is the configured export interval plus the measured receive-jitter bound, which is a property of the receiving machine rather than of the payload."
     },
     {
+      "field": "operation",
+      "origin": "otlp-datapoint",
+      "determinism": "deterministic",
+      "rule": "identity_source source-cursor-derived, and never source-assigned. A metrics counter names no execution: it is aggregated per attribute set, and query_source distinguishes main from subagent execution without naming either. What the source does produce is an ordered cursor - the attribute-set key with the counter start time and the export ordinal - so operation_ref is derived from source_cursor and the discriminator says so, which is the difference between deriving an identity and claiming to have read one. parent_operation_ref is null: the counter carries no linkage between a subagent execution and the one that started it. This is why packages/schemas/observer-equivalence-v1.json ranks this mode's achievable class at source-cursor and never at strong, and why two observers of one execution in different modes cannot be compared here.",
+      "otlp_attributes": [
+        "type",
+        "model",
+        "query_source"
+      ]
+    },
+    {
+      "field": "observer",
+      "origin": "collector-state",
+      "determinism": "device-scoped",
+      "rule": "collector_instance_id is the receiving collector's own device-local instance identifier and adapter_instance_id is the adapter process that decoded the export. Neither is in the payload and neither may enter the equivalence commitment preimage; they identify the channel so the exclusivity rule can tell two collectors apart, which is a different question from whether two observations are of one execution."
+    },
+    {
+      "field": "reading",
+      "origin": "producer-binding",
+      "determinism": "deterministic",
+      "rule": "accumulation is the metric's declared temporality and reset_detection is the binding's declared reset rule, both read from conformance/accounting/producer-bindings-v1.json rather than from the export, because an OTLP payload states its temporality in the metric definition the binding pins. series_generation is the reset counter the value-decrease-or-start-time-change rule increments, which is the same counter monotonic_interval.generation carries. The claude_code.token.usage counter is cumulative, so every reading of it has to be differenced before it is an accounting input and packages/schemas/accounting-arithmetic-v1.json#reconciliation rejects one that has not been."
+    },
+    {
       "field": "canonical_tokens",
       "origin": "otlp-datapoint",
       "determinism": "deterministic",
@@ -225,7 +248,7 @@
       "field": "retry",
       "origin": "not-derivable-from-otlp",
       "determinism": "not-observable",
-      "rule": "scope none, ordinal 0, distinct_execution false. The metrics channel exposes no retry fact and provider-side retries are already collapsed into one counter increment, so the duplicate domain rather than these fields is what prevents double counting."
+      "rule": "scope none, ordinal 0, generation 0, distinct_execution false. The metrics channel exposes no retry fact and provider-side retries are already collapsed into one counter increment, so the duplicate domain rather than these fields is what prevents double counting. generation is zero for the same reason the other three are their neutral values: the channel says nothing about re-execution of a named operation, and it names no operation to re-execute."
     },
     {
       "field": "duplicate_domain",

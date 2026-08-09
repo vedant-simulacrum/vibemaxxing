@@ -31,11 +31,6 @@
     "ends_at": "2026-07-19T00:00:01Z",
     "uncertainty_ms": "100"
   },
-  "operation": {
-    "identity_source": "source-assigned",
-    "operation_ref": "op-000000000001",
-    "parent_operation_ref": null
-  },
   "observer": {
     "collector_instance_id": "collector-instance-01",
     "adapter_instance_id": "adapter-instance-01"
@@ -87,8 +82,10 @@
   "local_fingerprint": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
   "rule_result": {
     "bundle_id": "deterministic-rules-v1",
-    "disposition": "accept-local",
-    "reason_codes": []
+    "disposition": "private-analytics",
+    "reason_codes": [
+      "uncertified-source-tuple"
+    ]
   },
   "privacy_scan": {
     "policy_id": "claim-egress-v1",

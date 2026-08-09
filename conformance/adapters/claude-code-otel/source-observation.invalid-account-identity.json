@@ -24,6 +24,20 @@
     "start_ns": "600000000000",
     "end_ns": "610000000000"
   },
+  "operation": {
+    "identity_source": "source-cursor-derived",
+    "operation_ref": "otel-cursor-000000000001",
+    "parent_operation_ref": null
+  },
+  "observer": {
+    "collector_instance_id": "collector-instance-01",
+    "adapter_instance_id": "adapter-instance-01"
+  },
+  "reading": {
+    "accumulation": "cumulative",
+    "reset_detection": "value-decrease-or-start-time-change",
+    "series_generation": "0"
+  },
   "token_observation": {
     "kind": "category-counts",
     "categories": {
@@ -34,6 +48,11 @@
     }
   },
   "outcome": "success",
+  "retry": {
+    "scope": "none",
+    "ordinal": "0",
+    "generation": "0"
+  },
   "sensitivity": {
     "classification": "L0",
     "contains_raw_content": false,

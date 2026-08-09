@@ -182,7 +182,7 @@
       "schema_version": 1,
       "profile_id": "local-exact-tokenizer-v1",
       "semantic_version": "1.0.0",
-      "content_sha256": "6ae493c9b2f421842037e9989a0693b7a307dd963d2d50c25f2cf1fa10711ea2",
+      "content_sha256": "b2782f0704b2c0456f138547f8ca39418daa15bd9531b2a7635bacea238e987c",
       "provider_or_runtime_id": "registered-local-runtime",
       "api_mode": "token-id-stream",
       "source_version_range": ">=1 <2",
@@ -203,12 +203,12 @@
         {
           "field_id": "prompt-token-ids",
           "unit": "tokens",
-          "authority": "reconstructed"
+          "authority": "exact-reconstruction"
         },
         {
           "field_id": "output-token-ids",
           "unit": "tokens",
-          "authority": "reconstructed"
+          "authority": "exact-reconstruction"
         }
       ],
       "containment_edges": [],

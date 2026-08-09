@@ -32,7 +32,7 @@
     "uncertainty_ms": "100"
   },
   "operation": {
-    "identity_source": "source-assigned",
+    "identity_source": "absent",
     "operation_ref": "op-000000000001",
     "parent_operation_ref": null
   },
@@ -87,8 +87,10 @@
   "local_fingerprint": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
   "rule_result": {
     "bundle_id": "deterministic-rules-v1",
-    "disposition": "accept-local",
-    "reason_codes": []
+    "disposition": "private-analytics",
+    "reason_codes": [
+      "uncertified-source-tuple"
+    ]
   },
   "privacy_scan": {
     "policy_id": "claim-egress-v1",

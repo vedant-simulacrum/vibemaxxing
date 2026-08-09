@@ -17,6 +17,9 @@
     "token_burn",
     "estimated_cash_burn",
     "execution_semantics",
+    "outcome_normalization",
+    "bounds",
+    "reconciliation",
     "correction_semantics"
   ],
   "properties": {
@@ -340,6 +343,251 @@
         }
       }
     },
+    "outcome_normalization": {
+      "description": "The map from what a source observation reported to what the normalized event records. The two vocabularies shared three of five values and each held two the other did not; with no map declared, `aborted-unknown` had to be written as `aborted-known`, which inverts the fact the source reported, and `unknown` had to be written as `quarantined-unknown`, which is a decision rather than an observation. scripts/repository/validate_planning_artifacts.py checks the map against both schemas: `observed` must equal the observation enum exactly, `normalized` must be admitted by the event enum, and every event value the map does not reach must appear in `normalizer_assigned` with a reason, so neither a missing case nor an excuse for a case that no longer exists survives.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "codomain",
+        "map",
+        "normalizer_assigned"
+      ],
+      "properties": {
+        "domain": {
+          "const": "source-observation-v1.outcome"
+        },
+        "codomain": {
+          "const": "normalized-accounting-event-v1.outcome"
+        },
+        "map": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "observed",
+              "normalized"
+            ],
+            "properties": {
+              "observed": {
+                "$ref": "#/$defs/outcome_value"
+              },
+              "normalized": {
+                "$ref": "#/$defs/outcome_value"
+              }
+            }
+          }
+        },
+        "normalizer_assigned": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "normalized",
+              "reason"
+            ],
+            "properties": {
+              "normalized": {
+                "$ref": "#/$defs/outcome_value"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 40,
+                "maxLength": 600
+              }
+            }
+          }
+        }
+      }
+    },
+    "bounds": {
+      "description": "The practical ceilings, distinct from the integer domain above. The domain says what a uint64 can hold; these say what one operation and one period can plausibly hold, and that a value outside either is refused rather than reported as the ceiling. Neither is a cap on what a participant may accumulate: Token Burn is accepted, immutable and unnormalized, and a bound that clipped an accumulated total would normalize the metric of record under another name.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "per_event_token_burn_maximum",
+        "per_event_exceeded_disposition",
+        "per_event_basis",
+        "period_type",
+        "period_accumulator_width",
+        "period_accumulator_maximum",
+        "period_exceeded_disposition",
+        "period_basis",
+        "saturation",
+        "capping",
+        "capping_reason",
+        "rejected_event_effect"
+      ],
+      "properties": {
+        "per_event_token_burn_maximum": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "per_event_exceeded_disposition": {
+          "const": "reject"
+        },
+        "per_event_basis": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 800
+        },
+        "period_type": {
+          "enum": [
+            "utc-day",
+            "iso-week",
+            "utc-month",
+            "utc-year"
+          ]
+        },
+        "period_accumulator_width": {
+          "const": "uint64"
+        },
+        "period_accumulator_maximum": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "period_exceeded_disposition": {
+          "const": "reject"
+        },
+        "period_basis": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 800
+        },
+        "saturation": {
+          "const": "forbidden"
+        },
+        "capping": {
+          "const": "forbidden"
+        },
+        "capping_reason": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 800
+        },
+        "rejected_event_effect": {
+          "const": "single-event-rejected-period-total-unchanged"
+        }
+      }
+    },
+    "reconciliation": {
+      "description": "How several readings of one operation become one accounted figure. The accounting profile already said which fields exist and which authority each carries; nothing said what happens when two of them describe the same operation, so the answer was whichever reading an implementation processed last. Every rule here is stated so that the result is a function of the readings and never of their order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grouping",
+        "group_key",
+        "absent_identity_disposition",
+        "cumulative_reading_disposition",
+        "cumulative_reading_reason",
+        "authority_vocabulary",
+        "authority_order",
+        "authority_order_basis",
+        "lower_authority_disposition",
+        "summation_across_readings",
+        "equal_authority_agreement",
+        "equal_authority_contradiction",
+        "contradiction_test",
+        "contradiction_resolution_by_selection",
+        "contradiction_reason",
+        "ordering_independence",
+        "tie_break_order",
+        "forbidden_tie_break_inputs",
+        "mode_precedence_authority"
+      ],
+      "properties": {
+        "grouping": {
+          "const": "one-operation-within-one-exclusivity-unit"
+        },
+        "group_key": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$",
+            "maxLength": 64
+          }
+        },
+        "absent_identity_disposition": {
+          "const": "private-analytics"
+        },
+        "cumulative_reading_disposition": {
+          "const": "reject"
+        },
+        "cumulative_reading_reason": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 800
+        },
+        "authority_vocabulary": {
+          "const": "normalized-accounting-event-v1.count_authority"
+        },
+        "authority_order": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/registered_id"
+          }
+        },
+        "authority_order_basis": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 900
+        },
+        "lower_authority_disposition": {
+          "const": "superseded"
+        },
+        "summation_across_readings": {
+          "description": "Two readings of one operation are two descriptions of one consumption, never two consumptions. Adding them is the double count the whole record exists to prevent.",
+          "const": "forbidden"
+        },
+        "equal_authority_agreement": {
+          "const": "one-counted-remainder-superseded"
+        },
+        "equal_authority_contradiction": {
+          "const": "profile-contradiction-policy"
+        },
+        "contradiction_test": {
+          "const": "canonical-components-differ"
+        },
+        "contradiction_resolution_by_selection": {
+          "const": "forbidden"
+        },
+        "contradiction_reason": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 900
+        },
+        "ordering_independence": {
+          "const": "required"
+        },
+        "tie_break_order": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/registered_id"
+          }
+        },
+        "forbidden_tie_break_inputs": {
+          "description": "Every one of these is a property of when or in what order a reading arrived rather than of what it says. A tie broken on any of them is a total that changes when the same facts are replayed in a different order.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/registered_id"
+          }
+        },
+        "mode_precedence_authority": {
+          "const": "observer-equivalence-v1.observation_modes"
+        }
+      }
+    },
     "correction_semantics": {
       "description": "How a correction changes a previously accepted total. It does not: an accepted claim is immutable and a correction is a new contribution that a later generation composes.",
       "type": "object",
@@ -410,6 +658,15 @@
     "sha256": {
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
+    },
+    "uint64_decimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "outcome_value": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "maxLength": 64
     },
     "canonical_component": {
       "enum": [

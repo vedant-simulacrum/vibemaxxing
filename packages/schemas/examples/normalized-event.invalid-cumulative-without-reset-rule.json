@@ -41,7 +41,7 @@
     "adapter_instance_id": "adapter-instance-01"
   },
   "reading": {
-    "accumulation": "delta",
+    "accumulation": "cumulative",
     "reset_detection": "not-applicable",
     "series_generation": "0"
   },
@@ -87,8 +87,10 @@
   "local_fingerprint": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
   "rule_result": {
     "bundle_id": "deterministic-rules-v1",
-    "disposition": "accept-local",
-    "reason_codes": []
+    "disposition": "private-analytics",
+    "reason_codes": [
+      "uncertified-source-tuple"
+    ]
   },
   "privacy_scan": {
     "policy_id": "claim-egress-v1",
