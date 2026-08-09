@@ -694,6 +694,7 @@
     }
   ],
   "api_operations": [
+    "cancelDeletion",
     "cancelIdentityUnlink",
     "completeGitHubAuth",
     "completeXAuth",
@@ -747,6 +748,7 @@
     "requestExport",
     "revokeAllSessions",
     "revokeDevice",
+    "revokeExportDownloadGrant",
     "revokeSession",
     "rotateDeviceKey",
     "startDeviceAuth",

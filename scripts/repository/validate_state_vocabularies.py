@@ -310,6 +310,7 @@ BINDINGS: tuple[Binding, ...] = (
             "failed",
             "cooling-off",
             "awaiting-local-receipt",
+            "cancelled",
         ),
         sql=("deletion_jobs.state",),
         api=("DeletionJob.state",),
@@ -605,12 +606,16 @@ BINDINGS: tuple[Binding, ...] = (
 SQL_LOCAL_VOCABULARIES: dict[str, tuple[str, ...]] = {
     "device_keys.state": ("active", "rotated", "revoked"),
     "quarantines.state": ("active", "released"),
+    # PF-029 removed `not-applicable`. It was a member meaning "we did not look",
+    # and with it a deletion plan could cover all seven domains by declining to
+    # answer for any of them. `packages/schemas/consolidation-plan-v1.schema.json`
+    # refuses the same value in the same position for the same reason. A domain
+    # that held nothing reaches `complete` with an affected row count of zero.
     "deletion_effects.state": (
         "pending",
         "executing",
         "complete",
         "failed",
-        "not-applicable",
     ),
     "platform_certifications.state": (
         "candidate",
@@ -733,6 +738,12 @@ SQL_LOCAL_VOCABULARIES: dict[str, tuple[str, ...]] = {
 OUTCOME_MIRRORS: dict[str, str] = {
     "appeal_decisions.decision": "Appeal.decision",
     "local_deletion_commands.disposition": "LocalDeletionOutcome.disposition",
+    # PF-029. One row of the hosted deletion plan, per data domain. The aggregate is
+    # the deletion job; a domain effect has no lifecycle of its own and is published
+    # so that a participant reading one job can see that their claims were deleted
+    # and their moderation record was retained unlinked, which are different answers
+    # about different data and are both true.
+    "deletion_effects.state": "DeletionDomainEffect.state",
 }
 
 # API enums that report the outcome of a single request rather than a stored aggregate state.
@@ -860,10 +871,16 @@ RECORDED_ABSENCES: dict[tuple[str, str], str] = {
         "release-trust",
         "api",
     ): "Local-only; trust in a release is evaluated on the device against TUF metadata.",
+    # PF-029. The previous reason read "Local-only; never persisted server-side and
+    # never exposed by the API", and both halves stopped being true when D-424 and
+    # D-425 landed `local_deletion_commands` in the planning DDL and
+    # `LocalDeletionOutcome` in the API. Its own binding row named the SQL column
+    # while the reason denied the column existed. The absence is real -- the machine
+    # state is not published -- and this is what it is.
     (
         "local-deletion-command",
         "api",
-    ): "Local-only; never persisted server-side and never exposed by the API.",
+    ): "The API publishes LocalDeletionOutcome.disposition, the declared coarsening, rather than the machine state; see OUTCOME_MIRRORS.",
     (
         "daemon-lifecycle",
         "api",
@@ -1497,12 +1514,21 @@ def validate(report: Report) -> None:
                 f"outcome enum value is not lowercase kebab-case: {reference} = {value!r}",
             )
 
-    # 10. Every API state enum is bound, transient, or a declared projection.
+    # 10. Every API state enum is bound, transient, a declared projection, or a
+    # mirrored sub-entity outcome. The last exemption was missing rather than
+    # decided: rule 9 already compares every OUTCOME_MIRRORS reference to the SQL
+    # vocabulary that owns it, which is a stricter check than this one, but until a
+    # mirrored outcome was named `state` no reference reached here to be exempted.
+    # `DeletionDomainEffect.state` is the first, and reporting it as bound to no
+    # aggregate would have been correct and useless: it is bound to a column.
     projection_refs = {
         reference for _, references, _ in PROJECTIONS for reference in references
     }
+    outcome_refs = set(OUTCOME_MIRRORS.values())
     for reference in sorted(api_state_enums(enums)):
         if reference in used_api or reference in projection_refs:
+            continue
+        if reference in outcome_refs:
             continue
         if reference not in TRANSIENT_API_ENUMS:
             report.check(

@@ -41,6 +41,18 @@
           "description": "personal identifies a natural person directly or through a live mapping the controller holds; pseudonymous identifies one only through a binding that an erasure destroys; non-personal never identifies one.",
           "enum": ["personal", "pseudonymous", "non-personal"]
         },
+        "data_domain": {
+          "description": "Which of the categories of processing in docs/privacy/DATA_MAP.md this row belongs to. The seven keys are that document's own section list and are not invented here; the planning validator compares this enum to the domain table in the Article 30 record in both directions, and compares every table that record names inside a section against the key declared here. An export manifest and a hosted deletion plan each have to answer for all seven, which is why the assignment lives on the row rather than in either of them.",
+          "enum": [
+            "account-identity",
+            "authentication-session",
+            "device-collection",
+            "usage-claims-scores",
+            "social-presence-notifications",
+            "integrity-moderation-appeals",
+            "requests-exports-deletion"
+          ]
+        },
         "retention": { "$ref": "#/$defs/retention" },
         "attribution_retention": {
           "description": "How long the ability to link a pseudonymous row to a person is kept, where that differs from how long the row is kept. Present only on pseudonymous rows.",
@@ -90,6 +102,58 @@
             "required": ["classification"]
           },
           "then": { "required": ["attribution_retention"] }
+        },
+        {
+          "description": "A row about a person belongs to a category of processing. Making it required rather than optional is the difference between a domain set an export can be complete against and a label somebody may forget to apply.",
+          "if": {
+            "properties": { "classification": { "const": "personal" } },
+            "required": ["classification"]
+          },
+          "then": { "required": ["data_domain"] }
+        },
+        {
+          "description": "A pseudonymous row is in a domain while it can still be attributed to somebody.",
+          "if": {
+            "allOf": [
+              {
+                "properties": { "classification": { "const": "pseudonymous" } },
+                "required": ["classification"]
+              },
+              {
+                "not": {
+                  "properties": {
+                    "attribution_retention": {
+                      "properties": { "rule": { "const": "no-retention" } },
+                      "required": ["rule"]
+                    }
+                  },
+                  "required": ["attribution_retention"]
+                }
+              }
+            ]
+          },
+          "then": { "required": ["data_domain"] }
+        },
+        {
+          "description": "A row that never identified anybody is in no subject's export and in no subject's deletion plan, so it carries no domain. Declaring one would put a table into a coverage set that no participant can ask about.",
+          "if": {
+            "properties": { "classification": { "const": "non-personal" } },
+            "required": ["classification"]
+          },
+          "then": { "not": { "required": ["data_domain"] } }
+        },
+        {
+          "description": "The exemption is bounded by the claim that buys it. A row whose attribution is kept for no time at all attributes to nobody; a row that keeps attribution has to name its domain, so widening this exemption means editing a retention claim in the Article 30 record rather than dropping a label.",
+          "if": {
+            "properties": {
+              "attribution_retention": {
+                "properties": { "rule": { "const": "no-retention" } },
+                "required": ["rule"]
+              }
+            },
+            "required": ["attribution_retention"]
+          },
+          "then": { "not": { "required": ["data_domain"] } }
         }
       ]
     },

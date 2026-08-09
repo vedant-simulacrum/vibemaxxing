@@ -2401,11 +2401,13 @@
         "complete",
         "failed",
         "cooling-off",
-        "awaiting-local-receipt"
+        "awaiting-local-receipt",
+        "cancelled"
       ],
       "terminal_states": [
         "complete",
-        "failed"
+        "failed",
+        "cancelled"
       ],
       "privacy_boundary": "account-private",
       "revision_model": "append-only",
@@ -2501,6 +2503,21 @@
           "recent_auth": false,
           "idempotency": "aggregate-action-key",
           "audit_event": "deletion-await-local.audit",
+          "reversal": "none",
+          "transaction_boundary": "deletion-job"
+        },
+        {
+          "transition_id": "deletion-cancel",
+          "from": [
+            "cooling-off"
+          ],
+          "action": "cancel-inside-the-cooling-off-window",
+          "to": "cancelled",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "deletion-cancel.audit",
           "reversal": "none",
           "transaction_boundary": "deletion-job"
         },

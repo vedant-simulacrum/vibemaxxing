@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 187 |
-| `in-progress` | 5 |
-| `landed` | 62 |
+| `not-started` | 186 |
+| `in-progress` | 4 |
+| `landed` | 64 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 287 assertions across 62 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 313 assertions across 64 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 5.
 
-`PF-028`, `PF-030`, `OS-001`, `OS-003`, `OS-009`.
+`PF-030`, `PF-033`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,12 +90,11 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 2 | `PF-028`, `PF-030` |
-| 2 | 3 | `PF-029`, `PF-031`, `PF-032` |
-| 3 | 1 | `PF-033` |
-| 4 | 1 | `PF-034` |
-| 5 | 1 | `PF-035` |
-| 6 | 1 | `PF-036` |
+| 1 | 2 | `PF-030`, `PF-033` |
+| 2 | 2 | `PF-031`, `PF-032` |
+| 3 | 1 | `PF-034` |
+| 4 | 1 | `PF-035` |
+| 5 | 1 | `PF-036` |
 
 Statuses additionally checkable against artifact presence: 196 of 260. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -817,27 +816,69 @@ The schema, DDL and API half landed under D-420 through D-423. `packages/schemas
 **Still not implemented.** No aggregate appends an event, no worker groups one, no worker evaluates a preference, and no surface renders an inbox. Every check in this unit compares records to records.
 
 ### PF-028 — Export authority
-Files: `packages/schemas/export-manifest-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`
-Acceptance: the manifest schema requires version, included and excluded domains, per-domain counts, checksums and an encryption reference, and rejects a manifest missing any; `exports` and `export_artifacts` carry a snapshot cutoff and a revocable grant with an expiry.
+Files: `docs/privacy/DATA_MAP.md`, `docs/privacy/PRIVACY_CONTRACT.md`, `packages/schemas/data-disposition-v1.schema.json`, `packages/schemas/data-disposition-v1.json`, `packages/schemas/export-manifest-v1.schema.json`, (new) `packages/schemas/examples/export-manifest.valid.json`, (new) seven `packages/schemas/examples/export-manifest.invalid-*.json` fixtures, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `conformance/p1140e/validation-matrix-v1.json`, `scripts/repository/validate_planning_artifacts.py`, (new) `tests/ci/test_export_and_deletion_domains.py`
+Acceptance: `docs/privacy/DATA_MAP.md` declares a closed set of data-domain keys, one per category-of-processing section, and `data-disposition-v1.json` carries the key on every row it classes `personal`, and on every `pseudonymous` row that keeps attribution, and on no other row; the export manifest requires a version, a snapshot cutoff, an encryption reference that no property could hold a key in, and one entry per domain with a count, a digest when included and a reason from a closed set when excluded; a manifest that answers for a domain twice is refused by a computed check the schema cannot express; `exports` carries the typed scope, the frozen recent-auth instant, the snapshot cutoff and constraints refusing a downloadable package with no manifest, key or expiry, `export_artifacts` carries the domain key, and `export_download_grants` carries a non-null expiry, a revocation instant and the export it opens; `revokeExportDownloadGrant` is the route that ends a grant; `deletion_state_at_generation` equals the vocabulary `DeletionJob` publishes plus `none`, which excludes the machine's internal state.
 Depends: PF-004, PF-019
 Repair: P-1140F-4
 Serves: SR-013
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: validator scripts/repository/validate_p1140e_contracts.py
+Evidence: unittest tests.ci.test_export_and_deletion_domains
+Evidence: unittest tests.ci.test_data_disposition_and_erasure
+Evidence: exists packages/schemas/examples/export-manifest.valid.json
+Evidence: exists packages/schemas/examples/export-manifest.invalid-domain-answered-twice.json
+Evidence: contains 1 docs/privacy/DATA_MAP.md :: ### The seven domains, named once
+Evidence: contains 1 packages/schemas/planning-schema.sql :: check (state not in ('snapshotting','encrypting','ready','downloaded','purged') or snapshot_cutoff_at is not null)
+Evidence: contains 1 packages/schemas/planning-schema.sql :: check (revoked_at is null or revoked_at >= issued_at)
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: operationId: revokeExportDownloadGrant
+Evidence: absent packages/schemas/export-manifest-v1.schema.json :: key_material
+Evidence: absent packages/schemas/export-manifest-v1.schema.json :: cooling_off
 
 - durable status resource and cancellation/purge;
 - frozen recent-auth grant and coherent snapshot cutoff;
 - versioned package, manifest, included/excluded domains, counts, checksums, encryption and short-lived revocable grants;
 - rights-of-others filtering and download audit.
 
+**The acceptance was rewritten, and the reason is the finding.** As written it asked for "included and excluded domains" against a repository in which no domain vocabulary existed. `exports` had four columns, `export_artifacts` keyed on a logical file name, and `deletion_effects.subsystem` was `text not null` with no CHECK — so "domain" was a word three artifacts used and none defined, and any implementation satisfying the sentence would have invented a fourth spelling. The rewritten clauses name the vocabulary's owner first, because until the Article 30 record declares the keys there is nothing for a manifest to be complete against. The acceptance also named the wrong table for the grant: it asked `export_artifacts` to carry "a revocable grant with an expiry", and the grant is `export_download_grants`, which existed as a four-column stub with neither.
+
+**Seven keys, declared in the record and carried on the row.** `docs/privacy/DATA_MAP.md` names one key per category-of-processing section, `data-disposition-v1.json` carries it on all 71 rows that class `personal` or keep attribution, and the validator compares the two in both directions — plus a third comparison that no work unit asked for and that turned out to matter: every table the record names inside a section must carry that section's key. That check found `presence_events` filed under "Account and identity" in the Article 30 record while `presence_leases`, the row beside it in every other sense, sat under "Social, presence and notifications". The row was moved.
+
+**Two rows carry no key and the exemption is bounded by the claim that buys it.** `deletion_tombstones` and `outbox_events` are `pseudonymous` with `attribution_retention` of `no-retention`: they attribute to nobody, so they are in no subject's export. Widening that exemption means editing a retention claim in the Article 30 record rather than deleting a label, which is the difference between a bounded exception and an escape hatch.
+
+**A file list cannot record an absence.** The old manifest listed files. A package that omitted a domain was indistinguishable from one that held nothing for it and from one whose producer forgot the domain existed, and the schema could not tell any of the three apart because a logical name is whatever the producer types. Every domain now has an entry, every exclusion names a reason from a closed set, and there is no value meaning that the producer did not look — the same refusal `consolidation-plan-v1.schema.json` makes in the same position.
+
+**`uniqueItems` does not see a repeated domain.** Two entries naming one domain with different counts are two distinct objects, so a manifest can answer twice for one domain, be silent about another, and satisfy every keyword the schema has. `export-manifest.invalid-domain-answered-twice.json` is that manifest and is declared a computed negative; the validator compares the answered multiset to the vocabulary.
+
+**Short-lived and revocable were words.** `export_download_grants` held a subject, a revision and a creation time. `expires_at` is now `not null`, because a nullable expiry is an eternal grant one omitted value away, and `revokeExportDownloadGrant` is the first route that can end one. Revocation and expiry are separate timestamps because a link the participant closed and a link that ran out are different things to be told.
+
+**A fourth deletion vocabulary is gone.** `deletion_state_at_generation` held a snake-cased cooling-off value and two words no machine, table or API enum used, which `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` had recorded as an open item; a manifest and the deletion job it described could not be compared at all. It equals the API's published vocabulary rather than the machine's, because the manifest is handed to the participant and the machine's internal `rebuilding-projections` is a state `DeletionJob` deliberately does not carry.
+
+**Still not implemented.** No export has been requested, produced, sealed, granted or purged. Every check in this unit compares records to records.
+
 ### PF-029 — Deletion plan, per-effect outcomes and tombstones
-Files: `packages/schemas/local-deletion-v1.schema.json`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/privacy/PRIVACY_CONTRACT.md`, `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`
-Acceptance: `deletion_jobs`, `deletion_effects`, `local_deletion_commands` and `local_deletion_receipts` cover every domain named in `docs/privacy/DATA_MAP.md`, with a per-device outcome of `complete`, `pending`, `expired`, `unreachable` or `waived`; `grep -in 'forensic' docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md` returns no claim of erasure.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/DATA_MAP.md`, `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `conformance/p1140e/validation-matrix-v1.json`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_export_and_deletion_domains.py`
+Acceptance: `deletion_effects` is keyed on `(deletion_job_id, data_domain)` over the closed domain set PF-028 declares, its state vocabulary contains no member meaning the worker did not look, and its `erasure_action` vocabulary equals the actions `data-disposition-v1.json` assigns to domain-bearing tables; `deletion_jobs` carries the cooling-off window as `effective_after`, refuses a cancellation not before it, and refuses a job under legal hold in any state that erases; the `server-deletion` machine reaches `cancelled` only from `cooling-off` and only as the participant's own recently authenticated act, with `cancelDeletion` as its route; `DeletionJob` requires `domain_effects` and `blocked_by_legal_hold`; `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md` states its claim ceiling in named literals and contains none of the eleven overclaims the validator lists, so an empty file fails both halves.
 Depends: PF-023, PF-024, PF-027, PF-028
 Repair: P-1140F-4
 Serves: SR-013
 Est: 12-16
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: validator scripts/repository/validate_p1140e_contracts.py
+Evidence: unittest tests.ci.test_export_and_deletion_domains
+Evidence: unittest tests.ci.test_state_vocabularies
+Evidence: contains 1 packages/schemas/planning-schema.sql :: primary key (deletion_job_id, data_domain)
+Evidence: contains 1 packages/schemas/planning-schema.sql :: check (cancelled_at is null or cancelled_at < effective_after)
+Evidence: contains 1 packages/schemas/planning-schema.sql :: check ((legal_hold_reference is null) = (legal_hold_placed_at is null))
+Evidence: contains 1 packages/schemas/state-machine-registry-v1.json :: "transition_id": "deletion-cancel"
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: operationId: cancelDeletion
+Evidence: contains 1 docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md :: Deletion here is logical, not forensic.
+Evidence: absent packages/schemas/planning-schema.sql :: subsystem text not null
+Evidence: absent docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md :: unrecoverable
 
 - hosted and local device deletion separated;
 - immutable domain/effect plan;
@@ -847,7 +888,27 @@ Status: in-progress
 - execution receipt does not claim forensic erasure;
 - legal holds, retention and backup tombstone reapplication.
 
-The per-device half landed under D-424 and D-425. `packages/schemas/local-deletion-v1.schema.json` carries the command, the signed receipt and the disposition; `local_deletion_commands` gains the disposition column, checked equal to the machine coarsened by acknowledgement and waiver, so `unreachable` is no longer reported as `expired`; `local_deletion_receipts` gains the four columns the device store already declares plus the COSE signature; and `DeletionJob.device_outcomes` is required, so a client cannot render one aggregate success. The unit is not finished. The hosted half — the immutable domain-and-effect plan, the account mutation freeze during execution, legal holds and backup tombstone reapplication — is untouched, `deletion_effects` still names no domain set, and `docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md` is unchanged by this work.
+The per-device half landed under D-424 and D-425. `packages/schemas/local-deletion-v1.schema.json` carries the command, the signed receipt and the disposition; `local_deletion_commands` gains the disposition column, checked equal to the machine coarsened by acknowledgement and waiver, so `unreachable` is no longer reported as `expired`; `local_deletion_receipts` gains the four columns the device store already declares plus the COSE signature; and `DeletionJob.device_outcomes` is required, so a client cannot render one aggregate success. This unit is the hosted half.
+
+**The acceptance was rewritten twice over, and both halves were wrong in ways worth recording.**
+
+The first half asked that `deletion_jobs`, `deletion_effects`, `local_deletion_commands` and `local_deletion_receipts` "cover every domain named in `docs/privacy/DATA_MAP.md`". That record named no domains at all — it had seven category-of-processing sections and no keys — so the criterion compared a table against nothing. It was also wrong on its face about which tables answer for what: a device command cannot cover `integrity-moderation-appeals`, which exists only server-side, and demanding that it does would have produced a device command listing server domains it can do nothing about. PF-028 declares the keys; the rewritten clause holds the hosted plan to all seven and leaves the device half where D-424 put it, reported per device and never merged into the hosted answer.
+
+The second half was `grep -in 'forensic' docs/operations/DATA_LIFECYCLE_AND_RECOVERY.md` returning no claim of erasure. The word was absent from that file, and had been for the life of the repository, so the criterion was already satisfied — by a document that made no statement about the claim ceiling whatsoever. That is an absence satisfied by emptiness, and it is the defect the criterion was written to prevent, in the criterion. The rewritten clause requires the ceiling to be stated in named literals *and* requires eleven overclaims to be absent, so an empty file now fails both halves. `test_an_empty_lifecycle_document_fails` is the case the old form could not have. The word `forensic` appears in that document for the first time, in a sentence denying the claim.
+
+**`deletion_effects.subsystem` was `text not null` with no CHECK.** Any two workers could spell one subsystem two ways and both rows were accepted, which is worse than disagreeing: two owners of one idea with no shared vocabulary cannot be found to disagree. It is `data_domain` now, over PF-028's closed set, with `primary key (deletion_job_id, data_domain)` so a domain appears exactly once per job.
+
+**`not-applicable` is gone from the effect state.** It was a member meaning the worker did not look, and with it a plan covered all seven domains by declining to answer for any. `consolidation-plan-v1.schema.json` refuses the same value in the same position and states the reason; the repair had reached that aggregate and not this one. A domain that held nothing reaches `complete` with `affected_row_count` zero, which is a statement about the account.
+
+**The Article 30 record promised a cancellation nothing could perform.** `docs/privacy/DATA_MAP.md` states the seven-day cooling-off window as cancellable within it, and `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` recorded that the machine had no `cancelled` state and no transition out of `cooling-off` other than forward — with the gap assigned to this unit. `deletion-cancel` runs from `cooling-off` only, with the participant as actor under recent authentication, and `cancelDeletion` is its only route. A worker that can call off an erasure makes the erasure a request rather than a right. `check (cancelled_at is null or cancelled_at < effective_after)` puts the lateness refusal where the value is written rather than where it is read.
+
+**A legal hold now stops something.** `legal_hold_reference` and `legal_hold_placed_at` are present together or not at all, and a held job may not be in `processing`, `rebuilding-projections`, `awaiting-local-receipt` or `complete`. Article 12(4) requires the participant to be told the controller is not acting, so `DeletionJob.blocked_by_legal_hold` says the request is held and no field says what the hold is.
+
+**A recorded reason had outlived its hole.** The `local-deletion-command`/`api` absence read "Local-only; never persisted server-side and never exposed by the API". Both halves stopped being true when D-424 and D-425 landed `local_deletion_commands` in the planning DDL and `LocalDeletionOutcome` in the API — and its own binding row named the SQL column while the reason denied the column existed. The absence is real; the reason now says what it is.
+
+**Rule 10 of the vocabulary validator had a missing exemption rather than a decided one.** Every mirrored sub-entity outcome is compared to the SQL vocabulary that owns it by rule 9, which is stricter, but until a mirrored outcome was named `state` none reached rule 10 to be exempted. `DeletionDomainEffect.state` is the first.
+
+**Still not implemented.** No deletion plan has been built, no domain has been erased, no hold has been placed, no cancellation has been made, and no restore drill has been run. Every check in this unit compares records to records.
 
 ### PF-030 — Release authorization and component manifest
 Files: `packages/schemas/release-set-v1.schema.json`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`

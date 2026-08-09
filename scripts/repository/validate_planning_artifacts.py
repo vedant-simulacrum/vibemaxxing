@@ -107,6 +107,7 @@ EXAMPLE_SCHEMAS: dict[str, str] = {
     "compatibility-graph": "compatibility-graph-v1.schema.json",
     "compatibility-tuple": "compatibility-tuple-v1.schema.json",
     "consolidation-plan": "consolidation-plan-v1.schema.json",
+    "export-manifest": "export-manifest-v1.schema.json",
     "fork-resolution": "fork-resolution-v1.schema.json",
     "install-plan": "install-plan-v1.schema.json",
     "local-deletion": "local-deletion-v1.schema.json",
@@ -139,6 +140,14 @@ EXAMPLE_NEGATIVE_GAPS: dict[str, str] = {
 # is untested, and the entry would be a justification outliving its hole.
 EXAMPLE_COMPUTED_NEGATIVES: dict[str, str] = {
     "certification-result.invalid-counts-omit-a-case.json": (
+        "scripts/repository/validate_planning_artifacts.py"
+    ),
+    # The schema counts seven entries and requires them unique. Two entries naming one
+    # domain with different counts are two distinct objects, so `uniqueItems` accepts
+    # them and the eighth domain simply goes unanswered. A key with no discriminator
+    # is the defect; `validate_export_and_deletion_domains` is what compares the
+    # answered set to the vocabulary.
+    "export-manifest.invalid-domain-answered-twice.json": (
         "scripts/repository/validate_planning_artifacts.py"
     ),
     "consolidation-plan.invalid-newer-identity-survives.json": (
@@ -4760,6 +4769,494 @@ def validate_ddl_declaration_order() -> None:
             )
 
 
+# The heading of the section in the Article 30 record that names the domains, and the
+# heading its category sections sit under. Both are read rather than assumed: a renamed
+# section fails here instead of quietly reducing the domain set to nothing.
+DATA_MAP_CATEGORY_HEADING = "## Categories of processing"
+DATA_MAP_DOMAIN_HEADING = "### The seven domains, named once"
+
+# Claims about deletion that no operations document may make. The bare word `forensic`
+# is deliberately absent: the repaired section uses it to deny the claim, and banning
+# the word rather than the claim would forbid the denial and leave an empty file
+# passing, which is the defect this replaces.
+DELETION_OVERCLAIMS: tuple[str, ...] = (
+    "forensic erasure",
+    "forensically",
+    "unrecoverable",
+    "beyond recovery",
+    "securely erased",
+    "securely deleted",
+    "sanitised",
+    "sanitized",
+    "physically destroyed",
+    "wiped",
+    "overwritten",
+    "shredded",
+)
+
+# Statements the operations document must make. An absence check alone is satisfied by
+# an empty file; these are what make the absence mean something.
+DELETION_CEILING_REQUIRED: tuple[str, ...] = (
+    "Deletion here is logical, not forensic.",
+    "docs/privacy/ERASURE_AND_KEY_DESTRUCTION.md",
+    "docs/privacy/PRIVACY_CONTRACT.md",
+    "erasure_restore_receipts",
+    "traffic_admitted_at",
+)
+
+
+def _data_map_text() -> str:
+    return (ROOT / "docs" / "privacy" / "DATA_MAP.md").read_text(encoding="utf-8")
+
+
+def _data_map_domain_table() -> dict[str, str]:
+    """Read the domain key and section title out of the Article 30 record.
+
+    The keys live in that document because it is the prose authority for what personal
+    data is processed and in which categories, and because a key set declared in a
+    schema and described in a document is two sets. Reading it back is what makes the
+    schema enum a copy that can be checked rather than a copy that can drift.
+    """
+    text = _data_map_text()
+    if DATA_MAP_DOMAIN_HEADING not in text:
+        raise ValidationFailure(
+            f"the Article 30 record no longer declares {DATA_MAP_DOMAIN_HEADING!r}; "
+            "the domain vocabulary has no owner"
+        )
+    section = text.split(DATA_MAP_DOMAIN_HEADING, 1)[1].split("\n### ", 1)[0]
+    rows: dict[str, str] = {}
+    for key, title in re.findall(
+        r"(?m)^\|\s*`([a-z-]+)`\s*\|\s*([^|]+?)\s*\|", section
+    ):
+        if key in rows:
+            raise ValidationFailure(f"the domain table names {key} twice")
+        rows[key] = title
+    if not rows:
+        raise ValidationFailure(
+            "the domain table in the Article 30 record has no rows; an empty "
+            "vocabulary makes every coverage check below vacuously true"
+        )
+    return rows
+
+
+def _data_map_section_tables() -> dict[str, set[str]]:
+    """Which tables each category section of the Article 30 record names."""
+    text = _data_map_text()
+    body = text.split(DATA_MAP_CATEGORY_HEADING, 1)[1].split("\n## ", 1)[0]
+    sections: dict[str, set[str]] = {}
+    for chunk in body.split("\n### ")[1:]:
+        title, _, rest = chunk.partition("\n")
+        sections[title.strip()] = set(re.findall(r"`([a-z][a-z0-9_]*)`", rest))
+    return sections
+
+
+def validate_export_and_deletion_domains() -> None:
+    """Prove that "every domain" resolves to a closed set every owner answers for.
+
+    PF-028 and PF-029, SR-013. The phrase was in two work units and in the privacy
+    contract, and nothing could evaluate it. An export manifest listed files, whose
+    logical names are whatever a producer types; `deletion_effects.subsystem` was
+    `text not null` with no CHECK at all. Neither vocabulary was closed, neither could
+    be compared to the Article 30 record, and neither could be compared to the other,
+    so a package or a plan missing a whole category of processing was indistinguishable
+    from one that held nothing for it.
+
+    Seven checks, each falsifiable:
+
+    1. the domain keys in `docs/privacy/DATA_MAP.md` equal the enum in the disposition
+       schema, in both directions;
+    2. each key is claimed by at least one disposition row, and each of the record's
+       category sections that names a domain-bearing table appears in the domain table;
+    3. every table the record names inside a section carries that section's key in the
+       registry, so the assignment is derived from the record rather than invented
+       beside it;
+    4. the export manifest, the export artifact table, the deletion effect table and
+       both API projections carry the same seven keys;
+    5. an export manifest answers for every domain exactly once -- the schema's
+       `uniqueItems` cannot see this, because two entries naming one domain with
+       different counts are two distinct objects;
+    6. no `personal` row claims an erasure never reaches it;
+    7. the manifest carries no key material, and the operations document states its
+       claim ceiling and stays under it.
+
+    This proves the vocabularies agree. No export has been produced and no domain has
+    been erased.
+    """
+    schema = validate_schema_file(SCHEMAS / "data-disposition-v1.schema.json")
+    registry = load_json(SCHEMAS / "data-disposition-v1.json")
+    entries = registry["entries"]
+
+    declared = set(schema["$defs"]["entry"]["properties"]["data_domain"]["enum"])
+    documented = _data_map_domain_table()
+
+    # 1. The record and the schema name the same domains.
+    if set(documented) != declared:
+        raise ValidationFailure(
+            "the domain vocabulary differs between the Article 30 record and "
+            f"data-disposition-v1.schema.json: only-in-record="
+            f"{sorted(set(documented) - declared)} only-in-schema="
+            f"{sorted(declared - set(documented))}"
+        )
+
+    by_table = {entry["table"]: entry for entry in entries}
+    used: dict[str, set[str]] = {key: set() for key in declared}
+    for entry in entries:
+        key = entry.get("data_domain")
+        if key is not None:
+            used[key].add(entry["table"])
+
+    # 2. A declared domain that no row claims is a name with nothing behind it.
+    unclaimed = sorted(key for key, tables in used.items() if not tables)
+    if unclaimed:
+        raise ValidationFailure(
+            f"domains declared by the Article 30 record that no disposition row "
+            f"claims: {unclaimed}"
+        )
+
+    sections = _data_map_section_tables()
+    by_title = {title.strip(): key for key, title in documented.items()}
+    for title, tables in sorted(sections.items()):
+        named = sorted(
+            table
+            for table in tables
+            if table in by_table and by_table[table].get("data_domain")
+        )
+        if not named:
+            continue
+        if title not in by_title:
+            raise ValidationFailure(
+                f"the Article 30 record section {title!r} names domain-bearing tables "
+                f"{named} and the domain table gives it no key"
+            )
+        # 3. The section a table is recorded under decides its domain.
+        expected = by_title[title]
+        wrong = sorted(
+            f"{table}={by_table[table]['data_domain']}"
+            for table in named
+            if by_table[table]["data_domain"] != expected
+        )
+        if wrong:
+            raise ValidationFailure(
+                f"the Article 30 record records {wrong} under {title!r}, whose domain "
+                f"is {expected}; the registry assignment contradicts the record"
+            )
+
+    # A domain whose section names no covered table is a key carried by a heading and
+    # nothing else. A missing section reaches this too, with an empty set, which is why
+    # there is one check here and not two: an unreachable branch is not a check.
+    for key, title in sorted(documented.items()):
+        if not used[key]:
+            raise ValidationFailure(f"domain {key} is claimed by no table")
+        under = {
+            table
+            for table in sections.get(title.strip(), set())
+            if by_table.get(table, {}).get("data_domain")
+        }
+        if not under:
+            raise ValidationFailure(
+                f"the Article 30 record's {title!r} section names no table the "
+                f"disposition registry covers, so the domain {key} is carried by a "
+                "heading and nothing else"
+            )
+
+    # 6. A row about a person cannot claim an erasure never reaches it. Checked before
+    # the effect vocabulary below, because `not-applicable` on a personal row would
+    # otherwise be reported as a vocabulary mismatch and the reader would go and widen
+    # the CHECK constraint to admit it.
+    unreachable = sorted(
+        entry["table"]
+        for entry in entries
+        if entry["classification"] == "personal"
+        and entry["erasure_action"] == "not-applicable"
+    )
+    if unreachable:
+        raise ValidationFailure(
+            f"personal rows declaring that an erasure never reaches them: {unreachable}"
+        )
+
+    # 4. Every owner of the vocabulary carries the same seven keys.
+    manifest = validate_schema_file(SCHEMAS / "export-manifest-v1.schema.json")
+    manifest_domains = set(manifest["$defs"]["data_domain"]["enum"])
+    if manifest_domains != declared:
+        raise ValidationFailure(
+            f"the export manifest domain enum differs from the registry: "
+            f"only-in-manifest={sorted(manifest_domains - declared)} "
+            f"only-in-registry={sorted(declared - manifest_domains)}"
+        )
+    plan = manifest["properties"]["domains"]
+    if plan.get("minItems") != len(declared) or plan.get("maxItems") != len(declared):
+        raise ValidationFailure(
+            f"the export manifest admits {plan.get('minItems')}..{plan.get('maxItems')}"
+            f" domain entries against {len(declared)} domains; a package that answers "
+            "for fewer is a package that is silent about one"
+        )
+
+    bodies = _planning_table_bodies()
+    for table, column in (
+        ("export_artifacts", "data_domain"),
+        ("deletion_effects", "data_domain"),
+    ):
+        actual = _sql_check_vocabulary(bodies[table], column)
+        if actual != declared:
+            raise ValidationFailure(
+                f"{table}.{column} differs from the domain vocabulary: "
+                f"only-in-sql={sorted(actual - declared)} "
+                f"only-in-registry={sorted(declared - actual)}"
+            )
+
+    spec = load_yaml(SCHEMAS / "openapi-v1.yaml")
+    schemas = spec["components"]["schemas"]
+    for name, holder in (
+        ("ExportDomainOutcome", "ExportJob"),
+        ("DeletionDomainEffect", "DeletionJob"),
+    ):
+        api_domains = set(schemas[name]["properties"]["data_domain"]["enum"])
+        if api_domains != declared:
+            raise ValidationFailure(
+                f"{name}.data_domain differs from the domain vocabulary: "
+                f"only-in-api={sorted(api_domains - declared)} "
+                f"only-in-registry={sorted(declared - api_domains)}"
+            )
+        field = "domains" if holder == "ExportJob" else "domain_effects"
+        projection = schemas[holder]["properties"][field]
+        if field not in schemas[holder]["required"]:
+            raise ValidationFailure(
+                f"{holder}.{field} is optional; a client that omits it renders one "
+                "aggregate outcome for seven different answers"
+            )
+        if projection.get("minItems") != len(declared):
+            raise ValidationFailure(
+                f"{holder}.{field} admits fewer than {len(declared)} entries"
+            )
+
+    # The effect vocabulary is the registry's own, so an effect can be compared to what
+    # the registry says the domain's tables were to receive.
+    effects = _sql_check_vocabulary(bodies["deletion_effects"], "erasure_action")
+    registry_actions = {
+        entry["erasure_action"]
+        for entry in entries
+        if entry.get("data_domain") is not None
+    }
+    if effects != registry_actions:
+        raise ValidationFailure(
+            "deletion_effects.erasure_action differs from the actions the disposition "
+            f"registry assigns to domain-bearing tables: only-in-sql="
+            f"{sorted(effects - registry_actions)} only-in-registry="
+            f"{sorted(registry_actions - effects)}"
+        )
+    if "not-applicable" in _sql_check_vocabulary(bodies["deletion_effects"], "state"):
+        raise ValidationFailure(
+            "deletion_effects.state admits not-applicable, which means the worker did "
+            "not look; with it a plan covers every domain by declining to answer for "
+            "any of them"
+        )
+
+    # 5. A manifest answers for each domain exactly once. `uniqueItems` cannot see
+    # this: two entries naming one domain with different counts are distinct objects.
+    twice = SCHEMAS / "examples" / "export-manifest.invalid-domain-answered-twice.json"
+    if not twice.is_file():
+        raise ValidationFailure(
+            "no fixture exercises a manifest that answers for one domain twice, which "
+            "is the case the schema cannot see"
+        )
+    for path in sorted((SCHEMAS / "examples").glob("export-manifest.*.json")):
+        if ".invalid-" in path.name and path != twice:
+            continue
+        answered = [item["data_domain"] for item in load_json(path)["domains"]]
+        duplicated = sorted({key for key in answered if answered.count(key) > 1})
+        missing = sorted(declared - set(answered))
+        if path == twice:
+            if not duplicated:
+                raise ValidationFailure(
+                    f"{path.name} no longer answers for a domain twice; the negative "
+                    "has stopped being one"
+                )
+            continue
+        if duplicated or missing:
+            raise ValidationFailure(
+                f"export manifest {path.name} answers twice for {duplicated} and is "
+                f"silent about {missing}"
+            )
+
+    # 7. The manifest holds no key, and the operations document stays under its ceiling.
+    manifest_text = (SCHEMAS / "export-manifest-v1.schema.json").read_text(
+        encoding="utf-8"
+    )
+    for banned in ("key_material", "private_key", "passphrase", "secret_key"):
+        if banned in manifest_text:
+            raise ValidationFailure(
+                f"the export manifest schema names {banned}; a manifest travels beside "
+                "the ciphertext it describes and a key in it makes the encryption a label"
+            )
+
+    lifecycle_path = ROOT / "docs" / "operations" / "DATA_LIFECYCLE_AND_RECOVERY.md"
+    lifecycle = lifecycle_path.read_text(encoding="utf-8")
+    absent = [text for text in DELETION_CEILING_REQUIRED if text not in lifecycle]
+    if absent:
+        raise ValidationFailure(
+            f"DATA_LIFECYCLE_AND_RECOVERY.md states no deletion claim ceiling: "
+            f"missing {absent}. An absence check alone passes on an empty file"
+        )
+    lowered = lifecycle.lower()
+    overclaims = sorted(text for text in DELETION_OVERCLAIMS if text in lowered)
+    if overclaims:
+        raise ValidationFailure(
+            f"DATA_LIFECYCLE_AND_RECOVERY.md claims more than the product observes: "
+            f"{overclaims}"
+        )
+
+
+def validate_export_and_deletion_lifecycles() -> None:
+    """Prove the export and deletion rows can hold what their owners promise.
+
+    PF-028 and PF-029, SR-013. `exports` held an id, an account, a state and a nullable
+    expiry, and `deletion_jobs` held an id, an account, a scope and a state. Between
+    them they were the persistence for a typed scope, a coherent snapshot, a manifest,
+    checksums, encryption, a short-lived revocable grant, a seven-day cancellable
+    cooling-off window and a legal hold, and they had a column for none of it. The
+    Article 30 record stated the cooling-off window as cancellable while the machine had
+    no `cancelled` state, so the record described a reversal no owner could perform.
+
+    Each constraint below is required by literal, because the rule they carry is
+    enforced at the write. A worker that reads `effective_after` and decides correctly
+    every time is not a control; a row that cannot record a cancellation after the
+    window closed is.
+
+    This proves the constraints are declared. No export job and no deletion job has ever
+    been written, and PostgreSQL has never executed this file outside CI.
+    """
+    bodies = _planning_table_bodies()
+    required: dict[str, tuple[str, ...]] = {
+        # The frozen recent-auth grant, the coherent snapshot, and a package that
+        # cannot become downloadable without a manifest, a key and an expiry.
+        "exports": (
+            "check (recent_auth_verified_at <= requested_at)",
+            "check (snapshot_cutoff_at is null or snapshot_cutoff_at >= requested_at)",
+            "check (state not in ('snapshotting','encrypting','ready','downloaded','purged') "
+            "or snapshot_cutoff_at is not null)",
+            "check (expires_at is null or expires_at > requested_at)",
+        ),
+        # Short-lived is `not null`. A nullable expiry is an eternal grant one omitted
+        # value away.
+        "export_download_grants": (
+            "expires_at timestamptz not null",
+            "check (expires_at > issued_at)",
+            "check (revoked_at is null or revoked_at >= issued_at)",
+        ),
+        # The window, the cancellation inside it, and the hold that stops execution.
+        "deletion_jobs": (
+            "check (effective_after > requested_at)",
+            "check ((state = 'cancelled') = (cancelled_at is not null))",
+            "check (cancelled_at is null or cancelled_at < effective_after)",
+            "check ((legal_hold_reference is null) = (legal_hold_placed_at is null))",
+        ),
+        # A completed effect has a count. A domain that held nothing says zero.
+        "deletion_effects": (
+            "primary key (deletion_job_id, data_domain)",
+            "check ((state = 'complete') = (completed_at is not null))",
+            "check (state <> 'complete' or affected_row_count is not null)",
+        ),
+    }
+    for table, constraints in sorted(required.items()):
+        body = bodies.get(table)
+        if body is None:
+            raise ValidationFailure(f"planning DDL lacks the {table} table")
+        flattened = " ".join(body.split())
+        for constraint in constraints:
+            if " ".join(constraint.split()) not in flattened:
+                raise ValidationFailure(
+                    f"{table} lacks its required constraint: {constraint}"
+                )
+
+    held = _sql_check_vocabulary(bodies["deletion_jobs"], "state")
+    executing = {
+        "processing",
+        "rebuilding-projections",
+        "awaiting-local-receipt",
+        "complete",
+    }
+    hold_clause = next(
+        (
+            line
+            for line in " ".join(bodies["deletion_jobs"].split()).split("check (")
+            if "legal_hold_reference is null or state in" in line
+        ),
+        None,
+    )
+    if hold_clause is None:
+        raise ValidationFailure(
+            "deletion_jobs admits a legal hold with no refusal; a hold that does not "
+            "stop the states that erase is a column"
+        )
+    permitted = set(re.findall(r"'([^']*)'", hold_clause))
+    if permitted & executing:
+        raise ValidationFailure(
+            f"deletion_jobs lets a held job reach {sorted(permitted & executing)}"
+        )
+    if not permitted <= held:
+        raise ValidationFailure(
+            "the legal-hold clause names states deletion_jobs.state does not admit: "
+            f"{sorted(permitted - held)}"
+        )
+
+    # The cancellation is the participant's act. A worker that can call off an erasure
+    # makes the erasure a request rather than a right.
+    machines = {
+        machine["machine_id"]: machine
+        for machine in load_json(SCHEMAS / "state-machine-registry-v1.json")["machines"]
+    }
+    deletion = machines["server-deletion"]
+    cancel = [
+        transition
+        for transition in deletion["transitions"]
+        if transition["to"] == "cancelled"
+    ]
+    if not cancel:
+        raise ValidationFailure(
+            "the server-deletion machine reaches no cancelled state; the Article 30 "
+            "record states the cooling-off window as cancellable"
+        )
+    for transition in cancel:
+        if transition["actor"] != "user" or not transition["recent_auth"]:
+            raise ValidationFailure(
+                f"{transition['transition_id']} cancels an erasure without being the "
+                f"participant's own recently authenticated act: actor="
+                f"{transition['actor']} recent_auth={transition['recent_auth']}"
+            )
+        if transition["from"] != ["cooling-off"]:
+            raise ValidationFailure(
+                f"{transition['transition_id']} cancels from {transition['from']}; "
+                "only the cooling-off window is reversible, because rows deleted after "
+                "it cannot be brought back by a state change"
+            )
+
+    # The manifest's deletion state is the machine's vocabulary and not a fourth
+    # spelling of it.
+    # The manifest is handed to the participant, so the vocabulary it must equal is the
+    # one the API publishes rather than the machine's own. `rebuilding-projections` is
+    # declared internal and `DeletionJob.state` does not carry it; a manifest that did
+    # would leak through the package what the API declines to say.
+    manifest = validate_schema_file(SCHEMAS / "export-manifest-v1.schema.json")
+    stated = set(manifest["properties"]["deletion_state_at_generation"]["enum"])
+    published = set(
+        load_yaml(SCHEMAS / "openapi-v1.yaml")["components"]["schemas"]["DeletionJob"][
+            "properties"
+        ]["state"]["enum"]
+    )
+    if not published <= set(deletion["states"]):
+        raise ValidationFailure(
+            "DeletionJob.state publishes values the server-deletion machine does not "
+            f"have: {sorted(published - set(deletion['states']))}"
+        )
+    expected = published | {"none"}
+    if stated != expected:
+        raise ValidationFailure(
+            "export-manifest deletion_state_at_generation differs from the vocabulary "
+            f"DeletionJob publishes: only-in-manifest={sorted(stated - expected)} "
+            f"only-in-api={sorted(expected - stated)}"
+        )
+
+
 def validate_erasure_contract() -> None:
     """Prove the erasure invariants that a check constraint can carry are carried.
 
@@ -7398,6 +7895,14 @@ def main() -> int:
         (
             "period lifecycle and correction rebuild vectors",
             validate_period_correction_rebuild,
+        ),
+        (
+            "export and deletion domain coverage",
+            validate_export_and_deletion_domains,
+        ),
+        (
+            "export and deletion job lifecycles",
+            validate_export_and_deletion_lifecycles,
         ),
         ("planning DDL declaration order", validate_ddl_declaration_order),
         ("origin validation and loopback controls", validate_origin_policy),
