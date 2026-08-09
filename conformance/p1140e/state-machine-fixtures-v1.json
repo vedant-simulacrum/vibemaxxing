@@ -36,6 +36,22 @@
       }
     },
     {
+      "machine_id": "linked-identity",
+      "positive": {
+        "case_id": "linked-identity-valid-transition",
+        "from": "unlink-pending",
+        "transition_id": "identity-unlink-apply",
+        "expected_to": "unlinked",
+        "expected": "terminal-binding-retained-for-appeal"
+      },
+      "negative": {
+        "case_id": "linked-identity-invalid-transition",
+        "from": "unlinked",
+        "transition_id": "identity-unlink-apply",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
       "machine_id": "web-session-family",
       "positive": {
         "case_id": "web-session-family-valid-transition",

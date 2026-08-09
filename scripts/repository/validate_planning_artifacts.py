@@ -882,6 +882,10 @@ def validate_p1140d_contracts() -> None:
     assert_unique(machine_ids, "state-machine IDs")
     required_machines = {
         "oauth-transaction",
+        # PF-007. The linked provider identity is the middle of the three aggregates
+        # AGENTS.md keeps apart and had no lifecycle at all, under a recorded absence
+        # saying the enrollment flow owned its transitions and they were unspecified.
+        "linked-identity",
         "web-session-family",
         "native-session-family",
         "ranked-identity-eligibility",
@@ -1999,6 +2003,15 @@ IDENTITY_LIFECYCLE_EXAMPLES: tuple[tuple[str, str, bool], ...] = (
     (
         "consolidation-plan-v1.schema.json",
         "consolidation-plan.invalid-summed-total.json",
+        False,
+    ),
+    # PF-008. The plan covered identities, claims and periods, so a consolidation could
+    # apply while saying nothing about the absorbed account's devices, blocks, boards,
+    # moderation state, exports or pending deletion. All eight domains are required, and
+    # this fixture drops one.
+    (
+        "consolidation-plan-v1.schema.json",
+        "consolidation-plan.invalid-domain-not-covered.json",
         False,
     ),
     ("fork-resolution-v1.schema.json", "fork-resolution.valid.json", True),

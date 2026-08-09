@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "fixture_id": "provider-mixup-vectors-v1",
+  "claim_scope": "Callback observations evaluated against packages/schemas/oauth-provider-registry-v1.json by scripts/repository/validate_oauth_identity_contract.py. Each mutation row differs from its provider's baseline row in exactly one field, so a rejection is attributable to one discriminator rather than to the vector being generally malformed. This proves that the recorded outcomes agree with a decision procedure written against the registry; no authorization request has been made to either provider and no server code exists to run this against.",
+  "discriminator_order": [
+    "transaction-single-use",
+    "transaction-lifetime",
+    "callback-path-binding",
+    "redirect-uri-exact-match",
+    "issuer-identification",
+    "state-binding",
+    "pkce-method"
+  ],
+  "vectors": [
+    {
+      "case_id": "AU-101",
+      "provider_id": "github",
+      "role": "baseline",
+      "mutated_discriminator": null,
+      "callback": {
+        "transaction_provider_id": "github",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/github/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/github/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "accept",
+      "expect_reason_code": null,
+      "note": "The accepted github callback every mutation below is measured against. It is the only vector in this fixture that accepts, so a mutation that fails to change the outcome is visible as a difference from exactly this row."
+    },
+    {
+      "case_id": "AU-102",
+      "provider_id": "github",
+      "role": "mutation",
+      "mutated_discriminator": "transaction-single-use",
+      "callback": {
+        "transaction_provider_id": "github",
+        "transaction_state": "consumed",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/github/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/github/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_CODE_ALREADY_CONSUMED",
+      "note": "The transaction was already consumed. A second callback carrying the same state is a replay, not a retry."
+    },
+    {
+      "case_id": "AU-103",
+      "provider_id": "github",
+      "role": "mutation",
+      "mutated_discriminator": "transaction-lifetime",
+      "callback": {
+        "transaction_provider_id": "github",
+        "transaction_state": "redirected",
+        "transaction_expired": true,
+        "delivered_to_callback_path": "/auth/github/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/github/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_TRANSACTION_EXPIRED",
+      "note": "The transaction outlived its recorded expiry before the callback arrived."
+    },
+    {
+      "case_id": "AU-104",
+      "provider_id": "github",
+      "role": "mutation",
+      "mutated_discriminator": "callback-path-binding",
+      "callback": {
+        "transaction_provider_id": "github",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/x/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/github/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_ISSUER_MISMATCH",
+      "note": "The mix-up itself: a transaction begun with one provider returns on the other provider's callback path. With RFC 9207 unverified for both providers this unique path is the binding that refuses it."
+    },
+    {
+      "case_id": "AU-105",
+      "provider_id": "github",
+      "role": "mutation",
+      "mutated_discriminator": "redirect-uri-exact-match",
+      "callback": {
+        "transaction_provider_id": "github",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/github/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/x/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_REDIRECT_URI_MISMATCH",
+      "note": "The presented redirect URI is the other provider's. Exact means byte-equal, so a prefix or host match never rescues it."
+    },
+    {
+      "case_id": "AU-106",
+      "provider_id": "github",
+      "role": "mutation",
+      "mutated_discriminator": "issuer-identification",
+      "callback": {
+        "transaction_provider_id": "github",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/github/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/github/callback",
+        "presented_iss": "https://x.com",
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_ISSUER_MISMATCH",
+      "note": "An iss was presented and it names the other provider. iss is compared whenever present even though neither provider's support for it is verified; it is never required and never selects configuration."
+    },
+    {
+      "case_id": "AU-107",
+      "provider_id": "github",
+      "role": "mutation",
+      "mutated_discriminator": "state-binding",
+      "callback": {
+        "transaction_provider_id": "github",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/github/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/github/callback",
+        "presented_iss": null,
+        "state_matches_transaction": false,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_STATE_INVALID",
+      "note": "The state value does not hash to the stored state_hash of any live transaction."
+    },
+    {
+      "case_id": "AU-108",
+      "provider_id": "github",
+      "role": "mutation",
+      "mutated_discriminator": "pkce-method",
+      "callback": {
+        "transaction_provider_id": "github",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/github/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/github/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "plain"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_PKCE_VERIFICATION_FAILED",
+      "note": "The callback presents a downgraded PKCE method. The registry pins S256, and plain would make the challenge equal the verifier."
+    },
+    {
+      "case_id": "AU-109",
+      "provider_id": "x",
+      "role": "baseline",
+      "mutated_discriminator": null,
+      "callback": {
+        "transaction_provider_id": "x",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/x/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/x/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "accept",
+      "expect_reason_code": null,
+      "note": "The accepted x callback every mutation below is measured against. It is the only vector in this fixture that accepts, so a mutation that fails to change the outcome is visible as a difference from exactly this row."
+    },
+    {
+      "case_id": "AU-110",
+      "provider_id": "x",
+      "role": "mutation",
+      "mutated_discriminator": "transaction-single-use",
+      "callback": {
+        "transaction_provider_id": "x",
+        "transaction_state": "consumed",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/x/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/x/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_CODE_ALREADY_CONSUMED",
+      "note": "The transaction was already consumed. A second callback carrying the same state is a replay, not a retry."
+    },
+    {
+      "case_id": "AU-111",
+      "provider_id": "x",
+      "role": "mutation",
+      "mutated_discriminator": "transaction-lifetime",
+      "callback": {
+        "transaction_provider_id": "x",
+        "transaction_state": "redirected",
+        "transaction_expired": true,
+        "delivered_to_callback_path": "/auth/x/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/x/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_TRANSACTION_EXPIRED",
+      "note": "The transaction outlived its recorded expiry before the callback arrived."
+    },
+    {
+      "case_id": "AU-112",
+      "provider_id": "x",
+      "role": "mutation",
+      "mutated_discriminator": "callback-path-binding",
+      "callback": {
+        "transaction_provider_id": "x",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/github/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/x/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_ISSUER_MISMATCH",
+      "note": "The mix-up itself: a transaction begun with one provider returns on the other provider's callback path. With RFC 9207 unverified for both providers this unique path is the binding that refuses it."
+    },
+    {
+      "case_id": "AU-113",
+      "provider_id": "x",
+      "role": "mutation",
+      "mutated_discriminator": "redirect-uri-exact-match",
+      "callback": {
+        "transaction_provider_id": "x",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/x/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/github/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_REDIRECT_URI_MISMATCH",
+      "note": "The presented redirect URI is the other provider's. Exact means byte-equal, so a prefix or host match never rescues it."
+    },
+    {
+      "case_id": "AU-114",
+      "provider_id": "x",
+      "role": "mutation",
+      "mutated_discriminator": "issuer-identification",
+      "callback": {
+        "transaction_provider_id": "x",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/x/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/x/callback",
+        "presented_iss": "https://github.com",
+        "state_matches_transaction": true,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_ISSUER_MISMATCH",
+      "note": "An iss was presented and it names the other provider. iss is compared whenever present even though neither provider's support for it is verified; it is never required and never selects configuration."
+    },
+    {
+      "case_id": "AU-115",
+      "provider_id": "x",
+      "role": "mutation",
+      "mutated_discriminator": "state-binding",
+      "callback": {
+        "transaction_provider_id": "x",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/x/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/x/callback",
+        "presented_iss": null,
+        "state_matches_transaction": false,
+        "pkce_method": "S256"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_STATE_INVALID",
+      "note": "The state value does not hash to the stored state_hash of any live transaction."
+    },
+    {
+      "case_id": "AU-116",
+      "provider_id": "x",
+      "role": "mutation",
+      "mutated_discriminator": "pkce-method",
+      "callback": {
+        "transaction_provider_id": "x",
+        "transaction_state": "redirected",
+        "transaction_expired": false,
+        "delivered_to_callback_path": "/auth/x/callback",
+        "presented_redirect_uri": "https://vibemaxxing.dev/auth/x/callback",
+        "presented_iss": null,
+        "state_matches_transaction": true,
+        "pkce_method": "plain"
+      },
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_PKCE_VERIFICATION_FAILED",
+      "note": "The callback presents a downgraded PKCE method. The registry pins S256, and plain would make the challenge equal the verifier."
+    }
+  ]
+}

@@ -252,6 +252,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/OAuthCode'
         - $ref: '#/components/parameters/OAuthState'
+        - $ref: '#/components/parameters/OAuthIssuer'
   /auth/device/start:
     post:
       operationId: startDeviceAuth
@@ -633,7 +634,109 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/IdentityMutationRequest'
+              $ref: '#/components/schemas/IdentityUnlinkRequest'
+  /identities/{identity_id}/provider-access-reports:
+    post:
+      operationId: reportProviderAccess
+      summary: Report that a linked provider account is lost or compromised
+      description: 'The linked-identity machine declares identity-report-lost and identity-report-compromised with actor `user`, and the API declared no route to either, so the two states the provider-loss contract exists to describe were unreachable by the only actor who can observe them. Recent authentication is deliberately not required: reauthenticating through the provider is exactly what a participant who has lost that provider account cannot do. The report moves the linked identity and nothing else — it revokes no session and quarantines no device, because those are effects of an applied recovery case under D-380 and not of a claim about a provider. Every existing session and the server inbox are notified, and that notice cannot be muted.'
+      x-authorization: authenticated-account
+      x-recent-auth: not-required
+      x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '202':
+          description: TransitionReceipt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/IdentityId'
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderAccessReportRequest'
+  /identities/{identity_id}/unlink-cancellations:
+    post:
+      operationId: cancelIdentityUnlink
+      summary: Cancel a pending unlink from a session that still has access
+      description: 'The reversal half of unlinkIdentity. `unlinked` is terminal and has no transition out of it, so an unlink that completed in error is unrecoverable; the machine therefore returns unlink-pending to linked, and this is the route. It requires recent authentication for the same reason the unlink request does — the participant is changing which methods can authenticate this account.'
+      x-authorization: authenticated-account
+      x-recent-auth: required
+      x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '202':
+          description: TransitionReceipt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/IdentityId'
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/IdempotencyKey'
   /invites/redeem:
     post:
       operationId: redeemInvite
@@ -2214,6 +2317,95 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DeletionRequest'
+  /consolidations/{consolidation_case_id}:
+    get:
+      operationId: getConsolidationPlan
+      summary: Read the consolidation plan this account is being asked to confirm
+      description: 'The `account-consolidation` machine declares consolidation-confirm with actor `user`, authentication `web-session` and recent authentication required, and the API declared no consolidation operation at all — so the participant was required by the lifecycle to perform a transition they had no route to, and a case could leave awaiting-confirmation only by expiring. This is the read half. It publishes the plan and no lifecycle value: there is no state field here, because a value like `applying` is an operational fact, and the participant is being asked about the plan rather than about the case. `plan_digest` is what the confirmation names, so a plan cannot be substituted between being read and being confirmed.'
+      x-authorization: authenticated-account
+      x-recent-auth: not-required
+      x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: ConsolidationPlanView
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsolidationPlanView'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/ConsolidationCaseId'
+  /consolidations/{consolidation_case_id}/confirmations:
+    post:
+      operationId: confirmConsolidation
+      summary: Confirm the presented consolidation plan under recent authentication
+      description: 'The write half, and the only participant-driven transition of the account-consolidation machine. It answers a TransitionReceipt rather than the case, so no lifecycle value is published here either. The request names the digest of the plan that was read; a digest that does not match the current plan is refused, because confirming a plan the participant never saw is the substitution this operation exists to prevent. Confirmation moves the case to applying and nothing else: no total is combined, and the surviving standing is recomputed from claim-level contributions under D-070.'
+      x-authorization: authenticated-account
+      x-recent-auth: required
+      x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '202':
+          description: TransitionReceipt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransitionReceipt'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/ConsolidationCaseId'
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsolidationConfirmationRequest'
   /pricing-datasets:
     get:
       operationId: listPricingDatasets
@@ -2295,6 +2487,20 @@ components:
       schema:
         type: string
         format: uuid
+    ConsolidationCaseId:
+      name: consolidation_case_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdentityId:
+      name: identity_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     Handle:
       name: handle
       in: path
@@ -2322,7 +2528,7 @@ components:
       name: iss
       in: query
       required: false
-      description: Required only when the stored provider-capability record supports RFC 9207; the callback value is compared with the immutable transaction issuer and never selects provider configuration.
+      description: 'The stored provider-capability record is packages/schemas/oauth-provider-registry-v1.json, and rfc9207_iss.capability on the row for this callback''s provider decides what this parameter means. Under `supported` ADR-015 fails closed and an authorization response arriving without an iss is refused, so the parameter is required. Under `unverified`, which is where both launch providers stand because no authorization response from either has been observed, the value is compared when present and never required, and the binding that actually refuses a mix-up is the unique provider-specific callback path. The parameter is declared identically on both callbacks because both rows record the same capability; it was previously declared on one and not the other, which stated a capability difference nothing recorded. The callback value is compared with the immutable transaction issuer and never selects provider configuration.'
       schema:
         type: string
         format: uri
@@ -2608,9 +2814,10 @@ components:
         - intended_action
       properties:
         intended_action:
+          description: 'What the transaction is for. The two values are the CHECK literals on oauth_transactions.intended_action and are kebab-case like every other vocabulary in this repository; they were snake_case here and unconstrained in the DDL, so the API held a vocabulary the persistence owner did not and neither spelling could be compared with the other.'
           enum:
-            - sign_in
-            - link_identity
+            - sign-in
+            - link-identity
     OAuthStart:
       type: object
       additionalProperties: false
@@ -2629,17 +2836,21 @@ components:
           type: string
           format: date-time
     OAuthCompletion:
+      description: 'What a callback returns, and where the two intended actions stop being the same operation. A sign-in callback consumes the transaction and mints browser access, so it reaches `consumed` and carries both an account and a session. A link callback does neither: it verifies the stored redirect, state, PKCE and lifetime, moves the transaction to `callback-received`, and stops. The link itself is performed by linkIdentity, which is authenticated, CSRF-protected, recent-auth gated and idempotent — none of which a public callback can be. The previous shape required account_id and session_id unconditionally, so the contract said a link callback mints a session, which is the thing oauth_transactions now refuses at the constraint level.'
       type: object
       additionalProperties: false
       required:
         - transaction_id
-        - account_id
-        - session_id
+        - intended_action
         - state
       properties:
         transaction_id:
           type: string
           format: uuid
+        intended_action:
+          enum:
+            - sign-in
+            - link-identity
         account_id:
           type: string
           format: uuid
@@ -2648,7 +2859,35 @@ components:
           format: uuid
         state:
           enum:
+            - callback-received
             - consumed
+      allOf:
+        - if:
+            properties:
+              intended_action:
+                const: sign-in
+            required:
+              - intended_action
+          then:
+            required:
+              - account_id
+              - session_id
+            properties:
+              state:
+                const: consumed
+        - if:
+            properties:
+              intended_action:
+                const: link-identity
+            required:
+              - intended_action
+          then:
+            not:
+              required:
+                - session_id
+            properties:
+              state:
+                const: callback-received
     DeviceAuthStartRequest:
       type: object
       additionalProperties: false
@@ -2851,9 +3090,13 @@ components:
           type: string
           pattern: ^[0-9a-f]{64}$
         state:
+          description: 'The six linked-identity states a client is shown. `candidate` and `superseded` are omitted and are declared internal in the binding table of docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md: a candidate is a link still in flight and has no confirmed binding to report, and a superseded row is history its successor already represents.'
           enum:
             - linked
             - unlink-pending
+            - lost
+            - compromised
+            - recovery-pending
             - unlinked
         linked_at:
           type: string
@@ -2884,20 +3127,128 @@ components:
           type: integer
           minimum: 0
     IdentityMutationRequest:
+      description: 'The link request. It names an OAuth transaction and nothing else. It previously carried a bare `authorization_code`, which made linkIdentity a second identity-mutating path that referenced no transaction: nothing bound the redirect, the state, the PKCE verifier, the provider revision or the lifetime, so every control the transaction exists to apply was optional in practice. The named transaction must be one this account started with intended_action link-identity and must stand at callback-received; consuming it is what links the provider subject, and it can be consumed once.'
       type: object
       additionalProperties: false
       required:
         - provider
-        - authorization_code
+        - oauth_transaction_id
       properties:
         provider:
           enum:
             - github
             - x
-        authorization_code:
+        oauth_transaction_id:
           type: string
-          minLength: 8
-          maxLength: 2048
+          format: uuid
+    ConsolidationPlanView:
+      description: 'What the participant is shown before confirming. It carries counts and per-domain outcomes and no combined figure: D-070 forbids adding two stored account totals, so there is no field here for one, and packages/schemas/consolidation-plan-v1.schema.json is the record this view projects. The eight domain keys are the ones a merge must define ownership of, and all eight are required, so a plan cannot be presented while silent about the absorbed account''s devices, blocks, boards, moderation state, exports or pending deletion.'
+      type: object
+      additionalProperties: false
+      required:
+        - consolidation_case_id
+        - plan_digest
+        - surviving_ranked_identity_id
+        - absorbed_ranked_identity_id
+        - absorbed_contribution_count
+        - excluded_contribution_count
+        - affected_period_count
+        - domain_dispositions
+        - expires_at
+        - revision
+      properties:
+        consolidation_case_id:
+          type: string
+          format: uuid
+        plan_digest:
+          description: SHA-256 over the canonical consolidation plan record. The confirmation names it, so a plan cannot be substituted between being read and being confirmed.
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        surviving_ranked_identity_id:
+          type: string
+          format: uuid
+        absorbed_ranked_identity_id:
+          type: string
+          format: uuid
+        absorbed_contribution_count:
+          type: integer
+          minimum: 0
+        excluded_contribution_count:
+          type: integer
+          minimum: 0
+        affected_period_count:
+          type: integer
+          minimum: 0
+        domain_dispositions:
+          type: array
+          minItems: 8
+          maxItems: 8
+          items:
+            $ref: '#/components/schemas/ConsolidationDomainDisposition'
+        expires_at:
+          type: string
+          format: date-time
+        revision:
+          type: integer
+          minimum: 1
+    ConsolidationDomainDisposition:
+      type: object
+      additionalProperties: false
+      required:
+        - domain
+        - disposition
+        - affected_count
+      properties:
+        domain:
+          enum:
+            - identities
+            - devices
+            - claims
+            - social
+            - boards
+            - moderation
+            - exports
+            - deletions
+        disposition:
+          enum:
+            - transferred
+            - retained
+            - excluded
+            - recomputed
+        affected_count:
+          description: A count of rows, never a quantity. No property in this document holds a figure derived from two accounts' token burn.
+          type: integer
+          minimum: 0
+    ConsolidationConfirmationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - plan_digest
+      properties:
+        plan_digest:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+    ProviderAccessReportRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - report
+      properties:
+        report:
+          description: 'Which fact the participant is reporting. `lost` means the provider account is no longer reachable; `compromised` means someone else controls it. They are separate values because they lead to different notices and because a compromise, unlike a loss, means the provider identity can no longer be trusted to authorize anything.'
+          enum:
+            - lost
+            - compromised
+    IdentityUnlinkRequest:
+      description: 'The unlink request. It names the linked identity to remove, because there is nothing to authorize against a provider: unlinking is a change to this account''s own rows. It shared IdentityMutationRequest with linkIdentity, which meant the contract required an authorization code to remove a link — including the case where the provider account is exactly what the participant has lost. Unlinking the last authentication method an account holds is refused; docs/security/AUTHENTICATION_AND_RECOVERY.md owns that invariant and the linked-identity machine carries it as the guard on identity-unlink-request.'
+      type: object
+      additionalProperties: false
+      required:
+        - identity_id
+      properties:
+        identity_id:
+          type: string
+          format: uuid
     Device:
       type: object
       additionalProperties: false

@@ -8,7 +8,8 @@
   "authorities": [
     "docs/security/AUTHENTICATION_AND_RECOVERY.md",
     "docs/decisions/ADR-015-SESSION_AUTHENTICATION.md",
-    "packages/schemas/openapi-v1.yaml"
+    "packages/schemas/openapi-v1.yaml",
+    "packages/schemas/oauth-provider-registry-v1.json"
   ],
   "subjects": [
     "go"
@@ -18,10 +19,267 @@
     "state": "absent",
     "command": null,
     "work_unit": "OS-009",
-    "note": "Neither the runner nor the fixtures exist. The eight transaction shapes the harness contract names — a replayed authorization code, a state mismatch, an expired code, a code redeemed twice, a refresh handle presented twice, a family past its 90-day absolute cap, a device code polled inside the 5-second minimum, and a recovery attempt inside the cooling-off period — are the case list this suite is waiting for."
+    "note": "No harness runner executes this suite against a subject. The provider mix-up vectors below are evaluated inside this repository by scripts/repository/validate_oauth_identity_contract.py, which decides each callback against packages/schemas/oauth-provider-registry-v1.json and compares the decision with the recorded expectation; that is a planning check and not conformance, because no Go subject exists to run the same decision. The other eight transaction shapes the harness contract names - a replayed refresh handle, a family past its 90-day absolute cap, a device code polled inside the 5-second minimum and the recovery cooling-off cases - are still the case list this suite is waiting for."
   },
-  "fixture_state": "empty",
+  "fixture_state": "populated",
   "generated_by": null,
-  "cases": [],
-  "note": "Declared with no cases so that the absence is countable. The suite directory holds a README and this manifest and nothing else."
+  "cases": [
+    {
+      "case_id": "AU-101",
+      "title": "github: accepted callback baseline",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/oauth-provider-registry-v1.json#/providers",
+      "negative": false,
+      "state": "active",
+      "note": "The accepted github callback every mutation below is measured against. It is the only vector in this fixture that accepts, so a mutation that fails to change the outcome is visible as a difference from exactly this row."
+    },
+    {
+      "case_id": "AU-102",
+      "title": "github: transaction-single-use refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_CODE_ALREADY_CONSUMED",
+      "authority_ref": "docs/security/AUTHENTICATION_AND_RECOVERY.md#the-oauth-transaction-aggregate",
+      "negative": true,
+      "state": "active",
+      "note": "The transaction was already consumed. A second callback carrying the same state is a replay, not a retry."
+    },
+    {
+      "case_id": "AU-103",
+      "title": "github: transaction-lifetime refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_TRANSACTION_EXPIRED",
+      "authority_ref": "docs/security/AUTHENTICATION_AND_RECOVERY.md#the-oauth-transaction-aggregate",
+      "negative": true,
+      "state": "active",
+      "note": "The transaction outlived its recorded expiry before the callback arrived."
+    },
+    {
+      "case_id": "AU-104",
+      "title": "github: callback-path-binding refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_ISSUER_MISMATCH",
+      "authority_ref": "packages/schemas/oauth-provider-registry-v1.json#/providers/0/callback_path",
+      "negative": true,
+      "state": "active",
+      "note": "The mix-up itself: a transaction begun with one provider returns on the other provider's callback path. With RFC 9207 unverified for both providers this unique path is the binding that refuses it."
+    },
+    {
+      "case_id": "AU-105",
+      "title": "github: redirect-uri-exact-match refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_REDIRECT_URI_MISMATCH",
+      "authority_ref": "packages/schemas/oauth-provider-registry-v1.json#/providers/0/redirect_uri",
+      "negative": true,
+      "state": "active",
+      "note": "The presented redirect URI is the other provider's. Exact means byte-equal, so a prefix or host match never rescues it."
+    },
+    {
+      "case_id": "AU-106",
+      "title": "github: issuer-identification refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_ISSUER_MISMATCH",
+      "authority_ref": "packages/schemas/oauth-provider-registry-v1.json#/providers/0/rfc9207_iss",
+      "negative": true,
+      "state": "active",
+      "note": "An iss was presented and it names the other provider. iss is compared whenever present even though neither provider's support for it is verified; it is never required and never selects configuration."
+    },
+    {
+      "case_id": "AU-107",
+      "title": "github: state-binding refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_STATE_INVALID",
+      "authority_ref": "docs/security/AUTHENTICATION_AND_RECOVERY.md#the-oauth-transaction-aggregate",
+      "negative": true,
+      "state": "active",
+      "note": "The state value does not hash to the stored state_hash of any live transaction."
+    },
+    {
+      "case_id": "AU-108",
+      "title": "github: pkce-method refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_PKCE_VERIFICATION_FAILED",
+      "authority_ref": "packages/schemas/oauth-provider-registry-v1.json#/providers/0/pkce_method",
+      "negative": true,
+      "state": "active",
+      "note": "The callback presents a downgraded PKCE method. The registry pins S256, and plain would make the challenge equal the verifier."
+    },
+    {
+      "case_id": "AU-109",
+      "title": "x: accepted callback baseline",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/oauth-provider-registry-v1.json#/providers",
+      "negative": false,
+      "state": "active",
+      "note": "The accepted x callback every mutation below is measured against. It is the only vector in this fixture that accepts, so a mutation that fails to change the outcome is visible as a difference from exactly this row."
+    },
+    {
+      "case_id": "AU-110",
+      "title": "x: transaction-single-use refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_CODE_ALREADY_CONSUMED",
+      "authority_ref": "docs/security/AUTHENTICATION_AND_RECOVERY.md#the-oauth-transaction-aggregate",
+      "negative": true,
+      "state": "active",
+      "note": "The transaction was already consumed. A second callback carrying the same state is a replay, not a retry."
+    },
+    {
+      "case_id": "AU-111",
+      "title": "x: transaction-lifetime refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_TRANSACTION_EXPIRED",
+      "authority_ref": "docs/security/AUTHENTICATION_AND_RECOVERY.md#the-oauth-transaction-aggregate",
+      "negative": true,
+      "state": "active",
+      "note": "The transaction outlived its recorded expiry before the callback arrived."
+    },
+    {
+      "case_id": "AU-112",
+      "title": "x: callback-path-binding refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_ISSUER_MISMATCH",
+      "authority_ref": "packages/schemas/oauth-provider-registry-v1.json#/providers/0/callback_path",
+      "negative": true,
+      "state": "active",
+      "note": "The mix-up itself: a transaction begun with one provider returns on the other provider's callback path. With RFC 9207 unverified for both providers this unique path is the binding that refuses it."
+    },
+    {
+      "case_id": "AU-113",
+      "title": "x: redirect-uri-exact-match refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_REDIRECT_URI_MISMATCH",
+      "authority_ref": "packages/schemas/oauth-provider-registry-v1.json#/providers/0/redirect_uri",
+      "negative": true,
+      "state": "active",
+      "note": "The presented redirect URI is the other provider's. Exact means byte-equal, so a prefix or host match never rescues it."
+    },
+    {
+      "case_id": "AU-114",
+      "title": "x: issuer-identification refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_ISSUER_MISMATCH",
+      "authority_ref": "packages/schemas/oauth-provider-registry-v1.json#/providers/0/rfc9207_iss",
+      "negative": true,
+      "state": "active",
+      "note": "An iss was presented and it names the other provider. iss is compared whenever present even though neither provider's support for it is verified; it is never required and never selects configuration."
+    },
+    {
+      "case_id": "AU-115",
+      "title": "x: state-binding refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_STATE_INVALID",
+      "authority_ref": "docs/security/AUTHENTICATION_AND_RECOVERY.md#the-oauth-transaction-aggregate",
+      "negative": true,
+      "state": "active",
+      "note": "The state value does not hash to the stored state_hash of any live transaction."
+    },
+    {
+      "case_id": "AU-116",
+      "title": "x: pkce-method refused",
+      "fixtures": [
+        {
+          "path": "conformance/auth/provider-mixup-vectors-v1.json",
+          "sha256": "ef805a5e0f745bf6b62fb2579b51e6a7784a6fa25ffc707a4bf47b0d8d34f7f3"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "OAUTH_PKCE_VERIFICATION_FAILED",
+      "authority_ref": "packages/schemas/oauth-provider-registry-v1.json#/providers/0/pkce_method",
+      "negative": true,
+      "state": "active",
+      "note": "The callback presents a downgraded PKCE method. The registry pins S256, and plain would make the challenge equal the verifier."
+    }
+  ],
+  "note": "Sixteen provider mix-up vectors, two accepted baselines and fourteen refusals. Every refusal differs from its provider's baseline in exactly one field, which is what makes the recorded reason code attributable to one discriminator rather than to a generally malformed callback."
 }

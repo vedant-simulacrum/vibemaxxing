@@ -436,10 +436,27 @@ BINDINGS: tuple[Binding, ...] = (
         api=("DeviceAuthorizationStatus.state",),
     ),
     Binding(
-        aggregate="identity-link",
-        states=("linked", "unlink-pending", "unlinked"),
+        aggregate="linked-identity",
+        machine="linked-identity",
+        states=(
+            "candidate",
+            "linked",
+            "unlink-pending",
+            "lost",
+            "compromised",
+            "recovery-pending",
+            "unlinked",
+            "superseded",
+        ),
         sql=("linked_identities.state",),
         api=("Identity.state",),
+        internal_states=("candidate", "superseded"),
+        note="PF-007. The aggregate was called `identity-link` and bound no machine, "
+        "under a recorded absence saying the enrollment flow owned its transitions and "
+        "they were unspecified. It is renamed to the spelling the table and the machine "
+        "already use, because three names for one aggregate is the drift the one-spelling "
+        "rule exists to stop. `candidate` is a link in flight and `superseded` is history "
+        "the successor replaced; neither is a state a client is shown.",
     ),
     Binding(
         aggregate="recovery-case",
@@ -693,7 +710,11 @@ OUTCOME_MIRRORS: dict[str, str] = {
 # API enums that report the outcome of a single request rather than a stored aggregate state.
 TRANSIENT_API_ENUMS: dict[str, tuple[tuple[str, ...], str | None]] = {
     "ClaimBatchResult.state": (("accepted", "rejected"), None),
-    "OAuthCompletion.state": (("consumed",), "oauth-transaction"),
+    # PF-006. A sign-in callback consumes the transaction; a link callback stops at
+    # `callback-received`, because linking is performed by linkIdentity under recent
+    # authentication rather than by a public callback. Both values are states of the
+    # machine, which rule 10 checks.
+    "OAuthCompletion.state": (("callback-received", "consumed"), "oauth-transaction"),
 }
 
 # Why an aggregate binds no machine, no SQL column or no API enum.
@@ -727,10 +748,6 @@ RECORDED_ABSENCES: dict[tuple[str, str], str] = {
         "device-authorization-grant",
         "machine",
     ): "Open: mutable, but the OAuth flow owns its transitions and they are unspecified.",
-    (
-        "identity-link",
-        "machine",
-    ): "Open: mutable, but the enrollment flow owns its transitions and they are unspecified.",
     (
         "oauth-transaction",
         "api",
@@ -790,7 +807,8 @@ RECORDED_ABSENCES: dict[tuple[str, str], str] = {
     (
         "account-consolidation",
         "api",
-    ): "D-070 consolidation under D-382; the participant reads the effect, not the case.",
+    ): "D-070 consolidation under D-382. getConsolidationPlan publishes the plan and "
+    "no lifecycle value; a state like `applying` is an operational fact.",
     (
         "lineage-fork-case",
         "api",

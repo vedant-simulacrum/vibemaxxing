@@ -5,10 +5,11 @@
   "description": "The D-070 duplicate-account consolidation record: which identity survives, which is absorbed, exactly which claims move, and what the result was. docs/security/RANKED_IDENTITY_ELIGIBILITY.md is the normative owner, packages/schemas/planning-schema.sql#consolidation_cases and #consolidation_contributions are the persistence owners, and the account-consolidation machine owns the lifecycle. The plan is a list of claim-level contributions and never a pair of totals: D-070 forbids adding two stored account totals, so the surviving standing is recomputed from the contributions below rather than incremented by a figure. Imported records stay excluded under D-007 and D-087, and an overlapping duplicate domain counts once under D-269.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "case", "contributions"],
+  "required": ["schema_version", "case", "domain_dispositions", "contributions"],
   "properties": {
     "schema_version": { "const": 1 },
     "case": { "$ref": "#/$defs/consolidation_case" },
+    "domain_dispositions": { "$ref": "#/$defs/domain_dispositions" },
     "contributions": {
       "description": "The plan. Every claim the case considered appears exactly once, including the ones it excluded, so the case explains what it dropped and why rather than being silent about a difference.",
       "type": "array",
@@ -17,13 +18,58 @@
     "result": { "$ref": "#/$defs/result" }
   },
   "$defs": {
+    "domain_dispositions": {
+      "description": "What happens to every domain a duplicate account owns. docs/security/AUTHENTICATION_AND_RECOVERY.md requires a merge to define ownership of usernames, devices, claims, boards, friendships, moderation state and deletion requests, and the plan covered identities, claims and periods only — so a consolidation could apply while saying nothing about the absorbed account's devices, blocks, board ownership, open moderation case, running export or pending deletion. All eight keys are required and additionalProperties is false, so the coverage cannot be satisfied by an empty object and cannot be widened by inventing a ninth domain here rather than in this schema.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identities",
+        "devices",
+        "claims",
+        "social",
+        "boards",
+        "moderation",
+        "exports",
+        "deletions"
+      ],
+      "properties": {
+        "identities": { "$ref": "#/$defs/domain_disposition" },
+        "devices": { "$ref": "#/$defs/domain_disposition" },
+        "claims": { "$ref": "#/$defs/domain_disposition" },
+        "social": { "$ref": "#/$defs/domain_disposition" },
+        "boards": { "$ref": "#/$defs/domain_disposition" },
+        "moderation": { "$ref": "#/$defs/domain_disposition" },
+        "exports": { "$ref": "#/$defs/domain_disposition" },
+        "deletions": { "$ref": "#/$defs/domain_disposition" }
+      }
+    },
+    "domain_disposition": {
+      "description": "One domain's outcome and the rule that produced it. There is no `not-applicable` value: a domain with nothing in it is `retained` with a count of zero, which is a statement, whereas a fourth enum member meaning 'we did not look' would let every domain be covered by declining to answer.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "affected_count", "basis"],
+      "properties": {
+        "disposition": {
+          "description": "transferred: the rows move to the surviving identity. retained: they stay with the absorbed account, which keeps existing as an unranked private-analytics account or is deleted at the participant's choice. excluded: they are dropped from the surviving standing and recorded as dropped. recomputed: the surviving value is rebuilt from claim-level contributions rather than moved or added.",
+          "enum": ["transferred", "retained", "excluded", "recomputed"]
+        },
+        "affected_count": {
+          "description": "How many rows of this domain the case touched. A count, never a quantity: no field in this schema may hold a figure derived from two accounts' token burn, which is what D-070 forbids and what validate_planning_artifacts.py refuses by name.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "basis": { "type": "string", "minLength": 1 }
+      }
+    },
     "consolidation_case": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "consolidation_case_id",
         "surviving_ranked_identity_id",
+        "surviving_ranked_identity_created_at",
         "absorbed_ranked_identity_id",
+        "absorbed_ranked_identity_created_at",
         "state",
         "initiated_by",
         "requested_at",
@@ -33,7 +79,13 @@
       "properties": {
         "consolidation_case_id": { "type": "string", "format": "uuid" },
         "surviving_ranked_identity_id": { "type": "string", "format": "uuid" },
+        "surviving_ranked_identity_created_at": {
+          "description": "When the surviving identity was created. Recorded on the plan so D-564 - the older ranked identity survives and the newer is retired without summation - is checkable rather than a sentence in a register. JSON Schema cannot compare two of its own fields, so scripts/repository/validate_oauth_identity_contract.py compares this with absorbed_ranked_identity_created_at on every committed plan and refuses one where the newer identity survived.",
+          "type": "string",
+          "format": "date-time"
+        },
         "absorbed_ranked_identity_id": { "type": "string", "format": "uuid" },
+        "absorbed_ranked_identity_created_at": { "type": "string", "format": "date-time" },
         "state": {
           "description": "applied is not terminal. A successful appeal moves the case to reversed, which appends inverse contributions rather than deleting anything, so an accepted claim stays immutable under D-263.",
           "enum": [

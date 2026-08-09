@@ -206,7 +206,206 @@
           "idempotency": "aggregate-action-key",
           "audit_event": "oauth-fail.audit",
           "reversal": "none",
-          "transaction_boundary": "oauth-transaction"
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
+      "machine_id": "linked-identity",
+      "semantic_owner": "authentication-and-recovery",
+      "persistence_owner": [
+        "linked-identities"
+      ],
+      "aggregate_key": "identity-id",
+      "initial_state": "candidate",
+      "states": [
+        "candidate",
+        "linked",
+        "unlink-pending",
+        "lost",
+        "compromised",
+        "recovery-pending",
+        "unlinked",
+        "superseded"
+      ],
+      "terminal_states": [
+        "unlinked",
+        "superseded"
+      ],
+      "privacy_boundary": "account-private",
+      "revision_model": "monotonic-revision",
+      "transaction_boundary": "aggregate-and-outbox",
+      "outbox": "required",
+      "transitions": [
+        {
+          "transition_id": "identity-link-confirm",
+          "from": [
+            "candidate"
+          ],
+          "action": "consume-oauth-transaction-and-bind-provider-subject",
+          "to": "linked",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "exact-request-replay",
+          "audit_event": "identity-link-confirm.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "identity-and-oauth-transaction"
+        },
+        {
+          "transition_id": "identity-link-abandon",
+          "from": [
+            "candidate"
+          ],
+          "action": "abandon-unconfirmed-candidate",
+          "to": "unlinked",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "identity-link-abandon.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "identity-unlink-request",
+          "from": [
+            "linked"
+          ],
+          "action": "request-unlink-unless-last-authentication-method",
+          "to": "unlink-pending",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "identity-unlink-request.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "identity-and-notification"
+        },
+        {
+          "transition_id": "identity-unlink-cancel",
+          "from": [
+            "unlink-pending"
+          ],
+          "action": "cancel-unlink-from-a-session-that-still-has-access",
+          "to": "linked",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "identity-unlink-cancel.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "identity-unlink-apply",
+          "from": [
+            "unlink-pending"
+          ],
+          "action": "apply-unlink-after-cooling-off",
+          "to": "unlinked",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "identity-unlink-apply.audit",
+          "reversal": "none",
+          "transaction_boundary": "identity-and-session"
+        },
+        {
+          "transition_id": "identity-report-lost",
+          "from": [
+            "linked"
+          ],
+          "action": "record-provider-access-lost",
+          "to": "lost",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "identity-report-lost.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "identity-and-notification"
+        },
+        {
+          "transition_id": "identity-report-compromised",
+          "from": [
+            "linked",
+            "lost"
+          ],
+          "action": "record-provider-account-compromised",
+          "to": "compromised",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": false,
+          "idempotency": "principal-route-key",
+          "audit_event": "identity-report-compromised.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "identity-and-session"
+        },
+        {
+          "transition_id": "identity-open-recovery",
+          "from": [
+            "lost",
+            "compromised"
+          ],
+          "action": "attach-open-recovery-case-for-this-account",
+          "to": "recovery-pending",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "identity-open-recovery.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "identity-and-notification"
+        },
+        {
+          "transition_id": "identity-recovery-restored",
+          "from": [
+            "recovery-pending"
+          ],
+          "action": "restore-binding-after-a-cancelled-or-denied-recovery",
+          "to": "linked",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "identity-recovery-restored.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "identity-recovery-retired",
+          "from": [
+            "recovery-pending"
+          ],
+          "action": "retire-binding-an-applied-recovery-replaced",
+          "to": "unlinked",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "identity-recovery-retired.audit",
+          "reversal": "none",
+          "transaction_boundary": "recovery-session-and-device"
+        },
+        {
+          "transition_id": "identity-supersede",
+          "from": [
+            "linked",
+            "lost",
+            "compromised",
+            "recovery-pending"
+          ],
+          "action": "supersede-by-a-later-binding-of-the-same-subject",
+          "to": "superseded",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "identity-supersede.audit",
+          "reversal": "none",
+          "transaction_boundary": "consolidation-identity-and-contributions"
         }
       ]
     },
