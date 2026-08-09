@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "registry_version": "1.6.0-p1140f",
+  "registry_version": "1.7.0-p1140f",
   "transports": {
     "problem": "Returned to the client as the reason_code of an RFC 9457 Problem body under the declared http_status.",
     "claim-rejection": "Returned inside ClaimBatchResult.rejections against one claim index. The batch operation itself answers 200, so http_status is null.",
@@ -403,6 +403,48 @@
         "submitClaimBatch"
       ],
       "introduced_in": "1.0.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "CLAIM_CLOCK_ROLLBACK",
+      "class": "time",
+      "default_outcome": "quarantined",
+      "user_safe": true,
+      "subsystem": "verification",
+      "retryable": false,
+      "public_message_key": "reason.claim_clock_rollback",
+      "internal_visibility": "support-and-security",
+      "severity": "high",
+      "appealability": "eligible",
+      "state_machine": "vibeproof-v1",
+      "transport": "claim-rejection",
+      "http_status": null,
+      "operation_classes": [],
+      "operations": [
+        "submitClaimBatch"
+      ],
+      "introduced_in": "1.7.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "CLAIM_TIMESTAMP_IN_FUTURE",
+      "class": "time",
+      "default_outcome": "quarantined",
+      "user_safe": true,
+      "subsystem": "verification",
+      "retryable": false,
+      "public_message_key": "reason.claim_timestamp_in_future",
+      "internal_visibility": "support-and-security",
+      "severity": "medium",
+      "appealability": "eligible",
+      "state_machine": "vibeproof-v1",
+      "transport": "claim-rejection",
+      "http_status": null,
+      "operation_classes": [],
+      "operations": [
+        "submitClaimBatch"
+      ],
+      "introduced_in": "1.7.0",
       "deprecated_in": null
     },
     {

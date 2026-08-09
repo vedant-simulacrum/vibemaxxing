@@ -616,9 +616,31 @@ create table idempotency_records (
   operation_id text not null,
   idempotency_key uuid not null,
   request_digest bytea not null check (octet_length(request_digest) = 32),
-  response_digest bytea,
+  -- The wire contract promises a replay returns the original response body
+  -- byte for byte. A digest cannot produce a body, so the body itself is stored:
+  -- a ledger that can only prove a response was equal cannot return it, and the
+  -- contract read as satisfied while nothing could satisfy it.
+  --
+  -- Only the server's own fixed-schema response is stored here. No request body,
+  -- no client content: the privacy boundary is what may be written, not what this
+  -- column can hold, and `expires_at` bounds how long even that is kept.
+  response_status smallint check (response_status between 100 and 599),
+  response_body bytea,
+  response_digest bytea check (response_digest is null or octet_length(response_digest) = 32),
   state text not null check (state in ('executing','committed','replayable-failure','conflict','expired','abandoned')),
   expires_at timestamptz not null,
+  -- A committed or replayable-failure record is one a replay must be able to
+  -- answer from. Leaving any of the three nullable in those states is what let a
+  -- row claim to be replayable while holding nothing to replay.
+  constraint idempotency_records_replayable_is_answerable check (
+    state not in ('committed','replayable-failure')
+    or (response_status is not null and response_body is not null and response_digest is not null)
+  ),
+  -- The digest is over `response_body`. SQL cannot check that without an
+  -- extension, so the pairing is constrained instead: neither appears alone.
+  constraint idempotency_records_digest_pairs_with_body check (
+    (response_body is null) = (response_digest is null)
+  ),
   primary key (principal_type, principal_id, operation_id, idempotency_key)
 );
 

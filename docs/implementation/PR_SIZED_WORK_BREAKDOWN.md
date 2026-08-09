@@ -73,16 +73,16 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 | Status | Units |
 |---|---|
 | `not-started` | 202 |
-| `in-progress` | 13 |
-| `landed` | 39 |
+| `in-progress` | 11 |
+| `landed` | 41 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 128 assertions across 39 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 136 assertions across 41 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 20.
+Startable now — not done, and every dependency done: 19.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-041`, `PF-043`, `PF-048`, `PF-054`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -768,12 +768,20 @@ The defect as found: twelve operations declared neither — `listSessions`, `lis
 
 ### PF-045 — Specify the error response matrix
 Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
-Acceptance: every operation declares its 4xx responses; every reason code maps to exactly one HTTP status and one registered state machine.
+Acceptance: every operation declares its 4xx responses; every reason code maps to exactly one HTTP status and resolves to exactly one authority — a registered state machine, or a declared non-aggregate authority where the fault belongs to no aggregate — and a declared authority that no code uses fails.
 Depends: PF-038
 Est: 8-10
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_p1140e_contracts.py
+Evidence: contains 1 packages/schemas/reason-codes-v1.json :: CLAIM_CLOCK_ROLLBACK
+Evidence: contains 1 packages/schemas/reason-codes-v1.json :: CLAIM_TIMESTAMP_IN_FUTURE
+Evidence: absent conformance/adversarial/anti-cheat-registry-v1.json :: "name":"clock-rollback","expected_action":"quarantine_session","reason_code":"CLAIM_SEQUENCE_UNEXPECTED"
 
-**Mostly landed in `963f6f6` under D-223, and D-224 records what did not.** Operations now declare their 4xx responses and the matrix lives in `packages/schemas/reason-codes-v1.json` rather than inline. What remains, and why this unit is `in-progress` rather than `landed`: D-224 records that the repair of the twenty pre-existing `state_machine: "vibeproof-v1"` values is complete only in part. A code that still names a machine the registry does not declare is a dangling reference wearing a valid-looking value, so this unit closes when every code resolves and not before.
+**Mostly landed in `963f6f6` under D-223.** Operations declare their 4xx responses and the matrix lives in `packages/schemas/reason-codes-v1.json` rather than inline.
+
+This unit then stayed `in-progress` behind a hole that had already been filled. Its own text said it "closes when every code resolves and not before", pointing at the twenty `state_machine: "vibeproof-v1"` values D-224 recorded as only partly repaired. D-560 added `non_aggregate_authorities` to the registry and `validate_p1140e_contracts.py` resolves against it, so every one of the 69 codes resolves today and none dangles. The blocker outlived the defect; the paragraph asserting it is struck.
+
+The `Acceptance:` was rewritten because it could not be satisfied as written. It required every code to map to "one **registered state machine**", and 38 of 69 do not: 20 name `server-runtime`, 15 `vibeproof-v1` and 3 `local-channel-v1`. Those are runtime, protocol and local-channel faults that belong to no aggregate and therefore have no machine — which is exactly why D-560 introduced the authority list rather than inventing machines to satisfy a field. An acceptance that the design deliberately contradicts is not a bar the unit failed to clear; it is a bar in the wrong place.
 
 The defect as found: no operation declared 401, 403, 404, 409 or 422 — only 200, 429 and default — and all twenty reason codes referenced `state_machine: "vibeproof-v1"`, which is not a registered machine, so every code dangled.
 
@@ -819,9 +827,19 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml
 Acceptance: a replayed request returns the original response body byte-for-byte; the ledger expresses `conflict` and `expired`.
 Depends: PF-038
 Est: 4-6
-Status: in-progress
+Status: landed
+Evidence: contains 1 packages/schemas/planning-schema.sql :: response_body bytea
+Evidence: contains 1 packages/schemas/planning-schema.sql :: idempotency_records_replayable_is_answerable
+Evidence: contains 1 packages/schemas/planning-schema.sql :: idempotency_records_digest_pairs_with_body
+Evidence: validator scripts/repository/validate_state_vocabularies.py
 
-**The API half landed in `963f6f6` under D-225; the SQL half has not.** The wire contract now states the scoped key and byte-identical replay under one `x-idempotency-contract` block. `packages/schemas/planning-schema.sql` still stores a nullable `response_digest` with no response-body column, so nothing in the database can return the original response the API now promises. That gap is the reason this unit is `in-progress`: a contract that states an invariant its storage cannot hold is worse than one that states nothing, because it reads as satisfied.
+**The API half landed in `963f6f6` under D-225; the SQL half lands here.** The wire contract states the scoped key and byte-identical replay under one `x-idempotency-contract` block, and the ledger could not answer it: `planning-schema.sql` stored a nullable `response_digest` and no response body at all. A digest proves a response was equal; it cannot return one. A contract that states an invariant its storage cannot hold is worse than one that states nothing, because it reads as satisfied.
+
+The ledger now stores `response_status` and `response_body` beside the digest, with two constraints doing the work the nullability did not. `idempotency_records_replayable_is_answerable` refuses a `committed` or `replayable-failure` row that leaves any of the three null, which is what let a row claim to be replayable while holding nothing to replay. `idempotency_records_digest_pairs_with_body` refuses a digest without its body and a body without its digest; SQL cannot verify the digest is *over* the body without an extension, so the pairing is constrained and the limit is stated rather than implied.
+
+Only the server's own fixed-schema response is stored. No request body and no client content: the privacy boundary governs what may be written, not what the column can hold, and `expires_at` already bounds how long even that is kept.
+
+The three defects the unit found are all closed: the principal is `(principal_type, principal_id)` rather than account-only, `operation_id` is in the primary key so one key cannot replay a different operation's response, and the state vocabulary carries `conflict` and `expired`.
 
 The defect as found: `planning-schema.sql` stored a nullable `response_digest` with no response-body column; its primary key was `(actor_account_id, idempotency_key)` with no global uniqueness; and the principal was account-only.
 

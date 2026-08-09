@@ -993,9 +993,9 @@
     },
     {
       "id": "D-245",
-      "decision": "Two reason-code gaps that the D-235 clock bounds depend on remain open and are recorded rather than worked around. RATE_LIMIT_EXCEEDED now exists at registry version 1.3.0 under D-223, so the rate-limit half of this gap closed before this row was written and the 429 contract is implementable. What does not exist is a code for a clock rollback or for a future timestamp: conformance/adversarial/anti-cheat-registry-v1.json maps clock-rollback onto CLAIM_SEQUENCE_UNEXPECTED, which describes a different fault and would make a rollback indistinguishable from an ordinary sequence gap in every appeal and every metric. Registering one is blocked behind the partial repair D-224 records, because fifteen codes still name a vibeproof-v1 state machine that is not registered and a new code would either join them or sit inconsistently beside them",
-      "status": "research-required",
-      "validation_or_reopen": "D-224's remaining state-machine references are repaired, after which a clock-rollback and a future-timestamp code are registered together and this row becomes accepted"
+      "decision": "A clock rollback and a future timestamp each have their own reason code. This row recorded two gaps blocked behind the partial repair D-224 described, where fifteen codes named a vibeproof-v1 state machine the registry did not declare. D-560 closed that by adding non_aggregate_authorities, so the blocker was already gone when this was reopened: every code resolves. CLAIM_CLOCK_ROLLBACK and CLAIM_TIMESTAMP_IN_FUTURE are registered together at registry version 1.7.0-p1140f, and the anti-cheat case AC-A-008 is remapped off CLAIM_SEQUENCE_UNEXPECTED, which describes a different fault and would have made a rollback indistinguishable from an ordinary sequence gap in every appeal and every metric. Both are appealable, because a rollback is as likely to be a corrected clock as an attack",
+      "status": "accepted",
+      "validation_or_reopen": "a deployed detector cannot distinguish a rollback from a corrected clock in practice, which would make the appealable outcome the wrong default rather than the code the wrong name"
     },
     {
       "id": "D-206",
@@ -1764,6 +1764,12 @@
       "decision": "VIBEPROOF_V1_PROTOCOL.md claimed Rust satisfied the cofactored verification requirement through `ed25519-dalek`'s ZIP-215 verification mode. No such mode exists in any released version: `verify` and `verify_strict` recompute R' and compare it to the signature's R, which is the cofactorless rule, and the crate's only ZIP-215 behaviour is point decoding in `VerifyingKey::from_bytes`, whose documentation reads \"verifies the point is valid under ZIP-215 rules\". The document therefore stated that Go failed a requirement Rust met while both defaults fail it identically, which made Rust look exempt from a constraint D-192 states in language-neutral terms. Corrected: both verifiers need a ZIP-215-capable implementation, `ed25519-zebra` 2.x and later in Rust and ed25519consensus in Go, and `ed25519-dalek` stays suitable for signing",
       "status": "accepted",
       "validation_or_reopen": "`ed25519-dalek` adds a cofactored verification path, at which point it re-enters the verifier candidate set"
+    },
+    {
+      "id": "D-612",
+      "decision": "PF-045's acceptance required every reason code to map to one registered state machine, and 38 of 69 do not: 20 name server-runtime, 15 vibeproof-v1 and 3 local-channel-v1. Those are runtime, protocol and local-channel faults belonging to no aggregate, which is why D-560 introduced a declared authority list rather than inventing machines to satisfy a field. The acceptance is rewritten to require resolution to exactly one authority — a registered machine, or a declared non-aggregate authority — with a declared authority no code uses still failing. An acceptance the design deliberately contradicts is a bar in the wrong place rather than one the unit failed to clear",
+      "status": "accepted",
+      "validation_or_reopen": "a non-aggregate authority acquires a state machine, at which point its codes bind to the machine and the authority entry is removed"
     }
   ]
 }
