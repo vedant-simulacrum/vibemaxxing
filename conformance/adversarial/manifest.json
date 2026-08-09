@@ -29,7 +29,7 @@
       "fixtures": [
         {
           "path": "conformance/adversarial/anti-cheat-registry-v1.json",
-          "sha256": "59c4a30001836543715d0c8bb556c9db514e0a21dcb2629b27586c76a3b52f55"
+          "sha256": "eb24a234bbd39e07a5dfe0c44f98674fc01de8f4799daf09e0ebc251c83da5db"
         }
       ],
       "expect": "accept",

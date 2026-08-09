@@ -2372,6 +2372,11 @@
       "machine_or_state_ownership": "Ed25519 verifier selection; no state vocabulary",
       "platform_scope": "Server, Native",
       "required_executable_evidence": "The Ed25519 divergence corpus verifies under the selected verifier and its ZIP-215 verdicts match the recorded oracle run"
+    },
+    {
+      "id": "D-612",
+      "implementation_bearing": false,
+      "reason": "corrects a work unit's acceptance criterion, which governs the planning record rather than the product"
     }
   ]
 }
