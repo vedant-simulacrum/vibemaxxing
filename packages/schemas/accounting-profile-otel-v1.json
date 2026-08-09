@@ -1,0 +1,279 @@
+{
+  "schema_version": 1,
+  "profile_id": "accounting-profile-otel-v1",
+  "semantic_version": "1.0.0",
+  "binding_id": "claude-code-otel-v1",
+  "target_schema": "packages/schemas/normalized-event.schema.json",
+  "specification": "docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md",
+  "publication_rule": "This profile supports one metric. `claude_code.token.usage` is the only metric any fixture in this repository replays, so it is the only one named supported, and `gemini_cli.token.usage`, `gen_ai.client.token.usage` and `codex.turn.token_usage` are recorded as read surfaces with no capture rather than as planned or partial support. Nothing here is certification: `claude-code-otel-v1` is a candidate binding whose effective ceiling is private analytics, and a derivation table is a specification of a mechanism rather than evidence that any collector runs it.",
+  "count_authority": "runtime-reported",
+  "supported_metrics": [
+    {
+      "name": "claude_code.token.usage",
+      "producer_id": "claude-code",
+      "capture_vectors": "conformance/accounting/otel-capture-vectors-v1.json",
+      "capture_evidence_kind": "exercised-on-hardware",
+      "assessed_on": "2026-08-06",
+      "note": "Eight vectors: five datapoint series covering the four type values, cumulative-to-delta, a counter decrease, a start-time change and two concurrent query_source series, and three refusals covering an identity attribute, an unknown attribute and an unmapped category value."
+    }
+  ],
+  "unsupported_metrics": [
+    {
+      "name": "claude_code.cost.usage",
+      "producer_id": "claude-code",
+      "state": "discarded-server-owned",
+      "reason": "A USD figure. Pricing is server-owned and a claim never carries a price, a currency or a cost estimate, so the receiver discards it before admission."
+    },
+    {
+      "name": "claude_code.session.count",
+      "producer_id": "claude-code",
+      "state": "discarded-carries-no-token-fact",
+      "reason": "Counts sessions rather than tokens. Nothing in the accounting arithmetic consumes it."
+    },
+    {
+      "name": "claude_code.active_time.total",
+      "producer_id": "claude-code",
+      "state": "discarded-carries-no-token-fact",
+      "reason": "A duration. Nothing in the accounting arithmetic consumes it."
+    },
+    {
+      "name": "gemini_cli.token.usage",
+      "producer_id": "gemini-cli",
+      "state": "no-capture",
+      "reason": "Read from a published configuration surface on 2026-08-06 and never exercised. No fixture in this repository replays a Gemini CLI export, so the type vocabulary, the instrument kind, the temporality and the reset behaviour are all unmeasured. Naming it supported would be a registry implying exercised support it does not have."
+    },
+    {
+      "name": "gen_ai.client.token.usage",
+      "producer_id": "gemini-cli",
+      "state": "no-capture",
+      "reason": "The OpenTelemetry GenAI semantic-convention metric the same CLI also emits. Emitting both means a naive receiver double counts, and no capture exists to decide which one the collector reads, so neither is consumed."
+    },
+    {
+      "name": "codex.turn.token_usage",
+      "producer_id": "codex-cli",
+      "state": "no-capture",
+      "reason": "Read from a published configuration surface on 2026-08-06 and never exercised. Two execution surfaces are additionally silent under openai/codex#12913, so even an exercised capture of the interactive surface would not cover the producer."
+    }
+  ],
+  "capture_surface_hazards": [
+    {
+      "hazard_id": "claude-code-identity-attributes",
+      "producer_id": "claude-code",
+      "kind": "identity-attributes-on-every-datapoint",
+      "default_state": "Every datapoint of every Claude Code metric carries `organization.id`, `user.account_uuid`, `user.account_id`, `user.email` and `user.id`. This is the default and no capture has ever been observed without them.",
+      "receiver_obligation": "All five are stripped inside the receiver, on the decoded in-memory datapoint, before admission to the observation queue and therefore before any aggregation, counter-delta state or grouping. A stripped value never keys a structure, never reaches disk, a log or a crash report, and a datapoint from which one cannot be removed is rejected whole. There is no partial-clean path and no identity here is ever trusted for identity: the ranked identity comes from the account and the device lineage, never from a telemetry attribute.",
+      "configuration_is_a_control": "partial",
+      "attributes": [
+        "organization.id",
+        "user.account_id",
+        "user.account_uuid",
+        "user.email",
+        "user.id"
+      ],
+      "reference": "D-099 fixes the strip list. OTEL_METRICS_INCLUDE_ACCOUNT_UUID=false removes the account UUIDs at the source and no documented setting removes user.email, which is why the removal is a receiver obligation and configuration is only a partial control."
+    },
+    {
+      "hazard_id": "gemini-cli-log-prompts-default-on",
+      "producer_id": "gemini-cli",
+      "kind": "default-on-prompt-logging",
+      "default_state": "Gemini CLI's `logPrompts` setting defaults to true, so prompt text is present on the telemetry logs channel unless the user explicitly disables it.",
+      "receiver_obligation": "The collector never opens a logs channel for any producer. Ingesting it would import L0 content directly, and a receiver whose safety depended on a producer default being flipped would be relying on a setting it does not own. The metrics channel carries no prompt text and is the only admissible channel.",
+      "configuration_is_a_control": "no",
+      "reference": "docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md, Gemini CLI row. The logs channel is unusable at any tier."
+    },
+    {
+      "hazard_id": "codex-cli-statsig-exporter-default",
+      "producer_id": "codex-cli",
+      "kind": "default-third-party-metrics-exporter",
+      "default_state": "Codex CLI's `[otel]` configuration block defaults `metrics_exporter` to `statsig`, not to `none`. Enabling telemetry without setting the exporter explicitly sends token metrics to a third party rather than to a local collector.",
+      "receiver_obligation": "No instruction, document or installer in this product may tell a participant to enable Codex telemetry without pinning `metrics_exporter` to an OTLP exporter aimed at the loopback receiver. The collector cannot detect or prevent the third-party export, so the control is the instruction and the control is weak; this is a reason the producer stays uncaptured rather than a hazard that capture would mitigate.",
+      "configuration_is_a_control": "yes",
+      "reference": "Read from the published Codex CLI configuration surface on 2026-08-06 alongside openai/codex#12913. Recorded here and in docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md; it was in neither before PF-041."
+    }
+  ],
+  "known_contradictions": [
+    {
+      "contradiction_id": "otel-count-authority",
+      "field": "count_authority",
+      "this_profile": "runtime-reported",
+      "other_authority": "conformance/accounting/accounting-profiles-v1.json",
+      "other_value": "cloud-separate-cache-v1 declares every one of its four source fields provider-reported",
+      "effect": "The same number is described twice with two different authorities, and provider-reported is the stronger evidence claim. The collector never sees a provider response: it sees a counter the CLI process emits, unsigned, and D-077 keeps every locally observed mechanism attested-local while D-100 records that no provider offers an individual-account attestation path. This profile writes runtime-reported, which is what docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md section 7 requires and what section 6 of the same document contradicts. Repairing it means registering a narrower accounting profile and re-pointing the binding, which changes the adapter's bound identity and is not this unit's to change.",
+      "owner": "A-001"
+    },
+    {
+      "contradiction_id": "otel-certification-bundle-absent",
+      "field": "certification",
+      "this_profile": "cannot be written from any binding in this repository",
+      "other_authority": "packages/schemas/normalized-event.schema.json",
+      "other_value": "certification.bundle_sha256 is required and must be 64 hexadecimal characters, with no null admitted",
+      "effect": "claude-code-otel-v1 is a candidate binding whose certification tuple carries bundle_sha256 null, and every other binding here is uncertified. So no NormalizedAccountingEvent can be constructed from any OTLP capture this repository can actually take: the event schema has no representation for an uncertified capture, while the publication rule of the binding registry says every binding is private analytics today. The only fixture that fills the field uses a placeholder of sixty-four f characters. This is why the field's derivation is blocked rather than declared, and it is why an end-to-end map from payload to event is not claimed.",
+      "owner": "PF-016"
+    }
+  ],
+  "derivations": [
+    {
+      "field": "schema_version",
+      "origin": "adapter-constant",
+      "determinism": "deterministic",
+      "rule": "The literal 1, from the target schema's const.",
+      "constant": 1
+    },
+    {
+      "field": "event_id",
+      "origin": "collector-state",
+      "determinism": "collector-minted",
+      "rule": "A UUIDv7 the collector generates at normalization. OTLP carries no event identity, so two receivers of the same export mint two different values. The deterministic identity of the observation is local_fingerprint, not this."
+    },
+    {
+      "field": "session_id",
+      "origin": "otlp-attribute",
+      "determinism": "device-scoped",
+      "rule": "Derived inside the adapter process from the session.id attribute through the keyed local commitment the binding's transform disposition requires. The raw identifier is discarded when the datapoint leaves that process, and the key is device-local, so the value is stable on one device and unreproducible off it.",
+      "otlp_attributes": [
+        "session.id"
+      ]
+    },
+    {
+      "field": "parent_event_id",
+      "origin": "not-derivable-from-otlp",
+      "determinism": "not-observable",
+      "rule": "Always null for this binding. query_source distinguishes main from subagent execution but names no parent, and the counter is aggregated per attribute set rather than per execution, so no linkage exists to read.",
+      "constant": null
+    },
+    {
+      "field": "adapter",
+      "origin": "adapter-constant",
+      "determinism": "deterministic",
+      "rule": "adapter_id claude-code-otel with the artifact and manifest digests of the running adapter build. Deterministic for a given build and not a property of the payload."
+    },
+    {
+      "field": "certification",
+      "origin": "producer-binding",
+      "determinism": "not-observable",
+      "rule": "platform_profile_id from packages/schemas/platform-profile-registry-v1.json and capture_mode otel are both available. bundle_sha256 is not: the binding's certification tuple carries null and the target schema admits no null, so this field cannot be written today and the derivation is blocked rather than described.",
+      "blocked_by": "otel-certification-bundle-absent"
+    },
+    {
+      "field": "source_id",
+      "origin": "producer-binding",
+      "determinism": "deterministic",
+      "rule": "claude-code, from the binding's certification tuple source_product_id. Not read from the payload: the instrumentation scope name is checked against the binding and a scope that does not match is not this producer."
+    },
+    {
+      "field": "provider_id",
+      "origin": "model-registry",
+      "determinism": "deterministic",
+      "rule": "Resolved from the registered model_id through the model registry. The OTLP payload carries a model alias and no provider attribute, so the provider is a property of the resolved model rather than of the export."
+    },
+    {
+      "field": "model_id",
+      "origin": "otlp-attribute",
+      "determinism": "deterministic",
+      "rule": "The model attribute resolved through the model registry to a registered identifier. An alias that does not resolve fails closed: the raw alias never advances and the event does not reach competitive eligibility.",
+      "otlp_attributes": [
+        "model"
+      ]
+    },
+    {
+      "field": "accounting_profile",
+      "origin": "producer-binding",
+      "determinism": "deterministic",
+      "rule": "The binding's accounting_profile id and content digest, which are cloud-separate-cache-v1 today. See the otel-count-authority contradiction: the profile that supplies this identity also declares an authority this capture cannot attest."
+    },
+    {
+      "field": "monotonic_interval",
+      "origin": "otlp-datapoint",
+      "determinism": "device-scoped",
+      "rule": "start_ns and end_ns bracket the export interval the delta covers, taken from start_time_unix_nano and time_unix_nano. generation is the reset counter the binding's value-decrease-or-start-time-change rule increments. domain_id is the collector's own clock domain and is device-scoped."
+    },
+    {
+      "field": "wall_time_observation",
+      "origin": "otlp-datapoint",
+      "determinism": "device-scoped",
+      "rule": "starts_at and ends_at from the datapoint's unix-nano times. uncertainty_ms is the configured export interval plus the measured receive-jitter bound, which is a property of the receiving machine rather than of the payload."
+    },
+    {
+      "field": "canonical_tokens",
+      "origin": "otlp-datapoint",
+      "determinism": "deterministic",
+      "rule": "The counter delta per attribute-set key, placed by the binding's category_map: input to input_uncached, output to output_visible, cacheRead to cache_read, cacheCreation to cache_write. reasoning, multimodal_input and multimodal_output are structurally zero because the bound profile declares reasoning_semantics and modality_semantics unavailable. This is the one field the capture vectors replay, and it is the reason the map is called deterministic at all.",
+      "otlp_attributes": [
+        "type",
+        "model",
+        "query_source"
+      ]
+    },
+    {
+      "field": "source_observed_categories",
+      "origin": "otlp-datapoint",
+      "determinism": "deterministic",
+      "rule": "One entry per profile source field the datapoint carried, keyed by the binding's profile_source_field, each with containment exclusive because cloud-separate-cache-v1 declares no containment edge. A category the datapoint did not carry is an absent entry and never a zero."
+    },
+    {
+      "field": "count_authority",
+      "origin": "adapter-constant",
+      "determinism": "deterministic",
+      "rule": "runtime-reported. The counts originate provider-side and reach the collector through the CLI process carrying no signature, so the authority the collector can attest is the runtime that reported them.",
+      "constant": "runtime-reported"
+    },
+    {
+      "field": "reconstruction_method",
+      "origin": "accounting-profile",
+      "determinism": "deterministic",
+      "rule": "none, from the bound profile's reconstruction.method. Nothing is tokenized locally on this path.",
+      "constant": "none"
+    },
+    {
+      "field": "outcome",
+      "origin": "not-derivable-from-otlp",
+      "determinism": "not-observable",
+      "rule": "success, which asserts only that a counter increment evidences consumption that had already finalised when the CLI emitted it. The channel carries no outcome attribute, so this adapter can never emit failed-after-consumption or cancelled-after-consumption and cannot tell them from success. That is a capability limit of the mechanism.",
+      "constant": "success"
+    },
+    {
+      "field": "retry",
+      "origin": "not-derivable-from-otlp",
+      "determinism": "not-observable",
+      "rule": "scope none, ordinal 0, distinct_execution false. The metrics channel exposes no retry fact and provider-side retries are already collapsed into one counter increment, so the duplicate domain rather than these fields is what prevents double counting."
+    },
+    {
+      "field": "duplicate_domain",
+      "origin": "producer-binding",
+      "determinism": "deterministic",
+      "rule": "domain_id claude-code-otel-datapoint, scope source-runtime. The key is the session commitment, the attribute-set key, the counter start time and the export ordinal, so a replayed datapoint is a duplicate rather than an addition."
+    },
+    {
+      "field": "local_fingerprint",
+      "origin": "collector-state",
+      "determinism": "device-scoped",
+      "rule": "A 43-character base64url keyed commitment over the duplicate-domain key. Keyed with a device-local key that is separate from any signing key, so it deduplicates on one device and reveals nothing off it."
+    },
+    {
+      "field": "rule_result",
+      "origin": "producer-binding",
+      "determinism": "deterministic",
+      "rule": "bundle_id deterministic-rules-v1 with the disposition the local deterministic rules reached. It is a local outcome and never a ceiling: the binding's effective_ceiling is private-analytics and is applied by the server verifier, so an accept-local disposition does not make an event competitive."
+    },
+    {
+      "field": "privacy_scan",
+      "origin": "collector-state",
+      "determinism": "deterministic",
+      "rule": "policy_id claim-egress-v1 with result pass. A datapoint carrying any stripped attribute is rejected whole at the receiver and never becomes an event, so an event that exists has already passed; the field records which policy decided, not whether one ran."
+    },
+    {
+      "field": "local_detector_commitment",
+      "origin": "adapter-constant",
+      "determinism": "deterministic",
+      "rule": "null. No detector participates. D-053 keeps statistical and small-language-model detection local, advisory and post-launch, so nothing on this path produces a commitment.",
+      "constant": null
+    },
+    {
+      "field": "network_eligible",
+      "origin": "adapter-constant",
+      "determinism": "deterministic",
+      "rule": "false, a const in the target schema. A normalized accounting event never crosses the device boundary; only fixed-schema aggregate accounting and integrity claims do.",
+      "constant": false
+    }
+  ]
+}

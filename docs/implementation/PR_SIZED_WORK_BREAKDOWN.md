@@ -73,16 +73,16 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 | Status | Units |
 |---|---|
 | `not-started` | 202 |
-| `in-progress` | 11 |
-| `landed` | 41 |
+| `in-progress` | 9 |
+| `landed` | 43 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 136 assertions across 41 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 155 assertions across 43 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 19.
+Startable now — not done, and every dependency done: 17.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-041`, `PF-043`, `PF-048`, `PF-054`, `OS-001`, `OS-003`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-048`, `PF-054`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -99,7 +99,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 | 7 | 1 | `PF-035` |
 | 8 | 1 | `PF-036` |
 
-Statuses additionally checkable against artifact presence: 196 of 260. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 197 of 260. The other 63 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -723,15 +723,40 @@ Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no
 `accounting-profile.schema.json` defines no rounding, overflow, precision, or unit-conversion rules, and no canonical digest algorithm — yet `accounting_profile_sha256` is a signed claim field. `retry_policy`, `cancellation_policy`, and `nested_execution_policy` at `:209-228` are enum labels with no defined behavior. Two implementations cannot currently agree on a token total, which makes cross-language parity meaningless.
 
 ### PF-041 — Specify the OpenTelemetry accounting profile
-Files: `packages/schemas/accounting-profile-otel-v1.json` (new), `docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `conformance/accounting/otel-capture-vectors-v1.json`
-Acceptance: the profile maps a captured OTLP payload to a `NormalizedAccountingEvent` deterministically; fixture includes at least one real capture per supported metric.
+Files: `packages/schemas/accounting-profile-otel-v1.json` (new), `packages/schemas/accounting-profile-otel-v1.schema.json` (new), `tests/ci/test_otel_accounting_profile.py` (new), `scripts/repository/validate_planning_artifacts.py`, `docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md`, `docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `conformance/accounting/manifest.json`, `conformance/adapters/agent-registry-v1.json`, `conformance/adapters/manifest.json`
+Acceptance: every top-level field of `packages/schemas/normalized-event.schema.json` has exactly one declared origin and determinism class in the profile, by equality in both directions, with the fields an OTLP payload carries no fact about marked `not-derivable-from-otlp`; the profile's supported metric set equals the metric set its producer binding declares; every supported metric names a capture fixture that replays that exact metric under that exact binding and carries at least one non-refusal vector; no derivation reads an attribute the binding strips or drops; and a disagreement with the bound accounting profile or an absent certification bundle must be declared in `known_contradictions`, with a declaration that no longer describes a disagreement failing too.
 Depends: PF-040
 Est: 8-12
-Status: in-progress
+Status: landed
+Evidence: exists packages/schemas/accounting-profile-otel-v1.json
+Evidence: exists packages/schemas/accounting-profile-otel-v1.schema.json
+Evidence: contains 1 packages/schemas/accounting-profile-otel-v1.json :: "kind": "default-third-party-metrics-exporter"
+Evidence: contains 1 packages/schemas/accounting-profile-otel-v1.json :: "kind": "default-on-prompt-logging"
+Evidence: contains 1 packages/schemas/accounting-profile-otel-v1.json :: "kind": "identity-attributes-on-every-datapoint"
+Evidence: contains 3 packages/schemas/accounting-profile-otel-v1.json :: "origin": "not-derivable-from-otlp"
+Evidence: contains 1 docs/integrations/AGENT_INTEGRATION_RESEARCH_MATRIX.md :: `metrics_exporter`
+Evidence: contains 1 conformance/adapters/agent-registry-v1.json :: statsig
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_otel_accounting_profile
 
 Empirically verified capture surface, 2026-08-05: Claude Code emits `claude_code.token.usage` as a counter with attributes `model`, `query_source` (`main`/`subagent`/`auxiliary`), and `type` (`input`/`output`/`cacheRead`/`cacheCreation`). Gemini CLI emits `gemini_cli.token.usage`; Codex emits `codex.turn.token_usage`. Prompt and response content appears only on the logs channel and is redacted unless explicitly enabled, so metrics-only capture keeps the collector out of L0 entirely.
 
 Three hazards this profile must encode: every Claude Code metric carries `organization.id`, `user.account_uuid`, `user.account_id`, `user.email`, and `user.id`, which must be dropped at ingest rather than trusted for identity; Gemini CLI's `logPrompts` defaults to **true**; and Codex's `metrics_exporter` defaults to `statsig`, not `none`.
+
+**Landed under D-614 and D-615.** All three hazards are encoded, and the third was recorded nowhere in this repository before this unit: neither `AGENT_INTEGRATION_RESEARCH_MATRIX.md` nor `conformance/adapters/agent-registry-v1.json` mentioned `metrics_exporter` or `statsig`, so the Codex row's defect column named only the `exec` and MCP-server silence. It is also the one hazard of the three that leaks outward — the other two risk importing content or identity into the collector, and this one exports the participant's token activity to a vendor neither party chose.
+
+**The profile supports exactly one metric, and says so.** `claude_code.token.usage` is the only metric any fixture in this repository replays. `gemini_cli.token.usage`, `gen_ai.client.token.usage` and `codex.turn.token_usage` are recorded as published surfaces read on 2026-08-06 with no capture, which is an absence of evidence rather than partial support. The supported set is held equal to the binding's declared metric set in both directions, so neither file can grow a metric the other has not exercised.
+
+The `Acceptance:` was rewritten because neither clause could be run as written. The first — that the profile "maps a captured OTLP payload to a `NormalizedAccountingEvent` deterministically" — is unsatisfiable under any honest reading. An OTLP counter carries no event identity, no outcome and no retry fact: `event_id` is minted by the receiver, `local_fingerprint` is a device-keyed commitment, `outcome` is a declared `success` that cannot be told from a cancellation that consumed tokens, and `retry` is a declared zero. Three of the twenty-four fields are therefore `not-derivable-from-otlp` and four more are device-scoped. Calling the result deterministic would have been true only of `canonical_tokens`, which the capture vectors already exercised before this unit existed. The replacement asks for what can be checked: one origin and one determinism class per field, by equality, so a field added to the event fails until someone decides where it comes from.
+
+The second clause — "fixture includes at least one real capture per supported metric" — was satisfiable by emptiness in the direction that mattered. Nothing tied "supported" to anything: the producer binding could have declared a second metric and the fixture would still have passed, because `validate_planning_artifacts.py` read `binding["otel"]["metrics"][0]` by position and compared the capture file's single `metric` field against it. **That was a live defect and it is fixed here**: the series evaluator now selects the metric by name and refuses a capture naming a metric the binding omits, and `validate_producer_bindings` refuses any declared metric that no capture replays. A binding that declared `gemini_cli.token.usage` today would have had every vector silently replayed against the Claude Code category map and reported as passing.
+
+Two contradictions were found by reading the unit's files against each other and are recorded rather than repaired, because repairing either changes what a future certification certifies:
+
+- **`otel-count-authority`.** `cloud-separate-cache-v1`, the accounting profile the binding names, declares all four of its source fields `provider-reported`. `ADAPTER_ONE_CLAUDE_CODE_OTEL.md` section 7 says recording `provider-reported` as this capture's count authority "would overstate the evidence and is forbidden", while section 6 of the same file describes the categories as provider-reported. Both statements are about the same number. The collector never sees a provider response; it sees an unsigned counter a CLI process emits, and D-077 keeps every locally observed mechanism attested-local. The event carries `runtime-reported`; the bound profile identity keeps the overstatement until `A-001` registers a narrower profile and re-points the binding. Section 6 now names the contradiction instead of restating one side of it.
+- **`otel-certification-bundle-absent`.** `packages/schemas/normalized-event.schema.json` requires `certification.bundle_sha256` as sixty-four hexadecimal characters with no null admitted, and every binding in this repository is `candidate` or `uncertified` with `bundle_sha256` null. So no `NormalizedAccountingEvent` can be constructed from any OTLP capture this repository can actually take, and the only fixture that fills the field uses sixty-four `f` characters. The event schema has no representation for an uncertified capture while the binding registry's own publication rule says every binding is private analytics today. `PF-016` owns it.
+
+Both are computed rather than trusted: the validator recomputes the disagreement from the bound profile and the binding on every run, so an undeclared disagreement fails and a declaration whose disagreement has been repaired fails too.
 
 ### PF-042 — Author the source receipt contract
 Files: `packages/schemas/source-receipt-v1.schema.json`, `packages/schemas/source-observation.schema.json`, `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
@@ -745,13 +770,32 @@ Evidence: validator scripts/repository/validate_planning_coverage.py
 Inventory line `:35`. Provenance for every claim, and the first of the 33 `planned-missing` contracts that blocks real work. Note the inventory maps this to `PF-021/PF-022`, which are ranking units; the accounting owners are `PF-017`/`PF-018`.
 
 ### PF-043 — Author the appraisal result and policy contracts
-Files: `packages/schemas/appraisal-result-v1.schema.json`, `packages/schemas/appraisal-policy-v1.schema.json`, `packages/schemas/openapi-v1.yaml`
-Acceptance: `ClaimRecord.appraisal_id` resolves to a defined schema and a retrievable operation; no dangling reference remains.
+Files: `packages/schemas/appraisal-result-v1.schema.json`, `packages/schemas/appraisal-policy-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/disclosure-projection-v1.json`, `packages/schemas/reason-codes-v1.json`, `tests/ci/test_appraisal_disclosure.py` (new), `scripts/repository/validate_planning_artifacts.py`, `conformance/p1140e/validation-matrix-v1.json`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
+Acceptance: `ClaimRecord.appraisal_id` resolves to a defined schema and to operationId `getAppraisal`, which is authenticated and answers with `AppraisalSummary` and never with the stored record; `AppraisalSummary` equals `appraisal-result-v1.schema.json` minus `schema_version`, minus `evaluated.anomaly_disposition` and `policy.implementation_sha256`, and with `public_state` crossing as `evidence_class`, by equality in both directions and including every admitted enum value; neither withheld name is declared as a property anywhere in `openapi-v1.yaml`; `disclosure-projection-v1.json` classifies the shape as self-audience; and a withheld field the record has dropped fails, so the justification cannot outlive the hole. `validate_cross_references.py` reports zero dangles.
 Depends: PF-038
 Est: 8-10
-Status: in-progress
+Status: landed
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: operationId: getAppraisal
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: AppraisalSummary:
+Evidence: absent packages/schemas/openapi-v1.yaml :: anomaly_disposition:
+Evidence: absent packages/schemas/openapi-v1.yaml :: implementation_sha256:
+Evidence: contains 1 packages/schemas/disclosure-projection-v1.json :: "api_schema": "AppraisalSummary"
+Evidence: contains 1 packages/schemas/reason-codes-v1.json :: getAppraisal
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: validator scripts/repository/validate_cross_references.py
+Evidence: unittest tests.ci.test_appraisal_disclosure
 
 Inventory lines `:37-38`. `ClaimRecord.appraisal_id` already references an appraisal today and there is no `/appraisals/{id}` path and no schema behind it.
+
+**Landed under D-613 and D-615.** Both schemas already existed; what was missing was the retrievable operation, and the interesting question was never whether one could be written but what it may return.
+
+The privacy answer is that the operation is self-only in every field and returns a projection rather than the record. `ClaimRecord` is a `self` shape in `disclosure-projection-v1.json` and `appraisal_id` is classified `self` there with the reason "names the verifier appraisal, which is integrity-private", so an appraisal identifier is only ever legible to the participant who submitted the claim and there is no non-owner audience to design for. A caller who is not that participant is answered 404 rather than 403: 403 confirms the appraisal exists, and an appraisal binds one-to-one to a claim, so a confirmed identifier is a confirmed submission by someone. The 403 the operation does declare comes from `INVITE_REQUIRED` and `NATIVE_SESSION_DEVICE_REVOKED`, which are facts about the caller's own account, and never from ownership.
+
+Two fields are withheld from the subject as well. `evaluated.anomaly_disposition` admits `under-review` and `shadow-only`, and showing either to the participant tells them an integrity case is open — which is exactly what D-381 keeps from them, because an investigation is `integrity-private` and the participant reads the effect on their standing rather than the existence of a case. `policy.implementation_sha256` is the server verifier's build digest, which is not the participant's personal data and which no appeal needs. Neither name is declared as a property anywhere in the document, so the absence is uniform and cannot itself be read as a signal.
+
+Everything else is disclosed to the subject because D-084 requires it: an integrity sanction is silent toward the public and notified toward the sanctioned participant, with the effect and the appeal route stated. `acceptance_outcome`, the seven `dimensions`, `awarded_profile_id`, `evidence_class`, `ranking_eligibility`, `reason_codes`, `validity` and `supersession` are that effect, and `evaluated` minus the anomaly disposition is what an appeal argues against — withholding it would leave the appeal route D-084 promises unusable. Disclosing the dimensions to the subject also discloses strictly less than they already hold: `SelfRankEntry` gives them `evidence_factor_hundredths` and `trust_factor_hundredths` outright. The record's `public_state` crosses as `evidence_class` because D-143 admits exactly one evidence vocabulary to the API.
+
+The `Acceptance:` was rewritten because it decided nothing. "Resolves to a defined schema and a retrievable operation" is satisfied by any response shape, including one returning the whole `VerifierAppraisalResult` to any authenticated caller — which would have published the anomaly disposition D-381 forbids and would have passed. It was also satisfied by the state of the tree before this unit ran in the half that mattered: `validate_cross_references.py` already reported zero dangles, because a JSON `format: uuid` field is not a reference the validator resolves, so the "no dangling reference remains" clause was true while the reference dangled in the only sense a reader cares about. The replacement is an equality against the record, so a field added to `appraisal-result-v1.schema.json` fails until someone decides whether the subject sees it, and a field the record drops fails too rather than leaving a withholding rule that guards nothing.
 
 ### PF-044 — Add pagination to unpaginated list operations
 Files: `packages/schemas/openapi-v1.yaml`

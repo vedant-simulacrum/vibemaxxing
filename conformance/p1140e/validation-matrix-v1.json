@@ -708,6 +708,7 @@
     "createRival",
     "enrollDevice",
     "exchangeDeviceAuth",
+    "getAppraisal",
     "getClaim",
     "getCompatibility",
     "getCurrentRank",

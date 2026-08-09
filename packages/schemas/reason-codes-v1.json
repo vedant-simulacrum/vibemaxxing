@@ -42,6 +42,7 @@
       "createRival",
       "enrollDevice",
       "exchangeDeviceAuth",
+      "getAppraisal",
       "getClaim",
       "getCompatibility",
       "getCurrentRank",
@@ -106,6 +107,7 @@
       "createOrganization",
       "createRival",
       "enrollDevice",
+      "getAppraisal",
       "getClaim",
       "getCurrentRank",
       "getMe",
@@ -262,6 +264,7 @@
     ],
     "path-addressed": [
       "createBoardInvitation",
+      "getAppraisal",
       "getClaim",
       "getLeaderboard",
       "getPublicProfile",

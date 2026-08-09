@@ -13,7 +13,9 @@
     "packages/schemas/accounting-arithmetic-v1.json",
     "packages/schemas/observer-equivalence-v1.json",
     "packages/schemas/producer-accounting-binding-v1.schema.json",
-    "conformance/accounting/accounting-schema-v1.json"
+    "conformance/accounting/accounting-schema-v1.json",
+    "packages/schemas/accounting-profile-otel-v1.schema.json",
+    "packages/schemas/accounting-profile-otel-v1.json"
   ],
   "subjects": [
     "rust",

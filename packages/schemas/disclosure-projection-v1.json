@@ -129,6 +129,30 @@
       ]
     },
     {
+      "api_schema": "AppraisalSummary",
+      "audience": "self",
+      "note": "The verifier appraisal of one of the participant's own claims, as the participant sees it. No appraisal is ever public and none is ever authorized to a viewer: the identifier that reaches it is itself `self` on ClaimRecord, and the record is integrity-private. This shape is a projection rather than the stored record because two of the record's fields are withheld from the participant too — `evaluated.anomaly_disposition`, whose `under-review` and `shadow-only` values are the statement D-381 keeps from them that a case is open, and `policy.implementation_sha256`, the verifier's own build digest. Neither appears in this shape at all, so their absence is uniform and is not itself a signal. What remains is the effect on the participant's standing, which D-084 requires be told to them.",
+      "fields": [
+        { "name": "appraisal_id", "audience": "self", "classification": "server-assigned", "reason": "Names one appraisal of one submission. It is reachable only from ClaimRecord.appraisal_id, which is self." },
+        { "name": "claim_id", "audience": "self", "classification": "observed-personal", "reason": "The submission appraised. Same audience as the claim itself, which is self in every field." },
+        { "name": "canonical_claim_sha256", "audience": "self", "classification": "non-personal", "reason": "Bound to one claim, so it identifies a submission even though the digest discloses nothing on its own." },
+        { "name": "evidence_bundle_sha256", "audience": "self", "classification": "non-personal", "reason": "Identifies the device-local bundle that explains the claim. Null when the device retained none, which is an input to the capture dimension rather than a neutral absence." },
+        { "name": "policy", "audience": "self", "classification": "server-assigned", "reason": "The published policy bundle and its content digest. The verifier build digest the record also carries is not in this shape: it is not the participant's personal data and no appeal needs it." },
+        { "name": "authority", "audience": "self", "classification": "server-assigned", "reason": "A constant. It records that the server verifier decided, which is what stops a surface presenting the outcome as client-selected." },
+        { "name": "client_influence", "audience": "self", "classification": "server-assigned", "reason": "A constant. Present so a client that renders the appraisal cannot imply it requested any part of it." },
+        { "name": "attestation", "audience": "self", "classification": "server-assigned", "reason": "Three constants recording D-100: the appraisal assesses a self-report and is never a provider confirmation. Omitting them is what would invite the misreading." },
+        { "name": "acceptance_outcome", "audience": "self", "classification": "server-assigned", "reason": "The outcome for this claim. D-084 requires the affected participant be told the effect; it is silent toward everyone else." },
+        { "name": "dimensions", "audience": "self", "classification": "server-assigned", "reason": "The seven evidence dimensions. The participant already reads the derived ADR-020 factors on SelfRankEntry, so this discloses strictly less to them than what they hold, and it discloses nothing to anyone else." },
+        { "name": "evaluated", "audience": "self", "classification": "server-assigned", "reason": "Which rule bundles, certification bundle, accounting profile and equivalence rule were applied. This is what an appeal argues against, so withholding it would leave the appeal route D-084 promises unusable." },
+        { "name": "awarded_profile_id", "audience": "self", "classification": "server-assigned", "reason": "The internal profile identifier. It stays internal: the API's public vocabulary is evidence_class, and this field is here for the participant's own appeal rather than for any surface." },
+        { "name": "evidence_class", "audience": "self", "classification": "server-assigned", "reason": "The record's public_state under D-143. Public in aggregate on the profile; per appraisal it would locate the exact submission that changed a participant's class, which is the same reason ClaimRecord.evidence_class is self." },
+        { "name": "ranking_eligibility", "audience": "self", "classification": "server-assigned", "reason": "Whether this claim competes. quarantined and retracted are integrity outcomes, which D-084 keeps private to the participant." },
+        { "name": "reason_codes", "audience": "self", "classification": "server-assigned", "reason": "A closed vocabulary from reason-codes-v1.json, whose appealability column is how the participant learns whether the outcome can be appealed." },
+        { "name": "validity", "audience": "self", "classification": "server-assigned", "reason": "When this appraisal applied. Bound to one participant's claim and meaningless to a third party." },
+        { "name": "supersession", "audience": "self", "classification": "server-assigned", "reason": "The append-only correction chain. A re-evaluation is a new appraisal rather than an edit, and the trigger names why the verifier looked again." }
+      ]
+    },
+    {
       "api_schema": "PresenceLease",
       "audience": "authorized-viewer",
       "note": "The projection, never the lease. `availability` is the three-value collapse the binding table declares; the underlying five-state lease, the device and the generation stay server-side.",
