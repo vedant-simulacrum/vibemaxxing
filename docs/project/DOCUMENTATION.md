@@ -103,9 +103,9 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 |---|---|---|
 | `project/` | **Top authority.** Product, phase, and this map | `PROJECT.md`, `STATUS.md`, `DOCUMENTATION.md` |
 | `planning/` | Decisions, gates, scope, policy | `DECISION_REGISTER.md`, `TASK_CATALOG.md`, `SCHEMA_AND_INTERFACE_INVENTORY.md`, `ARTIFACT_POLICY.md`, `PRODUCT_SCOPE_FREEZE.md`, `REPOSITORY_OPERATIONS.md`, `PROVISIONAL_DEFAULTS_AND_REVERSAL_THRESHOLDS.md`, `P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md`, `P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`, `SR_SEVERITY_REGRADING_PROPOSAL.md` (proposal, no authority), `CROSS_PLATFORM_COMPLETENESS_AUDIT.md`, `ANTI_CHEAT_IMPLEMENTATION_PLAN.md`, `decision-traceability/` (`D-001-D-020.md`, `D-021-D-040.md`, `D-041-D-061.md`, `D-062-D-069.md`, `D-070-D-099.md`, `D-100-D-199.md`, `D-200-D-299.md`, `D-300-D-399.md`, `D-400-D-499.md`, `D-500-D-599.md`, `D-600-D-699.md`, `README.md`; the `D-*.md` shards are generated from `conformance/planning/decision-traceability-v1.json`) |
-| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-022` |
+| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-023` |
 | `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `API_EDGE_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
-| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-022` |
+| `decisions/` | Accepted ADRs | `ADR-001` … `ADR-023` |
 | `architecture/` | System contracts, including the canonical wire profile | `VIBEPROOF_V1_PROTOCOL.md`, `VIBEPROOF_V1_CANONICAL_PROFILE.md`, `ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`, `NATIVE_CLIENT_AND_DAEMON.md`, `LEADERBOARD_STORAGE_AND_RANKING.md`, `PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `ARCHITECTURE.md` |
 | `product/` | Product surface and metrics | `PRODUCT_SPEC.md`, `ACCOUNTING_AND_TIME_CONTRACT.md`, `TOKEN_ACCOUNTING_SPEC.md`, `CASH_BURN_PRICING_PROVENANCE.md`, `SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, `ONBOARDING_AND_PRIVACY_VERIFICATION.md`, `METRICS.md`, `SOCIAL_RANKING_AND_ABUSE_RESEARCH.md` |
 | `privacy/` | **The boundary.** The invariant everything else serves, plus the personal-data record that follows from it | `PRIVACY_CONTRACT.md`, `PRIVACY_PRESERVING_USAGE_EVIDENCE.md`, `DATA_MAP.md` |
@@ -266,6 +266,7 @@ file in `docs/decisions/` to be reachable by path from this table.
 | ADR-020 | Confidence-weighted ranking | `docs/decisions/ADR-020-CONFIDENCE_WEIGHTED_RANKING.md` |
 | ADR-021 | Public-by-default leaderboard, and the risk the owner accepted | `docs/decisions/ADR-021-PUBLIC_BY_DEFAULT_RISK_ACCEPTANCE.md` |
 | ADR-022 | Erasure by cryptographic tombstone and key destruction | `docs/decisions/ADR-022-ERASURE_BY_KEY_DESTRUCTION.md` |
+| ADR-023 | CBOR, COSE and Ed25519 crate bakeoff: candidate set, disqualifications, deferred selection | `docs/decisions/ADR-023-CBOR_COSE_AND_ED25519_CRATE_BAKEOFF.md` |
 
 The numbering gap at ADR-015 is closed. Every ADR from ADR-001 to ADR-022 exists.
 

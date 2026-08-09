@@ -69,9 +69,9 @@
     },
     {
       "id": "D-012",
-      "decision": "Final Rust CBOR/COSE implementation crates are selected during implementation bakeoff behind an internal boundary",
+      "decision": "Final Rust CBOR/COSE implementation crates are selected during implementation bakeoff behind an internal boundary. ADR-023 fixes the half of this that is research: the candidate set is minicbor and dcbor for CBOR with ciborium as substrate only and cbor4ii as fallback, coset or a hand-written Sign1 for COSE, and ed25519-zebra in Rust with ed25519consensus or curve25519-voi in Go for cofactored verification. Three candidates are eliminated by primary sources rather than by preference: serde_cbor is archived and carries RUSTSEC-2021-0127 with no patched version, aws-nitro-enclaves-cose requires it transitively, and ed25519-dalek is disqualified for the verifier role because verify and verify_strict recompute R and compare bytes, which is the cofactorless rule D-192 rejects. Selection is not made: the reopen condition names malformed, fuzz, differential and resource tests, and none can run because no codec crate exists to wire a candidate into",
       "status": "research-required",
-      "validation_or_reopen": "malformed, fuzz, differential and resource tests pass"
+      "validation_or_reopen": "a vibeproof-codec crate exists with a candidate wired in and the malformed, differential and resource tests pass against it; the fuzz criterion additionally needs the owner to resolve its collision with the phase rule barring fuzz workflows"
     },
     {
       "id": "D-013",
@@ -1758,6 +1758,12 @@
       "decision": "Relabelling the public figure to Credited Token Burn moves pixels in the governed storyboard baselines, and an agent does not promote the new captures. Issue #64 asked for the baselines to be regenerated; `assets/ui/references/manifest.json` states that desktop, tablet and mobile baselines may change only after visual review of the workflow artifact, and that every governed viewport stores an exact reviewed SHA-256. A capture recorded as approved by the process that produced it would assert a review that did not happen, which is the same defect as an agent setting a review verdict. The drift measured by storyboard-visuals on the label change is recorded instead: public-profile desktop 0.147 per cent, tablet 0.127, mobile 0.372; rival-comparison desktop 0.093, tablet 0.080, mobile 0.261; board-standings desktop 0.064, tablet 0.046, mobile 0.011. Two exceed the 0.250 per cent threshold, both mobile, and the run fails on those. friends and activity-and-notifications match their reviewed captures exactly and are unaffected. storyboard-visuals is not a required check, so this does not block the label repair; the labels are the defect and the pixels are its consequence",
       "status": "accepted",
       "validation_or_reopen": "the owner reviews the workflow artifact and promotes the new captures, at which point the manifest's approved SHA-256 values change and this drift record is spent"
+    },
+    {
+      "id": "D-611",
+      "decision": "VIBEPROOF_V1_PROTOCOL.md claimed Rust satisfied the cofactored verification requirement through `ed25519-dalek`'s ZIP-215 verification mode. No such mode exists in any released version: `verify` and `verify_strict` recompute R' and compare it to the signature's R, which is the cofactorless rule, and the crate's only ZIP-215 behaviour is point decoding in `VerifyingKey::from_bytes`, whose documentation reads \"verifies the point is valid under ZIP-215 rules\". The document therefore stated that Go failed a requirement Rust met while both defaults fail it identically, which made Rust look exempt from a constraint D-192 states in language-neutral terms. Corrected: both verifiers need a ZIP-215-capable implementation, `ed25519-zebra` 2.x and later in Rust and ed25519consensus in Go, and `ed25519-dalek` stays suitable for signing",
+      "status": "accepted",
+      "validation_or_reopen": "`ed25519-dalek` adds a cofactored verification path, at which point it re-enters the verifier candidate set"
     }
   ]
 }
