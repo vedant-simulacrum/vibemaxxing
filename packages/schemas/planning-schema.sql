@@ -799,7 +799,26 @@ create table idempotency_records (
   response_body bytea,
   response_digest bytea check (response_digest is null or octet_length(response_digest) = 32),
   state text not null check (state in ('executing','committed','replayable-failure','conflict','expired','abandoned')),
+  -- The end of the replay window: after this the response bytes are discarded and
+  -- the row moves to `expired`. D-225 fixes it at 168 hours.
   expires_at timestamptz not null,
+  -- The end of the *row*, which is a different date and was doing the same job
+  -- through the same column. PF-020.
+  --
+  -- One column cannot bound both, and while it did, the only way to stop answering
+  -- a replay was to delete the row -- which makes the key fresh again, so the next
+  -- request carrying it is executed as a new mutation instead of refused. That is
+  -- the ambiguous-commit failure this ledger exists to prevent, reintroduced by the
+  -- cleanup. `x-idempotency-contract.expiry` already says the request "is not
+  -- re-executed under the same key", and nothing here could hold that promise past
+  -- the 168th hour.
+  --
+  -- `retain_until` is governed by `idempotency_record_retention_days` in
+  -- `packages/schemas/policy-defaults-v1.json`, default 30 days, and is strictly
+  -- later than `expires_at` so the refusal outlives the answer. Between the two
+  -- dates the row holds a key, a request digest and a state, and no response: enough
+  -- to refuse a reuse with 410, not enough to replay anything.
+  retain_until timestamptz not null,
   -- A committed or replayable-failure record is one a replay must be able to
   -- answer from. Leaving any of the three nullable in those states is what let a
   -- row claim to be replayable while holding nothing to replay.
@@ -811,6 +830,19 @@ create table idempotency_records (
   -- extension, so the pairing is constrained instead: neither appears alone.
   constraint idempotency_records_digest_pairs_with_body check (
     (response_body is null) = (response_digest is null)
+  ),
+  -- The refusal outlives the answer, by construction rather than by sweeper
+  -- ordering. Equality is refused too: a row whose retention ends the instant its
+  -- replay window does is the deleted row again.
+  constraint idempotency_records_retained_past_replay_window check (
+    retain_until > expires_at
+  ),
+  -- An expired row holds nothing to replay. Stated because the alternative --
+  -- keeping the bytes and relying on the read path to ignore them -- is a privacy
+  -- promise enforced in application code over data that is still there.
+  constraint idempotency_records_expired_holds_no_response check (
+    state <> 'expired'
+    or (response_status is null and response_body is null and response_digest is null)
   ),
   primary key (principal_type, principal_id, operation_id, idempotency_key)
 );
@@ -1224,7 +1256,6 @@ create unique index board_one_active_owner
 
 create index claims_account_received_idx on claims (account_id, received_at desc);
 create index notifications_account_created_idx on notifications (account_id, created_at desc);
-create index social_integrity_events_aggregate_idx on social_integrity_events (aggregate_id, aggregate_revision);
 
 -- Persistence owners for state-machine aggregates that the registry named
 -- but this contract did not define. AGENTS.md requires every mutable
@@ -2337,26 +2368,63 @@ create table presence_events (
 -- PostgreSQL indexes the referenced side of a foreign key and not the
 -- referencing side, so every unindexed referencing column turns a delete on the
 -- parent into a sequential scan of the child and holds a lock while it runs.
--- Ninety-eight tables carried four indexes. The erasure path in particular
--- deletes from `accounts`, which thirty-one tables reference.
+-- The erasure path in particular deletes from `accounts`, which thirty-one
+-- tables reference.
 --
--- Every index below is either the referencing side of a foreign key or a
--- documented query path named in
--- `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`. Each is created with
--- CONCURRENTLY in the migration that introduces it, which is one of the reasons
--- D-097 selected a migration tool with a no-transaction directive; this
--- contract states the target shape rather than the migration text.
+-- Two rules, both enforced by `validate_index_coverage` in
+-- `scripts/repository/validate_planning_artifacts.py` rather than by this
+-- comment:
+--
+--   1. every foreign key's referencing columns are the leading columns of a
+--      total index, primary key or unique constraint on the referencing table.
+--      A *partial* index does not satisfy it: PostgreSQL's referential check on
+--      a parent delete scans the child for any matching row, including the rows
+--      the predicate excludes;
+--   2. every index that supports no foreign key names the query it serves, in
+--      the access-path table of
+--      `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`. An index that
+--      names no query cannot be shown to be wrong, and cannot be dropped by
+--      anyone who did not write it.
+--
+-- Deliberately not stated: a count. Eighteen foreign keys were unindexed while
+-- this file held a hundred and thirty-two indexes and the sentence above claimed
+-- otherwise, because a total goes up when a redundant index is added and down
+-- when a wrong one is removed. Coverage is the signal; the total is not one.
+--
+-- Each is created with CONCURRENTLY in the migration that introduces it, which
+-- is one of the reasons D-097 selected a migration tool with a no-transaction
+-- directive; this contract states the target shape rather than the migration
+-- text.
 -- ---------------------------------------------------------------------------
 
 -- Foreign-key referencing side: identity and session.
 create index linked_identities_account_idx on linked_identities (account_id);
+-- The self-reference. A superseded identity row is read from its successor, and
+-- until PF-020 the reverse was the only direction with an index.
+create index linked_identities_superseded_idx on linked_identities (superseded_by_identity_id);
 create index web_sessions_account_idx on web_sessions (account_id);
+-- `token_family_id` carries no foreign key here; the index is the revoke-family path.
 create index web_sessions_family_idx on web_sessions (token_family_id);
 create index recovery_codes_account_idx on recovery_codes (account_id);
 create index optional_authenticators_account_idx on optional_authenticators (account_id);
 create index session_families_account_idx on session_families (account_id);
 create index native_sessions_family_idx on native_sessions (token_family_id);
 create index native_sessions_device_idx on native_sessions (device_id);
+
+-- Foreign-key referencing side: the OAuth transaction.
+--
+-- Five references and no index on any of them. `oauth_transactions_live_link_idx`
+-- covers `initiating_account_id`, but only `where state in
+-- ('created','redirected','callback-received')`; a delete on `accounts` has to
+-- find consumed, expired and failed transactions too, and a partial index cannot
+-- be used to prove their absence.
+create index oauth_transactions_initiating_account_idx on oauth_transactions (initiating_account_id);
+create index oauth_transactions_initiating_session_idx on oauth_transactions (initiating_web_session_id);
+create index oauth_transactions_resulting_account_idx on oauth_transactions (resulting_account_id);
+create index oauth_transactions_resulting_session_idx on oauth_transactions (resulting_session_id);
+create index oauth_transactions_resulting_identity_idx on oauth_transactions (resulting_identity_id);
+create index oauth_authorization_events_transaction_idx
+  on oauth_authorization_events (oauth_transaction_id);
 
 -- Foreign-key referencing side: device and lineage.
 create index devices_account_idx on devices (account_id);
@@ -2372,6 +2440,9 @@ create index checkpoint_receipts_device_idx on checkpoint_receipts (device_id, l
 -- Foreign-key referencing side: claims and verification.
 create index claim_challenges_account_idx on claim_challenges (account_id);
 create index claim_challenges_device_idx on claim_challenges (device_id);
+-- D-592 rekeyed the sequence onto the lineage; the challenge acquired the lineage
+-- reference in the same change and did not acquire its index.
+create index claim_challenges_lineage_idx on claim_challenges (lineage_id);
 create index claims_device_idx on claims (device_id);
 create index claims_challenge_idx on claims (challenge_id);
 create index claim_corrections_claim_idx on claim_corrections (claim_id);
@@ -2384,7 +2455,13 @@ create index verifier_appraisals_claim_idx on verifier_appraisals (claim_id);
 create index cost_interpretations_claim_idx on cost_interpretations (claim_id);
 create index cost_interpretations_dataset_idx on cost_interpretations (pricing_dataset_id);
 
--- Foreign-key referencing side: moderation and appeal.
+-- Moderation and appeal.
+--
+-- `moderation_cases.account_id` and `appeals.account_id` are deliberately not
+-- foreign keys -- both survive erasure unlinked -- so these two are documented
+-- query paths rather than referential ones. The heading used to say otherwise,
+-- which is how a reader would have concluded the delete on `accounts` was
+-- covered here.
 create index moderation_cases_account_idx on moderation_cases (account_id);
 create index moderation_actions_case_idx on moderation_actions (case_id);
 create index moderation_effects_case_idx on moderation_effects (case_id);
@@ -2402,6 +2479,10 @@ create index ranking_views_board_idx on ranking_views (board_id);
 create index periods_season_idx on periods (season_id);
 create index ranking_entries_domain_idx on ranking_entries (erasure_domain_id);
 create index score_contributions_period_domain_idx on score_contributions (period_id, erasure_domain_id);
+-- The domain alone. `score_contributions_period_domain_idx` leads with the period,
+-- so enumerating one participant's contributions across every period -- which is
+-- what an erasure does before it destroys the key -- could not use it.
+create index score_contributions_domain_idx on score_contributions (erasure_domain_id);
 create index score_contributions_claim_idx on score_contributions (claim_id);
 create index score_contributions_superseded_idx on score_contributions (superseded_by_contribution_id);
 create index ranking_movement_events_subject_idx on ranking_movement_events (subject_erasure_domain_id, created_at desc);
@@ -2423,7 +2504,16 @@ create index board_memberships_account_idx on board_memberships (account_id);
 create index board_invites_board_idx on board_invites (board_id);
 create index presence_leases_device_idx on presence_leases (device_id);
 create index notifications_actor_idx on notifications (actor_account_id);
+create index notification_events_actor_idx on notification_events (actor_account_id);
+-- `social_integrity_events.actor_account_id` carries no foreign key: the event
+-- outlives the actor. The index is a documented query path.
 create index social_integrity_events_actor_idx on social_integrity_events (actor_account_id);
+-- `social_integrity_events_aggregate_idx on (aggregate_id, aggregate_revision)`
+-- was here and is gone. `unique (aggregate_id, aggregate_revision)` on the table
+-- is implemented as a btree index over the same two columns in the same order, so
+-- the second one served no query the first did not and cost a write on every
+-- insert. It survived because nothing compared an index against the constraints
+-- around it.
 
 -- Foreign-key referencing side: admission.
 --
@@ -2442,9 +2532,21 @@ create index erasure_records_job_idx on erasure_records (deletion_job_id);
 create index deletion_tombstones_erasure_record_idx on deletion_tombstones (erasure_record_id);
 create index erasure_domain_links_absorbed_idx on erasure_domain_links (absorbed_erasure_domain_id);
 create index release_sets_root_idx on release_sets (tuf_root_version);
+create index tuf_metadata_root_idx on tuf_metadata (root_version);
 create index release_targets_profile_idx on release_targets (platform_profile_id);
 create index platform_certifications_profile_idx on platform_certifications (platform_profile_id);
 create index platform_certifications_release_idx on platform_certifications (release_set_id);
+create index platform_install_plans_release_idx on platform_install_plans (release_set_id);
+create index compatibility_edges_release_idx on compatibility_edges (release_set_id);
+-- Certification. `source_certifications_active_idx` is unique `where state =
+-- 'active'`, so it covers neither of these: retiring a platform profile has to
+-- see the candidate, testing, degraded, suspended, expired, superseded and
+-- retired rows as well.
+create index source_certifications_profile_idx on source_certifications (platform_profile_id);
+create index source_certifications_superseded_idx
+  on source_certifications (superseded_by_source_certification_id);
+create index certification_results_certification_idx
+  on certification_results (source_certification_id);
 create index update_installations_device_idx on update_installations (device_id);
 create index update_installations_release_idx on update_installations (release_set_id);
 create index update_installations_previous_release_idx on update_installations (previous_release_set_id);
@@ -2458,6 +2560,10 @@ create index update_installations_previous_release_idx on update_installations (
 create index erasure_keys_live_idx on erasure_keys (key_id) where destroyed_at is null;
 create index outbox_events_unprocessed_idx on outbox_events (created_at) where processed_at is null;
 create index idempotency_records_expiry_idx on idempotency_records (expires_at);
+-- The second sweep. `expires_at` finds the rows whose response bytes are due to be
+-- discarded; `retain_until` finds the rows themselves, days later. One index over
+-- one column cannot drive two sweeps with different dates and different effects.
+create index idempotency_records_retention_idx on idempotency_records (retain_until);
 create index claim_challenges_expiry_idx on claim_challenges (expires_at) where consumed_at is null;
 create index presence_leases_expiry_idx on presence_leases (expires_at);
 create index board_invites_expiry_idx on board_invites (expires_at) where state = 'pending';
@@ -2470,7 +2576,16 @@ create index local_deletion_commands_expiry_idx on local_deletion_commands (expi
 -- ranked identity, investigation, recovery, consolidation and fork tables.
 create index ranked_identities_erasure_domain_idx on ranked_identities (erasure_domain_id);
 create index ranked_identities_absorbed_into_idx on ranked_identities (absorbed_into_ranked_identity_id);
+-- Total, beside the partial `ranked_identities_account_live_idx`. That one is
+-- unique `where retired_at is null` and enforces one live identity per account;
+-- it cannot answer the delete on `accounts`, which has to see the retired rows a
+-- consolidation survivor keeps around precisely so they can be named.
+create index ranked_identities_account_idx on ranked_identities (account_id);
 create index identity_investigations_identity_idx on identity_investigations (ranked_identity_id);
+-- Same shape: `consolidation_cases_absorbed_idx` is unique over five open states,
+-- and `applied`, `rejected`, `reversed` and `expired` rows are outside it.
+create index consolidation_cases_absorbed_all_idx
+  on consolidation_cases (absorbed_ranked_identity_id);
 create index recovery_cases_account_idx on recovery_cases (account_id);
 create index recovery_cases_expiry_idx on recovery_cases (expires_at) where state in ('requested','verifying','cooling-off');
 create index identity_investigations_expiry_idx on identity_investigations (expires_at) where state = 'awaiting-participant';

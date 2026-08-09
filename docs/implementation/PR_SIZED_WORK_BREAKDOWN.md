@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 193 |
+| `not-started` | 191 |
 | `in-progress` | 7 |
-| `landed` | 54 |
+| `landed` | 56 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 230 assertions across 54 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 241 assertions across 56 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 10.
+Startable now — not done, and every dependency done: 8.
 
-`PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-048`, `OS-001`, `OS-003`, `OS-009`.
+`PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,7 +90,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 6 | `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
+| 1 | 5 | `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
 | 2 | 4 | `PF-022`, `PF-027`, `PF-031`, `PF-032` |
 | 3 | 1 | `PF-023` |
 | 4 | 1 | `PF-029` |
@@ -567,17 +567,35 @@ Evidence: unittest tests.ci.test_idempotency_ledger
 - retention: at least 30 days for high-impact mutations; claim-batch responses until later acknowledged checkpoint supersession.
 
 ### PF-020 — Transaction and ambiguous-commit model
-Files: `conformance/p1140e/sql-race-plans-v1.json`, `packages/schemas/planning-schema.sql`, `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`
-Acceptance: `sql-race-plans-v1.json` contains a plan for each of crash-before-commit, crash-after-commit, dropped response, takeover and expiry, each naming the exact rows a correct implementation leaves behind; `python3 scripts/repository/validate_p1140e_contracts.py` exits 0.
+Files: `conformance/p1140e/sql-race-plans-v1.json`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `docs/architecture/API_EDGE_CONTRACT.md`, `scripts/repository/validate_p1140e_contracts.py`, `tests/ci/test_sql_race_plans.py`
+Acceptance: `sql-race-plans-v1.json` states a case for each of crash-before-commit, crash-after-commit, dropped response, executing takeover and key expiry; every case in the file enumerates the rows a correct implementation leaves behind under `residual_rows`, each naming a table, a key and a presence of `present` or `absent`, with every present row stating column values that resolve against `packages/schemas/planning-schema.sql`; every case names at least one present and one absent row, and no two cases share an interleaving; `idempotency_records` bounds the replay window and the row's own retention with two different columns; `python3 scripts/repository/validate_p1140e_contracts.py` exits 0 and `python3 -m unittest tests.ci.test_sql_race_plans` exits 0 with a case per way the enumeration can rot back into prose.
 Depends: PF-019
 Repair: P-1140F-4
 Serves: SR-012
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_p1140e_contracts.py
+Evidence: unittest tests.ci.test_sql_race_plans
+Evidence: contains 31 conformance/p1140e/sql-race-plans-v1.json :: "presence": "absent"
+Evidence: contains 1 packages/schemas/planning-schema.sql :: idempotency_records_retained_past_replay_window
+Evidence: contains 1 packages/schemas/planning-schema.sql :: idempotency_records_expired_holds_no_response
+Evidence: absent packages/schemas/openapi-v1.yaml :: SR-012 stays open
 
 - idempotency, business effect, audit, outbox and exact response commit together;
 - crash before commit, crash after commit, dropped response, takeover and expiry cases;
 - expired high-impact keys reject reuse rather than becoming fresh mutations.
+
+**The acceptance is rewritten.** The original — "a plan for each of crash-before-commit, crash-after-commit, dropped response, takeover and expiry, each naming the exact rows a correct implementation leaves behind" — states the right requirement against a file that had no place to put a row and a validator with no rule that could read one. `sql-race-plans-v1.json` held fourteen cases, each with a `case_id`, a table list, `isolation: serializable`, a four-step `interleaving` and a one-line `expected`. All fourteen interleavings were the same four steps: `transaction-a-locks-authority`, `transaction-b-attempts-conflict`, `transaction-a-commits`, `transaction-b-rechecks`. The validator checked that the ids matched a hard-coded set, that the tables existed, and that no case claimed to have been executed — every one of which passes on a file whose cases are placeholders, which is what it was passing on. The rewritten criterion names the shape the requirement needs (`residual_rows`, present and absent, columns resolved against the DDL) and the test that fails when it decays.
+
+**One column bounded two different lifetimes, and the cleanup was the bug.** `idempotency_records` had `expires_at` and nothing else. `x-idempotency-contract.expiry` promised that a request past the window "is not re-executed under the same key", and the only mechanism available for ending a replay was deleting the row — after which the key is fresh, so the very next request carrying it is executed as a new mutation. The promise and the storage were opposites. `retain_until` splits them: `expires_at` ends the replay window at D-225's 168 hours and the response bytes are discarded there, `retain_until` ends the row under `idempotency_record_retention_days`, and `idempotency_records_retained_past_replay_window` refuses a row where the second is not strictly later than the first. `idempotency_records_expired_holds_no_response` makes the discarding a constraint rather than a promise kept in application code over bytes that are still on disk.
+
+The two figures had also been reading as a contradiction: D-225 says 168 hours, `policy-defaults-v1.json` says 30 days, and the disposition registry pointed the second at the same single column the first governed. They are not in conflict once they are bounding different things, and neither accepted decision had to be reopened to say so.
+
+**Three stale justifications, all outliving their holes.** `openapi-v1.yaml#x-idempotency-contract` still carried `open_finding: SR-012 stays open. This block is the API half. The persistence half — the nullable response_digest, the missing response-body column and the account-only primary key — is not repaired here`. All three were repaired, by PF-019 and PF-049, one and two units earlier. `API_EDGE_CONTRACT.md` carried the same paragraph in prose and told clients to treat byte-identical replay as specified rather than demonstrated for a reason that no longer existed. Neither is replaced with a closure claim: the block now records what is repaired and states that repaired is not closed, and that `conformance/p1140f/semantic-findings-v1.json` is the only authority for the finding's state.
+
+Two further stale facts fell out of reading the same paths: `SERVER_API_DATA_AND_RANKING_CONTRACT.md` still described the claim uniqueness constraints as `(device_id, sequence)` and `(device_id, payload_hash)`, which PF-010 moved onto the lineage, and the claim acceptance transaction still said "lock device sequence row" against a counter D-592 had rekeyed.
+
+This is SR-012's last unit. **No finding was touched.** `conformance/p1140f/semantic-findings-v1.json` is unmodified by this work, and it is not this unit's to modify: closure evidence cites the merge sha of the pull request that lands it, which cannot be known from inside that pull request.
 
 ### PF-021 — Ranking definition and audience authorization
 Files: `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
@@ -1020,13 +1038,26 @@ Evidence: absent packages/ui/src/concepts/product-storyboards.tsx :: All sources
 The defect as found: `PublicProfile` had 4 fields and `RankEntry` had 7, both `additionalProperties: false`, while the finished design system rendered avatars, evidence badges, rank movement, sparklines and board standings that no operation could supply.
 
 ### PF-048 — Author the indexing and partitioning plan
-Files: `packages/schemas/planning-schema.sql`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
-Acceptance: every foreign key and every documented query path has a supporting index; claims are partitioned as the contract states; `grep -c "CREATE INDEX" planning-schema.sql` is greater than 3.
+Files: `packages/schemas/planning-schema.sql`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_index_coverage.py`
+Acceptance: every foreign key's referencing columns lead a *total* index, primary key or unique constraint on the referencing table, with a partial index refused because PostgreSQL's referential check on a parent delete has to see the rows the predicate excludes; every index that supports no foreign key is named, with the query it serves, in the access-path table of `LEADERBOARD_STORAGE_AND_RANKING.md`, and every index that table names exists; no index repeats another index or a unique constraint column for column; the set of range-partitioned tables in the DDL equals the set the contract declares partitioned, on the same partition keys, each with a default partition; `python3 scripts/repository/validate_planning_artifacts.py --allow-no-postgres` exits 0 and `python3 -m unittest tests.ci.test_index_coverage` exits 0 with a case per rule.
 Depends: PF-038
 Est: 8-12
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_index_coverage
+Evidence: contains 1 packages/schemas/planning-schema.sql :: score_contributions_domain_idx
+Evidence: contains 6 packages/schemas/planning-schema.sql :: create index oauth_transactions_
+Evidence: absent packages/schemas/planning-schema.sql :: create index social_integrity_events_aggregate_idx
 
-**98 tables carry 3 indexes total** and zero `PARTITION BY`, while `SERVER_API_DATA_AND_RANKING_CONTRACT.md:70` states claims are partitioned by receipt month. The recorded figure was 73 tables; the DDL has grown and the index count has not. `friend_edges` and `rival_edges` have no reverse-direction index, so bidirectional queries sequential-scan. The 300 ms leaderboard SLO is unreachable as written, and `X-014` cannot produce evidence for a budget this makes unmeetable.
+**The acceptance is rewritten, and the old one was failing on a schema that satisfied it.** `grep -c "CREATE INDEX" planning-schema.sql` is greater than 3 — the DDL is written in lower case, so that case-sensitive grep answers **zero** against a file holding 132 indexes. This is the sixth naming-or-casing mismatch this repository has produced that finds no overlap at all, and it is the reason the unit still read `not-started` after commit `58976cf` had already written the index block, the access-path table and the partitioning section under this unit's own name.
+
+The rest of the old criterion was worse than wrong, it was backwards. A count rises when a redundant index is added and falls when a wrong one is removed, so the only number the unit stated moved against the thing it was measuring. Under it, the schema scored 132 while **eighteen foreign keys had no index at all**: all five on `oauth_transactions`, `score_contributions.erasure_domain_id`, `certification_results.source_certification_id`, `tuf_metadata.root_version`, `ranked_identities.account_id`, `notification_events.actor_account_id` and seven more. Five of those were invisible because a *partial* index covered the column — `oauth_transactions_live_link_idx` over three live states, `ranked_identities_account_live_idx` where `retired_at is null`, `consolidation_cases_absorbed_idx` over five open states, `source_certifications_active_idx` where `state = 'active'` — and a partial index cannot answer a parent delete, which has to prove the absence of *any* child row including the ones the predicate excludes. The erasure path is the one that suffers: it deletes from `accounts`, which thirty-one tables reference, and `score_contributions` could only be scanned by period.
+
+There was a redundant index too, which is the same signal read from the other end. `social_integrity_events_aggregate_idx` covered `(aggregate_id, aggregate_revision)` and the table already declared `unique (aggregate_id, aggregate_revision)`, which PostgreSQL implements as a btree over those columns in that order. It served no query the constraint did not and cost a write on every insert. Removing it lowered the count and improved the schema, which is the clearest statement available of why the count was never the signal.
+
+`validate_index_coverage` replaces it with coverage in both directions, and it is deliberately not a total. The second rule is the one that keeps the table honest: an index that supports no foreign key must name the query it serves, because an index justified by no query cannot be shown to be wrong and cannot be dropped by anyone who did not write it. Eighteen indexes were in that state, several of them filed under section headings in the DDL that claimed foreign-key support for columns that deliberately carry none — `moderation_cases.account_id`, `appeals.account_id`, `deletion_jobs.account_id`, `invite_codes.issued_by_account_id`, `organizations.owner_account_id` and `communities.owner_account_id` all outlive the account they name, on purpose, and a reader taking the heading at its word would have concluded the erasure delete was covered there.
+
+The unit's own note was stale in every figure it stated: 98 tables became 122, "3 indexes total" became 132, "zero `PARTITION BY`" became three range-partitioned tables with default partitions, and the claim that `SERVER_API_DATA_AND_RANKING_CONTRACT.md` partitions claims by receipt month had already been corrected to the opposite — `claims` cannot be partitioned without making three global uniqueness invariants per-month, and the contract says so. `friend_edges` and `rival_edges` did get their reverse-direction indexes. The 300 ms leaderboard SLO remains unmeasured: no index in this repository has been built against data, no plan has been read, and none of the required benchmarks has been run.
 
 ### PF-049 — Repair the idempotency contract
 Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`

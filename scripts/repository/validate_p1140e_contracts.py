@@ -33,6 +33,33 @@ def require(condition: bool, message: str) -> None:
         raise Failure(message)
 
 
+_COLUMN_RE = re.compile(
+    r"(?im)^\s{2}([a-z_][a-z0-9_]*)\s+"
+    r"(?:uuid|text|bytea|bigint|integer|smallint|boolean|timestamptz|numeric|jsonb|inet)\b"
+)
+
+
+def planning_table_columns(sql: str) -> dict[str, set[str]]:
+    """Map every planning table to the column names it declares.
+
+    The race plans name column values, and a plan naming a column that no longer
+    exists is the failure mode that made the previous version of that file worth
+    nothing: it read as a specification and resolved against nothing.
+    """
+    columns: dict[str, set[str]] = {}
+    starts = list(re.finditer(r"(?im)^create\s+table\s+([a-z_][a-z0-9_]*)\s*\(", sql))
+    for position, match in enumerate(starts):
+        end = starts[position + 1].start() if position + 1 < len(starts) else len(sql)
+        body = sql[match.end() : end]
+        body = "\n".join(
+            line for line in body.splitlines() if not line.lstrip().startswith("--")
+        )
+        columns[match.group(1)] = {
+            found.group(1) for found in _COLUMN_RE.finditer(body)
+        }
+    return columns
+
+
 def main() -> int:
     schema = load_json(CONF / "validation-matrix-v1.schema.json")
     matrix = load_json(CONF / "validation-matrix-v1.json")
@@ -249,6 +276,7 @@ def main() -> int:
 
     sql = (SCHEMAS / "planning-schema.sql").read_text(encoding="utf-8")
     tables = set(re.findall(r"(?im)^create\s+table\s+([a-z_][a-z0-9_]*)\s*\(", sql))
+    columns = planning_table_columns(sql)
     races = load_json(CONF / "sql-race-plans-v1.json")
     required_races = {
         "oauth-single-consume",
@@ -265,20 +293,98 @@ def main() -> int:
         "deletion-export-race",
         "local-delete-ack",
         "release-promote-rollback",
+        # PF-020. The ambiguous-commit family: the five moments at which a client
+        # and a server can disagree about whether a mutation happened.
+        "commit-crash-before-commit",
+        "commit-crash-after-commit",
+        "commit-dropped-response",
+        "commit-executing-takeover",
+        "commit-key-expiry",
     }
     require(
         {item["case_id"] for item in races["cases"]} == required_races,
         "SQL race plan set mismatch",
     )
+    # PF-020. Every case names the rows a correct implementation leaves behind.
+    #
+    # All fourteen original cases carried the same four generic interleaving steps
+    # -- lock, conflict, commit, recheck -- and one sentence of prose. That
+    # described a scenario and asserted nothing: no row, no column, no value, so
+    # nothing about it could be wrong. The checks below make the plan resolve
+    # against the schema it plans against.
+    seen_interleavings: dict[tuple[str, ...], str] = {}
     for case in races["cases"]:
+        case_id = case["case_id"]
         require(
             set(case["tables"]) <= tables,
-            f"SQL race references unknown table: {case['case_id']}",
+            f"SQL race references unknown table: {case_id}",
         )
         require(
             case["execution_state"] == "planned-runtime-evidence",
             "SQL race plan overclaims execution",
         )
+
+        steps = tuple(case["interleaving"])
+        require(
+            len(steps) >= 4,
+            f"SQL race plan states fewer than four steps: {case_id}",
+        )
+        require(
+            len(set(steps)) == len(steps),
+            f"SQL race plan repeats an interleaving step: {case_id}",
+        )
+        # The copy-paste that made the file vacuous is refused directly. Two cases
+        # with the same interleaving are one case written twice.
+        require(
+            steps not in seen_interleavings,
+            f"SQL race plans share one interleaving: {case_id} and "
+            f"{seen_interleavings.get(steps)}",
+        )
+        seen_interleavings[steps] = case_id
+
+        rows = case.get("residual_rows") or []
+        require(
+            bool(rows),
+            f"SQL race plan names no residual rows: {case_id}",
+        )
+        require(
+            sorted({row["table"] for row in rows}) == list(case["tables"]),
+            f"SQL race plan tables disagree with its residual rows: {case_id}",
+        )
+        presences = {row["presence"] for row in rows}
+        require(
+            presences <= {"present", "absent"},
+            f"SQL race plan states an unknown presence: {case_id}",
+        )
+        # A recovery plan that only says what survives, or only says what does not,
+        # is half a plan: the defect this file exists to refuse is always a row that
+        # is there and should not be, or the reverse.
+        require(
+            presences == {"present", "absent"},
+            f"SQL race plan states no present and absent pair: {case_id}",
+        )
+        for row in rows:
+            require(
+                bool(row.get("key")) and bool(row.get("note")),
+                f"SQL race residual row states no key or no note: {case_id}",
+            )
+            if row["presence"] == "absent":
+                require(
+                    "columns" not in row,
+                    f"SQL race plan describes the columns of an absent row: {case_id}",
+                )
+                continue
+            stated = row.get("columns") or {}
+            require(
+                bool(stated),
+                f"SQL race present row names no column values: {case_id}",
+            )
+            unknown = sorted(set(stated) - columns[row["table"]])
+            require(
+                not unknown,
+                f"SQL race residual row names columns {row['table']} does not "
+                f"define: {case_id} {unknown}",
+            )
 
     platform_registry = load_json(SCHEMAS / "platform-profile-registry-v1.json")
     source_ids: set[str] = set()
