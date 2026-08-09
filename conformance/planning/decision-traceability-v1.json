@@ -2377,6 +2377,29 @@
       "id": "D-612",
       "implementation_bearing": false,
       "reason": "corrects a work unit's acceptance criterion, which governs the planning record rather than the product"
+    },
+    {
+      "id": "D-613",
+      "implementation_bearing": true,
+      "normative_owner": "docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md; packages/schemas/disclosure-projection-v1.json",
+      "implementation_owner": "PF-043, consumed by PF-046 and the W web surfaces",
+      "machine_or_state_ownership": "verifier-appraisal aggregate; no state machine, because an appraisal is immutable and corrected by supersession rather than transitioned",
+      "platform_scope": "Server and web",
+      "required_executable_evidence": "validate_planning_artifacts.py holding AppraisalSummary equal to the appraisal record minus the two withheld fields, refusing the withheld names anywhere in openapi-v1.yaml, and refusing a non-self audience for the shape; tests.ci.test_appraisal_disclosure covering each refusal"
+    },
+    {
+      "id": "D-614",
+      "implementation_bearing": true,
+      "normative_owner": "docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md; docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md",
+      "implementation_owner": "PF-041, consumed by PF-042 and the A accounting epic",
+      "machine_or_state_ownership": "No aggregate. It is a derivation record over packages/schemas/normalized-event.schema.json and the producer binding registry",
+      "platform_scope": "Native collector on macOS, Linux and Windows",
+      "required_executable_evidence": "validate_planning_artifacts.py holding the supported metric set equal to the binding's declared metrics, requiring a replayed capture per metric, refusing a derivation that reads a stripped attribute, and refusing an undeclared disagreement with the bound accounting profile; tests.ci.test_otel_accounting_profile covering each refusal"
+    },
+    {
+      "id": "D-615",
+      "implementation_bearing": false,
+      "reason": "corrects two work units' acceptance criteria, which govern the planning record rather than the product"
     }
   ]
 }

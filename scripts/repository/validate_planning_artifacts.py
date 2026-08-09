@@ -301,6 +301,28 @@ ADAPTER_ONE_STRIP_LIST = (
     "user.id",
 )
 
+# PF-043, D-613. `AppraisalSummary` is `VerifierAppraisalResult` minus exactly these
+# two fields. The pair lives here rather than only in the OpenAPI description so that a
+# field added to the record forces a disclosure decision instead of arriving on the
+# wire by default: the top-level comparison below is an equality, so a new record field
+# fails until it is either projected or named as withheld.
+APPRAISAL_WITHHELD_FROM_SUBJECT = {
+    # D-381. `under-review` and `shadow-only` are the statement that an integrity case
+    # is open, and the participant reads the effect on their standing rather than the
+    # existence of a case.
+    "evaluated": "anomaly_disposition",
+    # The server verifier's own build digest. Not the participant's personal data and
+    # not needed to understand or appeal an outcome.
+    "policy": "implementation_sha256",
+}
+# A wire concern of the stored record. The document carries its own version.
+APPRAISAL_RECORD_ONLY = frozenset({"schema_version"})
+# D-143 admits one evidence vocabulary to the API, and it is not `public_state`.
+APPRAISAL_RENAMED = {"public_state": "evidence_class"}
+# Groups the projection reproduces whole. Listing them is what stops the nested
+# comparison being satisfied by a group the projection simply dropped.
+APPRAISAL_WHOLE_GROUPS = ("attestation", "dimensions", "validity", "supersession")
+
 
 def validate_adapter_one_boundary() -> None:
     """Prove the Claude Code OTLP identity attributes cannot survive either stage.
@@ -3335,7 +3357,7 @@ def validate_accounting_arithmetic() -> None:
 
 
 def evaluate_otel_series(
-    binding: dict[str, Any], series: list[dict[str, Any]]
+    binding: dict[str, Any], metric_name: str, series: list[dict[str, Any]]
 ) -> tuple[str, Any]:
     policy = binding["attribute_policy"]
     allowed = {
@@ -3353,7 +3375,17 @@ def evaluate_otel_series(
         for entry in policy["entries"]
         if entry["disposition"] == "drop"
     }
-    metric = binding["otel"]["metrics"][0]
+    # Selected by name rather than by position. Reading metrics[0] meant a binding
+    # could declare a second metric and have every vector silently replayed against
+    # the first one's category map, which is a registry implying exercised support it
+    # does not have.
+    metrics = {item["name"]: item for item in binding["otel"]["metrics"]}
+    if metric_name not in metrics:
+        raise ValidationFailure(
+            f"OTel capture vectors name metric {metric_name}, which binding "
+            f"{binding['binding_id']} does not declare"
+        )
+    metric = metrics[metric_name]
     category_attribute = metric["category_attribute"]
     category_map = {
         entry["attribute_value"]: entry["canonical_component"]
@@ -3498,12 +3530,26 @@ def validate_producer_bindings() -> None:
         "OTel capture vector IDs",
     )
     binding = bindings[capture["binding_id"]]
-    if capture["metric"] != binding["otel"]["metrics"][0]["name"]:
+    declared_metrics = {item["name"] for item in binding["otel"]["metrics"]}
+    if capture["metric"] not in declared_metrics:
         raise ValidationFailure("OTel capture vectors name a metric the binding omits")
+    # PF-041. Every metric a binding declares must be replayed by a capture, so a
+    # binding cannot list a metric it has never exercised. The vectors file carries one
+    # metric, so a binding declaring two would need a second vectors file before the
+    # second metric could be declared at all.
+    uncaptured = sorted(declared_metrics - {capture["metric"]})
+    if uncaptured:
+        raise ValidationFailure(
+            f"producer binding {capture['binding_id']} declares metrics no capture "
+            f"vector replays: {uncaptured}; a declared metric with no capture is "
+            "support the registry has not exercised"
+        )
 
     conditions: set[str] = set()
     for vector in capture["vectors"]:
-        outcome, detail = evaluate_otel_series(binding, vector["series"])
+        outcome, detail = evaluate_otel_series(
+            binding, capture["metric"], vector["series"]
+        )
         vector_id = vector["vector_id"]
         if vector["kind"] == "rejection":
             if outcome != "rejected":
@@ -3554,6 +3600,280 @@ def validate_producer_bindings() -> None:
         raise ValidationFailure(
             "OTel capture vectors do not cover every refusal condition: "
             f"missing {sorted(required_conditions - conditions)}"
+        )
+
+
+# The three hazards PF-041 records. Pinned here so the profile cannot drop one and
+# still pass: an omitted hazard is exactly the failure a receiver written against a
+# producer's documented behaviour rather than its default behaviour would make.
+OTEL_REQUIRED_HAZARDS = frozenset(
+    {
+        "identity-attributes-on-every-datapoint",
+        "default-on-prompt-logging",
+        "default-third-party-metrics-exporter",
+    }
+)
+
+
+def validate_otel_accounting_profile() -> None:
+    """Prove the OTLP-to-event profile is a map and that its support claims are exercised.
+
+    PF-041's acceptance was that the profile maps a captured OTLP payload to a
+    `NormalizedAccountingEvent` deterministically, with one real capture per supported
+    metric. The second half is checkable and is checked here by equality: the supported
+    metric set equals the metric set the binding declares, and each one names a capture
+    fixture that exists and replays that exact metric. The first half is not
+    satisfiable as written and the unit records why — an OTLP counter carries no
+    outcome, no retry and no event identity, and `certification.bundle_sha256` cannot
+    be written from any binding in this repository. So what is proven is narrower and
+    true: every top-level field of the target schema has exactly one declared origin,
+    the fields that cannot be read from the payload say so, and a disagreement with a
+    bound authority is declared rather than left for a reader to find.
+
+    The attribute check is the load-bearing one. A derivation may only read an
+    attribute the binding admits, so no field can be derived from an identity attribute
+    the strip list removes. That is D-099 expressed against the derivation table rather
+    than only against the receiver.
+    """
+    profile_schema = validate_schema_file(
+        SCHEMAS / "accounting-profile-otel-v1.schema.json"
+    )
+    profile = load_json(SCHEMAS / "accounting-profile-otel-v1.json")
+    validate_instance(profile_schema, profile, "OTel accounting profile")
+
+    for key in ("target_schema", "specification"):
+        if not (ROOT / profile[key]).exists():
+            raise ValidationFailure(
+                f"the OTel accounting profile names {key} {profile[key]}, which does "
+                "not exist"
+            )
+
+    bindings = {
+        entry["binding_id"]: entry
+        for entry in load_json(
+            CONFORMANCE / "accounting" / "producer-bindings-v1.json"
+        )["bindings"]
+    }
+    binding = bindings.get(profile["binding_id"])
+    if binding is None:
+        raise ValidationFailure(
+            f"the OTel accounting profile binds {profile['binding_id']}, which the "
+            "producer binding registry does not declare"
+        )
+    if binding["producer_kind"] != "otel":
+        raise ValidationFailure(
+            f"the OTel accounting profile binds {profile['binding_id']}, which is a "
+            f"{binding['producer_kind']} producer"
+        )
+
+    # One real capture per supported metric, and no metric declared without one.
+    supported = {item["name"]: item for item in profile["supported_metrics"]}
+    assert_unique(list(supported), "supported OTel metric names")
+    declared = {item["name"] for item in binding["otel"]["metrics"]}
+    if set(supported) != declared:
+        raise ValidationFailure(
+            "the OTel accounting profile's supported metrics differ from the metrics "
+            f"{profile['binding_id']} declares: "
+            f"only-in-profile={sorted(set(supported) - declared)} "
+            f"only-in-binding={sorted(declared - set(supported))}"
+        )
+    for name, entry in sorted(supported.items()):
+        path = ROOT / entry["capture_vectors"]
+        if not path.exists():
+            raise ValidationFailure(
+                f"supported metric {name} names capture vectors at "
+                f"{entry['capture_vectors']}, which do not exist"
+            )
+        capture = load_json(path)
+        if capture["metric"] != name:
+            raise ValidationFailure(
+                f"supported metric {name} names a capture fixture that replays "
+                f"{capture['metric']}"
+            )
+        if capture["binding_id"] != profile["binding_id"]:
+            raise ValidationFailure(
+                f"supported metric {name} names a capture fixture bound to "
+                f"{capture['binding_id']}"
+            )
+        if not any(
+            vector["kind"] == "datapoint-series" for vector in capture["vectors"]
+        ):
+            raise ValidationFailure(
+                f"supported metric {name} has only refusal vectors; a refusal proves "
+                "the receiver rejects something and never proves it can count"
+            )
+
+    unsupported = {item["name"] for item in profile["unsupported_metrics"]}
+    overlap = sorted(unsupported & set(supported))
+    if overlap:
+        raise ValidationFailure(
+            f"the OTel accounting profile calls the same metric supported and "
+            f"unsupported: {overlap}"
+        )
+    discarded = {item["name"] for item in binding["otel"]["discarded_metrics"]}
+    missing_discards = sorted(discarded - unsupported - {"*"})
+    if missing_discards:
+        raise ValidationFailure(
+            f"{profile['binding_id']} discards metrics the profile does not record as "
+            f"unsupported: {missing_discards}"
+        )
+
+    products = {
+        item["id"]
+        for item in load_json(CONFORMANCE / "adapters" / "agent-registry-v1.json")[
+            "products"
+        ]
+    }
+    named = {item["producer_id"] for item in profile["supported_metrics"]}
+    named |= {item["producer_id"] for item in profile["unsupported_metrics"]}
+    named |= {item["producer_id"] for item in profile["capture_surface_hazards"]}
+    unknown = sorted(named - products)
+    if unknown:
+        raise ValidationFailure(
+            f"the OTel accounting profile names producers the agent registry does not "
+            f"declare: {unknown}"
+        )
+
+    hazards = {item["kind"]: item for item in profile["capture_surface_hazards"]}
+    if set(hazards) != OTEL_REQUIRED_HAZARDS:
+        raise ValidationFailure(
+            "the OTel accounting profile's hazard set differs from PF-041: "
+            f"missing={sorted(OTEL_REQUIRED_HAZARDS - set(hazards))} "
+            f"extra={sorted(set(hazards) - OTEL_REQUIRED_HAZARDS)}"
+        )
+    identity = hazards["identity-attributes-on-every-datapoint"]
+    if tuple(sorted(identity.get("attributes", ()))) != ADAPTER_ONE_STRIP_LIST:
+        raise ValidationFailure(
+            "the OTel accounting profile's identity hazard does not name the D-099 "
+            f"strip list: {sorted(identity.get('attributes', ()))}"
+        )
+    if identity["configuration_is_a_control"] == "yes":
+        raise ValidationFailure(
+            "the OTel accounting profile records producer configuration as a full "
+            "control over the identity attributes; no documented setting removes "
+            "user.email, so the strip is a receiver obligation"
+        )
+
+    # One origin per top-level field of the target schema, by equality in both
+    # directions. A field added to the event fails here until someone says where it
+    # comes from, and a derivation for a field the event dropped fails too.
+    target = load_json(ROOT / profile["target_schema"])
+    fields = {item["field"]: item for item in profile["derivations"]}
+    assert_unique(
+        [item["field"] for item in profile["derivations"]], "derivation fields"
+    )
+    expected_fields = set(target["properties"])
+    if set(fields) != expected_fields:
+        raise ValidationFailure(
+            "the OTel accounting profile does not derive every field of "
+            f"{profile['target_schema']}: "
+            f"only-in-profile={sorted(set(fields) - expected_fields)} "
+            f"only-in-target={sorted(expected_fields - set(fields))}"
+        )
+
+    admitted = {
+        entry["attribute"]
+        for entry in binding["attribute_policy"]["entries"]
+        if entry["disposition"] in {"allow", "transform"}
+    }
+    refused = {
+        entry["attribute"]
+        for entry in binding["attribute_policy"]["entries"]
+        if entry["disposition"] in {"strip", "drop"}
+    }
+    contradictions = {
+        item["contradiction_id"] for item in profile["known_contradictions"]
+    }
+    for name, entry in sorted(fields.items()):
+        attributes = set(entry.get("otlp_attributes", ()))
+        if attributes and entry["origin"] not in {"otlp-attribute", "otlp-datapoint"}:
+            raise ValidationFailure(
+                f"derivation {name} reads OTLP attributes with origin "
+                f"{entry['origin']}, which is not a reading of the payload"
+            )
+        forbidden = sorted(attributes & refused)
+        if forbidden:
+            raise ValidationFailure(
+                f"derivation {name} reads attributes the binding strips or drops: "
+                f"{forbidden}"
+            )
+        unknown_attributes = sorted(attributes - admitted)
+        if unknown_attributes:
+            raise ValidationFailure(
+                f"derivation {name} reads attributes the binding does not admit: "
+                f"{unknown_attributes}"
+            )
+        if entry["origin"] == "not-derivable-from-otlp":
+            if entry["determinism"] != "not-observable":
+                raise ValidationFailure(
+                    f"derivation {name} is not derivable from OTLP and claims "
+                    f"determinism {entry['determinism']}; a value the channel carries "
+                    "no fact about is a declared stand-in, not an observation"
+                )
+            # A scalar field must name the literal that stands in for the missing
+            # fact. An object field cannot, and saying so by type rather than by
+            # exception is what keeps this from being a list of excused fields.
+            is_object = "properties" in target["properties"][name]
+            if not is_object and "constant" not in entry:
+                raise ValidationFailure(
+                    f"derivation {name} carries no fact and no constant, so nothing "
+                    "says what is written"
+                )
+        blocked = entry.get("blocked_by")
+        if blocked is not None and blocked not in contradictions:
+            raise ValidationFailure(
+                f"derivation {name} is blocked by {blocked}, which "
+                "known_contradictions does not declare"
+            )
+
+    if fields["count_authority"].get("constant") != profile["count_authority"]:
+        raise ValidationFailure(
+            "the OTel accounting profile's count_authority and its own derivation of "
+            "that field disagree"
+        )
+
+    # The count_authority disagreement is computed rather than trusted, so the
+    # declaration cannot outlive the disagreement and the disagreement cannot outlive
+    # the declaration.
+    profiles = {
+        item["profile_id"]: item
+        for item in load_json(
+            CONFORMANCE / "accounting" / "accounting-profiles-v1.json"
+        )["profiles"]
+    }
+    bound = profiles[binding["accounting_profile"]["id"]]
+    authorities = {field["authority"] for field in bound["source_fields"]}
+    declared_contradictions = {
+        item["field"] for item in profile["known_contradictions"]
+    }
+    disagrees = authorities != {profile["count_authority"]}
+    if disagrees and "count_authority" not in declared_contradictions:
+        raise ValidationFailure(
+            f"{bound['profile_id']} declares its source fields {sorted(authorities)} "
+            f"while this profile writes count_authority {profile['count_authority']}, "
+            "and no known_contradictions entry declares it"
+        )
+    if not disagrees and "count_authority" in declared_contradictions:
+        raise ValidationFailure(
+            "a count_authority contradiction is declared and the bound accounting "
+            "profile now agrees; remove the entry rather than leaving a record that "
+            "describes nothing"
+        )
+
+    # The certification gap is computed the same way: a binding that acquires a
+    # bundle digest must not keep a declaration saying it has none.
+    bundle = binding["certification"]["tuple"]["bundle_sha256"]
+    certification_declared = "certification" in declared_contradictions
+    if bundle is None and not certification_declared:
+        raise ValidationFailure(
+            f"{profile['binding_id']} carries no certification bundle digest while "
+            "normalized-event.schema.json requires one, and no known_contradictions "
+            "entry declares it"
+        )
+    if bundle is not None and certification_declared:
+        raise ValidationFailure(
+            f"{profile['binding_id']} now carries a certification bundle digest; the "
+            "declared certification contradiction has outlived its hole"
         )
 
 
@@ -3918,6 +4238,197 @@ def validate_evidence_chain() -> None:
     )
 
 
+def enum_values(node: dict[str, Any]) -> frozenset:
+    """Every literal a node admits, ignoring the null limb.
+
+    `const`, `enum` and a `oneOf` over either are three spellings of the same
+    statement, and the record and the API document do not use the same one.
+    """
+    if "const" in node:
+        return frozenset({node["const"]})
+    if "enum" in node:
+        return frozenset(value for value in node["enum"] if value is not None)
+    values: set = set()
+    for branch in node.get("oneOf", []):
+        values |= enum_values(branch)
+    return frozenset(values)
+
+
+def enum_map(schema: dict[str, Any], prefix: str = "") -> dict[str, frozenset]:
+    """Flatten a schema to `path -> admitted literals` for every field that has any."""
+    found: dict[str, frozenset] = {}
+    for name, node in (schema.get("properties") or {}).items():
+        path = f"{prefix}{name}"
+        if "properties" in node:
+            found.update(enum_map(node, f"{path}."))
+            continue
+        values = enum_values(node)
+        if values:
+            found[path] = values
+    return found
+
+
+def validate_appraisal_disclosure() -> None:
+    """Prove `ClaimRecord.appraisal_id` resolves, and to a projection rather than a record.
+
+    PF-043's acceptance is that the reference resolves to a defined schema and a
+    retrievable operation. Resolving it is the easy half. The half that decides whether
+    the operation may exist at all is that an appraisal is integrity-private: the
+    identifier is classified `self` on a `self` shape, so there is no non-owner audience
+    for any field, and two fields are withheld from the owner as well.
+
+    So this proves four things a description alone cannot. The operation exists, is
+    authenticated, and answers with `AppraisalSummary`. That shape is the record minus
+    exactly `APPRAISAL_WITHHELD_FROM_SUBJECT`, by equality in both directions, so a
+    field added to `appraisal-result-v1.schema.json` fails here until someone decides
+    whether the subject sees it. The two withheld names appear nowhere in the OpenAPI
+    document, so their absence is uniform and cannot itself be read as a signal. And the
+    disclosure projection classifies the shape as `self`.
+
+    None of it is evidence that any handler enforces ownership. It is evidence that no
+    shape in this document offers a field that the privacy record refuses.
+    """
+    record = load_json(SCHEMAS / "appraisal-result-v1.schema.json")
+    spec = load_yaml(SCHEMAS / "openapi-v1.yaml")
+    api = spec["components"]["schemas"]
+
+    if "appraisal_id" not in api["ClaimRecord"]["properties"]:
+        raise ValidationFailure(
+            "ClaimRecord no longer carries appraisal_id; this check exists because it "
+            "did and nothing resolved it"
+        )
+    operations = {
+        operation["operationId"]: operation
+        for item in spec["paths"].values()
+        for method, operation in item.items()
+        if isinstance(operation, dict) and "operationId" in operation
+    }
+    if "getAppraisal" not in operations:
+        raise ValidationFailure(
+            "ClaimRecord.appraisal_id names an appraisal no operation retrieves"
+        )
+    operation = operations["getAppraisal"]
+    returned = (
+        operation["responses"]["200"]["content"]["application/json"]["schema"]
+    ).get("$ref")
+    if returned != "#/components/schemas/AppraisalSummary":
+        raise ValidationFailure(
+            f"getAppraisal answers with {returned}, not the AppraisalSummary "
+            "projection; returning the stored record would publish the two fields "
+            "D-381 and minimisation keep from the subject"
+        )
+    if operation.get("security") == [] or operation.get("x-authorization") != (
+        "authenticated-account"
+    ):
+        raise ValidationFailure(
+            "getAppraisal is not authenticated; an appraisal is integrity-private and "
+            "has no public audience"
+        )
+
+    summary = api["AppraisalSummary"]
+    record_properties = set(record["properties"])
+    expected = (
+        record_properties - APPRAISAL_RECORD_ONLY - set(APPRAISAL_RENAMED)
+    ) | set(APPRAISAL_RENAMED.values())
+    declared = set(summary["properties"])
+    if declared != expected:
+        raise ValidationFailure(
+            "AppraisalSummary does not project the appraisal record: "
+            f"only-in-api={sorted(declared - expected)} "
+            f"only-in-record={sorted(expected - declared)}"
+        )
+    if set(summary["required"]) != expected:
+        raise ValidationFailure(
+            "AppraisalSummary declares an optional field; an appraisal field that may "
+            "be absent is a per-response redaction, and a redaction that fails open "
+            "publishes it"
+        )
+
+    for group, withheld in APPRAISAL_WITHHELD_FROM_SUBJECT.items():
+        carried = set(record["properties"][group]["properties"])
+        if withheld not in carried:
+            raise ValidationFailure(
+                f"the appraisal record no longer carries {group}.{withheld}, so the "
+                "justification for withholding it has outlived the field; remove the "
+                "entry rather than leaving a rule that guards nothing"
+            )
+        projected = set(summary["properties"][group]["properties"])
+        if projected != carried - {withheld}:
+            raise ValidationFailure(
+                f"AppraisalSummary.{group} differs from the record minus {withheld}: "
+                f"only-in-api={sorted(projected - (carried - {withheld}))} "
+                f"only-in-record={sorted((carried - {withheld}) - projected)}"
+            )
+
+    for group in APPRAISAL_WHOLE_GROUPS:
+        carried = set(record["properties"][group]["properties"])
+        projected = set(summary["properties"][group]["properties"])
+        if projected != carried:
+            raise ValidationFailure(
+                f"AppraisalSummary.{group} is not the whole record group: "
+                f"only-in-api={sorted(projected - carried)} "
+                f"only-in-record={sorted(carried - projected)}"
+            )
+
+    expected_enums: dict[str, frozenset] = {}
+    for path, values in enum_map(record).items():
+        head, _, tail = path.partition(".")
+        if head in APPRAISAL_RECORD_ONLY:
+            continue
+        if tail and APPRAISAL_WITHHELD_FROM_SUBJECT.get(head) == tail:
+            continue
+        expected_enums[APPRAISAL_RENAMED.get(path, path)] = values
+    projected_enums = enum_map(summary)
+    if projected_enums != expected_enums:
+        differing = sorted(
+            path
+            for path in set(projected_enums) | set(expected_enums)
+            if projected_enums.get(path) != expected_enums.get(path)
+        )
+        raise ValidationFailure(
+            "AppraisalSummary admits different values from the appraisal record at: "
+            f"{differing}"
+        )
+
+    # The withheld names appear nowhere in the document, so no other shape reintroduces
+    # them and their absence from this one carries no signal.
+    def property_names(node: Any) -> set[str]:
+        names: set[str] = set()
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == "properties" and isinstance(value, dict):
+                    names |= set(value)
+                names |= property_names(value)
+        elif isinstance(node, list):
+            for item in node:
+                names |= property_names(item)
+        return names
+
+    leaked = sorted(
+        set(APPRAISAL_WITHHELD_FROM_SUBJECT.values()) & property_names(spec)
+    )
+    if leaked:
+        raise ValidationFailure(
+            f"the OpenAPI document declares withheld appraisal fields: {leaked}"
+        )
+
+    projections = {
+        item["api_schema"]: item
+        for item in load_json(SCHEMAS / "disclosure-projection-v1.json")["projections"]
+    }
+    if "AppraisalSummary" not in projections:
+        raise ValidationFailure(
+            "the disclosure projection does not classify AppraisalSummary, so the "
+            "audience of an integrity-private shape is unrecorded"
+        )
+    if projections["AppraisalSummary"]["audience"] != "self":
+        raise ValidationFailure(
+            "AppraisalSummary is projected to "
+            f"{projections['AppraisalSummary']['audience']}; an appraisal has no "
+            "audience but its own subject"
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -3938,12 +4449,20 @@ def main() -> int:
         ("accounting arithmetic vectors", validate_accounting_arithmetic),
         ("producer bindings and OTel capture vectors", validate_producer_bindings),
         (
+            "OTel accounting profile and capture-surface hazards",
+            validate_otel_accounting_profile,
+        ),
+        (
             "observer equivalence and deduplication vectors",
             validate_observer_equivalence,
         ),
         (
             "source receipt, appraisal policy and appraisal result",
             validate_evidence_chain,
+        ),
+        (
+            "appraisal retrieval and subject disclosure",
+            validate_appraisal_disclosure,
         ),
         (
             "identity lifecycle, presence and viewer authorization contracts",

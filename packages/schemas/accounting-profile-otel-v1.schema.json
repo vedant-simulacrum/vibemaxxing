@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/accounting-profile-otel-v1.json",
+  "title": "OtelAccountingProfile v1",
+  "description": "The stage between an OTLP export and a NormalizedAccountingEvent. packages/schemas/producer-accounting-binding-v1.schema.json already takes an OTLP counter series to canonical token components, and packages/schemas/accounting-profile.schema.json already takes source fields to those components; neither says where the other twenty-one fields of packages/schemas/normalized-event.schema.json come from, so two collectors could agree on a token total and disagree on the event. This record names one origin and one determinism class for every top-level field of that event, so the fields that an OTLP payload cannot supply are counted rather than assumed. It also carries the metric support set and the capture-surface hazards, and both are written so that a claim needs evidence: a supported metric names a capture fixture that exists, and a disagreement with a bound authority must be declared rather than left for a reader to notice.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_id",
+    "semantic_version",
+    "binding_id",
+    "target_schema",
+    "specification",
+    "publication_rule",
+    "count_authority",
+    "supported_metrics",
+    "unsupported_metrics",
+    "capture_surface_hazards",
+    "known_contradictions",
+    "derivations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "profile_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "semantic_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "binding_id": {
+      "description": "The producer binding in conformance/accounting/producer-bindings-v1.json whose attribute policy, metric shape and reset detection this profile continues. One binding, because a derivation that read two attribute policies would have two answers for a stripped attribute.",
+      "$ref": "#/$defs/registered_id"
+    },
+    "target_schema": {
+      "$ref": "#/$defs/repository_path"
+    },
+    "specification": {
+      "$ref": "#/$defs/repository_path"
+    },
+    "publication_rule": {
+      "$ref": "#/$defs/prose"
+    },
+    "count_authority": {
+      "description": "The authority the collector can attest for a count that reached it through this binding. It is the value written to NormalizedAccountingEvent.count_authority and its vocabulary is that field's.",
+      "enum": [
+        "provider-reported",
+        "runtime-reported",
+        "source-reported",
+        "exact-reconstruction"
+      ]
+    },
+    "supported_metrics": {
+      "description": "A metric is supported only when a capture fixture in this repository replays it. The array is compared for equality against the binding's declared metrics, so a metric can neither be claimed without a capture nor declared in the binding without appearing here.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "producer_id",
+          "capture_vectors",
+          "capture_evidence_kind",
+          "assessed_on"
+        ],
+        "properties": {
+          "name": {
+            "$ref": "#/$defs/metric_name"
+          },
+          "producer_id": {
+            "$ref": "#/$defs/registered_id"
+          },
+          "capture_vectors": {
+            "$ref": "#/$defs/repository_path"
+          },
+          "capture_evidence_kind": {
+            "enum": [
+              "exercised-on-hardware",
+              "published-surface-read"
+            ]
+          },
+          "assessed_on": {
+            "type": "string",
+            "format": "date"
+          },
+          "note": {
+            "$ref": "#/$defs/prose"
+          }
+        }
+      }
+    },
+    "unsupported_metrics": {
+      "description": "Metrics this profile knows of and does not consume. `no-capture` is the honest state for a metric a published surface describes and no fixture in this repository replays; it is not a plan and it is not partial support.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "producer_id",
+          "state",
+          "reason"
+        ],
+        "properties": {
+          "name": {
+            "$ref": "#/$defs/metric_name"
+          },
+          "producer_id": {
+            "$ref": "#/$defs/registered_id"
+          },
+          "state": {
+            "enum": [
+              "no-capture",
+              "discarded-server-owned",
+              "discarded-carries-no-token-fact"
+            ]
+          },
+          "reason": {
+            "$ref": "#/$defs/prose"
+          }
+        }
+      }
+    },
+    "capture_surface_hazards": {
+      "description": "Properties of a producer's default configuration that a receiver must assume rather than hope for. Each one names what the default is, what the receiver does about it, and whether producer configuration is a control at all.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hazard_id",
+          "producer_id",
+          "kind",
+          "default_state",
+          "receiver_obligation",
+          "configuration_is_a_control",
+          "reference"
+        ],
+        "properties": {
+          "hazard_id": {
+            "$ref": "#/$defs/registered_id"
+          },
+          "producer_id": {
+            "$ref": "#/$defs/registered_id"
+          },
+          "kind": {
+            "enum": [
+              "identity-attributes-on-every-datapoint",
+              "default-on-prompt-logging",
+              "default-third-party-metrics-exporter"
+            ]
+          },
+          "default_state": {
+            "$ref": "#/$defs/prose"
+          },
+          "receiver_obligation": {
+            "$ref": "#/$defs/prose"
+          },
+          "configuration_is_a_control": {
+            "enum": [
+              "no",
+              "partial",
+              "yes"
+            ]
+          },
+          "attributes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "reference": {
+            "$ref": "#/$defs/prose"
+          }
+        }
+      }
+    },
+    "known_contradictions": {
+      "description": "Where this profile and another accepted authority say different things about the same field. Declaring one is not resolving it. The validator requires a declaration for every disagreement it can compute and refuses a declaration for a disagreement that no longer exists, so an entry cannot outlive its hole.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contradiction_id",
+          "field",
+          "this_profile",
+          "other_authority",
+          "other_value",
+          "effect",
+          "owner"
+        ],
+        "properties": {
+          "contradiction_id": {
+            "$ref": "#/$defs/registered_id"
+          },
+          "field": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "this_profile": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "other_authority": {
+            "$ref": "#/$defs/repository_path"
+          },
+          "other_value": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "effect": {
+            "$ref": "#/$defs/prose"
+          },
+          "owner": {
+            "type": "string",
+            "pattern": "^[A-Z]+-[0-9]{3}$"
+          }
+        }
+      }
+    },
+    "derivations": {
+      "description": "One entry for every top-level property of the target schema, no more and no fewer. The equality is what makes a field added to NormalizedAccountingEvent fail here until someone says where it comes from.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "origin",
+          "determinism",
+          "rule"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "maxLength": 64
+          },
+          "origin": {
+            "description": "Where the value comes from. `not-derivable-from-otlp` is the honest origin for a field the channel carries no fact about, and it is the one that keeps this record from reading as a complete map.",
+            "enum": [
+              "otlp-datapoint",
+              "otlp-attribute",
+              "producer-binding",
+              "accounting-profile",
+              "platform-registry",
+              "model-registry",
+              "adapter-constant",
+              "collector-state",
+              "not-derivable-from-otlp"
+            ]
+          },
+          "determinism": {
+            "description": "`deterministic` means two independent receivers of the same payload write the same value. `device-scoped` means the value is stable on one device and unreproducible off it, because a device-local key produced it. `collector-minted` means the receiver invented it. `not-observable` means the channel carries no fact and the value is a declared constant standing in for one.",
+            "enum": [
+              "deterministic",
+              "device-scoped",
+              "collector-minted",
+              "not-observable"
+            ]
+          },
+          "rule": {
+            "$ref": "#/$defs/prose"
+          },
+          "otlp_attributes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "constant": {
+            "type": [
+              "string",
+              "boolean",
+              "integer",
+              "null"
+            ]
+          },
+          "blocked_by": {
+            "description": "A contradiction_id from known_contradictions. Present when the field cannot be written at all today.",
+            "$ref": "#/$defs/registered_id"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "metric_name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[._][a-z0-9]+)*$",
+      "maxLength": 200
+    },
+    "repository_path": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._/-]+$",
+      "maxLength": 200
+    },
+    "prose": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 900
+    }
+  }
+}

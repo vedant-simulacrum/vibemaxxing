@@ -217,7 +217,7 @@ The SLM is post-launch research only. It is not an evidence source, accounting a
 
 ## Disclosure projection
 
-Which of these figures reaches whom is a record rather than a property of whichever response shape was written first. `packages/schemas/disclosure-projection-v1.json` classifies every property of seven API schemas by audience — `self`, `authorized-viewer`, `public` — and by the observed-versus-derived line D-108 uses to decide Article 20 portability. D-393 records the choices, and the validator resolves every field against `packages/schemas/openapi-v1.yaml` so the projection cannot drift from the shapes it governs.
+Which of these figures reaches whom is a record rather than a property of whichever response shape was written first. `packages/schemas/disclosure-projection-v1.json` classifies every property of eight API schemas by audience — `self`, `authorized-viewer`, `public` — and by the observed-versus-derived line D-108 uses to decide Article 20 portability. D-393 records the choices, and the validator resolves every field against `packages/schemas/openapi-v1.yaml` so the projection cannot drift from the shapes it governs. The eighth is `AppraisalSummary` under D-613: an appraisal is integrity-private, so `getAppraisal` has no audience but its own subject, and two of the record's fields are withheld from the subject too.
 
 The load-bearing rule is that no field may be narrower than the shape carrying it. A narrower field on a wider shape is a redaction the server performs per response, and a redaction that fails open publishes the field; narrowing is therefore expressed by a separate shape, which is what `SelfRankEntry` is for.
 

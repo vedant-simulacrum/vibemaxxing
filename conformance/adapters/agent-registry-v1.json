@@ -27,7 +27,8 @@
         "signals":["codex.turn.token_usage"],
         "coverage_gaps":["codex exec emits zero metrics","codex mcp-server emits no metrics"],
         "known_defects":[
-          {"reference":"openai/codex#12913","effect":"two execution surfaces are silent, so any total derived from this adapter omits whatever ran through them","measured_magnitude":"zero datapoints from exec and mcp-server"}
+          {"reference":"openai/codex#12913","effect":"two execution surfaces are silent, so any total derived from this adapter omits whatever ran through them","measured_magnitude":"zero datapoints from exec and mcp-server"},
+          {"reference":"published Codex CLI [otel] configuration surface, read 2026-08-06","effect":"metrics_exporter defaults to statsig rather than none, so telemetry enabled without pinning the exporter sends token metrics to a third party instead of to the local collector; no instruction in this product may tell a participant to enable Codex telemetry without setting it, and the collector can neither detect nor prevent the third-party export","measured_magnitude":"default-on third-party metrics export"}
         ],
         "notes":"Target tier lowered from hardened-certified because a total over an incomplete surface cannot support a hardened claim, and because OpenTelemetry capture is attested-local under D-077 rather than source-bound."
       }

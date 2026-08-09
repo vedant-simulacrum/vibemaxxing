@@ -986,6 +986,76 @@ paths:
           $ref: '#/components/responses/Problem'
       parameters:
         - $ref: '#/components/parameters/Id'
+  /appraisals/{id}:
+    get:
+      operationId: getAppraisal
+      x-authorization: authenticated-account
+      x-recent-auth: not-required
+      x-idempotency: not-applicable
+      description: >-
+        The verifier appraisal behind one of the caller's own accepted claims,
+        returned as a projection and never as the stored record.
+
+
+        Self-only in every field. `ClaimRecord` is a self-audience shape under
+        D-393 and `ClaimRecord.appraisal_id` is classified `self` there, so an
+        appraisal identifier is only ever legible to the participant who
+        submitted the claim. There is no non-owner audience for any field of
+        this response, and no widening of it exists: a caller who is not that
+        participant is answered 404 and never 403, because 403 would confirm
+        that the appraisal exists and an appraisal binds one-to-one to a claim,
+        so a confirmed identifier is a confirmed submission by someone. The 403
+        this operation declares is the caller's own `INVITE_REQUIRED` or
+        `NATIVE_SESSION_DEVICE_REVOKED` and is never an ownership answer.
+
+
+        What the subject does see is the effect on their own standing, which
+        D-084 requires be told to the sanctioned participant together with the
+        appeal route: `acceptance_outcome`, the seven `dimensions`,
+        `awarded_profile_id`, `evidence_class`, `ranking_eligibility`,
+        `reason_codes`, `validity` and `supersession`. Appealability is read
+        from `packages/schemas/reason-codes-v1.json` against the returned
+        reason codes. This operation is not the D-084 notice and does not
+        create one; the notice is a server-inbox item.
+
+
+        Two fields of `VerifierAppraisalResult` are withheld from the subject as
+        well as from every other viewer, and the projection exists so that the
+        narrowing is a schema boundary rather than a per-response redaction.
+        `evaluated.anomaly_disposition` carries `under-review` and
+        `shadow-only`; disclosing either tells the participant that an integrity
+        case is open, which D-381 forbids — the participant reads the effect on
+        their standing and is never told a case exists.
+        `policy.implementation_sha256` is the server verifier's own build
+        digest, which is not the participant's personal data and is not needed
+        to understand or appeal the outcome. Neither field appears in any
+        response of this document, so their absence is uniform and carries no
+        signal.
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: AppraisalSummary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppraisalSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Id'
   /leaderboards/{scope}/{period}:
     get:
       operationId: getLeaderboard
@@ -3050,6 +3120,15 @@ components:
         appraisal_id:
           type: string
           format: uuid
+          description: >-
+            The verifier appraisal that decided this claim. It is retrieved
+            through operationId `getAppraisal`, which answers with
+            `AppraisalSummary` — the self-only projection of
+            `packages/schemas/appraisal-result-v1.schema.json`. The identifier
+            is classified `self` in
+            `packages/schemas/disclosure-projection-v1.json` because the
+            appraisal it names is integrity-private, so it never reaches a
+            viewer who is not the submitter of this claim.
         accepted_at:
           type: string
           format: date-time
@@ -3059,6 +3138,274 @@ components:
             - standard
             - imported
           description: The awarded public evidence state from packages/schemas/evidence-profile-policy-v1.json. The server verifier assigns it; a client field requesting one is ignored under the policy's client-requested-public-state rule. Under ADR-020 the class is a weight on Credited Token Burn rather than a badge, and under D-100 no provider offers an individual-account attestation path, so the class assesses the quality of a self-report and is not a confirmation from any provider.
+    AppraisalSummary:
+      type: object
+      additionalProperties: false
+      description: >-
+        The self-only projection of `VerifierAppraisalResult`
+        (`packages/schemas/appraisal-result-v1.schema.json`). It carries every
+        field of that record except `schema_version`, which is a wire concern of
+        the stored record rather than of this document, and except the two the
+        subject is not told: `evaluated.anomaly_disposition` under D-381 and
+        `policy.implementation_sha256` as data that is not the participant's
+        own. The record's `public_state` crosses the boundary as
+        `evidence_class`, which is the one evidence vocabulary D-143 admits to
+        the API.
+      required:
+        - appraisal_id
+        - claim_id
+        - canonical_claim_sha256
+        - evidence_bundle_sha256
+        - policy
+        - authority
+        - client_influence
+        - attestation
+        - acceptance_outcome
+        - dimensions
+        - evaluated
+        - awarded_profile_id
+        - evidence_class
+        - ranking_eligibility
+        - reason_codes
+        - validity
+        - supersession
+      properties:
+        appraisal_id:
+          type: string
+          format: uuid
+        claim_id:
+          type: string
+          format: uuid
+        canonical_claim_sha256:
+          description: The digest of the exact signed claim bytes this appraisal evaluated.
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        evidence_bundle_sha256:
+          description: Null when the device retained no bundle, which is an input to the capture dimension rather than a neutral absence.
+          type:
+            - string
+            - 'null'
+          pattern: ^[0-9a-f]{64}$
+        policy:
+          type: object
+          additionalProperties: false
+          description: 'The published policy bundle the appraisal was decided under. `implementation_sha256` is withheld: the verifier build digest is not the participant''s personal data and no appeal needs it.'
+          required:
+            - policy_bundle_id
+            - content_sha256
+          properties:
+            policy_bundle_id:
+              type: string
+              maxLength: 128
+              pattern: ^[a-z0-9]+(?:[.-][a-z0-9]+)*$
+            content_sha256:
+              type: string
+              pattern: ^[0-9a-f]{64}$
+        authority:
+          description: Public evidence status is assigned by the server verifier and never selected by the client.
+          enum:
+            - server-verifier
+        client_influence:
+          enum:
+            - none
+        attestation:
+          type: object
+          additionalProperties: false
+          description: D-100. The appraisal assesses how good a self-report is. No surface may present it as a confirmation from a provider, because no provider offers an individual-account attestation path.
+          required:
+            - class
+            - basis
+            - assesses
+          properties:
+            class:
+              enum:
+                - none
+            basis:
+              enum:
+                - self-reported-at-source
+            assesses:
+              enum:
+                - self-report-quality
+        acceptance_outcome:
+          enum:
+            - accepted
+            - accepted-with-downgrade
+            - accepted-private-analytics
+            - idempotent-replay
+            - quarantined
+            - rejected
+            - superseded
+            - retracted
+        dimensions:
+          type: object
+          additionalProperties: false
+          description: The seven independent dimensions. A stronger value in one never compensates for a failed mandatory requirement in another. The subject already reads the derived weights on `SelfRankEntry`, so disclosing the dimensions to the subject discloses strictly less than what they hold already.
+          required:
+            - source_class
+            - capture_class
+            - accounting_class
+            - device_key_class
+            - continuity_class
+            - environment_class
+            - freshness_class
+          properties:
+            source_class:
+              enum:
+                - E1-S
+                - E1-R
+                - E2
+                - E3
+                - E4
+                - E5
+            capture_class:
+              enum:
+                - certified-structured
+                - certified-gateway
+                - certified-reconstruction
+                - uncertified
+            accounting_class:
+              enum:
+                - authoritative-profile
+                - exact-reconstruction
+                - approximate
+                - contradictory
+            device_key_class:
+              enum:
+                - K1
+                - K2
+                - K3
+                - K4
+                - K5
+                - KU
+            continuity_class:
+              enum:
+                - C0
+                - C1
+                - C2
+                - C3
+                - C4
+            environment_class:
+              enum:
+                - A0
+                - A1
+                - A2
+                - A3
+                - A4
+            freshness_class:
+              enum:
+                - anchored
+                - bounded-delayed
+                - unbounded
+                - contradictory
+        evaluated:
+          type: object
+          additionalProperties: false
+          description: 'The rule set the dimensions were read under, which is what an appeal argues against. `anomaly_disposition` is withheld: its `under-review` and `shadow-only` values are the statement that an integrity case is open, and D-381 keeps that from the participant.'
+          required:
+            - certification_bundle_sha256
+            - deterministic_rule_bundle_id
+            - accounting_profile_id
+            - observer_equivalence_rule_id
+          properties:
+            certification_bundle_sha256:
+              type:
+                - string
+                - 'null'
+              pattern: ^[0-9a-f]{64}$
+            deterministic_rule_bundle_id:
+              type: string
+              maxLength: 128
+              pattern: ^[a-z0-9]+(?:[.-][a-z0-9]+)*$
+            accounting_profile_id:
+              type: string
+              maxLength: 128
+              pattern: ^[a-z0-9]+(?:[.-][a-z0-9]+)*$
+            observer_equivalence_rule_id:
+              type: string
+              maxLength: 128
+              pattern: ^[a-z0-9]+(?:[.-][a-z0-9]+)*$
+        awarded_profile_id:
+          type:
+            - string
+            - 'null'
+          enum:
+            - hardened-source-bound-v1
+            - standard-competitive-v1
+            - imported-v1
+            - null
+        evidence_class:
+          description: The record's `public_state` under the one API vocabulary D-143 fixes. Null when no profile was awarded. A client never selects it.
+          type:
+            - string
+            - 'null'
+          enum:
+            - hardened
+            - standard
+            - imported
+            - null
+        ranking_eligibility:
+          enum:
+            - competitive
+            - competitive-pending-finalization
+            - private-analytics
+            - quarantined
+            - excluded
+            - retracted
+        reason_codes:
+          description: Codes from `packages/schemas/reason-codes-v1.json`. Their `appealability` is what tells the subject whether this outcome can be appealed.
+          type: array
+          uniqueItems: true
+          maxItems: 64
+          items:
+            type: string
+            maxLength: 128
+            pattern: ^[a-z0-9]+(?:[.-][a-z0-9]+)*$
+        validity:
+          type: object
+          additionalProperties: false
+          required:
+            - effective_from
+            - effective_until
+          properties:
+            effective_from:
+              type: string
+              format: date-time
+            effective_until:
+              type:
+                - string
+                - 'null'
+              format: date-time
+        supersession:
+          type: object
+          additionalProperties: false
+          description: Appraisals are immutable and corrections are append-only, so a re-evaluation is a new appraisal that supersedes this one rather than an edit to it.
+          required:
+            - supersedes_appraisal_id
+            - superseded_by_appraisal_id
+            - re_evaluation_trigger
+          properties:
+            supersedes_appraisal_id:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            superseded_by_appraisal_id:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            re_evaluation_trigger:
+              type:
+                - string
+                - 'null'
+              enum:
+                - policy-revision
+                - implementation-revision
+                - certification-change
+                - correction-record
+                - appeal-decision
+                - operator-review
+                - null
     RankEntry:
       type: object
       additionalProperties: false

@@ -32,7 +32,7 @@
       "fixtures": [
         {
           "path": "conformance/adapters/agent-registry-v1.json",
-          "sha256": "a7d3887ea0e04cc0b47a58ef244476cbc8901ae249994b0efdda29b4317f3a97"
+          "sha256": "7c91ed5052fa7d2d0ac7cb5eb17ff75ac9cb158c929877d45ad0b89441eb7d15"
         }
       ],
       "expect": "accept",
