@@ -719,6 +719,7 @@
     "getGlobalLeaderboard",
     "getLeaderboard",
     "getMe",
+    "getNotificationPreferences",
     "getPresence",
     "getPublicProfile",
     "linkIdentity",
@@ -753,7 +754,8 @@
     "startXAuth",
     "submitClaimBatch",
     "unlinkIdentity",
-    "updateMe"
+    "updateMe",
+    "updateNotificationPreferences"
   ],
   "state_machines": [
     "account-consolidation",

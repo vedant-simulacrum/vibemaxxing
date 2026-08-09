@@ -1324,8 +1324,8 @@
     {
       "id": "D-385",
       "decision": "Two presence policy keys are misnamed and the binding is stated rather than the keys renamed. `presence_lease_expiry_seconds` holds 90 and is the D-073 idle threshold; `presence_idle_after_seconds` holds 300 and is the D-073 offline threshold; only `presence_heartbeat_seconds` says what it does. The names are not corrected because `scripts/repository/validate_planning_artifacts.py` requires those exact spellings and three other artifacts cite them, so a rename is a wider edit than the defect justifies today. What closes the ambiguity instead is `packages/schemas/presence-pulse-v1.schema.json`, which binds each threshold to its key by `const` and whose validator asserts the resolved values are 30, 90 and 300, so a future edit that changes a value without changing the meaning fails. The pulse record itself is not a presence history: ADR-019 accepts a live-sampling risk on the stated basis that none is stored, so `presence_events` keeps `no-retention` and rows are discarded when their lease generation closes",
-      "status": "accepted",
-      "validation_or_reopen": "the keys are renamed by the track that owns the policy registry, at which point the `const` bindings follow and this row is superseded"
+      "status": "superseded",
+      "validation_or_reopen": "superseded by D-618, which performed the rename this row named as its own reopen condition; reopened only if the two are found to describe different keys"
     },
     {
       "id": "D-393",
@@ -1788,6 +1788,36 @@
       "decision": "PF-041's and PF-043's acceptance criteria are rewritten to what can be observed. PF-041 required a deterministic map from a captured OTLP payload to a NormalizedAccountingEvent, and an OTLP counter carries no event identity, no outcome and no retry fact while certification.bundle_sha256 cannot be written from any binding here, so the strong reading was unsatisfiable and the weak reading was unfalsifiable; it now requires one declared origin per top-level field with the non-observable ones marked as such, and one replayed capture per supported metric. PF-043 required only that ClaimRecord.appraisal_id resolve to a defined schema and a retrievable operation, which any response shape would have satisfied including one publishing the appraisal to a viewer; it now requires the operation to answer with the AppraisalSummary projection and the two withheld fields to be absent from the whole document",
       "status": "accepted",
       "validation_or_reopen": "the underlying record changes shape such that the rewritten criterion no longer decides done"
+    },
+    {
+      "id": "D-616",
+      "decision": "A block drives no board aggregate to a terminal state. `board-membership` carried `blocked` and `board-invitation` carried `invalidated-by-block`, each terminal, each reached by a `block-cascade` with no transition out. That is the D-585 defect one aggregate over and worse in one respect: a block is an act between two accounts, and what these destroyed was a membership and an invitation granted by a third party, the board owner, who had no part in it and could not undo it. Both states and both transitions are removed. A pending invitation between a blocked pair is suppressed at read time and expires on its own clock; a membership is suppressed at read time and stays a membership. A board still refuses a person through `removed`, which is a board admin's act under recent authentication and is reversible. The `block-race` plan in `conformance/p1140e/sql-race-plans-v1.json` said the block transaction deletes the friendship, the rivalry and the invite; that plan recorded the model D-585 replaced and is repaired to state the rows that survive",
+      "status": "accepted",
+      "validation_or_reopen": "a board-level need for a member-caused terminal state is identified, which would require deciding whose intent wins over an aggregate a third party owns"
+    },
+    {
+      "id": "D-617",
+      "decision": "A board invitation records its invitee and the role it grants, and that role admits only `member` and `viewer`. `board_invites` held a board id, a state and an expiry: no invitee and no role. The work unit's acceptance said the operation cannot grant an admin or owner role, `BoardInvitationRequest.role` admitted both on the wire, and the refusal compared fields no record held. Admin promotion stays a separate transition requiring recent authentication and ownership moves only through the paired transfer, so neither is reachable by accepting an invitation. `boards` also gains `name`, `visibility` and `membership_revision`: the first two were published by the API and stored nowhere, and board visibility is the value the current-viewer-authorization rule reads for every board view that is not the global one. `moderator` is removed from the role list in `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, because no membership state, transition, column or authorization row ever carried it",
+      "status": "accepted",
+      "validation_or_reopen": "a board moderator gains a membership state and an authorization row, at which point it is a role rather than a word"
+    },
+    {
+      "id": "D-618",
+      "decision": "The two misnamed presence policy keys are renamed. `presence_lease_expiry_seconds` held 90 and meant the idle threshold; `presence_idle_after_seconds` held 300 and meant the offline threshold. Read straight, the registry described a lease that expires at 90 seconds and an idle transition at 300, which makes `idle` a state nothing can reach. They are now `presence_idle_after_seconds` at 90 and `presence_offline_after_seconds` at 300, the `const` bindings in `packages/schemas/presence-pulse-v1.schema.json` follow, and `scripts/repository/validate_social_surface_contracts.py` additionally requires idle to be strictly before offline so the pair cannot be swapped back by value. D-385 deferred this on the stated ground that a list in `scripts/repository/validate_planning_artifacts.py` required the old spellings, which made the blocker a line in this repository holding its own defect in place",
+      "status": "accepted",
+      "validation_or_reopen": "a third presence threshold is introduced whose ordering relative to these two is not idle-then-offline"
+    },
+    {
+      "id": "D-619",
+      "decision": "Presence renewal is a device pulse and never a client-selected state. `PresenceRenewalRequest` carried one field, `availability`, over `online`, `idle` and `offline`, and the state-vocabulary validator declared it a coarsening of the `presence-lease` machine — a projection running inbound. With a session-cookie alternative on the route, a browser could PUT `online` on a repeating timer, which is the fabrication `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md` forbids in the paragraph above it and `AGENTS.md` forbids by making presence server-derived. The request now carries the device, the lease generation the discard rule is stated against and a qualifying boolean, and every security alternative on `renewPresence` requires device proof. Presence visibility moves from `presence_leases`, where it was one value per device, to `profiles.presence_visibility`, because the projection answers once per account and two devices could disagree with no rule saying which the merge took. The merge itself is stated as a precedence fold in `conformance/social/presence-merge-vectors.json` and evaluated under both device orderings",
+      "status": "accepted",
+      "validation_or_reopen": "a non-native source of qualifying activity is accepted, which would need its own evidence rule rather than a wider credential on this route"
+    },
+    {
+      "id": "D-620",
+      "decision": "Every notification event type declares the preference category that governs it, and a fifth category exists for the two types that had none. Four flags faced eight event types with the mapping written down in no artifact, so `suppression_cause = 'category-disabled'` named a category nothing defined, `compatibility` and `release` fell under no flag at all, and whether a security notice could be muted depended on which mapping a worker assumed. `event_categories` in `packages/schemas/notification-delivery-v1.schema.json` is the map; `product_enabled` is the new flag; `security` maps to the flag constrained true. `notification_preferences` also gains the two API operations it never had, so the flags that decide whether an inbox item is created at all are settable by the participant rather than only by a migration, and the update body omits `security_enabled`, `quiet_hours_scope` and the two opt-in timestamps rather than accepting and ignoring them. `notifications.retraction_reason_code` gains the CHECK that makes 'one of three registered reason codes' a vocabulary rather than a convention",
+      "status": "accepted",
+      "validation_or_reopen": "a notification type is added whose category is neither of the five, which would need a sixth flag rather than a default"
     }
   ]
 }

@@ -5,6 +5,16 @@
     "overtake_hysteresis_policy_key": "overtake_notification_hysteresis_hours",
     "overtake_material_lead_policy_key": "overtake_material_lead_tokens"
   },
+  "event_categories": {
+    "friend_request": "social",
+    "board_invitation": "social",
+    "rank_overtake": "ranking",
+    "moderation": "moderation",
+    "appeal": "moderation",
+    "security": "security",
+    "compatibility": "product",
+    "release": "product"
+  },
   "source_event": {
     "notification_event_id": "018f2c60-0000-7000-8000-000000000902",
     "event_type": "security",

@@ -17,7 +17,7 @@
     "state": "absent",
     "command": null,
     "work_unit": "OS-009",
-    "note": "block-independence-vectors.json states six cases with inputs, expected relationship rows and expected visibility under D-585. No runner executes them; the suite is declarative and is not evidence that any block is enforced."
+    "note": "No suite runner executes this directory. The six block cases are declarative: block-independence-vectors.json states inputs, rows and visibility under D-585 and nothing evaluates them, so they are not evidence that any block is enforced. The six merge cases are different in one respect and the difference is worth stating exactly: scripts/repository/validate_social_surface_contracts.py folds each case's device set under the file's own merge_rule, in both orderings, and compares the result to expected_availability. That executes the rule against the fixture. It does not execute a server, a lease or a pulse, and no presence surface exists to execute."
   },
   "fixture_state": "populated",
   "generated_by": null,
@@ -133,6 +133,105 @@
       "negative": false,
       "state": "active",
       "note": "rival_edges.state no longer admits blocked. The edge stays active and is suppressed at read time, so an unblock does not need to guess which rivalries to revive."
+    },
+    {
+      "case_id": "SO-201",
+      "title": "one active device and one expired device merge to online",
+      "fixtures": [
+        {
+          "path": "conformance/social/presence-merge-vectors.json",
+          "sha256": "582f982811f965eee1a7660429098723c084de87901517a56df52cab3ab67e0d"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#presence",
+      "negative": false,
+      "state": "active",
+      "note": "The case the fold exists for. A last-write merge reading the desktop lease second answers offline and the participant disappears while still working."
+    },
+    {
+      "case_id": "SO-202",
+      "title": "an idle device and an expired device merge to idle",
+      "fixtures": [
+        {
+          "path": "conformance/social/presence-merge-vectors.json",
+          "sha256": "582f982811f965eee1a7660429098723c084de87901517a56df52cab3ab67e0d"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#presence",
+      "negative": false,
+      "state": "active",
+      "note": "Idle outranks expired. An expired lease is an absence of evidence about one device, not evidence the account is gone."
+    },
+    {
+      "case_id": "SO-203",
+      "title": "a revoked device does not raise the account answer",
+      "fixtures": [
+        {
+          "path": "conformance/social/presence-merge-vectors.json",
+          "sha256": "582f982811f965eee1a7660429098723c084de87901517a56df52cab3ab67e0d"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#presence",
+      "negative": true,
+      "state": "active",
+      "note": "Negative. A revoked device contributing presence would let a device the participant removed keep reporting them present, which is a security act being undone by a projection. The case is negative and expects accept, which is not a contradiction: nothing here refuses a request, so there is no reason code to name. What it proves is that the fold does not manufacture presence, and a fold that answered online for any of these three would be wrong in the direction that matters."
+    },
+    {
+      "case_id": "SO-204",
+      "title": "three devices in three states merge to the most present",
+      "fixtures": [
+        {
+          "path": "conformance/social/presence-merge-vectors.json",
+          "sha256": "582f982811f965eee1a7660429098723c084de87901517a56df52cab3ab67e0d"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#presence",
+      "negative": false,
+      "state": "active",
+      "note": "The fold is over a set and not a pair, which is where an implementation written for two devices stops agreeing."
+    },
+    {
+      "case_id": "SO-205",
+      "title": "every device expired merges to offline",
+      "fixtures": [
+        {
+          "path": "conformance/social/presence-merge-vectors.json",
+          "sha256": "582f982811f965eee1a7660429098723c084de87901517a56df52cab3ab67e0d"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#presence",
+      "negative": true,
+      "state": "active",
+      "note": "Negative. No ordering of expired leases may produce a present account. The case is negative and expects accept, which is not a contradiction: nothing here refuses a request, so there is no reason code to name. What it proves is that the fold does not manufacture presence, and a fold that answered online for any of these three would be wrong in the direction that matters."
+    },
+    {
+      "case_id": "SO-206",
+      "title": "an account with no lease row merges to offline",
+      "fixtures": [
+        {
+          "path": "conformance/social/presence-merge-vectors.json",
+          "sha256": "582f982811f965eee1a7660429098723c084de87901517a56df52cab3ab67e0d"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md#presence",
+      "negative": true,
+      "state": "active",
+      "note": "Negative. An empty device set must not fall through to a default that means present. The case is negative and expects accept, which is not a contradiction: nothing here refuses a request, so there is no reason code to name. What it proves is that the fold does not manufacture presence, and a fold that answered online for any of these three would be wrong in the direction that matters."
     }
+  ],
+  "tooling": [
+    "scripts/repository/validate_social_surface_contracts.py"
   ]
 }

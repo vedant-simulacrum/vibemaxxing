@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 189 |
-| `in-progress` | 6 |
-| `landed` | 59 |
+| `not-started` | 187 |
+| `in-progress` | 5 |
+| `landed` | 62 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 263 assertions across 59 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 287 assertions across 62 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 7.
+Startable now — not done, and every dependency done: 5.
 
-`PF-025`, `PF-026`, `PF-028`, `PF-030`, `OS-001`, `OS-003`, `OS-009`.
+`PF-028`, `PF-030`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,13 +90,12 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 4 | `PF-025`, `PF-026`, `PF-028`, `PF-030` |
-| 2 | 3 | `PF-027`, `PF-031`, `PF-032` |
-| 3 | 1 | `PF-029` |
-| 4 | 1 | `PF-033` |
-| 5 | 1 | `PF-034` |
-| 6 | 1 | `PF-035` |
-| 7 | 1 | `PF-036` |
+| 1 | 2 | `PF-028`, `PF-030` |
+| 2 | 3 | `PF-029`, `PF-031`, `PF-032` |
+| 3 | 1 | `PF-033` |
+| 4 | 1 | `PF-034` |
+| 5 | 1 | `PF-035` |
+| 6 | 1 | `PF-036` |
 
 Statuses additionally checkable against artifact presence: 196 of 260. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -575,7 +574,7 @@ Est: 10-14
 Status: landed
 Evidence: validator scripts/repository/validate_p1140e_contracts.py
 Evidence: unittest tests.ci.test_sql_race_plans
-Evidence: contains 31 conformance/p1140e/sql-race-plans-v1.json :: "presence": "absent"
+Evidence: contains 30 conformance/p1140e/sql-race-plans-v1.json :: "presence": "absent"
 Evidence: contains 1 packages/schemas/planning-schema.sql :: idempotency_records_retained_past_replay_window
 Evidence: contains 1 packages/schemas/planning-schema.sql :: idempotency_records_expired_holds_no_response
 Evidence: absent packages/schemas/openapi-v1.yaml :: SR-012 stays open
@@ -593,6 +592,8 @@ The two figures had also been reading as a contradiction: D-225 says 168 hours, 
 **Three stale justifications, all outliving their holes.** `openapi-v1.yaml#x-idempotency-contract` still carried `open_finding: SR-012 stays open. This block is the API half. The persistence half — the nullable response_digest, the missing response-body column and the account-only primary key — is not repaired here`. All three were repaired, by PF-019 and PF-049, one and two units earlier. `API_EDGE_CONTRACT.md` carried the same paragraph in prose and told clients to treat byte-identical replay as specified rather than demonstrated for a reason that no longer existed. Neither is replaced with a closure claim: the block now records what is repaired and states that repaired is not closed, and that `conformance/p1140f/semantic-findings-v1.json` is the only authority for the finding's state.
 
 Two further stale facts fell out of reading the same paths: `SERVER_API_DATA_AND_RANKING_CONTRACT.md` still described the claim uniqueness constraints as `(device_id, sequence)` and `(device_id, payload_hash)`, which PF-010 moved onto the lineage, and the claim acceptance transaction still said "lock device sequence row" against a counter D-592 had rekeyed.
+
+**The absent-row floor moved from 31 to 30, and a lower floor is a weaker check, so the reason is recorded rather than the number quietly edited.** PF-025 repaired the `block-race` plan, whose four absent rows encoded the pre-D-585 model in which a block deletes the friendship, the rivalry and any pending invitation. Three of those became `present`, because a block changes no relationship row. PF-025's new `board-create-owner` case added two. The count is a floor over the whole file and not a per-case rule; the per-case rule — every case names at least one present and one absent row — is in `validate_p1140e_contracts.py` and did not move.
 
 This is SR-012's last unit. **No finding was touched.** `conformance/p1140f/semantic-findings-v1.json` is unmodified by this work, and it is not this unit's to modify: closure evidence cites the merge sha of the pull request that lands it, which cannot be known from inside that pull request.
 
@@ -707,13 +708,22 @@ Evidence: unittest tests.ci.test_block_independence
 - decline, cancel, expiry, unblock, generation and current authorization.
 
 ### PF-025 — Board ownership and role authority
-Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
-Acceptance: `boards` and `board_memberships` are written in one transaction in the recorded SQL plan; a partial unique index enforces exactly one owner per board; `board_invites` cannot grant an admin or owner role, which a rejected fixture case proves.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/projection-authorization-v1.json`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `conformance/p1140e/sql-race-plans-v1.json`, (new) `scripts/repository/validate_social_surface_contracts.py`, (new) `tests/ci/test_social_surface_contracts.py`, `scripts/repository/validate_p1140e_contracts.py`, `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_state_vocabularies.py`, `conformance/p1140e/validation-matrix-v1.json`
+Acceptance: neither the `board-membership` nor the `board-invitation` machine declares a block-caused state or a `block-cascade` transition, every remaining state is reachable and every terminal state is a sink; `board_invites` declares an `invited_account_id` column and a `role` column whose CHECK equals the `BoardInvitationRequest.role` enum, and neither admits `owner` or `admin`; `boards` declares `name`, a `visibility` CHECK of `public`, `unlisted`, `invite-only` and `private`, and a `membership_revision` counter that `projection-authorization-v1.json` reads instead of a state; `Board.kind` and `BoardCreateRequest.kind` equal `boards.board_type`; the `board-create-owner` case in `conformance/p1140e/sql-race-plans-v1.json` writes both tables and states the absent row a partial unique index cannot refuse; `board-membership` declares a transition from `active-owner` to a non-owner active state and every transition into a privileged role requires recent authentication; the `block-race` plan leaves `friend_edges` and `rival_edges` present; `python3 -m unittest tests.ci.test_social_surface_contracts` exits 0 and each board case fails with its stated substring when the corresponding drift is injected.
 Depends: PF-024
 Repair: P-1140F-4
 Serves: SR-011
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_social_surface_contracts.py
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: validator scripts/repository/validate_p1140e_contracts.py
+Evidence: unittest tests.ci.test_social_surface_contracts
+Evidence: unittest tests.ci.test_block_independence
+Evidence: absent packages/schemas/state-machine-registry-v1.json :: invalidated-by-block
+Evidence: absent packages/schemas/state-machine-registry-v1.json :: block-cascade
+Evidence: contains 1 packages/schemas/planning-schema.sql :: role text not null check (role in ('member','viewer'))
+Evidence: contains 1 conformance/p1140e/sql-race-plans-v1.json :: board-create-owner
 
 - atomic board creation plus initial owner;
 - invitations grant only non-privileged membership;
@@ -721,14 +731,33 @@ Status: not-started
 - paired ownership transfer preserving exactly one owner;
 - role/action authorization matrix and recovery.
 
+**The acceptance was rewritten, and two of its three clauses could not decide done.** It required a partial unique index to enforce "exactly one owner per board". A partial unique index cannot: it refuses a second `active-owner` row and is silent about a board with none, so the clause was satisfied by a constraint that enforces half of it. The rewritten clause names both halves — the index for at-most-one, and the `board-create-owner` transaction for at-least-one, with the absent row that states what the index cannot refuse. It also required that `boards` and `board_memberships` be written in one transaction "in the recorded SQL plan", and no such plan existed: `conformance/p1140e/sql-race-plans-v1.json` held a `board-owner-transfer` case and nothing about creation, so the criterion pointed at a record it could not read. The case exists now. And the third clause — `board_invites` cannot grant an admin or owner role, "which a rejected fixture case proves" — was refusing a value against a table that held no role column and no invitee at all. That is the class this repository has hit before: an operation whose declared refusals compare fields no record holds. The role is a column with a CHECK now, and the rewritten clause requires the SQL vocabulary and the wire enum to be equal sets rather than each separately plausible.
+
+**The block repair D-585 made for friendship had never reached boards.** `board-membership` carried a terminal `blocked`, reached by a `block-cascade` from `invited`, `active-viewer`, `active-member` and `active-admin`, actor `user`, `reversal: none`. `board-invitation` carried `invalidated-by-block` the same way. This is worse than the friendship case rather than milder: a block is an act between two accounts, and what these two states destroyed was a membership and an invitation that a third party — the board owner — had granted, permanently, with no transition out. `tests/ci/test_block_independence.py` pinned the repair for `friendship` and `rivalry` and its `SHARED_AGGREGATES` tuple named only those two, so the board half sat untouched behind a test that read as though it covered the rule. Both states and both transitions are gone under D-616, and the new validator refuses either to return.
+
+**The recorded race plan still described the model D-585 replaced.** `block-race` said the block transaction "deletes the friendship and the rivalry and inserts the block", with `friend_edges`, `rival_edges` and `board_invites` all `absent` afterwards and `expected` reading "block atomically removes incompatible relationships and invitations". PF-024 repaired the contract and the machines and left the plan alone, so the repository held one artifact saying a block changes no relationship row and another planning the deletion. The plan now states the rows that survive, and the validator fails if `friend_edges` or `rival_edges` goes back to `absent` on a block.
+
+**The transfer plan required a transition the machine did not have.** `board-owner-transfer` states that the outgoing owner remains present "in a non-owner active state". `board-membership` had exactly one transition out of `active-owner`, `board-owner-leave`, which goes to `left`. There was no demotion, so the plan's own residual row was unreachable in the aggregate that owns it, and the `board_one_active_owner` index would have refused the promotion half. `board-demote-owner` is declared, in the `board-owner-transfer` boundary, under recent authentication.
+
+**`moderator` was a word.** The contract listed five roles; `board_memberships.role` had four, the machine had four `active-*` states, and no column, transition or authorization row anywhere carried a moderator. It is removed from the prose rather than added to four artifacts, because board moderation is the `moderation-case` aggregate and not a membership role.
+
+**Docker is unavailable here, so no DDL in this unit has executed.** The new columns, CHECKs and indexes are declared in dependency order and CI is their first execution.
+
 ### PF-026 — Presence evidence and projection
-Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
-Acceptance: `presence_leases` records a device-bound lease generation; the `presence` machine transitions to `idle` at 90 seconds and `offline` at 300 seconds with those exact numbers in `packages/schemas/policy-defaults-v1.json`; a two-device merge fixture yields the same result under both device orderings.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/policy-defaults-v1.json`, `packages/schemas/presence-pulse-v1.schema.json`, `packages/schemas/projection-authorization-v1.json`, `packages/schemas/examples/presence-pulse.valid.json`, `packages/schemas/examples/presence-pulse.invalid-blocked-viewer-sees-online.json`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, `docs/privacy/PRIVACY_CONTRACT.md`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, (new) `conformance/social/presence-merge-vectors.json`, `conformance/social/manifest.json`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_state_vocabularies.py`, `scripts/repository/validate_social_surface_contracts.py`, `tests/ci/test_social_surface_contracts.py`
+Acceptance: `presence_leases` records a device-bound `lease_generation` and declares no `visibility` column, and `profiles` declares `presence_visibility`; `PresenceRenewalRequest` declares no `availability` and requires `device_id`, `lease_generation` and `qualifying`, and every security alternative on `renewPresence` requires `deviceProof`; `packages/schemas/policy-defaults-v1.json` resolves `presence_heartbeat_seconds` to 30, `presence_idle_after_seconds` to 90 and `presence_offline_after_seconds` to 300, with idle strictly before offline; `conformance/social/presence-merge-vectors.json` states a merge rule and six cases, and `scripts/repository/validate_social_surface_contracts.py` folds each case under both device orderings and requires one answer; `python3 -m unittest tests.ci.test_social_surface_contracts` exits 0 and each presence case fails with its stated substring when the corresponding drift is injected.
 Depends: PF-011, PF-024
 Repair: P-1140F-4
 Serves: SR-011
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_social_surface_contracts.py
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_social_surface_contracts
+Evidence: exists conformance/social/presence-merge-vectors.json
+Evidence: absent packages/schemas/policy-defaults-v1.json :: presence_lease_expiry_seconds
+Evidence: contains 1 packages/schemas/planning-schema.sql :: presence_visibility text not null default 'authorized-viewers'
+Evidence: contains 1 conformance/social/presence-merge-vectors.json :: "precedence": ["active", "idle", "expired", "revoked", "absent"]
 
 - device-bound qualifying pulse every 30 seconds;
 - active, idle at 90 seconds, offline at 300 seconds;
@@ -736,14 +765,34 @@ Status: not-started
 - deterministic multi-device merge;
 - private/block/relationship/board visibility as separate viewer projection.
 
+**The acceptance was rewritten, and two thirds of it named things that do not exist.** It required "the `presence` machine" to transition to `idle` at 90 seconds and `offline` at 300. There is no `presence` machine — the registry declares `presence-lease` — and it has no `offline` state; the lease expires, and `offline` is a value of the viewer projection. As written the clause could only be satisfied by inventing a state. Worse, it required "those exact numbers in `packages/schemas/policy-defaults-v1.json`", and both numbers were there under keys that meant the opposite: `presence_lease_expiry_seconds` held 90 and meant idle, `presence_idle_after_seconds` held 300 and meant offline. A reader checking the criterion would have found `presence_idle_after_seconds: 300` and passed it. The rewritten clause names the keys, the values and the ordering rule, so it is satisfied by the registry saying what it means rather than by two numbers being present somewhere in it.
+
+**A misnamed pair made `idle` unreachable.** Read straight, the registry said the lease expires after 90 seconds and goes idle after 300, so `presence-expire` always fires before `presence-idle` and a state the machine declares can never be entered. D-385 recorded the misnaming, declined the rename on the stated ground that "`scripts/repository/validate_planning_artifacts.py` requires those exact spellings", and named the rename as its own reopen condition. The blocker was a hard-coded list in this repository holding its own defect in place, and the traceability row for D-385 already named PF-026 as the owner. D-618 is the rename; D-385 is superseded.
+
+**A browser could fabricate presence.** The contract says in as many words that a browser or ordinary web session cannot fabricate indefinite activity. `renewPresence` accepted a session cookie, and `PresenceRenewalRequest` had exactly one field: `availability`, over `online`, `idle` and `offline`. So a tab could PUT `online` on a repeating timer and the sentence had nothing behind it. `validate_state_vocabularies.py` compounded it by declaring `PresenceRenewalRequest.availability` a *projection* of the presence-lease machine — a coarsening of a server-derived state, applied to a request, which is the direction a projection cannot run in. The request now carries the device, the generation and a qualifying boolean, and every alternative on the route requires device proof. This is also the write-side of a constraint that existed only on the read side: the schema comment says a pulse naming a superseded generation is discarded, and until now no generation reached the server on the path that admits pulses.
+
+**Visibility was one policy stored per device.** `presence_leases.visibility` held `authorized-viewers` or `private` per `(account, device)` row, against a projection that produces one availability per account. Two devices could disagree with nothing saying which the merge took, so going private on a laptop while a desktop stayed authorized published the participant anyway. It is `profiles.presence_visibility` now, and `projection-authorization-v1.json` reads it there.
+
+**The merge was required and never stated.** "Multi-device aggregation" was a bullet in the contract and nothing defined it. The rule is a precedence fold stated in the vector file, and the validator evaluates every case under both orderings, so a merge that depends on which device was read first fails rather than passing quietly. The suite manifest records exactly what that executes and what it does not: the rule against the fixture, not a server, a lease or a pulse.
+
+**What this does not reduce.** Presence remains a last-active answer an authorized viewer can watch, and D-561 through D-604 accepted that exposure knowingly. Nothing here narrows it.
+
 ### PF-027 — Notification source, inbox and channel model
-Files: `packages/schemas/notification-delivery-v1.schema.json`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `packages/schemas/disclosure-projection-v1.json`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
-Acceptance: `notification_events` is unique on recipient, type, source aggregate and source revision, and `notifications` carries the recipient projection with an authorization revision; the `notification-delivery` machine can express `retracted`; a delivery attempt row records `queued`, `deferred`, `accepted`, `acknowledged`, `failed` or `expired` and never maps `accepted` to a read.
+Files: `packages/schemas/notification-delivery-v1.schema.json`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/reason-codes-v1.json`, `packages/schemas/examples/notification-delivery.valid.json`, `packages/schemas/examples/notification-delivery.invalid-inbox-attempt-deferred.json`, `packages/schemas/examples/notification-delivery.invalid-suppressed-security-event.json`, (new) `packages/schemas/examples/notification-delivery.invalid-security-category-remapped.json`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `conformance/p1140e/validation-matrix-v1.json`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_social_surface_contracts.py`, `tests/ci/test_social_surface_contracts.py`
+Acceptance: `notification-delivery-v1.schema.json` declares `event_categories` naming every `event_type` exactly once, every named category has a `<category>_enabled` property on the preferences record and a column of that name on `notification_preferences`, and `security` maps to the flag constrained `true`; `notifications.retraction_reason_code` carries a CHECK whose value set equals the `retraction.reason_code` enum, which the existing reason-registry check already binds to the `notification` transport; the API declares `getNotificationPreferences` and `updateNotificationPreferences`, and `NotificationPreferencesUpdate` declares no `security_enabled`; `notification-delivery.invalid-security-category-remapped.json` is rejected by the schema; the contract's launch type list names the eight registered types and no others; `python3 -m unittest tests.ci.test_social_surface_contracts` exits 0 and each notification case fails with its stated substring when the corresponding drift is injected.
 Depends: PF-024, PF-026
 Repair: P-1140F-4
 Serves: SR-011
 Est: 12-16
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_social_surface_contracts.py
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_social_surface_contracts
+Evidence: exists packages/schemas/examples/notification-delivery.invalid-security-category-remapped.json
+Evidence: contains 1 packages/schemas/planning-schema.sql :: product_enabled boolean not null
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: operationId: getNotificationPreferences
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: operationId: updateNotificationPreferences
+Evidence: absent packages/schemas/openapi-v1.yaml :: PresenceRenewalRequest.availability
 
 - immutable source event and revision;
 - recipient inbox item, grouping, authorization revision, read/dismiss/expiry/retraction;
@@ -751,7 +800,21 @@ Status: in-progress
 - preferences, quiet hours, security-critical policy and subscription lifecycle;
 - push provider acceptance is not user read or guaranteed delivery.
 
-The schema, DDL and API half landed under D-420 through D-423. `packages/schemas/notification-delivery-v1.schema.json` carries the source event, inbox item, delivery attempt and preferences; `notification_events` and `notification_deliveries` are real tables rather than the three-column stubs they were; `Notification` publishes only the four post-delivery states; `markNotificationRead` gives the `notification-read` transition its first route; and four reason codes carry retraction on a transport of its own. The unit is not finished. No aggregate appends an event, no worker groups one, no surface renders an inbox, and `notification_preferences` still has no API operation, so a participant cannot set one.
+The schema, DDL and API half landed under D-420 through D-423. `packages/schemas/notification-delivery-v1.schema.json` carries the source event, inbox item, delivery attempt and preferences; `notification_events` and `notification_deliveries` are real tables rather than the three-column stubs they were; `Notification` publishes only the four post-delivery states; and `markNotificationRead` gives the `notification-read` transition its first route.
+
+**The acceptance was rewritten because the landed half had already satisfied all of it.** Every clause — the uniqueness over recipient, type, aggregate and revision; the recipient projection with an authorization revision; `retracted` on the machine; the six delivery states with no path from `accepted` to a read — was true before this unit began, and the block above said so in the same breath as `Status: in-progress`. A criterion that a unit's own prose records as already met cannot decide whether the unit is done. The rewritten clauses name what was still open.
+
+**Four preference flags governed eight event types and nothing declared the mapping.** `suppression_cause` admits `category-disabled`, and no artifact anywhere said which category any event type belonged to, so the word named nothing a reader could resolve. `compatibility` and `release` fell under no flag at all — a worker deciding whether to create one had no preference to read — and, more seriously, whether a `security` notice could be muted depended on which mapping that worker invented. This is a hidden security-critical mapping of exactly the kind the schema discipline forbids. `event_categories` declares it by `const`, `product_enabled` is the flag the two uncovered types needed, and a rejected fixture pins the one entry that must never move.
+
+**The prose promised types the model could not carry.** The launch list named eleven English phrases including rival suggestion, rank movement and quarantine; the enum has eight members and none of those three. Where a phrase maps to a registered type the repaired paragraph says so; where it does not, it says adding one is four artifacts rather than a sentence.
+
+**`retraction_reason_code` accepted any string.** The contract promised "one of three registered reason codes" and the column had no CHECK, so registration was a convention. The three are in the column now and the validator compares that set to the schema enum, which the existing reason-registry check already ties to the `notification` transport — so a fourth code added in one place fails rather than diverging.
+
+**A participant could not set a preference.** `notification_preferences` had no operation of any kind. The block above flagged that and this unit closes it; the update body omits `security_enabled`, `quiet_hours_scope` and the two opt-in timestamps rather than accepting and discarding them.
+
+**The previous note said four reason codes carry retraction "on a transport of its own".** Three do. `NOTIFICATION_ALREADY_RETRACTED` is a Problem body on `markNotificationRead` and is not a retraction reason; the note is corrected here rather than left to be counted again.
+
+**Still not implemented.** No aggregate appends an event, no worker groups one, no worker evaluates a preference, and no surface renders an inbox. Every check in this unit compares records to records.
 
 ### PF-028 — Export authority
 Files: `packages/schemas/export-manifest-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`

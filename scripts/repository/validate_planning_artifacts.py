@@ -624,8 +624,14 @@ def validate_policy_and_observability() -> None:
         "handle_rename_cooldown_days",
         "old_handle_redirect_days",
         "presence_heartbeat_seconds",
-        "presence_lease_expiry_seconds",
+        # PF-026 renamed the two misnamed keys D-385 recorded and deferred.
+        # `presence_lease_expiry_seconds` held 90 and meant idle;
+        # `presence_idle_after_seconds` held 300 and meant offline. D-385's stated
+        # reason for not renaming them was that this list required the old
+        # spellings, which made the blocker a line in the validator that was
+        # holding the defect in place.
         "presence_idle_after_seconds",
+        "presence_offline_after_seconds",
         "standard_claim_lateness_seconds",
         "challenge_expiry_seconds",
         "batch_max_claims",
@@ -3575,6 +3581,14 @@ NOTIFICATION_DELETION_EXAMPLES: tuple[tuple[str, str, bool], ...] = (
     (
         "notification-delivery-v1.schema.json",
         "notification-delivery.invalid-inbox-attempt-deferred.json",
+        False,
+    ),
+    # PF-027. The mapping that decides whether a security notice can be muted. It
+    # was not declared anywhere, so remapping it was not a change any artifact
+    # could refuse; the const in event_categories is what refuses this one.
+    (
+        "notification-delivery-v1.schema.json",
+        "notification-delivery.invalid-security-category-remapped.json",
         False,
     ),
     (

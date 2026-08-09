@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "suite_id": "social",
+  "case_prefix": "SO",
+  "authority": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md",
+  "supporting_authorities": [
+    "packages/schemas/presence-pulse-v1.schema.json",
+    "packages/schemas/state-machine-registry-v1.json",
+    "packages/schemas/projection-authorization-v1.json"
+  ],
+  "decisions": ["D-073", "D-095", "D-385", "D-386"],
+  "note": "Presence is one answer per account and one lease per device, and nothing said how the second becomes the first. The contract required multi-device aggregation and named no rule, so two devices in different states produced whatever a reader assumed. The rule is stated here as a precedence over lease states and a projection onto the three audience values, and the validator evaluates it under both device orderings: a merge that depends on which device was read first is not a merge. Nothing executes it against a server, because no presence surface exists.",
+  "merge_rule": {
+    "precedence": ["active", "idle", "expired", "revoked", "absent"],
+    "projection": {
+      "active": "online",
+      "idle": "idle",
+      "expired": "offline",
+      "revoked": "offline",
+      "absent": "offline"
+    },
+    "empty": "offline",
+    "note": "The account's availability is the projection of the most-present lease it holds. Precedence rather than recency, because recency needs a clock the devices do not share and would make the answer depend on which pulse landed last. `revoked` sits below `expired` and both project to offline, so a revoked device cannot pull the account's answer above what its remaining devices support. The account-level policy in profiles.presence_visibility is evaluated after this fold and can only narrow the result: a private participant reads offline to a viewer who is not authorized, which is the same value an inactive participant reads, so the suppression is not itself a signal."
+  },
+  "cases": [
+    {
+      "case_id": "SO-201",
+      "title": "one active device and one expired device merge to online",
+      "devices": [
+        { "device": "laptop", "state": "active" },
+        { "device": "desktop", "state": "expired" }
+      ],
+      "expected_availability": "online",
+      "note": "The case the fold exists for. Read desktop-first a naive last-write merge answers offline, and the participant disappears while still working."
+    },
+    {
+      "case_id": "SO-202",
+      "title": "an idle device and an expired device merge to idle",
+      "devices": [
+        { "device": "laptop", "state": "idle" },
+        { "device": "desktop", "state": "expired" }
+      ],
+      "expected_availability": "idle",
+      "note": "Idle outranks expired. An expired lease is an absence of evidence about that device, not evidence the account is gone."
+    },
+    {
+      "case_id": "SO-203",
+      "title": "a revoked device does not raise the account answer",
+      "devices": [
+        { "device": "laptop", "state": "revoked" },
+        { "device": "desktop", "state": "expired" }
+      ],
+      "expected_availability": "offline",
+      "note": "Revocation is a security act. A revoked device contributing presence would let a device the participant removed keep reporting them present."
+    },
+    {
+      "case_id": "SO-204",
+      "title": "three devices in three states merge to the most present",
+      "devices": [
+        { "device": "laptop", "state": "idle" },
+        { "device": "desktop", "state": "active" },
+        { "device": "phone", "state": "absent" }
+      ],
+      "expected_availability": "online",
+      "note": "The fold is over a set and not a pair, which is where an implementation written for two devices stops agreeing."
+    },
+    {
+      "case_id": "SO-205",
+      "title": "every device expired merges to offline",
+      "devices": [
+        { "device": "laptop", "state": "expired" },
+        { "device": "desktop", "state": "expired" }
+      ],
+      "expected_availability": "offline",
+      "note": "The negative case for the fold: no ordering of expired leases produces a present account."
+    },
+    {
+      "case_id": "SO-206",
+      "title": "an account with no lease row at all merges to offline",
+      "devices": [],
+      "expected_availability": "offline",
+      "note": "The other negative case. An empty device set must not fall through to a default that means present; `empty` is stated rather than left to whatever a fold over nothing returns."
+    }
+  ]
+}

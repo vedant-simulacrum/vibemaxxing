@@ -52,6 +52,17 @@ Removing the block restores visibility, because nothing was destroyed to begin w
 A participant who wants the relationship gone removes the friendship, which is a
 separate and deliberate act.
 
+The same rule reaches boards, and until PF-025 it did not. `board-membership`
+carried a terminal `blocked` state reached by a `block-cascade` from four states with
+no transition out, and `board-invitation` carried `invalidated-by-block`. Both are
+worse than the friendship case rather than milder: a block is an act between two
+accounts, and what it destroyed was a membership and an invitation granted by a third
+party — the board owner — who had no part in it and no way to undo it. Neither state
+exists now. A pending invitation between a blocked pair is suppressed at read time and
+expires on its own clock, and a membership is suppressed at read time and stays a
+membership. A board can still refuse a person: that is `removed`, it is a board
+admin's act under recent authentication, and it is reversible.
+
 Every transition requires an initiator, authorization rule, idempotency behavior, timestamp, audit event and user-safe result.
 
 ## Rivals and overtakes
@@ -64,7 +75,21 @@ Hysteresis and grouping suppress notification flip-flop. Corrections, moderation
 
 ## Boards, organizations and communities
 
-Board visibility is public, unlisted, invite-only or private. Roles are owner, admin, moderator, member and viewer.
+Board visibility is public, unlisted, invite-only or private, and `boards.visibility`
+is where it is stored. It was stored nowhere until PF-025 while `AGENTS.md` makes it
+load-bearing: only the global leaderboard view is universally public by default, so
+an unlisted or private board view requires current viewer authorization and the rule
+needs a value to read.
+
+Roles are owner, admin, member and viewer. `moderator` appeared in this list and
+nowhere else — no membership state, no transition, no column and no authorization
+row ever carried it — so it was a word rather than a role, and it is removed. Board
+moderation is the `moderation-case` aggregate, which is not a board membership role.
+
+Board kinds are private, organization, hacker-house and community. The API's `kind`
+enum offered three of those four until PF-025, omitting the one the route map
+publishes a public surface for, so a stored hacker-house board had no representation
+on the wire.
 
 One canonical board aggregate owns:
 
@@ -74,7 +99,24 @@ One canonical board aggregate owns:
 - policy versions;
 - transfer and deletion state.
 
-The last owner cannot leave without transfer or deletion. Ownership transfer requires recent strong authentication and an auditable transition.
+**Exactly one owner is two rules and one of them is not an index.**
+`board_one_active_owner` is a partial unique index on `state = 'active-owner'`: it
+refuses a second owner and is silent about a board that has none. The other half is
+that a board and its owner membership are one write — planned as `board-create-owner`
+in `conformance/p1140e/sql-race-plans-v1.json` — so no board is ever readable without
+an owner, and a later update cannot be the thing that creates one.
+
+**An invitation grants membership or viewership and can grant nothing else.**
+`board_invites.role` admits `member` and `viewer`. The wire enum admitted `owner` and
+`admin` until PF-025, against a `board_invites` table that held neither a role column
+nor an invitee: the rule that an invitation cannot grant a privileged role was a
+refusal comparing fields no record held. Admin promotion is a separate transition
+requiring recent authentication, and ownership moves only through the paired transfer.
+
+The last owner cannot leave without transfer or deletion. Ownership transfer requires
+recent strong authentication and an auditable transition; it demotes the outgoing
+owner to admin and promotes the successor inside one transaction, and the demotion is
+a transition the machine declares rather than a step the plan assumed.
 
 Board policies are versioned and prospective. They may define eligible sources, minimum evidence profile, metric, periods, membership and historical behavior. Rebuilds require explicit authorization and visible member communication.
 
@@ -90,9 +132,49 @@ Schemas may reserve a clearly unused future hook only when it cannot affect laun
 
 ## Presence
 
-Presence states are active, idle, offline and private.
+The lease states are `absent`, `active`, `idle`, `expired` and `revoked`, owned by the
+`presence-lease` machine. What a viewer is shown is the coarser `online`, `idle`,
+`offline`; `private` is a visibility policy and not a state, which is why it does not
+appear in either list.
 
 Active presence must derive from qualifying collector-observed activity that has been safely signed/authorized and accepted under the presence policy. A browser or ordinary web session cannot fabricate indefinite activity.
+
+**The renewal request carries a pulse and never a state.** That sentence above had
+nothing behind it until PF-026: `renewPresence` accepted a session cookie and a body
+whose only field was `availability` over `online`, `idle` and `offline`, declared as a
+coarsening of the machine — a projection running inbound. A browser could therefore
+PUT `online` on a repeating timer, which is precisely the fabrication the paragraph
+forbids, and presence would have been a measure of who had a tab open. The request now
+requires a device, the lease generation it was minted under and a qualifying boolean,
+every alternative on the route requires device proof, and the state is derived.
+
+**The thresholds.** A qualifying pulse every `presence_heartbeat_seconds`; `active`
+becomes `idle` after `presence_idle_after_seconds`; the lease expires after
+`presence_offline_after_seconds`. The values are 30, 90 and 300 and live in
+`packages/schemas/policy-defaults-v1.json`. The last two keys used to be named the
+other way round — `presence_lease_expiry_seconds` held 90 and meant idle,
+`presence_idle_after_seconds` held 300 and meant offline — so reading the registry
+straight gave a lease that expired at 90 seconds and an idle threshold at 300, which
+is an `idle` state nothing can ever reach. The superseded D-385 recorded the
+misnaming, deferred the rename, and named its own reopen condition; D-618 is the
+rename PF-026 performed.
+
+**Multi-device aggregation is a stated fold, not an implementation detail.** An
+account holds one lease per device and the projection answers once, and nothing said
+how. The rule is precedence over lease states — `active`, `idle`, `expired`,
+`revoked`, `absent` — projected onto the three audience values, so the answer is the
+projection of the most-present lease the account holds and does not depend on which
+device was read first. `conformance/social/presence-merge-vectors.json` states it with
+six cases and the validator evaluates each under both orderings. A revoked device
+cannot raise the answer: revocation is a security act, and a revoked device
+contributing presence would be that act undone by a projection.
+
+**Visibility is one policy per account.** It lives on `profiles.presence_visibility`.
+It was a column on `presence_leases`, one value per device, against a projection that
+produces one answer per account — so going private on a laptop while a desktop stayed
+authorized published the participant anyway, and nothing said which value the merge
+took. A viewer the policy excludes reads `offline`, which is the value an inactive
+participant reads, so the suppression is not itself a signal.
 
 Presence processing must define:
 
@@ -106,9 +188,23 @@ Presence processing must define:
 
 Closing the menu-bar/tray shell does not end collection; disabling presence does not disable accounting.
 
+Presence is a last-active answer and an authorized viewer can infer working hours by
+watching it. ADR-019 accepts that on the stated basis that no history is stored:
+`presence_events` carries `no-retention` and rows are discarded when their generation
+closes. Nothing above reduces that exposure and none of it should be read as doing so.
+
 ## Notifications
 
-Launch notification types include friend request/acceptance, rival suggestion, overtake, rank movement, board invitation/administration, device/security event, quarantine, appeal, compatibility change and release/security notice.
+The launch type set is closed and has exactly eight members: `friend_request`,
+`board_invitation`, `rank_overtake`, `moderation`, `appeal`, `security`,
+`compatibility` and `release`. This paragraph used to list eleven English phrases
+including rival suggestion, rank movement and quarantine, none of which the enum can
+carry, so the contract promised notifications the model could not express. Where the
+phrases survive, they map: a friend acceptance is a `friend_request` event on a later
+revision of the same aggregate, quarantine and device events are `moderation` and
+`security`, and board administration is `board_invitation`. Rank movement without an
+overtake and rival suggestion are not launch types; adding either means adding an
+enum member in four artifacts, not a sentence here.
 
 Notifications use typed schemas rather than unrestricted JSON. `packages/schemas/notification-delivery-v1.schema.json` is the machine-readable form of this section, `packages/schemas/planning-schema.sql` is the persistence authority, and the `notification-delivery` machine in `packages/schemas/state-machine-registry-v1.json` owns the lifecycle. Nothing below is implemented: no aggregate appends an event, no worker groups one, and no surface renders an inbox.
 
@@ -142,15 +238,37 @@ Three constraints carry the authority relation rather than leaving it to a worke
 
 ### Preferences and quiet hours
 
-The four category flags decide whether an inbox item is created at all. Quiet hours and the two opt-in timestamps decide only whether a best-effort transport carries a hint about an item that exists either way. The split is fixed rather than configurable: the inbox is the authority, so an inbox item withheld overnight is a lost notification and not a deferred one. With no transport shipping at launch, quiet hours therefore have no observable effect, which is stated here rather than shipped as a control that appears to do something.
+The five category flags decide whether an inbox item is created at all. Quiet hours and the two opt-in timestamps decide only whether a best-effort transport carries a hint about an item that exists either way. The split is fixed rather than configurable: the inbox is the authority, so an inbox item withheld overnight is a lost notification and not a deferred one. With no transport shipping at launch, quiet hours therefore have no observable effect, which is stated here rather than shipped as a control that appears to do something.
 
-Security and recovery notices cannot be muted. `security_enabled` is constrained true in the schema and in the DDL, and a `security` event has no suppression path at all.
+**Which flag governs which type is declared, and until PF-027 it was not.** Four flags
+faced eight event types and no artifact anywhere held the mapping, so
+`suppression_cause = 'category-disabled'` named a category nothing defined, and
+`compatibility` and `release` fell under no flag at all — a worker deciding whether to
+create one had no preference to read and had to invent a rule. Worse, whether a
+security notice could be muted depended on which rule it invented. The map is
+`event_categories` in `packages/schemas/notification-delivery-v1.schema.json`:
+`friend_request` and `board_invitation` are `social`, `rank_overtake` is `ranking`,
+`moderation` and `appeal` are `moderation`, `compatibility` and `release` are
+`product`, and `security` is `security`. `product_enabled` is the fifth flag the two
+uncovered types needed. Every category has a column on `notification_preferences` and
+a property on the preferences record, and the validator requires all three to agree.
+
+**A participant can now set them.** `notification_preferences` was a table with no
+operation of any kind — described in the schema, persisted in the DDL, reachable by
+nobody — so the flags that decide whether an item is created were settable only by a
+migration. `getNotificationPreferences` and `updateNotificationPreferences` are the
+two routes. The update body carries no `security_enabled`, no `quiet_hours_scope` and
+neither opt-in timestamp: the first two are constants and the timestamps record a
+consent granted through transport enrollment, and a field a client may send that the
+server must refuse is a control that appears to work.
+
+Security and recovery notices cannot be muted. `security_enabled` is constrained true in the schema and in the DDL, `security` maps to that flag rather than to a mutable one, and a `security` event has no suppression path at all.
 
 ### Retraction
 
 Corrections, moderation reversals and rebuilds retract prior notifications, and `retracted` is API-visible.
 
-A retracted item stays in the inbox. Deleting it would leave a participant who already read the original holding a fact the product has withdrawn, with nothing to tell them it withdrew it. Each retraction carries one of three registered reason codes and, for a rebuild, the superseding generation.
+A retracted item stays in the inbox. Deleting it would leave a participant who already read the original holding a fact the product has withdrawn, with nothing to tell them it withdrew it. Each retraction carries one of three registered reason codes and, for a rebuild, the superseding generation. `notifications.retraction_reason_code` admitted any string until PF-027, so "registered" was a convention; the column now carries the same closed vocabulary as the schema enum and the validator compares the two sets.
 
 Rebuild retraction is deterministic rather than a judgement: when a rebuild supersedes a generation, every item whose source event cites that generation is retracted. It follows from ADR-020 making rebuild the mechanism for a trust-state change, and it is the notification half of the correction path ADR-022 describes for sealed generations.
 

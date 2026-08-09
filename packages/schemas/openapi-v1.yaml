@@ -2027,12 +2027,11 @@ paths:
         - $ref: '#/components/parameters/Limit'
     put:
       operationId: renewPresence
+      description: 'Admit one qualifying pulse for the calling device. The only alternative is a device-proofed bearer credential, which makes this a native-bound operation: the social contract states that a browser or ordinary web session cannot fabricate indefinite activity, and until PF-026 a session cookie could PUT `availability: online` on a repeating timer and the statement had nothing behind it. The response is the merged account-level lease, so a device learns the answer its own pulse contributed to rather than the state it asked for.'
       x-authorization: authenticated-account
       x-recent-auth: not-required
       x-idempotency: required-durable-request-hash
       security:
-        - sessionCookie: []
-          csrfToken: []
         - bearerAuth: []
           deviceProof: []
       responses:
@@ -2067,7 +2066,6 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
       parameters:
-        - $ref: '#/components/parameters/Origin'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -2105,6 +2103,85 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
+  /notifications/preferences:
+    get:
+      operationId: getNotificationPreferences
+      description: 'Read the participant''s notification preferences. Until PF-027 notification_preferences was a table with no operation of any kind, so the four category flags that decide whether an inbox item is created at all were settable by nobody: the row existed, the schema described it, and a participant could neither read nor change it.'
+      x-authorization: authenticated-account
+      x-recent-auth: not-required
+      x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: NotificationPreferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+    put:
+      operationId: updateNotificationPreferences
+      description: 'Replace the participant''s notification preferences. `security_enabled` is absent from the request body rather than present and ignored: security and recovery notices cannot be muted, the SQL column is constrained true, and a field a client may send but the server must refuse is a control that appears to work. Quiet hours reach only best-effort transports, which is why the response echoes `quiet_hours_scope` as a constant — with no transport shipping at launch under D-086 they have no observable effect, and saying so is more honest than a setting that silently does nothing to the inbox.'
+      x-authorization: authenticated-account
+      x-recent-auth: not-required
+      x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: NotificationPreferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableContent'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferencesUpdate'
   /notifications/{notification_id}/read:
     post:
       operationId: markNotificationRead
@@ -4219,12 +4296,14 @@ components:
           type: string
           format: uuid
     Board:
+      description: 'One board. `kind` is the same four-value vocabulary as boards.board_type in packages/schemas/planning-schema.sql. Until PF-025 it admitted three, omitting hacker-house, so the one board type the route map publishes a public surface for could not be named in a response and a stored hacker-house board had no representation on the wire at all. `visibility` was published nowhere and stored nowhere, while AGENTS.md makes it load-bearing: only the global leaderboard is universally public by default, so an unlisted or private board view requires current viewer authorization and the rule needs a value to read.'
       type: object
       additionalProperties: false
       required:
         - board_id
         - kind
         - name
+        - visibility
         - membership_revision
         - state
       properties:
@@ -4233,14 +4312,22 @@ components:
           format: uuid
         kind:
           enum:
-            - organization
-            - community
             - private
+            - organization
+            - hacker-house
+            - community
         name:
           type: string
           minLength: 1
           maxLength: 100
+        visibility:
+          enum:
+            - public
+            - unlisted
+            - invite-only
+            - private
         membership_revision:
+          description: 'The board-scoped counter that advances on every membership or role change. It is the revision the D-386 current-viewer-authorization recheck compares against, which is why it is a counter rather than the membership state it used to be read from: a state detects a change and cannot order two.'
           type: integer
           minimum: 0
         state:
@@ -4278,17 +4365,26 @@ components:
       required:
         - kind
         - name
+        - visibility
       properties:
         kind:
           enum:
-            - organization
-            - community
             - private
+            - organization
+            - hacker-house
+            - community
         name:
           type: string
           minLength: 1
           maxLength: 100
+        visibility:
+          enum:
+            - public
+            - unlisted
+            - invite-only
+            - private
     BoardInvitationRequest:
+      description: 'An invitation grants a non-privileged membership and nothing else. The enum admitted owner and admin until PF-025, against an acceptance criterion that said board_invites cannot grant them and a board_invites table that held no role column to refuse with: the refusal compared a field no record held. Ownership moves only through the paired transfer, and admin promotion is a separate transition requiring recent authentication, so neither is reachable by accepting an invitation.'
       type: object
       additionalProperties: false
       required:
@@ -4300,8 +4396,6 @@ components:
           format: uuid
         role:
           enum:
-            - owner
-            - admin
             - member
             - viewer
     NamedResourceRequest:
@@ -4411,17 +4505,26 @@ components:
           type: integer
           minimum: 0
     PresenceRenewalRequest:
+      description: 'One qualifying pulse from one device. It carries no availability and cannot: AGENTS.md states presence is server-derived from qualifying device activity, and the presence-lease machine makes idle and expiry worker transitions, so a request that named a state was the client selecting a server-assigned value. Until PF-026 this body was a single `availability` field over online, idle and offline, declared as a projection of the machine — a coarsening applied to a request, which is the direction the projection cannot run in — and the social contract''s own rule that a browser or ordinary web session cannot fabricate indefinite activity had nothing enforcing it. It carries the device and the lease generation instead, because the discard rule is stated against exactly those two: a pulse naming a superseded generation is dropped rather than applied, and until now neither value reached the server on the write path that the rule governs.'
       type: object
       additionalProperties: false
       required:
-        - availability
+        - device_id
+        - lease_generation
+        - qualifying
       properties:
-        availability:
-          enum:
-            - online
-            - idle
-            - offline
+        device_id:
+          type: string
+          format: uuid
+        lease_generation:
+          description: The generation the pulse was minted under. A pulse naming a superseded generation is discarded, which is what stops a resumed process from reviving an expired lease.
+          type: integer
+          minimum: 0
+        qualifying:
+          description: Whether the device observed qualifying collector activity in this interval. A boolean and never a description, because a pulse carries no content of any kind.
+          type: boolean
     PresenceLease:
+      description: The merged answer for one account, not one device. Every device row is folded into a single availability by the deterministic merge in conformance/social/presence-merge-vectors.json, and a viewer the participant's presence visibility excludes reads offline, which is the same value an inactive participant reads.
       type: object
       additionalProperties: false
       required:
@@ -4583,6 +4686,101 @@ components:
         revision:
           type: integer
           minimum: 0
+    NotificationPreferences:
+      description: 'What the participant decided. The five category flags decide whether an inbox item is created at all; quiet hours and the two opt-in timestamps decide only whether a best-effort transport carries a hint about an item that exists either way. Every declared event type names one of these categories in packages/schemas/notification-delivery-v1.schema.json#/$defs/event_categories, which is the map PF-027 added: four flags governed eight event types, compatibility and release fell under none of them, and the suppression cause `category-disabled` named a category no artifact defined.'
+      type: object
+      additionalProperties: false
+      required:
+        - account_id
+        - social_enabled
+        - ranking_enabled
+        - moderation_enabled
+        - product_enabled
+        - security_enabled
+        - quiet_hours_scope
+        - timezone_name
+        - push_opt_in_at
+        - email_opt_in_at
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        social_enabled:
+          type: boolean
+        ranking_enabled:
+          type: boolean
+        moderation_enabled:
+          type: boolean
+        product_enabled:
+          description: Compatibility and release notices. They had no flag at all before PF-027, so a worker deciding whether to create one had no preference to read.
+          type: boolean
+        security_enabled:
+          description: Always true. Security and recovery notices cannot be muted, the SQL column is constrained true, and the request body carries no field for it.
+          const: true
+        quiet_hours_start_minute:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+          maximum: 1439
+        quiet_hours_end_minute:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+          maximum: 1439
+        quiet_hours_scope:
+          description: Fixed rather than configurable. The inbox is the notification authority, so an inbox item withheld overnight is a lost notification and not a deferred one.
+          const: best-effort-transports-only
+        timezone_name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        push_opt_in_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        email_opt_in_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+    NotificationPreferencesUpdate:
+      description: 'The settable half. `security_enabled`, `quiet_hours_scope`, `push_opt_in_at` and `email_opt_in_at` are absent: the first two are constants, and the two opt-in timestamps record a consent granted through the transport enrollment path rather than a value a preferences write may assert on the participant''s behalf.'
+      type: object
+      additionalProperties: false
+      required:
+        - social_enabled
+        - ranking_enabled
+        - moderation_enabled
+        - product_enabled
+        - timezone_name
+      properties:
+        social_enabled:
+          type: boolean
+        ranking_enabled:
+          type: boolean
+        moderation_enabled:
+          type: boolean
+        product_enabled:
+          type: boolean
+        quiet_hours_start_minute:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+          maximum: 1439
+        quiet_hours_end_minute:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+          maximum: 1439
+        timezone_name:
+          type: string
+          minLength: 1
+          maxLength: 64
     ModerationCaseRequest:
       type: object
       additionalProperties: false

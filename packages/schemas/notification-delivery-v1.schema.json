@@ -5,16 +5,42 @@
   "description": "The four records the inventory recorded as proposed and the repository lacked: what a source event is, what the inbox projection holds, what a transport attempt records, and what a preference decides. docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md is the normative owner, packages/schemas/planning-schema.sql#notification_events, #notifications, #notification_deliveries and #notification_preferences are the persistence owners, and the notification-delivery machine owns the lifecycle. The binding rule this file exists to make executable is that the server inbox is notification authority and push and email are best-effort hints: a notification exists for its recipient exactly when a row is in the inbox, and no transport can create one, keep one alive, or mark one read. D-086 ships the inbox alone; the transport half is specified now so that shipping one later adds rows rather than changes the model.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "policy_keys"],
+  "required": ["schema_version", "policy_keys", "event_categories"],
   "properties": {
     "schema_version": { "const": 1 },
     "policy_keys": { "$ref": "#/$defs/policy_keys" },
+    "event_categories": { "$ref": "#/$defs/event_categories" },
     "source_event": { "$ref": "#/$defs/source_event" },
     "inbox_item": { "$ref": "#/$defs/inbox_item" },
     "delivery_attempt": { "$ref": "#/$defs/delivery_attempt" },
     "preferences": { "$ref": "#/$defs/preferences" }
   },
   "$defs": {
+    "event_categories": {
+      "description": "Which preference flag governs which event type. PF-027 added this because nothing declared it: five categories now, four before, against eight event types, and the mapping existed only in whatever a worker would have assumed. Two things followed from that. compatibility and release named no category at all, so the suppression cause category-disabled could be recorded against an event no flag could have disabled. And whether security could be muted depended on the assumed mapping rather than on a rule — it maps to the one flag that is constrained true, so the answer is no, and the answer is now in the artifact rather than in the assumption. scripts/repository/validate_social_surface_contracts.py requires every declared event type to appear here exactly once, every named category to have a <category>_enabled property on the preferences record and a column of that name on packages/schemas/planning-schema.sql#notification_preferences, and security to map to the constrained-true flag.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "friend_request",
+        "board_invitation",
+        "rank_overtake",
+        "moderation",
+        "appeal",
+        "security",
+        "compatibility",
+        "release"
+      ],
+      "properties": {
+        "friend_request": { "const": "social" },
+        "board_invitation": { "const": "social" },
+        "rank_overtake": { "const": "ranking" },
+        "moderation": { "const": "moderation" },
+        "appeal": { "const": "moderation" },
+        "security": { "const": "security" },
+        "compatibility": { "const": "product" },
+        "release": { "const": "product" }
+      }
+    },
     "policy_keys": {
       "description": "Every number this model uses lives in packages/schemas/policy-defaults-v1.json and is named here rather than repeated. The two overtake keys are why the rank_overtake type has a suppression path the other types do not: an overtake that does not clear the material lead, or that reverses inside the hysteresis window, is a flip-flop and not news.",
       "type": "object",
@@ -312,6 +338,7 @@
         "social_enabled",
         "ranking_enabled",
         "moderation_enabled",
+        "product_enabled",
         "security_enabled",
         "timezone_name",
         "quiet_hours_scope"
@@ -321,6 +348,10 @@
         "social_enabled": { "type": "boolean" },
         "ranking_enabled": { "type": "boolean" },
         "moderation_enabled": { "type": "boolean" },
+        "product_enabled": {
+          "description": "Compatibility and release notices. They were governed by no flag at all before PF-027, which made them the two types a worker had to invent a rule for.",
+          "type": "boolean"
+        },
         "security_enabled": { "const": true },
         "quiet_hours_start_minute": {
           "type": "integer",

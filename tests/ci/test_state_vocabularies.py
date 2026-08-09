@@ -246,7 +246,10 @@ class ValidatorFixture:
         self.assertIn("only-in-binding=['encrypting', 'snapshotting']", output)
 
     def test_snake_case_state_value_fails(self) -> None:
-        self.edit_sql("'invalidated-by-block'", "'invalidated_by_block'")
+        # `deletion_jobs.state`. The value used to be `board_invites.state`'s
+        # `invalidated-by-block`, which PF-025 removed: a block must not drive an
+        # invitation to a terminal state an unblock cannot leave.
+        self.edit_sql("'rebuilding-projections'", "'rebuilding_projections'")
         code, output = self.run_validator()
         self.assertEqual(code, 1)
         self.assertIn("not lowercase kebab-case", output)

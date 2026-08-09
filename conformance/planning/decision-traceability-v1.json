@@ -2400,6 +2400,51 @@
       "id": "D-615",
       "implementation_bearing": false,
       "reason": "corrects two work units' acceptance criteria, which govern the planning record rather than the product"
+    },
+    {
+      "id": "D-616",
+      "implementation_bearing": true,
+      "normative_owner": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md with packages/schemas/state-machine-registry-v1.json",
+      "implementation_owner": "PF-025",
+      "machine_or_state_ownership": "`board-membership` and `board-invitation` states and transitions",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Validator run refusing a block-caused state or a block-cascade transition on either board machine, and refusing a block-race plan that deletes a relationship row"
+    },
+    {
+      "id": "D-617",
+      "implementation_bearing": true,
+      "normative_owner": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md with packages/schemas/planning-schema.sql",
+      "implementation_owner": "PF-025",
+      "machine_or_state_ownership": "`board_invites.role` and `boards.visibility` vocabularies",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "Validator run comparing BoardInvitationRequest.role with board_invites.role and refusing owner or admin in either"
+    },
+    {
+      "id": "D-618",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/policy-defaults-v1.json with packages/schemas/presence-pulse-v1.schema.json",
+      "implementation_owner": "PF-026",
+      "machine_or_state_ownership": "`presence-lease` thresholds",
+      "platform_scope": "Server, Native",
+      "required_executable_evidence": "Validator run asserting 30, 90 and 300 against the renamed keys and requiring idle strictly before offline"
+    },
+    {
+      "id": "D-619",
+      "implementation_bearing": true,
+      "normative_owner": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md with packages/schemas/openapi-v1.yaml",
+      "implementation_owner": "PF-026",
+      "machine_or_state_ownership": "`presence-lease` renewal transition and `profiles.presence_visibility`",
+      "platform_scope": "Server, Native, Web",
+      "required_executable_evidence": "Validator run refusing an availability field on PresenceRenewalRequest, refusing a non-device-proofed alternative on renewPresence, and evaluating the merge vectors under both device orderings"
+    },
+    {
+      "id": "D-620",
+      "implementation_bearing": true,
+      "normative_owner": "docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md with packages/schemas/notification-delivery-v1.schema.json",
+      "implementation_owner": "PF-027",
+      "machine_or_state_ownership": "`notification-delivery` categories and `notification_preferences` columns",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "Validator run requiring every event type to name a category with a matching preferences property and SQL column, and security to map to the constrained-true flag"
     }
   ]
 }
