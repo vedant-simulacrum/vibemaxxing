@@ -64,7 +64,7 @@
       "fixtures": [
         {
           "path": "conformance/adapters/claude-code-otel/source-observation.valid.json",
-          "sha256": "7a7435d1dc72825f2fa90c072b3028bf874b26a605a940635824ec8f3e498fab"
+          "sha256": "d6392099479eb5b9cf9cde49374ba79c8bb7159a7d4cedf2987910718a410582"
         }
       ],
       "expect": "accept",
@@ -79,7 +79,7 @@
       "fixtures": [
         {
           "path": "conformance/adapters/claude-code-otel/source-observation.invalid-user-email.json",
-          "sha256": "822c3bd69758a3db26b56c38dfc08c4e7f4ce2d0158d0500a2b306cbc9739c28"
+          "sha256": "899403ce0cf3d4e1196f92def5cc5e67c3c1b76aa07ffd81a6b556686f7763a2"
         }
       ],
       "expect": "reject",
@@ -94,7 +94,7 @@
       "fixtures": [
         {
           "path": "conformance/adapters/claude-code-otel/source-observation.invalid-organization-id.json",
-          "sha256": "7ffd16e64fe10432ae846a1ceb9415e84a4613590241f86aa2b79176bbc1b1de"
+          "sha256": "1019f90a31aa0b2b74395c993cc5e9ea6203f86900169c9770158170a5d71321"
         }
       ],
       "expect": "reject",
@@ -109,7 +109,7 @@
       "fixtures": [
         {
           "path": "conformance/adapters/claude-code-otel/source-observation.invalid-account-identity.json",
-          "sha256": "5474bc180e5c1f4faca06f67d52550042edb072991f033ff6eea5ecdf35456af"
+          "sha256": "5cf331c35e9f91a6519e893172738ad5ee09c250293e3115aac97f5c35f4d72a"
         }
       ],
       "expect": "reject",
@@ -124,7 +124,7 @@
       "fixtures": [
         {
           "path": "conformance/adapters/claude-code-otel/normalized-event.invalid-user-email.json",
-          "sha256": "8536fa86e0c95726d4bdbb05309c9feb47d29582405d7deb17e82c652ae3616b"
+          "sha256": "ab5f9309b55cc86003170d6f7e5310c5dc2bfe1739d0dbe45c45fdfb91203d87"
         }
       ],
       "expect": "reject",

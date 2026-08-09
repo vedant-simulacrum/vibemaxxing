@@ -8,7 +8,7 @@
       "schema_version": 1,
       "binding_id": "claude-code-otel-v1",
       "semantic_version": "1.0.0",
-      "content_sha256": "fd81ca3d6fdf474830a31ee9f6a47c569a7e4604ab52b3d5c08648c0f2c2140f",
+      "content_sha256": "13122775456e3bccc2b2f61d46c3cf96e1a720bf057a80b65a85ba4a3ab469c3",
       "producer_kind": "otel",
       "accounting_profile": {
         "id": "cloud-separate-cache-v1",
@@ -16,7 +16,7 @@
       },
       "arithmetic": {
         "id": "accounting-arithmetic-v1",
-        "content_sha256": "c2f84c0a8f7dc89547e84b58e75e3719a119ba30d0eda9c5fe536ed4cac589c9"
+        "content_sha256": "e549a2241ce8e67473e55e94b9aab5789724a36b2b8510f61e7dca25d80721b3"
       },
       "certification": {
         "state": "candidate",
@@ -161,7 +161,7 @@
       "schema_version": 1,
       "binding_id": "generic-otel-v1",
       "semantic_version": "1.0.0",
-      "content_sha256": "80a4a17307712449436dc8b014529e9c4a2079ce5d773164519b66a08df49b3d",
+      "content_sha256": "7443a69dfec7f03a825072f936135dd835a16a07efbcfd6747aace689e3fbc29",
       "producer_kind": "otel",
       "accounting_profile": {
         "id": "cloud-separate-cache-v1",
@@ -169,7 +169,7 @@
       },
       "arithmetic": {
         "id": "accounting-arithmetic-v1",
-        "content_sha256": "c2f84c0a8f7dc89547e84b58e75e3719a119ba30d0eda9c5fe536ed4cac589c9"
+        "content_sha256": "e549a2241ce8e67473e55e94b9aab5789724a36b2b8510f61e7dca25d80721b3"
       },
       "certification": {
         "state": "uncertified",
@@ -220,7 +220,7 @@
       "schema_version": 1,
       "binding_id": "generic-acp-v1",
       "semantic_version": "1.0.0",
-      "content_sha256": "32ec1fc06fa10f3870e3f7dc39527492b37f426c193a5700f7798ecfa54a455e",
+      "content_sha256": "ae7e394768798056387f7fde0062a9f5afbe9714d055d50f3d374a8c8813302f",
       "producer_kind": "acp",
       "accounting_profile": {
         "id": "cloud-separate-cache-v1",
@@ -228,7 +228,7 @@
       },
       "arithmetic": {
         "id": "accounting-arithmetic-v1",
-        "content_sha256": "c2f84c0a8f7dc89547e84b58e75e3719a119ba30d0eda9c5fe536ed4cac589c9"
+        "content_sha256": "e549a2241ce8e67473e55e94b9aab5789724a36b2b8510f61e7dca25d80721b3"
       },
       "certification": {
         "state": "uncertified",

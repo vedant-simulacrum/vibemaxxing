@@ -127,14 +127,17 @@
       ],
       "properties": {
         "state": {
+          "description": "`uncertified` plus the eight states of the `source-certification` machine in packages/schemas/state-machine-registry-v1.json, matching packages/schemas/source-receipt-v1.schema.json#certification.state exactly. `revoked` is gone because no transition of that machine reaches it, and `testing`, `superseded` and `retired` are present because transitions do.",
           "enum": [
             "uncertified",
             "candidate",
+            "testing",
             "active",
             "degraded",
             "suspended",
             "expired",
-            "revoked"
+            "superseded",
+            "retired"
           ]
         },
         "tuple": {

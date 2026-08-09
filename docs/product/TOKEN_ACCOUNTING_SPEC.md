@@ -12,53 +12,48 @@ Status: Normative draft. Must be implemented with cross-provider golden fixtures
 
 ## Canonical fields
 
-Every normalized operation may contain:
+`packages/schemas/normalized-event.schema.json` is the machine owner of the normalized record and `packages/schemas/source-observation.schema.json` is the machine owner of what an adapter hands it. This section is their prose, not a second vocabulary.
 
-- `operation_id`
-- `provider`
-- `agent`
-- `model`
-- `started_at_bucket`
-- `ended_at_bucket`
-- `input_tokens_total`
-- `output_tokens_total`
-- `cache_read_input_tokens`
-- `cache_write_input_tokens`
-- `reasoning_output_tokens`
-- `tool_tokens`
-- `other_billable_tokens`
-- `billable_tokens_total`
-- `count_source`
-- `count_confidence`
-- `category_relationships`
-- `provider_usage_schema_version`
-- `adapter_version`
+Until PF-017 it was a second vocabulary. It listed eighteen field names — `operation_id`, `provider`, `agent`, `model`, `started_at_bucket`, `ended_at_bucket`, `input_tokens_total`, `output_tokens_total`, `cache_read_input_tokens`, `cache_write_input_tokens`, `reasoning_output_tokens`, `tool_tokens`, `other_billable_tokens`, `billable_tokens_total`, `count_source`, `count_confidence`, `category_relationships`, `provider_usage_schema_version` and `adapter_version` — and **not one of them existed in any schema in this repository**. The two documents answered the same question and only one of them was executable, which is how `operation_id` came to be a field the specification named, the schemas had never had, and reconciliation needed.
 
-No content fields are permitted.
+The record binds five groups of facts.
+
+- **Identity of the record.** `event_id` and `session_id`, both collector-minted, and `parent_event_id` for this collector's own event graph. None of the three survives being observed by a second collector.
+- **Identity of the execution.** `operation.identity_source`, `operation.operation_ref` and `operation.parent_operation_ref`. The discriminator comes first because it says how the identity was obtained: `source-assigned` when the source named the execution, `source-cursor-derived` when it exposed only an ordered cursor that belongs to it, `absent` when there is no source-derived identity at all. The schema refuses `absent` beside a populated reference and refuses a populated discriminator beside a null one, so a collector cannot supply an identity it did not read, and it pins an `absent` event to private analytics because that is the weak class of `packages/schemas/observer-equivalence-v1.json` and the weak class never competes.
+- **Identity of the observer.** `observer.collector_instance_id` and `observer.adapter_instance_id`, with `certification.capture_mode`. Mode and collector instance are the exclusivity channel identity the equivalence rule names, and the rule's tied-channel case — two collector instances in one mode over one source runtime — could not be evaluated at all while the event carried neither. Both observer fields are listed in that rule's forbidden commitment preimage inputs, and they are forbidden there for the same reason they are required here: an observer-derived commitment never collides, and a commitment that never collides is a client deciding for itself that its observation is not a duplicate.
+- **What was read.** `reading.accumulation`, `reading.reset_detection` and `reading.series_generation`, then `canonical_tokens`, `source_observed_categories`, `count_authority` and `reconstruction_method`. `accumulation` is the flag that separates a running total from an increment; an OTLP counter is cumulative by default, and a receiver that adds two cumulative readings has counted everything before the second one twice. A cumulative reading is not an accounting input until it has been differenced, and `packages/schemas/accounting-arithmetic-v1.json#reconciliation` rejects one that has not been.
+- **What was decided.** `certification`, `outcome`, `retry`, `duplicate_domain`, `local_fingerprint`, `rule_result`, `privacy_scan`, `local_detector_commitment` and `network_eligible`, which is always false.
+
+No content fields are permitted, and `additionalProperties` is false on both records, so the prohibition is a refusal rather than an instruction.
+
+### Outcome
+
+The observation vocabulary and the event vocabulary shared three values and each held two the other did not. An observation could report `aborted-unknown` and `unknown`; an event could record `aborted-known` and `quarantined-unknown`; no mapping was declared anywhere, so `aborted-unknown` had to be written as `aborted-known`, which inverts the fact the source reported.
+
+`packages/schemas/accounting-arithmetic-v1.json#outcome_normalization` now declares the whole map. `aborted-unknown` is carried through unchanged, `unknown` becomes `quarantined-unknown` because quarantining is the normalizer's decision rather than the source's report, and `aborted-known` is declared as normalizer-assigned: it is reached only from an `aborted-unknown` observation plus a `count-reported-consumption` cancellation policy, and no source can hand it over. The validator checks the map is total over the observation enum, lands inside the event enum, and that every event value the map does not reach carries a reason — so a missing case and a stale excuse both fail.
 
 ## Source precedence
 
-1. Provider/API authoritative billable usage attached to the operation.
-2. Agent-produced structured usage derived directly from provider response.
-3. Trusted local proxy measurement.
-4. Offline tokenizer estimate.
-5. Unknown.
+The precedence list here was five prose levels — provider, agent-produced, trusted local proxy, offline tokenizer, unknown — and it resolved to nothing. `count_authority` has four values, `packages/schemas/observer-equivalence-v1.json` ranks nine observation modes, and there was no mapping between any two of the three. It has been replaced with the two orders that are executable, in the sequence reconciliation applies them.
 
-Lower-precedence sources must never override a higher-precedence source for the same operation.
+**Count authority** ranks who is being trusted, and is the declaration order of `count_authority` in `packages/schemas/normalized-event.schema.json`:
+
+1. `provider-reported`
+2. `runtime-reported`
+3. `source-reported`
+4. `exact-reconstruction`
+
+This is not an order of precision. An exact tokenizer reconstruction is the most precise of the four and ranks last because it is the only one the participant's own machine produces; ranking it above a provider figure would make the strongest evidence class the one with no external witness. `packages/schemas/accounting-profile.schema.json` spelled the fourth value `reconstructed` while nine other artifacts spelled it `exact-reconstruction`, two spellings with no overlap, so a profile's declared authority could not be ranked at all; the profile now uses the one spelling and the validator compares the two vocabularies by set equality.
+
+**Observation mode** ranks the channel, and is `precedence_rank` in `packages/schemas/observer-equivalence-v1.json`: native-event, official-hook, extension-api, local-runtime, ACP, OTel, proxy, wrapper, live-log. The same nine values are the `execution_mode` of an observation, the `capture_mode` of an event and both mode vocabularies of `packages/schemas/source-receipt-v1.schema.json`. `acp` was missing from the observation schema while `generic-acp-v1` was a registered producer binding, so an ACP observation was unrepresentable in the schema every ACP adapter has to write; `capture_mode` on the event was an unconstrained slug, so an event could name a mode with no precedence rank and the survivor rule would have had nothing to order it by.
+
+Lower-precedence sources never override a higher-precedence source for the same operation, and are never added to it. See **Reconciliation** below for what happens when the precedence does not separate them.
 
 ## Total calculation
 
-`billable_tokens_total` is used when the provider supplies an authoritative non-overlapping total.
+Token Burn is the checked sum of the mutually exclusive canonical components the profile enables. A source total is an observation rather than a universal addend: `source_total_authority` on the profile states whether it is authoritative and exclusive, authoritative and containing, diagnostic-only, or absent, and `containment_edges` state which categories are contained in which. A contained category is subtracted from its container with a checked subtraction before both appear as canonical outputs, and `containment` on each `source_observed_categories` entry records what the source said about it: `exclusive`, `contains-other-categories`, `contained-by-other-category` or `diagnostic-total`.
 
-Otherwise, compute from non-overlapping leaf categories only. Category metadata must state whether a category is:
-
-- `exclusive`
-- `included_in_input`
-- `included_in_output`
-- `included_in_total`
-- `informational_only`
-
-Cached input is normally included in total input. Reasoning/thought output is normally included in total output when the provider reports it that way. The normalizer must not add them again.
+Cached input is normally included in total input, and reasoning output is normally included in total output when the provider reports it that way. The containment graph is what says so for a given profile, and the normalizer never adds them again.
 
 ## Arithmetic
 
@@ -90,6 +85,37 @@ Unit prices are integers in pricing-currency nano-units per token. `units × uni
 ### Retries, cancellation and nested execution
 
 `retry_policy`, `cancellation_policy` and `nested_execution_policy` in `packages/schemas/accounting-profile.schema.json` are enums whose behaviour D-262 defines in the arithmetic record. Each retry value names which attempts count, whether a distinct model execution is required, what identifies an attempt, and which control prevents the double count. Each cancellation value names the counted quantity and the treatment of an unknown remainder, which is absent and never zero. Each nested-execution value names child attribution, whether a parent total contains its children, and which control deduplicates.
+
+### Reconciliation
+
+Several readings can describe one operation: a provider figure and a proxy measurement, two collectors watching one runtime, an OTLP export and an official hook. Until PF-018 nothing said what to do with them, so the answer was whichever reading an implementation processed last. `packages/schemas/accounting-arithmetic-v1.json#reconciliation` owns the rule and `conformance/accounting/reconciliation-vectors-v1.json` is its executable form.
+
+Reconciliation is **per operation**, grouped on the whole exclusivity unit — device lineage, source runtime, runtime generation — plus the operation reference. The generation is in the key because a source that restarts may reuse an operation identifier, and a key without it would discard the second execution as a duplicate of the first.
+
+Within a group:
+
+1. A reading whose `identity_source` is `absent` is not reconciled with anything, because nothing distinguishes it from a duplicate. It is private analytics. Its tokens are real and the participant keeps them; they do not compete. Every retrospective import has this shape.
+2. A cumulative reading rejects. It is not an accounting input until it has been differenced against the previous reading of its series generation.
+3. The highest count authority in the group survives. Every lower-authority reading is **superseded**, never averaged with the survivor and never added to it. Two readings of one operation are two descriptions of one consumption.
+4. If authority does not separate them and their canonical components agree, one is counted and the rest are superseded. Observation-mode precedence decides which, and the choice does not change the total.
+5. If authority does not separate them and their canonical components disagree, the operation takes the disposition its accounting profile declared in advance through `contradiction_policy`: reject, quarantine, or private analytics. **Selecting a survivor between two equally authoritative contradicting sources is forbidden**, because the accepted total would then depend on which reading was seen first.
+
+The result is a function of the readings and never of their order. Ties break on authority rank, then observation-mode precedence rank, then the reading's own canonical bytes; array position, arrival order, receive time and local wall-clock time are named as forbidden inputs and the vector schema refuses to be able to carry any of them, because a field a vector can carry is a field a tie can be broken on. The validator evaluates every vector under **every permutation** of its readings and requires one result.
+
+Nothing in this section asserts that any capture tuple is certified. None is: every producer binding in `conformance/accounting/producer-bindings-v1.json` is `candidate` or `uncertified` and every effective ceiling is private analytics. Reconciliation decides which reading counts; certification decides whether the counted figure may compete, and it is a separate gate that is closed today for every mechanism this repository can capture.
+
+### Bounds
+
+The integer domain says what a `uint64` can hold. Two further bounds say what is plausible, and both refuse rather than report the ceiling.
+
+| Bound | Value | What happens |
+|---|---:|---|
+| One event's Token Burn | 100,000,000 | the event is rejected |
+| A period accumulator | 18,446,744,073,709,551,615 | the event that would exceed it is rejected; the period total is unchanged |
+
+One hundred million tokens in a single model operation is not a measurement. The largest published context window is under ten million and the seven canonical components of one operation cannot together reach ten times that, so a figure above the bound is a misread counter — most often a cumulative reading admitted as an increment, which is exactly the confusion `reading.accumulation` now makes visible. A saturating implementation would report the bound itself, and nothing downstream distinguishes that from a real total.
+
+Neither bound caps what a participant may accumulate. Token Burn is the raw metric of record: accepted, immutable and unnormalized. The per-event bound refuses one impossible event and the period bound refuses one event that would leave the integer domain; clipping an accumulated period figure would be normalization under another name, and `capping` is recorded as forbidden in the arithmetic record for that reason.
 
 ### Corrections
 

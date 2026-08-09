@@ -2,7 +2,7 @@
   "schema_version": 1,
   "arithmetic_id": "accounting-arithmetic-v1",
   "semantic_version": "1.0.0",
-  "content_sha256": "c2f84c0a8f7dc89547e84b58e75e3719a119ba30d0eda9c5fe536ed4cac589c9",
+  "content_sha256": "e549a2241ce8e67473e55e94b9aab5789724a36b2b8510f61e7dca25d80721b3",
   "digest": {
     "algorithm": "sha-256",
     "preimage_encoding": "cbor-core-deterministic",
@@ -129,6 +129,92 @@
         "dedup_control": "observer-equivalence"
       }
     }
+  },
+  "outcome_normalization": {
+    "domain": "source-observation-v1.outcome",
+    "codomain": "normalized-accounting-event-v1.outcome",
+    "map": [
+      {
+        "observed": "success",
+        "normalized": "success"
+      },
+      {
+        "observed": "failed-after-consumption",
+        "normalized": "failed-after-consumption"
+      },
+      {
+        "observed": "cancelled-after-consumption",
+        "normalized": "cancelled-after-consumption"
+      },
+      {
+        "observed": "aborted-unknown",
+        "normalized": "aborted-unknown"
+      },
+      {
+        "observed": "unknown",
+        "normalized": "quarantined-unknown"
+      }
+    ],
+    "normalizer_assigned": [
+      {
+        "normalized": "aborted-known",
+        "reason": "No observation reports this. It is reached only when the profile's cancellation_policy is count-reported-consumption and the source reported a consumption figure alongside the abort, so it is the normalizer's conclusion from an aborted-unknown observation plus a policy, never a value a source can hand over."
+      }
+    ]
+  },
+  "bounds": {
+    "per_event_token_burn_maximum": "100000000",
+    "per_event_exceeded_disposition": "reject",
+    "per_event_basis": "One model operation. The largest published context window is under ten million tokens and the seven canonical components of one operation cannot together reach ten times that, so a single event above one hundred million tokens is a misread counter rather than a measurement - most often a cumulative reading admitted as an increment, which is the confusion packages/schemas/normalized-event.schema.json#reading now makes visible.",
+    "period_type": "utc-day",
+    "period_accumulator_width": "uint64",
+    "period_accumulator_maximum": "18446744073709551615",
+    "period_exceeded_disposition": "reject",
+    "period_basis": "The period accumulator is a uint64 like every other quantity here, and an event that would carry a period total past that maximum leaves the domain. It rejects for the same reason a component sum does.",
+    "saturation": "forbidden",
+    "capping": "forbidden",
+    "capping_reason": "Token Burn is the raw metric of record: accepted, immutable and unnormalized. Saturating an event at a bound returns the bound as though it were a total, and capping a participant's accumulated period figure would normalize the metric by another name. Neither bound above is a limit on how much a participant may accumulate - the per-event bound refuses one impossible event, and the period bound refuses one event that would leave the integer domain.",
+    "rejected_event_effect": "single-event-rejected-period-total-unchanged"
+  },
+  "reconciliation": {
+    "grouping": "one-operation-within-one-exclusivity-unit",
+    "group_key": [
+      "device_lineage_id",
+      "source_runtime_id",
+      "runtime_generation",
+      "operation_ref"
+    ],
+    "absent_identity_disposition": "private-analytics",
+    "cumulative_reading_disposition": "reject",
+    "cumulative_reading_reason": "A running total is not an accounting input. It becomes one by being differenced against the previous reading of the same series generation, and a reconciler that admits it as an increment adds every token before it a second time.",
+    "authority_vocabulary": "normalized-accounting-event-v1.count_authority",
+    "authority_order": [
+      "provider-reported",
+      "runtime-reported",
+      "source-reported",
+      "exact-reconstruction"
+    ],
+    "authority_order_basis": "Who is being trusted, not how precise the figure is. An exact tokenizer reconstruction is the most precise of the four and ranks last because it is the only one the participant's own machine produces; ranking it above a provider figure would make the strongest evidence class the one with no external witness. The order is the declaration order of the count_authority enum in packages/schemas/normalized-event.schema.json and is checked against it rather than restated.",
+    "lower_authority_disposition": "superseded",
+    "summation_across_readings": "forbidden",
+    "equal_authority_agreement": "one-counted-remainder-superseded",
+    "equal_authority_contradiction": "profile-contradiction-policy",
+    "contradiction_test": "canonical-components-differ",
+    "contradiction_resolution_by_selection": "forbidden",
+    "contradiction_reason": "Two equally authoritative sources reporting different numbers for one operation is a disagreement the accounting cannot settle. Choosing one makes the accepted total depend on which reading the reconciler happened to look at first, which is exactly the array-order dependence conformance/accounting/reconciliation-vectors-v1.json refuses. The operation takes the disposition its accounting profile declared in advance.",
+    "ordering_independence": "required",
+    "tie_break_order": [
+      "source-authority-rank",
+      "observation-mode-precedence-rank",
+      "reading-bytes-lexicographic"
+    ],
+    "forbidden_tie_break_inputs": [
+      "array-position",
+      "arrival-order",
+      "receive-time",
+      "local-wall-time"
+    ],
+    "mode_precedence_authority": "observer-equivalence-v1.observation_modes"
   },
   "correction_semantics": {
     "accepted_total_mutability": "immutable",

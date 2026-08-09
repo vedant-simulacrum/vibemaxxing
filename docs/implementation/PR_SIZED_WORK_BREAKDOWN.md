@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 195 |
+| `not-started` | 193 |
 | `in-progress` | 7 |
-| `landed` | 52 |
+| `landed` | 54 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 206 assertions across 52 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 230 assertions across 54 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 11.
+Startable now — not done, and every dependency done: 10.
 
-`PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-048`, `OS-001`, `OS-003`, `OS-009`.
+`PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-048`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,8 +90,8 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 7 | `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
-| 2 | 5 | `PF-018`, `PF-022`, `PF-027`, `PF-031`, `PF-032` |
+| 1 | 6 | `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
+| 2 | 4 | `PF-022`, `PF-027`, `PF-031`, `PF-032` |
 | 3 | 1 | `PF-023` |
 | 4 | 1 | `PF-029` |
 | 5 | 1 | `PF-033` |
@@ -99,7 +99,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 | 7 | 1 | `PF-035` |
 | 8 | 1 | `PF-036` |
 
-Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 196 of 260. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -464,33 +464,91 @@ The API third is met by publishing `evaluated.certification_state` on `Appraisal
 - narrow per-tuple emergency downgrade and reinstatement.
 
 ### PF-017 — Source observation and operation identity
-Files: `packages/schemas/source-observation.schema.json`, `packages/schemas/normalized-event.schema.json`, `docs/product/TOKEN_ACCOUNTING_SPEC.md`
-Acceptance: every example under `packages/schemas/examples/` and `conformance/adapters/claude-code-otel/` validates, and a normalized event that names no operation identity, observer identity or cumulative/incremental flag is rejected by the schema.
+Files: `packages/schemas/source-observation.schema.json`, `packages/schemas/normalized-event.schema.json`, `packages/schemas/source-receipt-v1.schema.json`, `packages/schemas/producer-accounting-binding-v1.schema.json`, `packages/schemas/accounting-profile-otel-v1.json`, `packages/schemas/local-store-v1.sql`, `packages/schemas/examples/source-observation.valid.json` (new), `packages/schemas/examples/source-observation.valid-acp.json` (new), `packages/schemas/examples/source-observation.invalid-no-observer.json` (new), `packages/schemas/examples/source-observation.invalid-no-accumulation-flag.json` (new), `packages/schemas/examples/normalized-event.invalid-no-operation-identity.json` (new), `packages/schemas/examples/normalized-event.invalid-invented-operation-identity.json` (new), `packages/schemas/examples/normalized-event.invalid-unranked-capture-mode.json` (new), `packages/schemas/examples/normalized-event.invalid-cumulative-without-reset-rule.json` (new), `packages/schemas/examples/normalized-event.valid.json`, `conformance/adapters/claude-code-otel/source-observation.valid.json`, `conformance/adapters/claude-code-otel/normalized-event.invalid-user-email.json`, `conformance/adapters/manifest.json`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_source_observation_identity.py` (new), `docs/product/TOKEN_ACCOUNTING_SPEC.md`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
+Acceptance: `packages/schemas/examples/` is executed by enumerating the directory rather than a list — every file carries a prefix a schema owns, every `.valid` file validates, every `.invalid-` file is refused by its own schema or by a named validator that has to name the file back, every prefix owns at least one valid example, and a prefix with no negative example declares why with the reverse check. The nine observation modes are one set across `source-observation.schema.json#execution_mode`, `normalized-event.schema.json#certification.capture_mode`, both mode vocabularies of `source-receipt-v1.schema.json` and `producer-accounting-binding-v1.schema.json#certification.tuple.mode`, compared against `observer-equivalence-v1.json#observation_modes` by set equality in both directions. `certification.state` on the receipt and the binding equals `uncertified` plus the `source-certification` machine's states, computed from the registry, and `source_receipts.certification_state` declares that vocabulary as a CHECK constraint. `operation`, `observer` and `reading` are required on both records; an `absent` identity source beside a populated `operation_ref` is refused and is pinned to `private-analytics`; a `cumulative` reading declaring `not-applicable` reset detection is refused. Every observer field is refused as an equivalence commitment preimage input and is named in that rule's forbidden list. `python3 -m unittest tests.ci.test_source_observation_identity` exits 0 and fails on each of those drifts.
 Depends: PF-015
 Repair: P-1140F-3
 Serves: SR-017
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: contains 1 packages/schemas/source-observation.schema.json :: "acp"
+Evidence: contains 6 packages/schemas/normalized-event.schema.json :: "identity_source"
+Evidence: contains 4 packages/schemas/normalized-event.schema.json :: "accumulation"
+Evidence: absent packages/schemas/source-receipt-v1.schema.json :: "revoked"
+Evidence: absent packages/schemas/producer-accounting-binding-v1.schema.json :: "revoked"
+Evidence: contains 1 packages/schemas/local-store-v1.sql :: check (certification_state in (
+Evidence: contains 3 scripts/repository/validate_state_vocabularies.py :: source_receipts.certification_state
+Evidence: contains 1 scripts/repository/validate_planning_artifacts.py :: def validate_schema_example_coverage
+Evidence: contains 1 docs/product/TOKEN_ACCOUNTING_SPEC.md :: operation.identity_source
+Evidence: exists packages/schemas/examples/source-observation.valid-acp.json
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_source_observation_identity
 
 - authenticated tuple selection before normalization;
 - provider/model/source facts;
 - operation, parent/child, retry generation, observer identity, cumulative/incremental semantics;
 - direct/proxy/ACP/OTel equivalence.
 
+**The acceptance was rewritten, and it had to be.** The first clause — "every example under `packages/schemas/examples/` and `conformance/adapters/claude-code-otel/` validates" — was not a check anybody could run. Most of the files in both directories are negatives that must *not* validate, so read literally the clause was false at head and false at every commit before it; read charitably it was "the examples are in the state the validator expects", which is what the suite already did and therefore learned nothing. And it improved when a failing example was deleted, which is the class this repository keeps rediscovering. The unit also declared no `(new)` file, so artifact presence could not observe it either: the whole status rested on assertion, and the only falsifiable half was the second clause. That half was genuinely failing — no schema here had an operation identity, an observer identity or an accumulation flag — but nothing would have said so.
+
+It is replaced by a directory enumeration. The directory is the input: a prefix no schema owns fails, a name that is neither `.valid` nor `.invalid-<reason>` fails, a negative that stops being negative fails, and a prefix that loses its last valid example fails. Reading it that way immediately found that `consolidation-plan.invalid-newer-identity-survives.json` appears nowhere in `validate_planning_artifacts.py` — it is refused by `validate_oauth_identity_contract.py`, which nothing recorded, so from this validator's side it looked like an orphan and from the other side nothing said the schema was expected to accept it. Both schema-valid negatives now name the validator that refuses them, that file has to name the fixture back, and a declaration for a fixture the schema has since started refusing fails.
+
+"cumulative/incremental" became `cumulative`/`delta`. `producer-accounting-binding-v1.schema.json` already carries `temporality` with those two values because they are OpenTelemetry's; a third word for the same fact would have been the hidden mapping this unit exists to remove, so the observation reads the binding's vocabulary back and the validator compares the two by set equality.
+
+**Five live defects, all in artifacts that already existed.**
+
+`acp` was in four of the five artifacts that carry the observation-mode vocabulary and not in `source-observation.schema.json`, while `generic-acp-v1` sat in `conformance/accounting/producer-bindings-v1.json` as a registered binding. An ACP observation was unrepresentable in the schema every ACP adapter has to write, and PF-017's own scope line says "direct/proxy/ACP/OTel equivalence". A one-value gap in one of five artifacts is invisible to any check that reads one artifact, which is why the check now reads all six and compares.
+
+`certification.capture_mode` on the event was `^[a-z0-9]+(?:[.-][a-z0-9]+)*$` with no enum. An event could name a capture mode `observer-equivalence-v1.json` assigns no precedence rank, and the survivor rule would then have had nothing to order it by. `conformance/accounting/reconciliation-vectors-v1.json` carries that reading as a refusal.
+
+The outcome vocabularies did not cross-resolve. An observation could report `aborted-unknown` and `unknown`; an event could record `aborted-known` and `quarantined-unknown`; three values were shared and no mapping existed anywhere. `aborted-unknown` therefore had to be written as `aborted-known`, which inverts the fact the source reported — an unknown remainder recorded as a known one. The map now lives in `accounting-arithmetic-v1.json#outcome_normalization`, `aborted-unknown` passes through unchanged, and `aborted-known` is declared normalizer-assigned with the reason it is unreachable from any observation.
+
+The certification state vocabulary was a third vocabulary. `source-receipt-v1.schema.json` and `producer-accounting-binding-v1.schema.json` both admitted `revoked`, which no transition of the `source-certification` machine reaches — that machine ends at `retired` — and both omitted `testing`, `superseded` and `retired`, which transitions do. So a receipt could record a state no certification can ever hold and could not record three that one can. `PF-067` had recorded the device column that stores it, `source_receipts.certification_state`, in `SQL_COLUMNS_WITHOUT_VOCABULARY` naming PF-017 and PF-018 as the owners "rather than guessed at"; the guess would have been wrong in both directions. The column now carries the CHECK constraint and the two schemas carry the same nine values.
+
+And that table had no reverse check. `check_absence_reasons` proves a `RECORDED_ABSENCES` reason cannot outlive the binding it excused, and the same guard was never applied to `SQL_COLUMNS_WITHOUT_VOCABULARY` — rule 8 `continue`s past a listed column without reading it, so a column that acquired a CHECK would have kept the excuse and silently lost the check. Both directions are now checked, and the table is empty.
+
+**The prose owner was a second vocabulary.** `docs/product/TOKEN_ACCOUNTING_SPEC.md` listed eighteen canonical field names — `operation_id`, `count_source`, `billable_tokens_total`, `category_relationships` and the rest — and not one of them existed in any schema in this repository. Its five-level source-precedence list resolved to neither the four `count_authority` values nor the nine mode precedence ranks. Both sections are replaced by prose over the fields that exist, with the two orders that are executable. `operation_id`, the field the specification named and the schemas never had, is what reconciliation needed and is now `operation.operation_ref` with the discriminator that says how it was obtained.
+
+**What is not claimed.** `accounting-profile-otel-v1.json` now derives the three new blocks, and two of them say the channel supplies nothing: the OTLP counter names no execution, so `identity_source` is `source-cursor-derived` and never `source-assigned`, and `parent_operation_ref` is always null because the counter carries no linkage between a subagent execution and the one that started it. That is why `observer-equivalence-v1.json` ranks the mode's achievable class at source-cursor. Making the fact representable is not making it available.
+
+The inventory row is repaired. Line `:34` attributed source observation and normalized accounting to `PF-020..PF-024` — the transaction, ranking, period and social units, none of which owns any of it. PF-042's note flagged the misattribution four units ago and named the wrong line and the wrong pair.
+
 ### PF-018 — Accounting reconciliation and bounds
-Files: `packages/schemas/accounting-profile.schema.json`, `conformance/accounting/reconciliation-vectors-v1.json` (new), `docs/product/TOKEN_ACCOUNTING_SPEC.md`
-Acceptance: every reconciliation vector produces the same result under two array orderings; a vector with two equal-authority contradicting sources produces the recorded deterministic outcome; an event exceeding the declared period bound is rejected rather than saturating.
+Files: `packages/schemas/accounting-arithmetic-v1.json`, `packages/schemas/accounting-arithmetic-v1.schema.json`, `packages/schemas/accounting-profile.schema.json`, `packages/schemas/reconciliation-vectors-v1.schema.json` (new), `conformance/accounting/reconciliation-vectors-v1.json` (new), `conformance/accounting/reconciliation-vectors-v1.invalid-arrival-order-field.json` (new), `conformance/accounting/accounting-profiles-v1.json`, `conformance/accounting/producer-bindings-v1.json`, `conformance/accounting/manifest.json`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_accounting_reconciliation.py` (new), `docs/product/TOKEN_ACCOUNTING_SPEC.md`
+Acceptance: every reconciliation vector produces one result under **every permutation** of its readings, exhausted rather than sampled, with vectors capped at six readings so the sweep stays bounded; a vector with two equal-authority contradicting sources takes the disposition its accounting profile declared in advance and never a selected survivor; an event above the per-event bound and an event that would carry a period accumulator past the integer domain are both rejected, with the period total unchanged, and the arithmetic record declares saturation and capping forbidden. `reconciliation.authority_order` equals `normalized-event.schema.json#count_authority` in declaration order and `accounting-profile.schema.json`'s authority vocabulary equals it as a set. The failure conditions the vectors exercise equal the conditions the evaluator can reach, in both directions. `python3 -m unittest tests.ci.test_accounting_reconciliation` exits 0 and fails on each of those drifts.
 Depends: PF-017
 Repair: P-1140F-3
 Serves: SR-009
 Est: 12-16
-Status: not-started
+Status: landed
+Evidence: exists conformance/accounting/reconciliation-vectors-v1.json
+Evidence: exists packages/schemas/reconciliation-vectors-v1.schema.json
+Evidence: contains 1 scripts/repository/validate_planning_artifacts.py :: def evaluate_reconciliation
+Evidence: contains 1 packages/schemas/accounting-arithmetic-v1.json :: "per_event_token_burn_maximum": "100000000"
+Evidence: contains 1 packages/schemas/accounting-arithmetic-v1.json :: "capping": "forbidden"
+Evidence: contains 1 conformance/accounting/reconciliation-vectors-v1.json :: "condition": "period-bound-exceeded"
+Evidence: absent conformance/accounting/reconciliation-vectors-v1.json :: arrival
+Evidence: absent packages/schemas/accounting-profile.schema.json :: "reconstructed"
+Evidence: contains 1 docs/product/TOKEN_ACCOUNTING_SPEC.md :: Selecting a survivor between two equally authoritative contradicting sources is forbidden
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_accounting_reconciliation
 
 - per-operation grouping;
 - source authority, containment, cache/reasoning/modality semantics;
 - equal-authority contradiction handling;
 - deterministic tie-breaking independent of array order;
 - checked arithmetic and practical event/period bounds.
+
+**The acceptance was rewritten, and only in one direction.** It was satisfiable as written and it is now stronger. "The same result under two array orderings" is a check whose author picks the two orderings, and two orderings that agree prove nothing about the ones that do not; a first-wins reconciler is correct on any single ordering of an agreeing pair. The validator exhausts every permutation instead, which for the widest vector here is 24 evaluations and for the whole file is a few hundred. The six-reading cap is declared and enforced, so a vector cannot quietly grow past what the sweep can afford — a vector of seven fails rather than silently falling back to sampling.
+
+**The vocabulary split was live.** `accounting-profile.schema.json` spelled the fourth count authority `reconstructed`; `normalized-event.schema.json`, `source-receipt-v1.schema.json`, `appraisal-result-v1.schema.json`, `appraisal-policy-v1.json`, `evidence-profile-policy-v1.json`, `adapter-manifest.schema.json`, `accounting-profile-otel-v1.schema.json` and `openapi-v1.yaml` all spelled it `exact-reconstruction`. Two spellings that never overlap. `local-exact-tokenizer-v1` declares both of its source fields under the profile spelling, so its authority could not be ranked at all — and `validate_otel_accounting_profile` already compares a bound profile's authorities against the event's `count_authority` and demands a declared contradiction when they differ, which for any reconstruction profile would have been a contradiction that did not exist. It does not fire today only because the one binding that check runs over happens to bind a provider-reported profile. The rename changed `local-exact-tokenizer-v1`'s canonical digest, which is recomputed rather than edited.
+
+**The rules that were nowhere.** `contradiction_policy` existed on the profile and nothing consumed it; the arithmetic record had no grouping, no authority order, no tie-break and no bound beyond the integer domain. The reconciliation rule now states all of them, and the two that matter most are stated as prohibitions: `summation_across_readings` is forbidden, because two readings of one operation are two descriptions of one consumption, and `contradiction_resolution_by_selection` is forbidden, because choosing between two equally authoritative contradicting sources makes the accepted total depend on which reading was seen first. `array-position`, `arrival-order`, `receive-time` and `local-wall-time` are named as forbidden tie-break inputs and the vector schema refuses to be able to carry any of them: a field a vector can carry is a field a tie can be broken on, and that refusal is the file's one negative fixture.
+
+**The bounds do not cap anybody.** Token Burn is the raw metric of record — accepted, immutable, unnormalized — so a bound that clipped an accumulated period figure would be normalization under another name, and `capping` is recorded as forbidden with that reason. The two bounds refuse one event each: one hundred million tokens in a single operation is a misread counter rather than a measurement, most often a cumulative reading admitted as an increment, which is exactly what PF-017's `reading.accumulation` made visible and what the `cumulative-reading-not-differenced` vector refuses; and an event that would carry a period accumulator past the unsigned 64-bit maximum leaves the domain. In both cases the event is rejected and the period total is unchanged. A saturating implementation would report the bound as a total, and nothing downstream distinguishes that from a real one.
+
+**Nothing here asserts a certified tuple, because there is none.** Every binding in `conformance/accounting/producer-bindings-v1.json` is `candidate` or `uncertified`, PF-016 confirmed every reachable state is `candidate`, and no vector in this file carries a certification at all. Reconciliation decides which reading counts; certification decides whether the counted figure may compete, and that gate is closed today for every mechanism this repository can capture. The `absent-operation-identity-is-private-analytics` vector is where the two meet: a live-log reading with no source-derived identity — the shape every retrospective import has — keeps its tokens as private analytics and never competes, which is the binding rule stated as a vector rather than as a sentence.
 
 ### PF-019 — Idempotency authority
 Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/state-machine-registry-v1.json`
@@ -871,7 +929,7 @@ Status: landed
 Evidence: exists packages/schemas/source-receipt-v1.schema.json
 Evidence: validator scripts/repository/validate_planning_coverage.py
 
-Inventory line `:35`. Provenance for every claim, and the first of the 33 `planned-missing` contracts that blocks real work. Note the inventory maps this to `PF-021/PF-022`, which are ranking units; the accounting owners are `PF-017`/`PF-018`.
+Inventory line `:35`. Provenance for every claim, and the first of the 33 `planned-missing` contracts that blocks real work. The misattribution this note flagged was on the row above, `:34`, and it read `PF-020..PF-024` rather than `PF-021/PF-022` — five units of which none is an accounting unit; they are transaction, ranking, period and social. `PF-017` repaired the row to name `PF-017`/`PF-018`. The note is left in place because a flag that was raised and not acted on for four units is worth keeping visible.
 
 ### PF-043 — Author the appraisal result and policy contracts
 Files: `packages/schemas/appraisal-result-v1.schema.json`, `packages/schemas/appraisal-policy-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/disclosure-projection-v1.json`, `packages/schemas/reason-codes-v1.json`, `tests/ci/test_appraisal_disclosure.py` (new), `scripts/repository/validate_planning_artifacts.py`, `conformance/p1140e/validation-matrix-v1.json`, `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
@@ -1588,14 +1646,14 @@ Est: 8-12
 Status: not-started
 
 ### A-004 Cache/reasoning/modality/total reconciliation
-Files: `crates/vibeproof-core/src/accounting/reconcile.rs` (new), `conformance/accounting/reconciliation-vectors-v1.json` (new)
+Files: `crates/vibeproof-core/src/accounting/reconcile.rs` (new), `conformance/accounting/reconciliation-vectors-v1.json`
 Acceptance: every vector reconciles to its recorded total; a vector whose parts cannot sum to its stated total yields a contradiction verdict rather than a silent adjustment, and the test fails if any adjustment is applied.
 Depends: A-003
 Est: 10-14
 Status: not-started
 
 ### A-005 Retry/cancellation/nested-agent reconciliation
-Files: `crates/vibeproof-core/src/accounting/lifecycle.rs` (new), `conformance/accounting/reconciliation-vectors-v1.json` (new)
+Files: `crates/vibeproof-core/src/accounting/lifecycle.rs` (new), `conformance/accounting/reconciliation-vectors-v1.json`
 Acceptance: each value of `retry_policy`, `cancellation_policy` and `nested_execution_policy` is exercised by at least one vector, which a coverage assertion in the test enforces; a cancelled operation contributes exactly the recorded amount and a nested subagent turn is counted exactly once.
 Depends: A-003
 Est: 10-14

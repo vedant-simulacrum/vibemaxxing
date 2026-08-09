@@ -59,7 +59,7 @@
     {
       "finding_id": "SR-007",
       "severity": "P1",
-      "state": "repair-in-progress",
+      "state": "repaired-pending-review",
       "title": "Device lineage, challenge, replay, checkpoint, and recovery",
       "repair_task": "P-1140F-2",
       "finding_class": "contradiction",
@@ -75,7 +75,8 @@
         "packages/schemas/openapi-v1.yaml#ClaimChallenge"
       ],
       "closure_evidence": [
-        "PF-009 at 48b22762fcce6d84650f352867f717ae9df41920: device_sequences keys on lineage_id and no longer references a device row, continuity_state has one owner in device_lineages, and claim_challenges carries a lineage_id foreign key. A copied device store previously produced two internally continuous rows, making the fork invisible to the counter meant to catch it."
+        "PF-009 at 48b22762fcce6d84650f352867f717ae9df41920: device_sequences keys on lineage_id and no longer references a device row, continuity_state has one owner in device_lineages, and claim_challenges carries a lineage_id foreign key. A copied device store previously produced two internally continuous rows, making the fork invisible to the counter meant to catch it.",
+        "PF-010 at c7647fe7bb1f171588106de8c14d9f20cdb4be34: lineage scoping was enforced where the sequence counter is read and not where it is written. D-592 rekeyed device_sequences onto the lineage and stopped one table short: claims still carried unique (device_id, device_sequence) and unique (device_id, payload_hash), so two device rows in one lineage could each hold sequence 42 and the same payload. checkpoint_receipts was device-keyed while the head it advances was lineage-keyed, giving a restored store a private receipt chain. device_key_events could not record dual authorization at all — one nullable signature and no account column — so an ordinary rotation and a single-signature forgery were the same row. All three are repaired, with recovered forbidding the outgoing signature so a rotation cannot be admitted by claiming to be a recovery. AUTHENTICATION_AND_RECOVERY.md also ended the recovery order with a human appeal, contradicting D-561's accepted rule that exhaustion is permanent."
       ],
       "reviewed_commit": null,
       "review_verdict": "pending"

@@ -29,10 +29,6 @@
     "operation_ref": "otel-cursor-000000000001",
     "parent_operation_ref": null
   },
-  "observer": {
-    "collector_instance_id": "collector-instance-01",
-    "adapter_instance_id": "adapter-instance-01"
-  },
   "reading": {
     "accumulation": "cumulative",
     "reset_detection": "value-decrease-or-start-time-change",

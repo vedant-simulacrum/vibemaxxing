@@ -11,7 +11,7 @@
   "certification": {
     "bundle_sha256": null,
     "platform_profile_id": "linux-x64-native",
-    "capture_mode": "native-event"
+    "capture_mode": "carrier-pigeon"
   },
   "source_id": "synthetic-agent",
   "provider_id": "synthetic",
@@ -87,8 +87,10 @@
   "local_fingerprint": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
   "rule_result": {
     "bundle_id": "deterministic-rules-v1",
-    "disposition": "accept-local",
-    "reason_codes": []
+    "disposition": "private-analytics",
+    "reason_codes": [
+      "uncertified-source-tuple"
+    ]
   },
   "privacy_scan": {
     "policy_id": "claim-egress-v1",

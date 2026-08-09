@@ -15,7 +15,8 @@
     "packages/schemas/producer-accounting-binding-v1.schema.json",
     "conformance/accounting/accounting-schema-v1.json",
     "packages/schemas/accounting-profile-otel-v1.schema.json",
-    "packages/schemas/accounting-profile-otel-v1.json"
+    "packages/schemas/accounting-profile-otel-v1.json",
+    "packages/schemas/reconciliation-vectors-v1.schema.json"
   ],
   "subjects": [
     "rust",
@@ -44,7 +45,7 @@
       "fixtures": [
         {
           "path": "conformance/accounting/accounting-profiles-v1.json",
-          "sha256": "e38ee3040b96f974c4591ad6aaed8da2a53b0b1354ef87524c598bc1f89873fc"
+          "sha256": "20fafb616751c180a269d60dc2cadc2fdd72bf1664ea9dba7afe9e02730e23b7"
         }
       ],
       "expect": "accept",
@@ -136,7 +137,7 @@
       "fixtures": [
         {
           "path": "conformance/accounting/producer-bindings-v1.json",
-          "sha256": "096e6cee24bbb77d6fab51d4413367bc5ecf0fd32b9457964391642072e2ba4c"
+          "sha256": "e22e9a79433da5440ea0b85c8baef5f53773d9bf36b67810721c71f3dd107805"
         }
       ],
       "expect": "accept",
@@ -192,6 +193,38 @@
       "negative": false,
       "state": "active",
       "note": "This is the only file in the suite any runner reads today."
+    },
+    {
+      "case_id": "AC-011",
+      "title": "Reproduce every reconciliation vector under every ordering of its readings",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/reconciliation-vectors-v1.json",
+          "sha256": "3ba969b8e68cea74c805d0b91639cd38d22b23fd1d92157e8ff03c51522f4e73"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "packages/schemas/accounting-arithmetic-v1.json#/reconciliation",
+      "negative": false,
+      "state": "active",
+      "note": "scripts/repository/validate_planning_artifacts.py evaluates each vector under every permutation of its readings and requires one result. A reconciliation whose total depends on which reading arrived first fails here."
+    },
+    {
+      "case_id": "AC-012",
+      "title": "Refuse a reconciliation reading that records when it arrived",
+      "fixtures": [
+        {
+          "path": "conformance/accounting/reconciliation-vectors-v1.invalid-arrival-order-field.json",
+          "sha256": "6aab05f4b89c415b6834f0162f4db004adcc0d7a7e417a6120466e3d951f75ed"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_ACCOUNTING_INCONSISTENT",
+      "authority_ref": "packages/schemas/accounting-arithmetic-v1.json#/reconciliation/forbidden_tie_break_inputs",
+      "negative": true,
+      "state": "active",
+      "note": "The reading carries an arrival ordinal. accounting-arithmetic-v1.json forbids arrival-order as a tie-break input, and the vector schema refuses the field outright rather than admitting it and trusting nobody to read it: a field a vector can carry is a field a tie can be broken on. The refusal is a schema refusal; the reason code is the wire code the server emits for that class and is a mapping this manifest asserts."
     }
   ],
   "note": "The suite proves normalisation, token categories, retries and duplicates against the arithmetic record rather than against whichever implementation reads a profile first."

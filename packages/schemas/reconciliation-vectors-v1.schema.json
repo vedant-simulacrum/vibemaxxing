@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibemaxxing.dev/schemas/reconciliation-vectors-v1.json",
+  "title": "AccountingReconciliationVectors v1",
+  "description": "Executable vectors for `packages/schemas/accounting-arithmetic-v1.json#reconciliation` and `#bounds`. A vector states the readings that describe one or more operations and either the disposition every reading must take or the exact condition the reconciliation must reject with. `scripts/repository/validate_planning_artifacts.py` recomputes each one from the arithmetic record, the accounting profile and the observer-equivalence precedence ranks rather than reading the expectation back, and it recomputes it under every ordering of the readings array, so a result that depends on which reading arrived first fails here rather than in production. A vector may not record `array-position`, `arrival-order`, `receive-time` or `local-wall-time` for the same reason: the arithmetic record forbids all four as tie-break inputs, and a field a vector cannot carry is a field a tie cannot be broken on.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "vectors_id",
+    "arithmetic_id",
+    "profile_registry_id",
+    "equivalence_rule_id",
+    "vectors"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "vectors_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "arithmetic_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "profile_registry_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "equivalence_rule_id": {
+      "$ref": "#/$defs/registered_id"
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/reconciliation_vector"
+          },
+          {
+            "$ref": "#/$defs/reconciliation_failure_vector"
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "registered_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "maxLength": 128
+    },
+    "opaque_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{8,128}$"
+    },
+    "uint64_decimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "canonical_components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_uncached",
+        "output_visible",
+        "cache_read",
+        "cache_write",
+        "reasoning",
+        "multimodal_input",
+        "multimodal_output"
+      ],
+      "properties": {
+        "input_uncached": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "output_visible": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "cache_read": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "cache_write": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "reasoning": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "multimodal_input": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "multimodal_output": {
+          "$ref": "#/$defs/uint64_decimal"
+        }
+      }
+    },
+    "group": {
+      "description": "The four facts `accounting-arithmetic-v1.json#reconciliation.group_key` names. Three of them are the exclusivity unit `observer-equivalence-v1.json` already declares; the fourth is the operation identity, which is what makes the grouping per operation rather than per device.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_lineage_id",
+        "source_runtime_id",
+        "runtime_generation",
+        "operation_ref"
+      ],
+      "properties": {
+        "device_lineage_id": {
+          "$ref": "#/$defs/opaque_ref"
+        },
+        "source_runtime_id": {
+          "$ref": "#/$defs/opaque_ref"
+        },
+        "runtime_generation": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "operation_ref": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/opaque_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "reading": {
+      "description": "One source reading of one operation. It carries what the source said and who read it, and nothing about when it arrived.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reading_id",
+        "group",
+        "identity_source",
+        "count_authority",
+        "observation_mode",
+        "accumulation",
+        "components"
+      ],
+      "properties": {
+        "reading_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "group": {
+          "$ref": "#/$defs/group"
+        },
+        "identity_source": {
+          "enum": [
+            "source-assigned",
+            "source-cursor-derived",
+            "absent"
+          ]
+        },
+        "count_authority": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "observation_mode": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "accumulation": {
+          "enum": [
+            "cumulative",
+            "delta"
+          ]
+        },
+        "components": {
+          "$ref": "#/$defs/canonical_components"
+        }
+      }
+    },
+    "reconciliation_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "kind",
+        "profile_id",
+        "period_total_before",
+        "readings",
+        "expected"
+      ],
+      "properties": {
+        "vector_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "kind": {
+          "const": "reconciliation"
+        },
+        "profile_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "period_total_before": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "readings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/reading"
+          }
+        },
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dispositions",
+            "counted_token_burn",
+            "period_total_after"
+          ],
+          "properties": {
+            "dispositions": {
+              "type": "object",
+              "minProperties": 1,
+              "propertyNames": {
+                "$ref": "#/$defs/registered_id"
+              },
+              "additionalProperties": {
+                "enum": [
+                  "counted",
+                  "superseded",
+                  "quarantined",
+                  "private-analytics",
+                  "rejected"
+                ]
+              }
+            },
+            "counted_token_burn": {
+              "$ref": "#/$defs/uint64_decimal"
+            },
+            "period_total_after": {
+              "$ref": "#/$defs/uint64_decimal"
+            }
+          }
+        }
+      }
+    },
+    "reconciliation_failure_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "kind",
+        "profile_id",
+        "period_total_before",
+        "readings",
+        "expected_failure"
+      ],
+      "properties": {
+        "vector_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "kind": {
+          "const": "reconciliation-failure"
+        },
+        "profile_id": {
+          "$ref": "#/$defs/registered_id"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "period_total_before": {
+          "$ref": "#/$defs/uint64_decimal"
+        },
+        "readings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/reading"
+          }
+        },
+        "expected_failure": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "condition",
+            "disposition"
+          ],
+          "properties": {
+            "condition": {
+              "enum": [
+                "cumulative-reading-not-differenced",
+                "unranked-count-authority",
+                "unranked-observation-mode",
+                "sum-overflow",
+                "per-event-bound-exceeded",
+                "period-bound-exceeded"
+              ]
+            },
+            "disposition": {
+              "description": "Every one of these rejects. Saturating at the bound would return the bound as a total, and clamping the period accumulator would cap a metric the product declares unnormalized.",
+              "const": "reject"
+            }
+          }
+        }
+      }
+    }
+  }
+}

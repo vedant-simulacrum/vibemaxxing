@@ -654,6 +654,23 @@ SQL_LOCAL_VOCABULARIES: dict[str, tuple[str, ...]] = {
         "rejected",
         "superseded",
     ),
+    # PF-017. The device receipt's copy of the certification state that bound the
+    # capture. It is not the `source-certification` aggregate's own column - that lives
+    # server-side - so it is a sub-entity vocabulary rather than a binding, but it must
+    # be the same words: `uncertified`, for a capture no certification record binds,
+    # plus that machine's eight states. It previously had no CHECK constraint at all and
+    # the two schemas that mirror it admitted `revoked`, which the machine cannot reach.
+    "source_receipts.certification_state": (
+        "uncertified",
+        "candidate",
+        "testing",
+        "active",
+        "degraded",
+        "suspended",
+        "expired",
+        "superseded",
+        "retired",
+    ),
     "evidence_assessments.public_state": (
         "hardened",
         "standard",
@@ -866,13 +883,15 @@ RECORDED_ABSENCES: dict[tuple[str, str], str] = {
 # A state column that is neither bound to an aggregate nor a declared sub-entity
 # vocabulary must still be accounted for, or extending the persistence check to the
 # device half would simply not see it. Each entry names the unit that owns the hole.
-SQL_COLUMNS_WITHOUT_VOCABULARY: dict[str, str] = {
-    "source_receipts.certification_state": (
-        "Device-side receipt column with no CHECK constraint, so it can hold any "
-        "value. The source-certification vocabulary it should mirror is owned by "
-        "PF-017 and PF-018; recorded here rather than guessed at."
-    ),
-}
+#
+# The entry that lived here was `source_receipts.certification_state`, a device column
+# with no CHECK constraint at all. PF-017 gave it one and it moved into
+# SQL_LOCAL_VOCABULARIES. The reverse check below is the part that matters: an entry
+# here for a column that has since acquired a CHECK is an excuse outliving the hole it
+# excused, and rule 8 skips such a column silently, so nothing else would notice. This
+# is the same guard `check_absence_reasons` applies to RECORDED_ABSENCES; it was built
+# for that table and not for this one.
+SQL_COLUMNS_WITHOUT_VOCABULARY: dict[str, str] = {}
 
 # Client-facing fields that deliberately collapse a machine into a coarser vocabulary.
 PROJECTIONS: tuple[tuple[str, tuple[str, ...], dict[str, str]], ...] = (
@@ -1353,6 +1372,27 @@ def validate(report: Report) -> None:
             actual == union,
             f"shared SQL column {column} is not the union of its machines: "
             f"only-in-sql={sorted(actual - union)} only-in-machines={sorted(union - actual)}",
+        )
+
+    # 8a. An excuse may not outlive the hole it excused. Rule 8 skips a column listed in
+    # SQL_COLUMNS_WITHOUT_VOCABULARY without reading it, so a column that has since
+    # acquired a CHECK constraint or a declared vocabulary would keep the excuse and
+    # lose the check, and nothing would say so. `check_absence_reasons` applies exactly
+    # this guard to RECORDED_ABSENCES; it was never applied to this table, and
+    # `source_receipts.certification_state` is the entry that was in it.
+    for column in sorted(SQL_COLUMNS_WITHOUT_VOCABULARY):
+        if column not in declared_state_columns:
+            report.check(
+                False,
+                f"{column}: recorded as a column with no vocabulary, and no such SQL "
+                "state column exists; the excuse names nothing",
+            )
+            continue
+        report.check(
+            column not in checks and column not in SQL_LOCAL_VOCABULARIES,
+            f"{column}: recorded as a column with no vocabulary, but it now declares "
+            "one; the reason has outlived the gap it excused and rule 8 would skip the "
+            "column silently",
         )
 
     # 8. Every SQL state column is either bound or an explicitly declared sub-entity vocabulary.

@@ -119,7 +119,15 @@ create table source_receipts (
   counted_observation_id text not null references observations(observation_id),
   attestation text not null check (attestation = 'none'),
   attestation_basis text not null check (attestation_basis = 'self-reported-at-source'),
-  certification_state text not null,
+  -- `uncertified` plus the eight states of the `source-certification` machine, the
+  -- same vocabulary packages/schemas/source-receipt-v1.schema.json#certification.state
+  -- carries. The column had no CHECK at all, so it could hold any value and
+  -- scripts/repository/validate_state_vocabularies.py recorded it as a hole owned by
+  -- PF-017 and PF-018 rather than guessing which of the three certification
+  -- vocabularies in this repository it was meant to mirror. It was none of them: the
+  -- receipt admitted `revoked`, which no transition of that machine reaches, and
+  -- omitted `testing`, `superseded` and `retired`, which transitions do.
+  certification_state text not null check (certification_state in ('uncertified','candidate','testing','active','degraded','suspended','expired','superseded','retired')),
   created_at text not null
 );
 

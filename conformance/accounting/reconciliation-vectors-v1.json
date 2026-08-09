@@ -1,0 +1,707 @@
+{
+  "schema_version": 1,
+  "vectors_id": "reconciliation-vectors-v1",
+  "arithmetic_id": "accounting-arithmetic-v1",
+  "profile_registry_id": "accounting-profiles-v1",
+  "equivalence_rule_id": "observer-equivalence-v1",
+  "vectors": [
+    {
+      "vector_id": "single-reading-counts-once",
+      "kind": "reconciliation",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "One reading of one operation. The baseline: reconciliation of a single reading is that reading, and the period total advances by exactly its Token Burn.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-provider-otel",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000001"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "100",
+            "output_visible": "40",
+            "cache_read": "60",
+            "cache_write": "10",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "r-provider-otel": "counted"
+        },
+        "counted_token_burn": "210",
+        "period_total_after": "210"
+      }
+    },
+    {
+      "vector_id": "higher-authority-supersedes-lower",
+      "kind": "reconciliation",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "A provider-reported reading and a source-reported reading of one operation, disagreeing. The lower authority is superseded rather than averaged, dropped silently or added: 210, not 710 and not 500. This is the rule docs/product/ACCOUNTING_AND_TIME_CONTRACT.md states as `lower-precedence sources must never override a higher-precedence source`, in a form that fails when it is broken.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-provider-otel",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000002"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "100",
+            "output_visible": "40",
+            "cache_read": "60",
+            "cache_write": "10",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        },
+        {
+          "reading_id": "r-source-live-log",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000002"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "source-reported",
+          "observation_mode": "live-log",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "500",
+            "output_visible": "0",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "r-provider-otel": "counted",
+          "r-source-live-log": "superseded"
+        },
+        "counted_token_burn": "210",
+        "period_total_after": "210"
+      }
+    },
+    {
+      "vector_id": "equal-authority-agreement-counts-once",
+      "kind": "reconciliation",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "Two collectors in different modes read the same operation and agree on every canonical component. Authority does not separate them, so the observation-mode precedence rank in packages/schemas/observer-equivalence-v1.json does: otel ranks 6 and proxy ranks 7, so the otel reading counts and the proxy reading is superseded. The total is 100, not 200; two descriptions of one consumption are never two consumptions.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-runtime-otel",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000003"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "runtime-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "60",
+            "output_visible": "40",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        },
+        {
+          "reading_id": "r-runtime-proxy",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000003"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "runtime-reported",
+          "observation_mode": "proxy",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "60",
+            "output_visible": "40",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "r-runtime-otel": "counted",
+          "r-runtime-proxy": "superseded"
+        },
+        "counted_token_burn": "100",
+        "period_total_after": "100"
+      }
+    },
+    {
+      "vector_id": "equal-authority-contradiction-quarantines",
+      "kind": "reconciliation",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "Two equally authoritative readings of one operation reporting different numbers. Neither outranks the other and the accounting cannot decide which is right, so the operation takes the disposition its profile declared in advance: cloud-separate-cache-v1 says quarantine. Picking a survivor here is what would make the accepted total depend on which reading was seen first.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-provider-otel",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000004"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "100",
+            "output_visible": "40",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        },
+        {
+          "reading_id": "r-provider-proxy",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000004"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "proxy",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "101",
+            "output_visible": "40",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "r-provider-otel": "quarantined",
+          "r-provider-proxy": "quarantined"
+        },
+        "counted_token_burn": "0",
+        "period_total_after": "0"
+      }
+    },
+    {
+      "vector_id": "equal-authority-contradiction-rejects",
+      "kind": "reconciliation",
+      "profile_id": "cloud-inclusive-total-v1",
+      "note": "The same contradiction under a profile whose contradiction_policy is reject rather than quarantine. The reconciliation is identical and the disposition is different, which is the point: the arithmetic fixes that a contradiction is detected and never resolved by selection, and the profile fixes what happens to the operation.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-provider-native",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-other-agent-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000005"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "native-event",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "900",
+            "output_visible": "100",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        },
+        {
+          "reading_id": "r-provider-wrapper",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-other-agent-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000005"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "wrapper",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "800",
+            "output_visible": "100",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "r-provider-native": "rejected",
+          "r-provider-wrapper": "rejected"
+        },
+        "counted_token_burn": "0",
+        "period_total_after": "0"
+      }
+    },
+    {
+      "vector_id": "absent-operation-identity-is-private-analytics",
+      "kind": "reconciliation",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "A live-log reading with no source-derived operation identity - the session-file fallback packages/schemas/observer-equivalence-v1.json calls the weak class, and the shape every retrospective import has. Nothing distinguishes it from a duplicate, so it cannot be reconciled with anything and never enters competition. It is not rejected: the tokens are real and the participant keeps them as private analytics.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-imported-live-log",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": null
+          },
+          "identity_source": "absent",
+          "count_authority": "source-reported",
+          "observation_mode": "live-log",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "4000",
+            "output_visible": "1000",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "r-imported-live-log": "private-analytics"
+        },
+        "counted_token_burn": "0",
+        "period_total_after": "0"
+      }
+    },
+    {
+      "vector_id": "two-operations-reconcile-independently",
+      "kind": "reconciliation",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "Four readings across two operations of one runtime, interleaved. Grouping is per operation, so a contradiction in one operation cannot quarantine the other and a supersession in one cannot decide the other. Six readings in three groups is also the widest permutation this file asks the validator to exhaust.",
+      "period_total_before": "1000",
+      "readings": [
+        {
+          "reading_id": "r-op-a-provider",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "3",
+            "operation_ref": "op-00000000000a"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "official-hook",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "10",
+            "output_visible": "5",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        },
+        {
+          "reading_id": "r-op-b-runtime",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "3",
+            "operation_ref": "op-00000000000b"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "runtime-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "70",
+            "output_visible": "30",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        },
+        {
+          "reading_id": "r-op-a-source",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "3",
+            "operation_ref": "op-00000000000a"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "source-reported",
+          "observation_mode": "wrapper",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "999",
+            "output_visible": "999",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        },
+        {
+          "reading_id": "r-op-b-runtime-proxy",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "3",
+            "operation_ref": "op-00000000000b"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "runtime-reported",
+          "observation_mode": "proxy",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "70",
+            "output_visible": "30",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "r-op-a-provider": "counted",
+          "r-op-a-source": "superseded",
+          "r-op-b-runtime": "counted",
+          "r-op-b-runtime-proxy": "superseded"
+        },
+        "counted_token_burn": "115",
+        "period_total_after": "1115"
+      }
+    },
+    {
+      "vector_id": "same-operation-ref-different-runtime-generation-is-two-operations",
+      "kind": "reconciliation",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "One operation identifier reused across a runtime restart. The generation is part of the group key, so the two readings are two operations and both count; treating the identifier alone as the key would have discarded the second as a duplicate of the first. This is why the key carries the whole exclusivity unit rather than only the operation name.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-generation-0",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-reused-000001"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "11",
+            "output_visible": "0",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        },
+        {
+          "reading_id": "r-generation-1",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "1",
+            "operation_ref": "op-reused-000001"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "22",
+            "output_visible": "0",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "r-generation-0": "counted",
+          "r-generation-1": "counted"
+        },
+        "counted_token_burn": "33",
+        "period_total_after": "33"
+      }
+    },
+    {
+      "vector_id": "cumulative-reading-rejects",
+      "kind": "reconciliation-failure",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "A running total offered as an accounting input. An OTLP counter is cumulative by default, and admitting one as an increment adds every token before it a second time. It has to be differenced against the previous reading of its series generation first; until it has been, it is not an increment and the reconciliation refuses it rather than guessing.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-cumulative-counter",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000010"
+          },
+          "identity_source": "source-cursor-derived",
+          "count_authority": "runtime-reported",
+          "observation_mode": "otel",
+          "accumulation": "cumulative",
+          "components": {
+            "input_uncached": "100000",
+            "output_visible": "0",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected_failure": {
+        "condition": "cumulative-reading-not-differenced",
+        "disposition": "reject"
+      }
+    },
+    {
+      "vector_id": "unranked-count-authority-rejects",
+      "kind": "reconciliation-failure",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "A count authority the arithmetic record's authority_order does not rank. There is no answer to whether it outranks a provider figure, so admitting it would mean guessing where it sits, and the guess would decide a total.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-unranked-authority",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000011"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "vibes-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "10",
+            "output_visible": "0",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected_failure": {
+        "condition": "unranked-count-authority",
+        "disposition": "reject"
+      }
+    },
+    {
+      "vector_id": "unranked-observation-mode-rejects",
+      "kind": "reconciliation-failure",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "An observation mode packages/schemas/observer-equivalence-v1.json assigns no precedence rank. `certification.capture_mode` in packages/schemas/normalized-event.schema.json was an unconstrained slug before this unit, so this reading was expressible; the survivor rule would then have had nothing to order it by.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-unranked-mode",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000012"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "carrier-pigeon",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "10",
+            "output_visible": "0",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected_failure": {
+        "condition": "unranked-observation-mode",
+        "disposition": "reject"
+      }
+    },
+    {
+      "vector_id": "component-sum-overflow-rejects",
+      "kind": "reconciliation-failure",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "Two components that individually fit the unsigned 64-bit domain and together do not. The checked sum rejects before any bound is consulted, because a wrapped total is a plausible-looking number for an impossible one.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-overflowing-reading",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000013"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "10000000000000000000",
+            "output_visible": "10000000000000000000",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected_failure": {
+        "condition": "sum-overflow",
+        "disposition": "reject"
+      }
+    },
+    {
+      "vector_id": "per-event-bound-exceeded-rejects",
+      "kind": "reconciliation-failure",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "One token past the per-event bound. The sum is a valid unsigned 64-bit integer, so the checked arithmetic is satisfied and only the practical bound catches it. A saturating implementation would report one hundred million tokens for this operation, which is a number nothing distinguishes downstream from a real total.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-impossible-operation",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000014"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "100000001",
+            "output_visible": "0",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected_failure": {
+        "condition": "per-event-bound-exceeded",
+        "disposition": "reject"
+      }
+    },
+    {
+      "vector_id": "period-bound-exceeded-rejects",
+      "kind": "reconciliation-failure",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "A period accumulator six hundred and fifteen tokens below the unsigned 64-bit maximum and an event of one thousand. The event is rejected and the period total is left where it was; saturating it at the maximum would publish a figure no sequence of accepted events explains, and clamping the accumulated total is the normalization the product forbids outright.",
+      "period_total_before": "18446744073709551000",
+      "readings": [
+        {
+          "reading_id": "r-last-event-of-the-day",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000015"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "1000",
+            "output_visible": "0",
+            "cache_read": "0",
+            "cache_write": "0",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          }
+        }
+      ],
+      "expected_failure": {
+        "condition": "period-bound-exceeded",
+        "disposition": "reject"
+      }
+    }
+  ]
+}

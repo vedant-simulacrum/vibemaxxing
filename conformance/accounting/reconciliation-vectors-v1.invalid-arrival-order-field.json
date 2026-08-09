@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "vectors_id": "reconciliation-vectors-v1-invalid-arrival-order-field",
+  "arithmetic_id": "accounting-arithmetic-v1",
+  "profile_registry_id": "accounting-profiles-v1",
+  "equivalence_rule_id": "observer-equivalence-v1",
+  "vectors": [
+    {
+      "vector_id": "reading-carrying-arrival-order",
+      "kind": "reconciliation",
+      "profile_id": "cloud-separate-cache-v1",
+      "note": "The refusal that keeps the ordering-independence check honest. A reading may carry what the source said and who read it, and nothing about when it arrived, because a field a vector can carry is a field a tie can be broken on. accounting-arithmetic-v1.json lists arrival-order among the forbidden tie-break inputs; this file refuses to be able to express one.",
+      "period_total_before": "0",
+      "readings": [
+        {
+          "reading_id": "r-provider-otel",
+          "group": {
+            "device_lineage_id": "dl-00000001",
+            "source_runtime_id": "rt-claude-code-1",
+            "runtime_generation": "0",
+            "operation_ref": "op-000000000001"
+          },
+          "identity_source": "source-assigned",
+          "count_authority": "provider-reported",
+          "observation_mode": "otel",
+          "accumulation": "delta",
+          "components": {
+            "input_uncached": "100",
+            "output_visible": "40",
+            "cache_read": "60",
+            "cache_write": "10",
+            "reasoning": "0",
+            "multimodal_input": "0",
+            "multimodal_output": "0"
+          },
+          "arrival_ordinal": "0"
+        }
+      ],
+      "expected": {
+        "dispositions": {
+          "r-provider-otel": "counted"
+        },
+        "counted_token_burn": "210",
+        "period_total_after": "210"
+      }
+    }
+  ]
+}
