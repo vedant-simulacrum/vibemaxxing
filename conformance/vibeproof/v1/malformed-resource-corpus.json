@@ -1,83 +1,176 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "protocol_major": 1,
+  "reason_authority": "packages/schemas/reason-codes-v1.json",
+  "note": "The sole negative-vector corpus for VibeProof v1. PF-054 originally planned a second file named negative-vectors.json beside this one; it is not created, because a rule name declared in a third vector file is exactly what PF-002's ownership check refuses, and because validate_conformance_manifests fails on any file in this directory no manifest case names.",
+  "stages": [
+    "canonical-decode",
+    "cose-profile",
+    "signature",
+    "resource-limits",
+    "transaction",
+    "rotation"
+  ],
+  "outcomes": [
+    "reject",
+    "reject-before-decode",
+    "reject-before-allocation",
+    "reject-before-signature",
+    "reject-before-claim-loop",
+    "conflict",
+    "quarantine-lineage"
+  ],
+  "cddl_rules_pinned": [
+    "batch-context",
+    "correction-record-v1",
+    "cose-sign1-rotation-v1",
+    "dual-authorized-rotation-v1",
+    "gap-declaration",
+    "key-rotation-transition-v1"
+  ],
+  "cddl_rules_unpinned": [
+    {
+      "rule": "verifier-appraisal-v1",
+      "work_unit": "P-007",
+      "reason": "A server appraisal is produced by the verifier, not submitted to it, so no decoder-boundary case exists to write. No encoded instance exists in either corpus."
+    },
+    {
+      "rule": "challenge-v1",
+      "work_unit": "P-007",
+      "reason": "The challenge is server-issued and consumed by the device. No encoded instance exists in either corpus."
+    },
+    {
+      "rule": "atomic-batch-result-v1",
+      "work_unit": "P-007",
+      "reason": "The three transaction cases here describe the outcome an atomic batch result would carry, in prose state rather than in bytes. Naming the rule on a case with no encoding would claim coverage the corpus does not have."
+    },
+    {
+      "rule": "claim-result-v1",
+      "work_unit": "P-007",
+      "reason": "Per-claim results are elements of atomic-batch-result-v1 and share its absence."
+    }
+  ],
   "cases": [
     {
       "id": "duplicate-map-key",
       "input_hex": "a200010002",
+      "decoder_signal": "duplicate-key",
       "stage": "canonical-decode",
       "expected": "reject",
-      "reason_code": "protocol-duplicate-key"
+      "reason_code": "protocol-duplicate-key",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "non-minimal-integer",
       "input_hex": "1817",
+      "decoder_signal": "non-minimal-integer",
       "stage": "canonical-decode",
       "expected": "reject",
-      "reason_code": "protocol-non-minimal-integer"
+      "reason_code": "protocol-non-minimal-integer",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "indefinite-map",
       "input_hex": "bf0001ff",
+      "decoder_signal": "indefinite-length",
       "stage": "canonical-decode",
       "expected": "reject",
-      "reason_code": "protocol-indefinite-length"
+      "reason_code": "protocol-indefinite-length",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "float-value",
       "input_hex": "f93c00",
+      "decoder_signal": "float",
       "stage": "canonical-decode",
       "expected": "reject",
-      "reason_code": "protocol-float-forbidden"
+      "reason_code": "protocol-float-forbidden",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "unknown-tag",
       "input_hex": "d86400",
+      "decoder_signal": "tag",
       "stage": "canonical-decode",
       "expected": "reject",
-      "reason_code": "protocol-tag-forbidden"
+      "reason_code": "protocol-tag-forbidden",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "trailing-bytes",
       "input_hex": "a1000100",
+      "decoder_signal": "trailing-bytes",
       "stage": "canonical-decode",
       "expected": "reject",
-      "reason_code": "protocol-trailing-bytes"
+      "reason_code": "protocol-trailing-bytes",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
+    },
+    {
+      "id": "reserved-additional-information",
+      "input_hex": "1c",
+      "decoder_signal": "reserved",
+      "stage": "canonical-decode",
+      "expected": "reject",
+      "reason_code": "protocol-reserved-additional-information",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
+    },
+    {
+      "id": "undefined-simple-value",
+      "input_hex": "f7",
+      "decoder_signal": "simple-value",
+      "stage": "canonical-decode",
+      "expected": "reject",
+      "reason_code": "protocol-simple-value-forbidden",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
+    },
+    {
+      "id": "truncated-byte-string",
+      "input_hex": "41",
+      "decoder_signal": "truncated",
+      "stage": "canonical-decode",
+      "expected": "reject",
+      "reason_code": "protocol-truncated-item",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "unprotected-algorithm",
       "mutation": "place label 1 in COSE unprotected map",
       "stage": "cose-profile",
       "expected": "reject",
-      "reason_code": "cose-unprotected-security-header"
+      "reason_code": "cose-unprotected-security-header",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "wrong-algorithm",
-      "mutation": "replace protected alg -8 with -7",
+      "mutation": "replace protected alg -19 with -8",
       "stage": "cose-profile",
       "expected": "reject",
-      "reason_code": "cose-algorithm-not-allowed"
+      "reason_code": "cose-algorithm-not-allowed",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "wrong-content-type",
       "mutation": "replace registered claim content type",
       "stage": "cose-profile",
       "expected": "reject",
-      "reason_code": "cose-content-type-mismatch"
+      "reason_code": "cose-content-type-mismatch",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "wrong-kid-size",
       "mutation": "replace 16-byte kid with 15 bytes",
       "stage": "cose-profile",
       "expected": "reject",
-      "reason_code": "cose-kid-invalid"
+      "reason_code": "cose-kid-invalid",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "signature-mutation",
       "mutation": "flip one signature bit",
       "stage": "signature",
       "expected": "reject",
-      "reason_code": "signature-invalid"
+      "reason_code": "signature-invalid",
+      "registry_reason_code": "CLAIM_INVALID_SIGNATURE"
     },
     {
       "id": "depth-13",
@@ -87,7 +180,8 @@
       },
       "stage": "resource-limits",
       "expected": "reject-before-allocation",
-      "reason_code": "protocol-depth-exceeded"
+      "reason_code": "protocol-depth-exceeded",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "claim-16385-bytes",
@@ -97,27 +191,32 @@
       },
       "stage": "resource-limits",
       "expected": "reject-before-signature",
-      "reason_code": "claim-size-exceeded"
+      "reason_code": "claim-size-exceeded",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "batch-257-claims",
+      "cddl_rule": "batch-context",
       "generator": {
         "kind": "batch-count",
         "claims": 257
       },
       "stage": "resource-limits",
       "expected": "reject-before-claim-loop",
-      "reason_code": "batch-count-exceeded"
+      "reason_code": "batch-count-exceeded",
+      "registry_reason_code": "BATCH_ATOMIC_REJECT"
     },
     {
       "id": "batch-1048577-bytes",
+      "cddl_rule": "batch-context",
       "generator": {
         "kind": "batch-size",
         "encoded_bytes": 1048577
       },
       "stage": "resource-limits",
       "expected": "reject-before-decode",
-      "reason_code": "batch-size-exceeded"
+      "reason_code": "batch-size-exceeded",
+      "registry_reason_code": "REQUEST_MALFORMED"
     },
     {
       "id": "allocation-ratio",
@@ -128,7 +227,8 @@
       },
       "stage": "resource-limits",
       "expected": "reject-before-allocation",
-      "reason_code": "allocation-limit-exceeded"
+      "reason_code": "allocation-limit-exceeded",
+      "registry_reason_code": "CLAIM_INVALID_CANONICAL_ENCODING"
     },
     {
       "id": "idempotency-conflict",
@@ -138,7 +238,8 @@
       },
       "stage": "transaction",
       "expected": "conflict",
-      "reason_code": "idempotency-key-conflict"
+      "reason_code": "idempotency-key-conflict",
+      "registry_reason_code": "IDEMPOTENCY_KEY_CONFLICT"
     },
     {
       "id": "sequence-fork",
@@ -149,7 +250,8 @@
       },
       "stage": "transaction",
       "expected": "quarantine-lineage",
-      "reason_code": "continuity-sequence-fork"
+      "reason_code": "continuity-sequence-fork",
+      "registry_reason_code": "CLAIM_CHAIN_FORK"
     },
     {
       "id": "checkpoint-mismatch",
@@ -158,16 +260,61 @@
       },
       "stage": "transaction",
       "expected": "conflict",
-      "reason_code": "continuity-checkpoint-mismatch"
+      "reason_code": "continuity-checkpoint-mismatch",
+      "registry_reason_code": "CLAIM_SEQUENCE_UNEXPECTED"
+    },
+    {
+      "id": "gap-declaration-not-monotonic",
+      "cddl_rule": "gap-declaration",
+      "state": {
+        "sequence_after_gap_greater_than_sequence_before_gap": false
+      },
+      "stage": "transaction",
+      "expected": "reject",
+      "reason_code": "continuity-gap-not-monotonic",
+      "registry_reason_code": "CLAIM_GAP_DECLARATION_REQUIRED"
+    },
+    {
+      "id": "correction-reverses-unknown-correction",
+      "cddl_rule": "correction-record-v1",
+      "state": {
+        "reverses_correction_resolves": false
+      },
+      "stage": "transaction",
+      "expected": "reject",
+      "reason_code": "correction-reverses-unknown",
+      "registry_reason_code": "STATE_TRANSITION_NOT_PERMITTED"
     },
     {
       "id": "rotation-payload-mismatch",
+      "cddl_rule": "cose-sign1-rotation-v1",
       "state": {
         "old_and_new_signature_payloads_identical": false
       },
       "stage": "rotation",
       "expected": "reject",
-      "reason_code": "rotation-payload-mismatch"
+      "reason_code": "rotation-payload-mismatch",
+      "registry_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    },
+    {
+      "id": "rotation-single-authorization",
+      "cddl_rule": "dual-authorized-rotation-v1",
+      "state": {
+        "cose_sign1_rotation_count": 1
+      },
+      "stage": "rotation",
+      "expected": "reject",
+      "reason_code": "rotation-dual-authorization-missing",
+      "registry_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    },
+    {
+      "id": "rotation-transition-mode-invalid",
+      "cddl_rule": "key-rotation-transition-v1",
+      "mutation": "set the transition mode at label 10 to 4, outside the registered rotate/recover/retire/requalify range",
+      "stage": "rotation",
+      "expected": "reject",
+      "reason_code": "rotation-transition-mode-unregistered",
+      "registry_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
     }
   ]
 }

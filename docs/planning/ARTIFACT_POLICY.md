@@ -26,20 +26,41 @@ Exploratory material may not be called canonical, normative, conformant, certifi
 
 Superseded reports, stale review packets, old fixtures, archived baselines, and prior planning conclusions retained only for history.
 
+### `absent`
+
+A declared surface with no artifact at all: an evaluation suite whose fixtures and implementation do not exist. It is the only class capped at `none`, and every `not_applicable` eval suite carries it.
+
+The class exists so that `docs/verification/EVAL_SYSTEM.md`'s rule — an eval suite reported as `not_applicable` is an absence of evidence, never a pass — has a value it can be checked against. Twenty-four of the twenty-seven suites are `not_applicable`; while `authority_class` and `evidence_ceiling` were read by nothing, each of them could have declared `production-evidence` and every validator stayed green.
+
 ## Evidence ceilings
 
 Evidence claims use the following ordered vocabulary:
 
-1. `schema-valid`
-2. `structurally-consistent`
-3. `fixture-consistent`
-4. `cross-language-parity`
-5. `normative-conformance`
-6. `adversarial-tested`
-7. `platform-exercised`
-8. `production-evidence`
+1. `none`
+2. `schema-valid`
+3. `structurally-consistent`
+4. `fixture-consistent`
+5. `cross-language-parity`
+6. `normative-conformance`
+7. `adversarial-tested`
+8. `platform-exercised`
+9. `production-evidence`
 
 A higher level requires all lower-level prerequisites but does not automatically imply security, privacy, certification, or launch readiness.
+
+`none` is the floor and is a real value rather than a missing one. An artifact or suite at `none` claims nothing, which is the correct claim for a suite with no fixtures, and a ladder whose floor was `schema-valid` had nowhere to put that.
+
+Each class caps the ceiling its artifacts may claim, and the caps are machine-readable in `conformance/p1140f/artifact-authority-v1.json` rather than restated here:
+
+| Class | Cap | Why the cap is there |
+| --- | --- | --- |
+| `normative-planning` | `fixture-consistent` | A specification defines intended behaviour. Two implementations agreeing is a property of the implementations, not of the document they read |
+| `candidate-planning` | `structurally-consistent` | A contract still under semantic review. No artifact carries this class today; the cap is recorded so promoting one is a deliberate edit |
+| `exploratory-prototype` | `cross-language-parity` | Two implementations reading the same non-normative format agree about the wrong authority, which is not conformance |
+| `historical-non-authoritative` | `structurally-consistent` | It may still be internally consistent; it is never current evidence |
+| `absent` | `none` | There is no artifact to be evidence |
+
+`scripts/repository/validate_p1140f_authority.py` reads the ladder and the caps from that registry and fails on an artifact above its cap. `scripts/ci/run_evals.py --validate-registry` applies the same caps to every eval suite, plus two the artifact registry has no reason to know: a `not_applicable` suite is capped at `none`, and a `ready` suite is capped by what its fixture manifest declares — or, if the manifest declares no ceiling of its own, at `fixture-consistent` when it binds fixtures and at `none` when it binds none.
 
 Two implementations agreeing on the same non-normative format establish only `cross-language-parity`. A suite may claim `normative-conformance` only when it consumes the sole normative corpus and exercises every required encoding, signature, rejection, and resource invariant. `production-evidence` requires an implemented integrated system and immutable operational evidence.
 

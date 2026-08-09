@@ -97,6 +97,18 @@ The last two exist because without them the gate is evaded by deleting or renami
 
 Recording a downgrade is deliberately a file edit, so it leaves a reviewable diff. An undeclared downgrade turns validation red.
 
+## Every suite declares an authority class and a bounded evidence ceiling
+
+Each suite in `evals/suites/suites.yaml` carries `authority_class` and `evidence_ceiling`, both drawn from the vocabulary in `conformance/p1140f/artifact-authority-v1.json`, which `docs/planning/ARTIFACT_POLICY.md` owns. `scripts/ci/run_evals.py --validate-registry` refuses a value the registry does not declare and refuses a ceiling higher than the lowest applicable cap:
+
+- the suite's `authority_class` caps it — `exploratory-prototype` cannot reach `normative-conformance`;
+- a `not_applicable` suite is capped at `none`. It has no fixture manifest by construction, and the status is an absence of evidence rather than a pass. Twenty-four of the twenty-seven suites carry it;
+- a `ready` suite is capped by its fixture manifest: the manifest's own `evidence_ceiling` if it declares one, otherwise `fixture-consistent` when it binds at least one fixture, otherwise `none`.
+
+The last clause is the one worth reading twice. A ceiling check that only asked whether the fixtures contradicted the claim would be satisfied by a suite with no fixtures at all — the absence would satisfy the absence-check, and the emptiest suite in the registry would be the one it never questioned. The cap is therefore derived from what the manifest *binds*, so having nothing lowers the ceiling instead of leaving it unexamined.
+
+Both keys were added in commit `31a6539` to satisfy `scripts/repository/validate_p1140f_authority.py` and were then declaratively inert: `run_evals.py` admitted them to its key allowlist and read neither, and only one of the twenty-seven suites carried them at all.
+
 ## `not_applicable` names what it is waiting for
 
 Every `not_applicable` suite declares `not_applicable_until`: the repository-relative paths whose *absence* is the justification for the status. Validation fails as soon as any one of them exists, which is what makes "must not be used after the owning component is introduced" checkable rather than aspirational. A reviewer decides whether the justification still holds by asking whether the named paths exist, not by reading the prose reason.

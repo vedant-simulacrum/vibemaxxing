@@ -146,14 +146,21 @@ class RecordFieldTests(IssuePlanFixtureMixin, unittest.TestCase):
         self.assertEqual(self.by_key()["F-001"]["depends"], ["PF-036"])
 
     def test_a_unit_missing_a_required_field_is_not_emitted(self) -> None:
-        self.write_source(
-            self.breakdown_text.replace(
-                "Acceptance: `python3 scripts/repository/generate_issue_plan.py` emits",
-                "Acceptance:\nUnrelated: `python3 scripts/repository/generate_issue_plan.py` emits",
-                1,
-            )
+        mutated = self.breakdown_text.replace(
+            "Acceptance: `python3 scripts/repository/generate_issue_plan.py` emits",
+            "Acceptance:\nUnrelated: `python3 scripts/repository/generate_issue_plan.py` emits",
+            1,
         )
-        self.expect_failure("PF-037 (line 661) is missing `Acceptance:`")
+        self.write_source(mutated)
+        # The heading's line number is computed rather than written down. It was a
+        # literal, and every edit anywhere above `PF-037` in the breakdown failed this
+        # test for a reason with nothing to do with what it checks.
+        line = next(
+            number
+            for number, text in enumerate(mutated.splitlines(), start=1)
+            if text.startswith("### PF-037 ")
+        )
+        self.expect_failure(f"PF-037 (line {line}) is missing `Acceptance:`")
 
     def test_generation_is_byte_deterministic(self) -> None:
         first = self.output.read_bytes() if self.output.exists() else b""

@@ -32,7 +32,7 @@
       "fixtures": [
         {
           "path": "conformance/vibeproof/v1/exact-byte-vectors.json",
-          "sha256": "c30a81990a1beada5ba04ed6c80ac5f2adb776762bddc1515c4a4748d4e8993e"
+          "sha256": "3cfa77078a58d42bb71ff8265839f3511568101a6c707333e3c0c18d4feac10f"
         }
       ],
       "expect": "accept",
@@ -48,7 +48,7 @@
       "fixtures": [
         {
           "path": "conformance/vibeproof/v1/malformed-resource-corpus.json",
-          "sha256": "36ddd626080811960ef920887c15e7b265269d4bb89f49fc67d3898c0a7a17c5"
+          "sha256": "a6ef8404599763ed4457d57a4cb42354241e43debeb8f9a6dd1b73efee3d708d"
         }
       ],
       "expect": "reject",
@@ -56,7 +56,7 @@
       "authority_ref": "docs/architecture/VIBEPROOF_V1_PROTOCOL.md#canonical-cbor",
       "negative": true,
       "state": "active",
-      "note": "Duplicate keys, non-minimal integers and indefinite-length constructs, plus the resource limits a decoder must enforce before it allocates."
+      "note": "Twenty-seven cases. Nine state their input as hex and are decoded by scripts/repository/validate_planning_artifacts.py, which requires the canonical profile decoder to refuse each one with the exact decoder_signal the case declares, so a case cannot claim a malformation its bytes do not contain. The other eighteen state a mutation, a generator or a transaction state in prose and are not executable until an implementation reads them. expect_reason_code names the canonical-decode class only; the corpus spans ten registry reason codes in total - CLAIM_INVALID_CANONICAL_ENCODING, CLAIM_INVALID_SIGNATURE, CLAIM_CHAIN_FORK, CLAIM_SEQUENCE_UNEXPECTED, CLAIM_GAP_DECLARATION_REQUIRED, BATCH_ATOMIC_REJECT, REQUEST_MALFORMED, IDEMPOTENCY_KEY_CONFLICT, DEVICE_KEY_CONTINUITY_BROKEN and STATE_TRANSITION_NOT_PERMITTED - each resolving in packages/schemas/reason-codes-v1.json, which this manifest has named as the suite's reason authority since it was written and which none of the original twenty cases resolved against."
     },
     {
       "case_id": "VP-003",

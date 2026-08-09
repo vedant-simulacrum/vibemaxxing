@@ -181,14 +181,27 @@ class WorkUnitStatusValidatorTests(unittest.TestCase):
         self.assertEqual(self.run_validator(), 1)
 
     def test_not_started_contradicted_by_an_existing_artifact_fails(self) -> None:
-        """The staleness this whole mechanism exists to catch."""
-        text = re.sub(
-            r"(### PF-054 .*?\nFiles: )`conformance/vibeproof/v1/negative-vectors\.json` \(new\)",
-            r"\1`packages/schemas/planning-schema.sql` (new)",
-            self.original,
-            count=1,
-            flags=re.S,
-        )
+        """The staleness this whole mechanism exists to catch.
+
+        The unit is found rather than named. This test used to pin `PF-054` and the
+        exact path on its `Files:` line, so it failed the moment that unit landed and
+        stopped promising a file — for a reason with nothing to do with what it checks.
+        """
+        blocks = re.split(r"(?m)^(?=### )", self.original)
+        for block in blocks:
+            if "\nStatus: not-started\n" not in block:
+                continue
+            match = re.search(r"(?m)^Files: .*?(`[^`]+` \(new\))", block)
+            if match is None:
+                continue
+            mutated = block.replace(
+                match.group(1), "`packages/schemas/planning-schema.sql` (new)", 1
+            )
+            text = self.original.replace(block, mutated, 1)
+            break
+        else:
+            self.fail("no not-started unit promises a new file")
+
         self.assertNotEqual(text, self.original)
         self.write(text)
         self.assertEqual(self.run_validator(), 1)
@@ -347,8 +360,7 @@ class RepairScheduleTests(unittest.TestCase):
         self.series = {
             unit.unit_id: unit
             for unit in self.units
-            if unit.unit_id.startswith("PF-")
-            and int(unit.unit_id.split("-")[1]) <= 36
+            if unit.unit_id.startswith("PF-") and int(unit.unit_id.split("-")[1]) <= 36
         }
 
     def test_every_unlanded_repair_unit_appears_exactly_once(self) -> None:

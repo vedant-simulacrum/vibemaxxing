@@ -20,6 +20,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import cddl_instance  # noqa: E402
 import generate_vibeproof_vectors as vibeproof_vectors  # noqa: E402
 import generate_planning_docs as planning_docs  # noqa: E402
 
@@ -1424,6 +1425,389 @@ def validate_vibeproof_vectors() -> None:
         raise ValidationFailure(
             f"VibeProof malformed/resource corpus missing: {sorted(missing)}"
         )
+
+
+VIBEPROOF_OWNERSHIP_KEYS = ("cddl_rules_pinned", "cddl_rules_unpinned")
+
+
+def vibeproof_vector_path() -> Path:
+    return CONFORMANCE / "vibeproof" / "v1" / "exact-byte-vectors.json"
+
+
+def vibeproof_corpus_path() -> Path:
+    return CONFORMANCE / "vibeproof" / "v1" / "malformed-resource-corpus.json"
+
+
+# Which rule each vector file's messages are encoded under. The payload and header
+# rules are checked as CBOR instances; the COSE_Sign1 rules are checked structurally,
+# because `#6.18([...])` with named array entries is outside the subset
+# `cddl_instance` implements and a checker must not pretend to read what it cannot.
+VIBEPROOF_MESSAGE_RULES = {
+    "claim": {
+        "payload": "vibeproof-claim-v1",
+        "protected": "protected-headers-claim-v1",
+        "envelope": "cose-sign1-claim-v1",
+    },
+    "receipt": {
+        "payload": "checkpoint-receipt-v1",
+        "protected": "protected-headers-receipt-v1",
+        "envelope": "cose-sign1-receipt-v1",
+    },
+}
+
+
+def _json_strings(node: Any) -> list[str]:
+    """Every JSON string in a document, keys included."""
+    if isinstance(node, str):
+        return [node]
+    if isinstance(node, dict):
+        found: list[str] = []
+        for key, value in node.items():
+            found.append(key)
+            found.extend(_json_strings(value))
+        return found
+    if isinstance(node, list):
+        return [item for value in node for item in _json_strings(value)]
+    return []
+
+
+def vibeproof_foreign_declarations(
+    rules: set[str], documents: dict[str, Any]
+) -> list[str]:
+    """Report documents that declare a CDDL rule name outside the two vector files.
+
+    A *declaration* is a JSON string equal to a rule name, or one of the ownership
+    keys. It is deliberately not a substring match: `conformance/vibeproof/v1/manifest.json`
+    carries `"packages/schemas/vibeproof-claim-v1.cddl"` and
+    `"packages/schemas/reason-codes-v1.json"`, which contain the rule names
+    `vibeproof-claim-v1` and `reason-code` inside them and are references to the
+    grammar rather than competitors to it. A substring rule would fail on the file
+    that points at the authority, which teaches the next author to weaken the check.
+
+    `packages/schemas/*.json` is out of scope, and not by omission. Four JSON Schema
+    documents there define `$defs` named `digest32`, `uuid7`, `registered-id` and
+    `uint64` — `egress-allowlist-v1.json`, `egress-allowlist-v1.schema.json`,
+    `observer-equivalence-v1{,.schema}.json`, `appraisal-result-v1.schema.json`,
+    `source-receipt-v1.schema.json` and `accounting-arithmetic-v1{,.schema}.json`.
+    Those are JSON Schema definition names in a different language and namespace,
+    not CDDL rules, and the collision is in the word rather than in the authority.
+    The hazard this check exists for is a *third conformance corpus*, so it scans
+    the two trees where one could appear: `conformance/` and `evals/`.
+    """
+    offences: list[str] = []
+    for relative in sorted(documents):
+        document = documents[relative]
+        keys = [
+            key
+            for key in VIBEPROOF_OWNERSHIP_KEYS
+            if isinstance(document, dict) and key in document
+        ]
+        if keys:
+            offences.append(
+                f"{relative} declares VibeProof rule ownership ({', '.join(keys)}); "
+                "only the two vector files may"
+            )
+        declared = sorted(
+            {value for value in _json_strings(document) if value in rules}
+        )
+        if declared:
+            offences.append(
+                f"{relative} names CDDL rules as declarations: {declared}; a rule is "
+                "owned by exactly one vector file and a third occurrence is a second "
+                "authority for the same wire format"
+            )
+    return offences
+
+
+def _vibeproof_candidate_documents() -> dict[str, Any]:
+    """Every JSON file under `conformance/` and `evals/` bar the two vector files."""
+    owners = {vibeproof_vector_path(), vibeproof_corpus_path()}
+    documents: dict[str, Any] = {}
+    for root in (CONFORMANCE, ROOT / "evals"):
+        for path in sorted(root.rglob("*.json")):
+            if path in owners:
+                continue
+            try:
+                documents[path.relative_to(ROOT).as_posix()] = json.loads(
+                    path.read_text(encoding="utf-8")
+                )
+            except json.JSONDecodeError as error:
+                raise ValidationFailure(f"{path}: {error.msg}") from error
+    return documents
+
+
+def _check_cose_envelope(
+    kind: str, vector: dict[str, Any], rule: str, bodies: dict[str, str]
+) -> None:
+    """Assert the committed COSE_Sign1 bytes are the four-element tagged structure.
+
+    RFC 9052 s4.2: COSE_Sign1 is tag 18 over exactly `[protected, unprotected,
+    payload, signature]`. The elements are checked against the vector's own recorded
+    protected headers, payload and signature, so an envelope assembled from
+    different bytes than the ones the fixture publishes fails here rather than
+    being discovered by an implementation.
+    """
+    cose = bytes.fromhex(vector["cose_sign1_hex"])
+    if not cose.startswith(bytes.fromhex("d2")):
+        raise ValidationFailure(f"{kind} {rule}: outermost item is not tag 18")
+    body, consumed = vibeproof_vectors.decode_map_at(cose, 1)
+    if consumed != len(cose):
+        raise ValidationFailure(f"{kind} {rule}: trailing bytes after the envelope")
+    if not isinstance(body, list) or len(body) != 4:
+        raise ValidationFailure(
+            f"{kind} {rule}: COSE_Sign1 must be four elements, got "
+            f"{len(body) if isinstance(body, list) else type(body).__name__}"
+        )
+    protected, unprotected, payload, signature = body
+    if protected != bytes.fromhex(vector["protected_headers_hex"]):
+        raise ValidationFailure(f"{kind} {rule}: envelope protected bytes differ")
+    if unprotected != {}:
+        raise ValidationFailure(f"{kind} {rule}: the unprotected bucket is not empty")
+    if payload != bytes.fromhex(vector["canonical_payload_hex"]):
+        raise ValidationFailure(f"{kind} {rule}: envelope payload bytes differ")
+    if signature != bytes.fromhex(vector["signature_hex"]):
+        raise ValidationFailure(f"{kind} {rule}: envelope signature bytes differ")
+    cddl_instance.check("signature64", signature, bodies, f"{rule}.signature")
+
+
+def validate_vibeproof_rule_ownership() -> None:
+    """Every CDDL rule is owned by exactly one vector file, and the claim is checked.
+
+    Three properties, and the third is the one that makes the first two worth
+    declaring.
+
+    **Exactly one owner.** `exact-byte-vectors.json` and `malformed-resource-corpus.json`
+    each declare `cddl_rules_pinned`; the corpus additionally declares
+    `cddl_rules_unpinned` for rules no vector covers. The three sets must partition
+    the grammar exactly — nothing missing, nothing repeated, nothing invented. A
+    rule added to the CDDL and pinned by nobody fails here, which is the drift this
+    unit exists to stop.
+
+    **No third file.** No other JSON document under `conformance/` or `evals/` may
+    declare a rule name. `PF-054` originally planned a second negative corpus named
+    `negative-vectors.json` beside these two; had it been written and declared rule
+    ownership, this check would have refused it.
+
+    **The declaration is verified, not believed.** The rules the exact-byte vectors
+    pin must be exactly the reference closure of the messages those vectors actually
+    encode, and each encoded message is decoded and checked against its rule: the
+    label set must match exactly, every value must satisfy its declared type, and
+    the COSE_Sign1 envelope must be the tagged four-element structure over the
+    fixture's own bytes. Before this, nothing in the repository compared the
+    committed bytes to the grammar; the vectors could have encoded an entirely
+    different message and every check stayed green.
+    """
+    text = (SCHEMAS / "vibeproof-claim-v1.cddl").read_text(encoding="utf-8")
+    bodies = cddl_instance.rule_bodies(text)
+    references = cddl_instance.rule_references(bodies)
+    rules = set(bodies)
+
+    vectors = load_json(vibeproof_vector_path())
+    corpus = load_json(vibeproof_corpus_path())
+    pinned_by_vectors = set(vectors.get("cddl_rules_pinned", []))
+    pinned_by_corpus = set(corpus.get("cddl_rules_pinned", []))
+    unpinned_rows = corpus.get("cddl_rules_unpinned", [])
+    unpinned = {row["rule"] for row in unpinned_rows}
+
+    if len(unpinned) != len(unpinned_rows):
+        raise ValidationFailure("the negative corpus lists a rule as unpinned twice")
+    owned = [
+        ("exact-byte-vectors.json cddl_rules_pinned", pinned_by_vectors),
+        ("malformed-resource-corpus.json cddl_rules_pinned", pinned_by_corpus),
+        ("malformed-resource-corpus.json cddl_rules_unpinned", unpinned),
+    ]
+    for index, (label, first) in enumerate(owned):
+        for other_label, second in owned[index + 1 :]:
+            overlap = sorted(first & second)
+            if overlap:
+                raise ValidationFailure(
+                    f"CDDL rules claimed by both {label} and {other_label}: {overlap}"
+                )
+    union = pinned_by_vectors | pinned_by_corpus | unpinned
+    if union - rules:
+        raise ValidationFailure(
+            f"vector files claim rules the CDDL does not declare: {sorted(union - rules)}"
+        )
+    if rules - union:
+        raise ValidationFailure(
+            f"CDDL rules owned by no vector file: {sorted(rules - union)}"
+        )
+
+    checked_roots = {
+        rule
+        for message in VIBEPROOF_MESSAGE_RULES.values()
+        for rule in message.values()
+    }
+    closure = cddl_instance.reference_closure(checked_roots, references)
+    if pinned_by_vectors != closure:
+        raise ValidationFailure(
+            "exact-byte-vectors.json must pin exactly the reference closure of the "
+            f"messages it encodes; unreachable={sorted(pinned_by_vectors - closure)} "
+            f"unpinned={sorted(closure - pinned_by_vectors)}"
+        )
+    dangling = cddl_instance.is_reference_closed(pinned_by_vectors, references)
+    if dangling:
+        raise ValidationFailure(
+            f"exact-byte-vectors.json pins rules that depend on unpinned ones: {sorted(dangling)}"
+        )
+
+    for kind, message in VIBEPROOF_MESSAGE_RULES.items():
+        vector = vectors[kind]
+        try:
+            payload = vibeproof_vectors.decode_exact(
+                bytes.fromhex(vector["canonical_payload_hex"])
+            )
+            protected = vibeproof_vectors.decode_exact(
+                bytes.fromhex(vector["protected_headers_hex"])
+            )
+        except ValueError as error:
+            raise ValidationFailure(
+                f"{kind} bytes are not canonical-profile CBOR: {error}"
+            ) from error
+        for role, value in (("payload", payload), ("protected", protected)):
+            try:
+                cddl_instance.check(message[role], value, bodies)
+            except (cddl_instance.CddlMismatch, cddl_instance.CddlUnsupported) as error:
+                raise ValidationFailure(
+                    f"{kind} {role} does not satisfy {message[role]}: {error}"
+                ) from error
+            # Re-encoding what was decoded proves the committed bytes are in the one
+            # canonical form the profile admits. Decoding alone does not: a
+            # length-first map ordering decodes to the same instance and signs to
+            # different bytes, which is the interoperability failure RFC 9052 s9
+            # exists to prevent.
+            committed = bytes.fromhex(
+                vector[
+                    "canonical_payload_hex"
+                    if role == "payload"
+                    else "protected_headers_hex"
+                ]
+            )
+            if vibeproof_vectors.encode(value) != committed:
+                raise ValidationFailure(
+                    f"{kind} {role} bytes are not the canonical encoding of what they "
+                    "decode to"
+                )
+        _check_cose_envelope(kind, vector, message["envelope"], bodies)
+
+    case_rules = [case["cddl_rule"] for case in corpus["cases"] if "cddl_rule" in case]
+    unknown = sorted(set(case_rules) - pinned_by_corpus)
+    if unknown:
+        raise ValidationFailure(
+            f"negative corpus cases name rules the corpus does not pin: {unknown}"
+        )
+    uncovered = sorted(pinned_by_corpus - set(case_rules))
+    if uncovered:
+        raise ValidationFailure(
+            f"negative corpus pins rules no case exercises: {uncovered}"
+        )
+    breakdown = (
+        ROOT / "docs" / "implementation" / "PR_SIZED_WORK_BREAKDOWN.md"
+    ).read_text(encoding="utf-8")
+    for row in unpinned_rows:
+        if not row.get("reason", "").strip():
+            raise ValidationFailure(f"{row['rule']} is unpinned with no reason")
+        if f"\n### {row['work_unit']} " not in breakdown:
+            raise ValidationFailure(
+                f"{row['rule']} defers to {row['work_unit']}, which has no work-unit "
+                "block in PR_SIZED_WORK_BREAKDOWN.md"
+            )
+
+    offences = vibeproof_foreign_declarations(rules, _vibeproof_candidate_documents())
+    if offences:
+        raise ValidationFailure("; ".join(offences))
+
+
+def validate_vibeproof_negative_corpus() -> None:
+    """The negative corpus states what it tests, and every byte-level case does it.
+
+    `PF-054` recorded that only positive vectors existed and that batch, rotation,
+    gap and correction cases were absent. Twenty negative cases already existed, so
+    the premise was stale in both halves, and the unit's acceptance — that duplicate
+    keys, non-minimal integers, indefinite containers and trailing bytes are each
+    covered — passed on the unrepaired tree. What was actually missing is the thing
+    that makes a corpus more than a list: nothing decoded the recorded hex, so a case
+    could name a malformation its bytes did not contain and no check would notice.
+
+    So the hex is decoded here. Each byte-level case names a `decoder_signal`, the
+    canonical profile decoder must refuse the input, and it must refuse it with
+    exactly that signal — not merely fail. Every refusal the decoder can produce is
+    covered by at least one case, so a rule the profile enforces cannot be missing
+    from the corpus without this failing.
+
+    Each case also names a `registry_reason_code` resolving in
+    `packages/schemas/reason-codes-v1.json`, which the suite manifest has declared as
+    this corpus's reason authority since it was written while none of the twenty
+    local reason codes resolved against it.
+    """
+    corpus = load_json(vibeproof_corpus_path())
+    if corpus["schema_version"] != 2 or corpus["protocol_major"] != 1:
+        raise ValidationFailure("negative corpus header is not v2 of protocol major 1")
+    authority = corpus["reason_authority"]
+    if authority != "packages/schemas/reason-codes-v1.json":
+        raise ValidationFailure(
+            f"negative corpus names an unknown reason authority: {authority}"
+        )
+    valid_codes = {row["code"] for row in load_json(ROOT / authority)["codes"]}
+    stages, outcomes = set(corpus["stages"]), set(corpus["outcomes"])
+
+    seen_signals: set[str] = set()
+    reason_codes: list[str] = []
+    for case in corpus["cases"]:
+        identifier = case["id"]
+        if case["stage"] not in stages:
+            raise ValidationFailure(f"{identifier}: undeclared stage {case['stage']}")
+        if case["expected"] not in outcomes:
+            raise ValidationFailure(
+                f"{identifier}: undeclared outcome {case['expected']}"
+            )
+        if case["registry_reason_code"] not in valid_codes:
+            raise ValidationFailure(
+                f"{identifier}: registry_reason_code {case['registry_reason_code']} does "
+                f"not resolve in {authority}"
+            )
+        reason_codes.append(case["reason_code"])
+        shapes = [
+            key
+            for key in ("input_hex", "mutation", "generator", "state")
+            if key in case
+        ]
+        if len(shapes) != 1:
+            raise ValidationFailure(
+                f"{identifier}: a case states its input exactly one way, not {shapes}"
+            )
+        if shapes[0] != "input_hex":
+            if "decoder_signal" in case:
+                raise ValidationFailure(
+                    f"{identifier}: declares a decoder_signal with no bytes to decode, "
+                    "so nothing can check it"
+                )
+            continue
+        signal = case["decoder_signal"]
+        seen_signals.add(signal)
+        try:
+            decoded = vibeproof_vectors.decode_exact(bytes.fromhex(case["input_hex"]))
+        except vibeproof_vectors.ProfileViolation as refusal:
+            if refusal.symbol != signal:
+                raise ValidationFailure(
+                    f"{identifier}: declares decoder_signal {signal} but the canonical "
+                    f"profile decoder refused it as {refusal.symbol}"
+                ) from refusal
+        else:
+            raise ValidationFailure(
+                f"{identifier}: the canonical profile decoder accepted this input and "
+                f"returned {decoded!r}; a negative case whose bytes decode is not one"
+            )
+
+    assert_unique(reason_codes, "VibeProof negative-corpus reason codes")
+    missing = sorted(vibeproof_vectors.PROFILE_VIOLATIONS - seen_signals)
+    if missing:
+        raise ValidationFailure(
+            f"the canonical profile refuses inputs no corpus case exercises: {missing}"
+        )
+    unknown = sorted(seen_signals - vibeproof_vectors.PROFILE_VIOLATIONS)
+    if unknown:
+        raise ValidationFailure(f"negative corpus names undeclared signals: {unknown}")
 
 
 def validate_protobuf_files() -> None:
@@ -4490,6 +4874,8 @@ def main() -> int:
         ("inventory table integrity", validate_inventory_register),
         ("CDDL grammar parse and required rules", validate_cddl_file),
         ("VibeProof exact-byte and malformed vectors", validate_vibeproof_vectors),
+        ("VibeProof CDDL rule ownership", validate_vibeproof_rule_ownership),
+        ("VibeProof negative corpus", validate_vibeproof_negative_corpus),
         ("VibeProof vector reproducibility", validate_vector_reproducibility),
         ("planning document generation", validate_planning_doc_generation),
         ("decision traceability coverage", validate_decision_traceability),

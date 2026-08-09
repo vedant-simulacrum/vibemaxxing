@@ -242,33 +242,57 @@ def main() -> int:
     paths = [row["path"] for row in artifact_rows]
     if len(paths) != len(set(paths)):
         raise RuntimeError("duplicate artifact-authority path")
-    ceiling_order = {
-        "schema-valid": 0,
-        "structurally-consistent": 1,
-        "fixture-consistent": 2,
-        "cross-language-parity": 3,
-        "normative-conformance": 4,
-        "adversarial-tested": 5,
-        "platform-exercised": 6,
-        "production-evidence": 7,
+    # The ladder and the per-class caps are read from the registry rather than
+    # copied here. This validator used to carry its own copy of the ladder and its
+    # own hard-coded rule for one class, so a ceiling added to the policy was
+    # unknown to the checker and a class other than exploratory-prototype was
+    # capped by nothing at all.
+    declared_ceilings = artifacts["evidence_ceilings"]
+    if len(set(declared_ceilings)) != len(declared_ceilings):
+        raise RuntimeError("artifact registry repeats an evidence ceiling")
+    if declared_ceilings[0] != "none":
+        raise RuntimeError(
+            "the weakest evidence ceiling must be 'none'; an eval suite with no "
+            "fixtures is capped there, and a ladder whose floor is a positive claim "
+            "gives an absence of evidence somewhere to sit"
+        )
+    ceiling_order = {name: index for index, name in enumerate(declared_ceilings)}
+    class_maxima = {
+        name: record["maximum_evidence_ceiling"]
+        for name, record in artifacts["authority_classes"].items()
     }
+    unknown_caps = sorted(set(class_maxima.values()) - set(ceiling_order))
+    if unknown_caps:
+        raise RuntimeError(
+            f"authority classes cap at undeclared ceilings: {unknown_caps}"
+        )
     for row in artifact_rows:
         if not path_exists(row["path"]):
             raise RuntimeError(
                 f"artifact registry references missing path: {row['path']}"
             )
-        if row["authority_class"] == "exploratory-prototype":
-            if (
-                ceiling_order[row["evidence_ceiling"]]
-                > ceiling_order["cross-language-parity"]
-            ):
-                raise RuntimeError(
-                    f"exploratory artifact overclaims evidence: {row['path']}"
-                )
-            if not row.get("known_incompatibilities"):
-                raise RuntimeError(
-                    f"exploratory artifact lacks known incompatibilities: {row['path']}"
-                )
+        if row["authority_class"] not in class_maxima:
+            raise RuntimeError(
+                f"artifact declares an undeclared authority class: {row['path']} "
+                f"({row['authority_class']})"
+            )
+        if row["evidence_ceiling"] not in ceiling_order:
+            raise RuntimeError(
+                f"artifact declares an undeclared evidence ceiling: {row['path']} "
+                f"({row['evidence_ceiling']})"
+            )
+        cap = class_maxima[row["authority_class"]]
+        if ceiling_order[row["evidence_ceiling"]] > ceiling_order[cap]:
+            raise RuntimeError(
+                f"artifact overclaims evidence: {row['path']} declares "
+                f"{row['evidence_ceiling']} and {row['authority_class']} caps at {cap}"
+            )
+        if row["authority_class"] == "exploratory-prototype" and not row.get(
+            "known_incompatibilities"
+        ):
+            raise RuntimeError(
+                f"exploratory artifact lacks known incompatibilities: {row['path']}"
+            )
 
     bundle_rows = bundles["bundles"]
     bundle_ids = [row["bundle_id"] for row in bundle_rows]
