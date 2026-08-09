@@ -1503,9 +1503,9 @@
     },
     {
       "id": "D-541",
-      "decision": "The pre-publication audit REPOSITORY_OPERATIONS.md required — secret, privacy, license, security and history — was never performed, because publication was never treated as an event. It is owed retroactively. The secret limb is now performed: 1,829 blobs across all 918 commits were scanned for AWS keys, Anthropic keys, GitHub tokens and classic PATs, private key headers, Slack tokens and Google API keys, with zero matches. The privacy, license, security and history limbs are not performed. This decision records the gap rather than the reassurance: one limb of five is evidence about one limb of five.",
-      "status": "research-required",
-      "validation_or_reopen": "the four remaining limbs are performed and recorded, at which point this becomes accepted"
+      "decision": "The pre-publication audit REPOSITORY_OPERATIONS.md required — secret, privacy, license, security and history — was never performed, because publication was never treated as an event. It was owed retroactively and all five limbs are now performed and recorded under the retroactive publication audit in REPOSITORY_OPERATIONS.md. Secret: 1,829 blobs across 918 commits, zero credential matches. Privacy: no third-party personal data; two owner self-disclosures recorded rather than removed, because rewriting public history is the more damaging repair. Security and history: clean. License: one gap remains open — the `@img/sharp-libvips-*` prebuilt binaries pinned under LGPL-3.0-or-later in two lockfiles need the NOTICE and attribution review LICENSES.md already says has not happened. The scan was restricted to refs that exist on the remote, because this machine carries local-only checkpoint refs that an unqualified scan would have reported as published history",
+      "status": "accepted",
+      "validation_or_reopen": "the LGPL attribution review is performed under the open-source release checklist, or a limb is found to have missed a class of material it claimed to cover"
     },
     {
       "id": "D-560",

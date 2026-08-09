@@ -159,16 +159,27 @@ jobs:
           from pathlib import Path
 
           data = json.loads(Path('/tmp/vibemaxxing-issue-plan.json').read_text())
+          record = json.loads(Path('conformance/p1140f/gate-authorization-v1.json').read_text())
+          states = {gate['gate']: gate['state'] for gate in record['gates']}
           issues = data['issues']
           keys = [issue['key'] for issue in issues]
           by_key = {issue['key']: issue for issue in issues}
-          assert data['schema_version'] == 2
+          assert data['schema_version'] == 3
           assert data['issue_count'] == len(issues)
           assert len(keys) == len(set(keys))
           assert all(re.fullmatch(r'[A-Z][A-Z0-9]*-\d{3}', key) for key in keys)
           assert {'PF-001', 'PF-036', 'F-001', 'P-008', 'N-016'} <= set(keys)
-          assert by_key['PF-001']['phase_gate'] == 'P-1140F-planning-repair'
-          assert by_key['F-001']['phase_gate'] == 'P-1104-explicit-implementation-approval'
+          # PF-037. These once asserted the literals the generator hardcoded, so the
+          # pair could only agree with each other and never with the gate record. Both
+          # now read that record, and a gate the owner moves moves them together.
+          assert by_key['PF-001']['phase_gate'] == 'P-1140F'
+          assert by_key['F-001']['phase_gate'] == 'P-1104'
+          assert by_key['PF-001']['phase_gate_state'] == states['P-1140F']
+          assert by_key['F-001']['phase_gate_state'] == states['P-1104']
+          assert all(('blocked' in i['labels']) == i['blocked'] for i in issues)
+          required = {'files', 'acceptance', 'depends', 'est', 'status'}
+          assert all(required <= issue.keys() for issue in issues)
+          assert all(issue['acceptance'] and issue['est'] and issue['status'] for issue in issues)
           assert not any(key.startswith('IMP-') for key in keys)
           print(f'issue plan: pass ({len(keys)} stable work units)')
           PY
