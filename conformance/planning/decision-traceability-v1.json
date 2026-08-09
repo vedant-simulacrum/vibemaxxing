@@ -2358,6 +2358,11 @@
       "id": "D-609",
       "implementation_bearing": false,
       "reason": "governs the planning track's own traceability record, not product behaviour"
+    },
+    {
+      "id": "D-610",
+      "implementation_bearing": false,
+      "reason": "records a governed-asset review the owner must perform, not product behaviour"
     }
   ]
 }
