@@ -5,6 +5,16 @@
     "overtake_hysteresis_policy_key": "overtake_notification_hysteresis_hours",
     "overtake_material_lead_policy_key": "overtake_material_lead_tokens"
   },
+  "event_categories": {
+    "friend_request": "social",
+    "board_invitation": "social",
+    "rank_overtake": "ranking",
+    "moderation": "moderation",
+    "appeal": "moderation",
+    "security": "security",
+    "compatibility": "product",
+    "release": "product"
+  },
   "source_event": {
     "notification_event_id": "018f2c60-0000-7000-8000-000000000901",
     "event_type": "rank_overtake",
@@ -44,6 +54,7 @@
     "social_enabled": true,
     "ranking_enabled": true,
     "moderation_enabled": true,
+    "product_enabled": true,
     "security_enabled": true,
     "quiet_hours_start_minute": 1320,
     "quiet_hours_end_minute": 420,

@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "registry_version": "1.7.0-p1140f",
+  "registry_version": "1.8.0-p1140f",
   "transports": {
     "problem": "Returned to the client as the reason_code of an RFC 9457 Problem body under the declared http_status.",
     "claim-rejection": "Returned inside ClaimBatchResult.rejections against one claim index. The batch operation itself answers 200, so http_status is null.",
@@ -53,6 +53,7 @@
       "getGlobalLeaderboard",
       "getLeaderboard",
       "getMe",
+      "getNotificationPreferences",
       "getPresence",
       "getPublicProfile",
       "linkIdentity",
@@ -87,7 +88,8 @@
       "startXAuth",
       "submitClaimBatch",
       "unlinkIdentity",
-      "updateMe"
+      "updateMe",
+      "updateNotificationPreferences"
     ],
     "public": [
       "completeGitHubAuth",
@@ -122,6 +124,7 @@
       "getCurrentRank",
       "getLeaderboard",
       "getMe",
+      "getNotificationPreferences",
       "getPresence",
       "getPublicProfile",
       "linkIdentity",
@@ -151,10 +154,12 @@
       "rotateDeviceKey",
       "submitClaimBatch",
       "unlinkIdentity",
-      "updateMe"
+      "updateMe",
+      "updateNotificationPreferences"
     ],
     "native-bound": [
       "createClaimChallenge",
+      "renewPresence",
       "submitClaimBatch"
     ],
     "mutating": [
@@ -190,7 +195,8 @@
       "startXAuth",
       "submitClaimBatch",
       "unlinkIdentity",
-      "updateMe"
+      "updateMe",
+      "updateNotificationPreferences"
     ],
     "mutating-authenticated": [
       "cancelIdentityUnlink",
@@ -220,7 +226,8 @@
       "rotateDeviceKey",
       "submitClaimBatch",
       "unlinkIdentity",
-      "updateMe"
+      "updateMe",
+      "updateNotificationPreferences"
     ],
     "recent-auth": [
       "cancelIdentityUnlink",
@@ -264,7 +271,8 @@
       "rotateDeviceKey",
       "submitClaimBatch",
       "unlinkIdentity",
-      "updateMe"
+      "updateMe",
+      "updateNotificationPreferences"
     ],
     "collection": [
       "getBoardLeaderboard",
@@ -332,7 +340,8 @@
       "startXAuth",
       "submitClaimBatch",
       "unlinkIdentity",
-      "updateMe"
+      "updateMe",
+      "updateNotificationPreferences"
     ]
   },
   "codes": [

@@ -672,13 +672,13 @@
       ],
       "isolation": "serializable",
       "interleaving": [
-        "the-block-transaction-locks-both-account-rows-in-canonical-order",
-        "a-concurrent-invite-transaction-blocks-on-the-second-of-them",
-        "the-block-deletes-the-friendship-and-the-rivalry-and-inserts-the-block",
-        "the-block-commits",
-        "the-invite-transaction-rereads-and-finds-a-block-in-force"
+        "the-block-transaction-inserts-one-directional-blocks-row",
+        "a-concurrent-invite-transaction-reads-the-pair-before-the-insert-commits",
+        "the-block-commits-having-touched-no-relationship-row",
+        "the-invite-transaction-rereads-the-block-set-at-its-authorization-recheck",
+        "the-invite-transaction-fails-closed-and-leaves-its-own-pending-row-untouched"
       ],
-      "expected": "block atomically removes incompatible relationships and invitations",
+      "expected": "a block inserts one row and changes no relationship; every effect is a read-time denial",
       "residual_rows": [
         {
           "table": "blocks",
@@ -698,20 +698,83 @@
         {
           "table": "friend_edges",
           "key": "the canonical pair for the two accounts",
-          "presence": "absent",
-          "note": "Removed in the same transaction as the block, so no window exists in which a block is in force and the friendship still renders."
+          "presence": "present",
+          "columns": {
+            "established_at": "unchanged by the block"
+          },
+          "note": "This row said absent until PF-025, describing the pre-D-585 model in which a block deleted the friendship. Friendship is keyed on an unordered pair and is symmetric, so deleting it let one person destroy a shared aggregate the other could not restore. The row survives and is suppressed at read time by projection-authorization-v1.json#directional-block."
         },
         {
           "table": "rival_edges",
           "key": "either direction between the two accounts",
-          "presence": "absent",
-          "note": "Rivalry is separate from friendship and from blocking, and a block ends it in both directions."
+          "presence": "present",
+          "columns": {
+            "state": "unchanged by the block"
+          },
+          "note": "Same repair. rival_edges.state no longer admits blocked and the block does not end the edge; an unblock therefore does not have to guess which rivalries to revive."
         },
         {
           "table": "board_invites",
           "key": "a pending invite between the two accounts",
+          "presence": "present",
+          "columns": {
+            "state": "pending"
+          },
+          "note": "The invite is suppressed at read time and expires on its own clock. Voiding it was the board half of the same defect: invalidated-by-block was terminal, so an unblock could not revive an invitation the block had killed."
+        }
+      ],
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "board-create-owner",
+      "tables": [
+        "board_memberships",
+        "boards"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "the-creation-transaction-inserts-the-boards-row",
+        "the-same-transaction-inserts-the-owner-board_memberships-row",
+        "a-concurrent-reader-sees-neither-row-because-the-transaction-has-not-committed",
+        "the-creation-transaction-commits-both-rows-together",
+        "the-reader-sees-a-board-that-has-had-an-owner-for-its-whole-visible-life"
+      ],
+      "expected": "a board and its owner membership are one write, so no board is ever readable without an owner",
+      "residual_rows": [
+        {
+          "table": "boards",
+          "key": "board_id = B",
+          "presence": "present",
+          "columns": {
+            "name": "not null",
+            "visibility": "one of public, unlisted, invite-only, private",
+            "membership_revision": "0",
+            "state": "active"
+          },
+          "note": "name and visibility were published by the API and stored nowhere until PF-025, so a created board could not record either."
+        },
+        {
+          "table": "board_memberships",
+          "key": "(board_id, account_id) for the creator",
+          "presence": "present",
+          "columns": {
+            "role": "owner",
+            "state": "active-owner",
+            "revision": "1"
+          },
+          "note": "board_one_active_owner refuses a second of these. It cannot refuse zero, which is why the owner row is written here rather than by a later update: at-most-one is an index, at-least-one is this transaction."
+        },
+        {
+          "table": "boards",
+          "key": "a boards row whose board_id has no active-owner membership",
           "presence": "absent",
-          "note": "An invite that outlives the block would deliver a notification from a blocked account."
+          "note": "The state the partial unique index is silent about. If creation were two writes it would exist between them, and the exactly-one-owner rule the board contract states would hold only by timing."
+        },
+        {
+          "table": "board_memberships",
+          "key": "a second row in state 'active-owner' for board B",
+          "presence": "absent",
+          "note": "Refused by the index rather than by the order of the two inserts."
         }
       ],
       "execution_state": "planned-runtime-evidence"

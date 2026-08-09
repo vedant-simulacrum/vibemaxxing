@@ -2,8 +2,8 @@
   "schema_version": 1,
   "thresholds": {
     "pulse_interval_policy_key": "presence_heartbeat_seconds",
-    "idle_after_policy_key": "presence_lease_expiry_seconds",
-    "offline_after_policy_key": "presence_idle_after_seconds"
+    "idle_after_policy_key": "presence_idle_after_seconds",
+    "offline_after_policy_key": "presence_offline_after_seconds"
   },
   "audience_projection": {
     "viewer_relationship": "blocked-either-direction",

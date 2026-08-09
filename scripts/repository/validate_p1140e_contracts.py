@@ -287,6 +287,12 @@ def main() -> int:
         "device-sequence-fork",
         "friend-cross-request",
         "block-race",
+        # PF-025. Board creation is a two-table write and had no plan, so the
+        # acceptance criterion that `boards` and `board_memberships` are written in
+        # one transaction "in the recorded SQL plan" pointed at a plan that did not
+        # exist. It is also the half `board_one_active_owner` cannot enforce: a
+        # partial unique index refuses a second owner and is silent about none.
+        "board-create-owner",
         "board-owner-transfer",
         "ranking-generation-promote",
         "moderation-appeal-reversal",

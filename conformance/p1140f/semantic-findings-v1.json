@@ -133,7 +133,7 @@
     {
       "finding_id": "SR-010",
       "severity": "P1",
-      "state": "repair-in-progress",
+      "state": "repaired-pending-review",
       "title": "Ranking authorization, immutable generations, periods, and corrections",
       "repair_task": "P-1140F-4",
       "finding_class": "contradiction",
@@ -152,7 +152,10 @@
         "packages/schemas/planning-schema.sql#score_snapshots"
       ],
       "closure_evidence": [
-        "PF-021 at 7891df41e9fb4b27c7fae378beea67a9aed7e971 (audience half only): every operation carrying security: [] is declared in openapi-v1.yaml#x-public-operations with one of three admissible reasons, exactly one of which is global-board. The ranking-definition and audience separation in ranking-view-v1.schema.json is not done and PF-021 remains in-progress."
+        "PF-021 at 7891df41e9fb4b27c7fae378beea67a9aed7e971 (audience half only): every operation carrying security: [] is declared in openapi-v1.yaml#x-public-operations with one of three admissible reasons, exactly one of which is global-board. The ranking-definition and audience separation in ranking-view-v1.schema.json is not done and PF-021 remains in-progress.",
+        "PF-021 at 986e90c29eba7733456e48cd95f99d88c3a32d0f: getLeaderboard held the global-board public reason while its path admitted global, friends, rivals and board, so the reason named one value of a path segment and the declaration covered all four: GET /leaderboards/friends/weekly answered an unauthenticated caller with a viewer-relative standing, and the board scope named no board. PF-052 had landed a note saying this operation gains a viewer parameter and loses its unauthenticated security, and did neither. RankEntry.evidence_class also admitted imported while the SQL column and the generation schema both refused it, making the public leaderboard schema the only artifact saying an import could be ranked.",
+        "PF-022 at 986e90c29eba7733456e48cd95f99d88c3a32d0f: the one active pointer did not exist: state was a five-value CHECK with no uniqueness, so two workers could each promote a generation and leave two rows active. The Cursor parameter asserted the server rejects a cursor it did not issue, one issued against a different snapshot and one issued to a different principal, while no record held an issuer, a snapshot or a principal. The refusal order is now a rule, because a presentation breaking two of them must be refused by the same one every time.",
+        "PF-023 at 986e90c29eba7733456e48cd95f99d88c3a32d0f: ranking_corrections named no participant and no period, so every row said some total somewhere moved by some amount and no rebuild could reproduce anybody's figure, while the storage contract documented an index as serving correction application across views. periods had no lifecycle at all against seasons' five checked timestamps, so a correction to a closed period was indistinguishable from a claim landing in an open one. The transition into corrected is now a moderator act under recent authentication rather than a scheduled job's."
       ],
       "reviewed_commit": null,
       "review_verdict": "pending"

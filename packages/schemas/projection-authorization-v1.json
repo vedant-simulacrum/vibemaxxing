@@ -33,9 +33,9 @@
     {
       "input_id": "board-membership",
       "persistence_owner": "board_memberships",
-      "revision_source": "board_memberships.state",
+      "revision_source": "board_memberships.revision",
       "effect": "widen",
-      "note": "Only the four active- states widen. invited does not: an unaccepted invitation is not membership, and treating it as one would let an inviter grant themselves a view of the invitee."
+      "note": "Only the four active- states widen. invited does not: an unaccepted invitation is not membership, and treating it as one would let an inviter grant themselves a view of the invitee. The revision source was board_memberships.state until PF-025, which detects a change and cannot order two: a promotion followed by a demotion back to the same state left it unchanged, so a recheck comparing it would have accepted a stale authorization. The board-scoped counter boards.membership_revision advances in the same transaction and is what a board-wide check reads."
     },
     {
       "input_id": "board-container-state",
@@ -46,10 +46,10 @@
     },
     {
       "input_id": "presence-visibility",
-      "persistence_owner": "presence_leases",
-      "revision_source": "presence_leases.visibility",
+      "persistence_owner": "profiles",
+      "revision_source": "profiles.presence_visibility",
       "effect": "deny-unless-authorized",
-      "note": "Applies to the presence projection only. A private participant still holds a lease and still transitions; the projection is suppressed rather than the lease."
+      "note": "Applies to the presence projection only. A private participant still holds a lease and still transitions; the projection is suppressed rather than the lease. PF-026 moved the owner off presence_leases, where the policy was stored once per device against a projection that answers once per account: two devices could disagree and nothing said which the merge took."
     },
     {
       "input_id": "account-lifecycle",

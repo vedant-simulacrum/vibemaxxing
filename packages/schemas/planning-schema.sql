@@ -558,9 +558,15 @@ create table cost_interpretations (
   estimated_cost numeric(30,12)
 );
 
+-- The per-account visibility policies. `visibility` governs the profile;
+-- `presence_visibility` governs the presence projection and is separate because
+-- the contract gives presence an independent control. PF-026 moved the presence
+-- policy here from `presence_leases`, where it was stored once per device against
+-- a projection that produces one answer per account.
 create table profiles (
   account_id uuid primary key references accounts(account_id),
   visibility text not null check (visibility in ('public','friends','private')),
+  presence_visibility text not null default 'authorized-viewers' check (presence_visibility in ('authorized-viewers','private')),
   updated_at timestamptz not null
 );
 
@@ -615,33 +621,90 @@ create table communities (
   state text not null check (state in ('active','archived'))
 );
 
+-- PF-025. `name` and `visibility` were published by the API and stored nowhere.
+-- `Board` required `name` and `BoardCreateRequest` accepted one, so the request
+-- carried a value the persistence owner could not hold; and board visibility is
+-- the input AGENTS.md makes load-bearing — only the global leaderboard is
+-- universally public, every other board view requires current viewer
+-- authorization — so a board with no visibility column gave that rule nothing to
+-- read. The four values are the ones
+-- `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md` states.
+--
+-- `membership_revision` is the board-scoped counter the D-386 recheck compares
+-- against. It advances on every membership or role change, which is what lets a
+-- notification generated under one authorization state be refused when the
+-- board's membership has moved on. `board_memberships.state` used to serve as
+-- the revision source in `packages/schemas/projection-authorization-v1.json`; a
+-- state detects a change and cannot order two, and a promotion followed by a
+-- demotion back to the same state was invisible to it.
 create table boards (
   board_id uuid primary key,
   board_type text not null check (board_type in ('private','organization','hacker-house','community')),
+  name text not null,
+  visibility text not null check (visibility in ('public','unlisted','invite-only','private')),
   policy_version text not null,
-  state text not null check (state in ('active','archived'))
+  membership_revision bigint not null default 0 check (membership_revision >= 0),
+  state text not null check (state in ('active','archived')),
+  created_at timestamptz not null
 );
 
+-- PF-025. `state` carried a terminal `blocked` and the `board-membership` machine
+-- carried a `block-cascade` transition into it from four states, with no
+-- transition out. That is the D-585 defect one aggregate over: a directional
+-- block between two accounts destroyed a membership a third party — the board
+-- owner — had granted, permanently, and unblocking could not restore it because
+-- terminal means terminal. A board can still refuse a person: `removed` is that
+-- act, it is taken by a board admin under recent authentication, and it is
+-- reversible. Block effects on a board surface are read-time effects under
+-- `packages/schemas/projection-authorization-v1.json#directional-block`, exactly
+-- as they are for friendship.
+--
+-- `revision` is per membership row and advances with each transition; the board's
+-- own `membership_revision` advances in the same transaction. Two counters rather
+-- than one because a member's own row moves for reasons the board-wide view does
+-- not care about, and a board-wide check that read a single member's counter
+-- would pass whenever that member happened not to have moved.
 create table board_memberships (
   board_id uuid not null references boards(board_id),
   account_id uuid not null references accounts(account_id),
   role text not null check (role in ('owner','admin','member','viewer')),
-  state text not null check (state in ('invited','active-viewer','active-member','active-admin','active-owner','left','removed','blocked')),
+  state text not null check (state in ('invited','active-viewer','active-member','active-admin','active-owner','left','removed')),
+  revision integer not null default 1 check (revision > 0),
+  updated_at timestamptz not null,
   primary key (board_id, account_id),
   check (
     (state = 'active-owner' and role = 'owner')
     or (state = 'active-admin' and role = 'admin')
     or (state = 'active-member' and role = 'member')
     or (state = 'active-viewer' and role = 'viewer')
-    or state in ('invited','left','removed','blocked')
+    or state in ('invited','left','removed')
   )
 );
 
+-- PF-025. The invitation is the operation the unit's acceptance says cannot grant
+-- an admin or owner role, and until now it held no role column and no invitee: it
+-- was a board id, a state and an expiry. A refusal that compares a field no record
+-- holds refuses nothing, and `BoardInvitationRequest.role` admitted `owner` and
+-- `admin` on the wire with nothing downstream to reject them. Both columns exist
+-- now and `role` is constrained to the two non-privileged values, so privilege
+-- escalation by invitation is unrepresentable rather than checked in a handler.
+-- Admin promotion is a separate transition under recent authentication, and
+-- ownership moves only through the paired transfer.
+--
+-- `invalidated-by-block` is gone for the same reason `blocked` left the membership
+-- table. An invitation killed by a block could not be revived by an unblock; a
+-- pending invitation is suppressed at read time while the block stands and expires
+-- on its own clock if nobody acts.
 create table board_invites (
   board_invite_id uuid primary key,
   board_id uuid not null references boards(board_id),
-  state text not null check (state in ('pending','accepted','declined','expired','revoked','invalidated-by-block')),
-  expires_at timestamptz not null
+  invited_account_id uuid not null references accounts(account_id),
+  invited_by_account_id uuid not null references accounts(account_id),
+  role text not null check (role in ('member','viewer')),
+  state text not null check (state in ('pending','accepted','declined','expired','revoked')),
+  created_at timestamptz not null,
+  expires_at timestamptz not null,
+  check (invited_account_id <> invited_by_account_id)
 );
 
 -- The current presence answer for one device, server-derived under D-073 from
@@ -650,16 +713,25 @@ create table board_invites (
 -- pulse names the generation it was minted under, and a pulse naming a
 -- superseded generation is discarded rather than applied.
 --
--- `visibility` is an independent policy and not a state. A private participant
+-- Visibility is an independent policy and not a state. A private participant
 -- still has a lease and still transitions; what changes is who may read the
 -- projection of it. Collapsing the two would make going private look like going
 -- offline to the server as well as to the viewer.
+--
+-- PF-025..PF-027 moved that policy off this row. It was `presence_leases.visibility`,
+-- one value per device, while the thing it decides is one answer per account: the
+-- projection merges every device into a single availability, so two devices could
+-- hold `private` and `authorized-viewers` and nothing said which the merge takes.
+-- Going private on a laptop while a desktop stayed authorized would have published
+-- the participant anyway. It lives on `profiles.presence_visibility` now, which is
+-- the per-account visibility owner, and the lease row holds only what the device
+-- observed.
 create table presence_leases (
   account_id uuid not null references accounts(account_id),
   device_id uuid not null references devices(device_id),
   state text not null check (state in ('absent','active','idle','expired','revoked')),
   lease_generation bigint not null default 0 check (lease_generation >= 0),
-  visibility text not null default 'authorized-viewers' check (visibility in ('authorized-viewers','private')),
+  revision integer not null default 1 check (revision > 0),
   last_qualifying_pulse_at timestamptz,
   expires_at timestamptz not null,
   primary key (account_id, device_id),
@@ -701,7 +773,17 @@ create table notifications (
   delivered_at timestamptz,
   read_at timestamptz,
   retracted_at timestamptz,
-  retraction_reason_code text,
+  -- PF-027. The column existed and admitted any string, so the "registered reason
+  -- code" the contract promises was a convention rather than a vocabulary. These
+  -- are the three notification-transport codes in
+  -- `packages/schemas/reason-codes-v1.json`; the same three are the enum in
+  -- `notification-delivery-v1.schema.json#/$defs/retraction`, and
+  -- `scripts/repository/validate_social_surface_contracts.py` compares the two sets
+  -- so a code added to one and not the other fails.
+  retraction_reason_code text check (retraction_reason_code in (
+    'NOTIFICATION_RETRACTED_BY_CORRECTION',
+    'NOTIFICATION_RETRACTED_BY_MODERATION_REVERSAL',
+    'NOTIFICATION_RETRACTED_BY_RANKING_REBUILD')),
   primary key (notification_id, created_at),
   -- `delivered_at` is set exactly when the item reached the inbox, which is what
   -- makes a read impossible to fake: a `read` row with no delivery time is the
@@ -730,11 +812,22 @@ create table notifications_default partition of notifications default;
 -- `security_enabled` is constrained true. Security and recovery notices cannot be
 -- muted, and a preferences row that claims otherwise is unrepresentable rather
 -- than overridden in application code.
+--
+-- PF-027 added `product_enabled` and, with it, the mapping that was missing. Four
+-- flags governed eight event types and nothing anywhere said which flag governed
+-- which type, so `suppression_cause = 'category-disabled'` named a category no
+-- artifact defined and `compatibility` and `release` fell under no flag at all: a
+-- worker had to invent the mapping, and whether `security` could be muted depended
+-- on which mapping it invented. The map is declared in
+-- `packages/schemas/notification-delivery-v1.schema.json#/$defs/event_categories`
+-- and `scripts/repository/validate_social_surface_contracts.py` requires every
+-- event type to name a category and every category to have a column here.
 create table notification_preferences (
   account_id uuid primary key references accounts(account_id),
   social_enabled boolean not null,
   ranking_enabled boolean not null,
   moderation_enabled boolean not null,
+  product_enabled boolean not null,
   security_enabled boolean not null check (security_enabled),
   quiet_hours_start_minute smallint check (quiet_hours_start_minute between 0 and 1439),
   quiet_hours_end_minute smallint check (quiet_hours_end_minute between 0 and 1439),
@@ -1339,6 +1432,15 @@ create table update_installations (
   updated_at timestamptz not null
 );
 
+-- At most one owner per board. Said precisely, because "exactly one" is what the
+-- board contract requires and this index cannot deliver it: a partial unique index
+-- refuses a second `active-owner` row and is silent about a board that has none.
+-- The other half is the creation transaction, which writes the `boards` row and its
+-- owner `board_memberships` row together or writes neither -- planned as
+-- `board-create-owner` in `conformance/p1140e/sql-race-plans-v1.json` -- and the
+-- paired transfer, which demotes the outgoing owner and promotes the incoming one
+-- inside the same `board-owner-transfer` boundary. A board owner therefore cannot
+-- be created by an update, and the last owner cannot leave without a successor.
 create unique index board_one_active_owner
   on board_memberships (board_id)
   where state = 'active-owner';
@@ -2665,6 +2767,8 @@ create index organizations_owner_idx on organizations (owner_account_id);
 create index communities_owner_idx on communities (owner_account_id);
 create index board_memberships_account_idx on board_memberships (account_id);
 create index board_invites_board_idx on board_invites (board_id);
+create index board_invites_invited_idx on board_invites (invited_account_id);
+create index board_invites_inviter_idx on board_invites (invited_by_account_id);
 create index presence_leases_device_idx on presence_leases (device_id);
 create index notifications_actor_idx on notifications (actor_account_id);
 create index notification_events_actor_idx on notification_events (actor_account_id);

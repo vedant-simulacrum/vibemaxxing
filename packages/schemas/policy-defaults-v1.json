@@ -191,7 +191,7 @@
         "conformance/p1140e/validation-matrix-v1.json"
       ]
     },
-    "presence_lease_expiry_seconds": {
+    "presence_idle_after_seconds": {
       "value": 90,
       "min": 45,
       "max": 180,
@@ -208,7 +208,7 @@
         "conformance/p1140e/validation-matrix-v1.json"
       ]
     },
-    "presence_idle_after_seconds": {
+    "presence_offline_after_seconds": {
       "value": 300,
       "min": 60,
       "max": 1800,

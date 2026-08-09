@@ -203,15 +203,15 @@ Blocking, device revocation and privacy changes invalidate visibility immediatel
 
 ### Pulse, lease generation and audience projection
 
-`packages/schemas/presence-pulse-v1.schema.json` is the machine-readable form of the three records this section needs, and D-385 records the choices.
+`packages/schemas/presence-pulse-v1.schema.json` is the machine-readable form of the three records this section needs, and D-618 and D-619 record the choices.
 
 A qualifying pulse names a device, a lease generation and a boolean. `qualifying` is a boolean rather than a description because a description would be content. Only a native collector produces one: a browser tab open on a leaderboard is not evidence that a participant is working, and counting it would make presence a measure of who is looking at the product.
 
 The lease generation is what stops a resumed process from reviving an expired lease. A daemon restart mints a new generation, and a pulse naming a superseded one is discarded rather than applied.
 
-`visibility` is a policy on the lease and not a state of it. A private participant still holds a lease and still transitions; what changes is who may read the projection. Collapsing the two would make going private indistinguishable from going offline.
+Presence visibility is a policy and not a state. A private participant still holds a lease and still transitions; what changes is who may read the projection. Collapsing the two would make going private indistinguishable from going offline. It is one policy per account and lives on `profiles.presence_visibility`. It was a column on `presence_leases`, one value per device, against a projection that answers once per account: going private on a laptop while a desktop stayed authorized published the participant anyway, and nothing said which value the merge took.
 
-The three D-073 thresholds are bound to policy keys by `const` in that schema, and the validator asserts the resolved values are 30, 90 and 300 seconds. Two of the keys are misnamed — `presence_lease_expiry_seconds` holds the idle threshold and `presence_idle_after_seconds` holds the offline threshold — and the binding is stated rather than the keys renamed, because three other artifacts and one validator require those exact spellings.
+The three D-073 thresholds are bound to policy keys by `const` in that schema, and the validator asserts the resolved values are 30, 90 and 300 seconds against `presence_heartbeat_seconds`, `presence_idle_after_seconds` and `presence_offline_after_seconds`. Two of those keys used to be misnamed: `presence_lease_expiry_seconds` held 90 and meant idle, `presence_idle_after_seconds` held 300 and meant offline, so the registry read straight described a lease expiring before it could go idle. D-618 renamed them, and the idle threshold is now additionally required to be strictly before the offline one, so the pair cannot be swapped back by value.
 
 None of this is a presence history. ADR-019 accepts a live-sampling risk on the stated basis that no history is stored, so `presence_events` carries `no-retention` in `packages/schemas/data-disposition-v1.json` and rows are discarded when their generation closes. Retaining them would convert an accepted risk into a larger one without anybody deciding to.
 

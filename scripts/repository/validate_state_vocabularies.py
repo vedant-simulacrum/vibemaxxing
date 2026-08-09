@@ -184,9 +184,11 @@ BINDINGS: tuple[Binding, ...] = (
             "active-owner",
             "left",
             "removed",
-            "blocked",
         ),
         sql=("board_memberships.state",),
+        note="PF-025 removed `blocked`. A block between two accounts must not "
+        "terminally end a membership a third party granted; `removed` is the "
+        "board's own reversible act.",
     ),
     Binding(
         aggregate="board-invitation",
@@ -197,9 +199,10 @@ BINDINGS: tuple[Binding, ...] = (
             "declined",
             "expired",
             "revoked",
-            "invalidated-by-block",
         ),
         sql=("board_invites.state",),
+        note="PF-025 removed `invalidated-by-block` for the same reason: an "
+        "unblock could not revive it.",
     ),
     Binding(
         aggregate="board-container",
@@ -910,9 +913,15 @@ SQL_COLUMNS_WITHOUT_VOCABULARY: dict[str, str] = {}
 
 # Client-facing fields that deliberately collapse a machine into a coarser vocabulary.
 PROJECTIONS: tuple[tuple[str, tuple[str, ...], dict[str, str]], ...] = (
+    # PF-026 removed `PresenceRenewalRequest.availability` from this tuple, and
+    # from the API. A projection coarsens a server-derived state on the way out; it
+    # cannot run inbound. Declaring the *request* body as a projection of the
+    # presence-lease machine meant the client named the state, which is the
+    # selection AGENTS.md forbids: presence is server-derived from qualifying
+    # device activity. The request now carries a pulse.
     (
         "presence-lease",
-        ("PresenceLease.availability", "PresenceRenewalRequest.availability"),
+        ("PresenceLease.availability",),
         {
             "absent": "offline",
             "active": "online",

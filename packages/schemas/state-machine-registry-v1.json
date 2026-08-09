@@ -1437,13 +1437,11 @@
         "active-admin",
         "active-owner",
         "left",
-        "removed",
-        "blocked"
+        "removed"
       ],
       "terminal_states": [
         "left",
-        "removed",
-        "blocked"
+        "removed"
       ],
       "privacy_boundary": "account-private",
       "revision_model": "monotonic-revision",
@@ -1511,6 +1509,21 @@
           "transaction_boundary": "board-owner-transfer"
         },
         {
+          "transition_id": "board-demote-owner",
+          "from": [
+            "active-owner"
+          ],
+          "action": "demote-outgoing-owner",
+          "to": "active-admin",
+          "actor": "user",
+          "authentication": "web-session",
+          "recent_auth": true,
+          "idempotency": "principal-route-key",
+          "audit_event": "board-demote-owner.audit",
+          "reversal": "explicit-transition",
+          "transaction_boundary": "board-owner-transfer"
+        },
+        {
           "transition_id": "board-owner-leave",
           "from": [
             "active-owner"
@@ -1560,24 +1573,6 @@
           "transaction_boundary": "board-membership"
         },
         {
-          "transition_id": "board-membership-block",
-          "from": [
-            "active-viewer",
-            "invited",
-            "active-member",
-            "active-admin"
-          ],
-          "action": "block-cascade",
-          "to": "blocked",
-          "actor": "user",
-          "authentication": "web-session",
-          "recent_auth": false,
-          "idempotency": "principal-route-key",
-          "audit_event": "board-membership-block.audit",
-          "reversal": "none",
-          "transaction_boundary": "board-membership"
-        },
-        {
           "transition_id": "board-promote-member",
           "from": [
             "active-viewer"
@@ -1607,15 +1602,13 @@
         "accepted",
         "declined",
         "expired",
-        "revoked",
-        "invalidated-by-block"
+        "revoked"
       ],
       "terminal_states": [
         "accepted",
         "declined",
         "expired",
-        "revoked",
-        "invalidated-by-block"
+        "revoked"
       ],
       "privacy_boundary": "account-private",
       "revision_model": "monotonic-revision",
@@ -1666,21 +1659,6 @@
           "audit_event": "invite-expire.audit",
           "reversal": "none",
           "transaction_boundary": "single-aggregate"
-        },
-        {
-          "transition_id": "invite-block-invalidate",
-          "from": [
-            "pending"
-          ],
-          "action": "block-cascade",
-          "to": "invalidated-by-block",
-          "actor": "system",
-          "authentication": "none",
-          "recent_auth": false,
-          "idempotency": "aggregate-action-key",
-          "audit_event": "invite-block-invalidate.audit",
-          "reversal": "none",
-          "transaction_boundary": "social-pair-cascade"
         },
         {
           "transition_id": "invite-revoke",
