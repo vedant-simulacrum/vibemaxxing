@@ -301,10 +301,24 @@ create table device_sequences (
   server_checkpoint_head bytea
 );
 
+-- Scoped to the lineage for the same reason `device_sequences` is, and repaired in
+-- the same direction under PF-010. D-592 rekeyed the counter and stopped there: the
+-- counter became lineage-scoped while the uniqueness that enforces it stayed
+-- device-scoped, so the sequence a clone could no longer obtain from the counter it
+-- could still write into `claims`. Two device rows inside one lineage could each hold
+-- `device_sequence` 42 and each hold the same `payload_hash`, and both unique indexes
+-- accepted it, because `device_id` discriminated the pair. That is the same defect one
+-- table further along, and `duplicate-sequence-continuation` — the first of the four
+-- detection bases D-072 recognises — is exactly the collision these indexes now refuse.
+--
+-- `device_id` is retained: which device row submitted a claim is what names a branch
+-- when a fork case is opened, and `lineage_fork_branches.device_id` reads it. It is
+-- audit and attribution, and it is no longer a uniqueness discriminator.
 create table claims (
   claim_id uuid primary key,
   batch_id uuid not null,
   account_id uuid not null references accounts(account_id),
+  lineage_id uuid not null references device_lineages(lineage_id),
   device_id uuid not null references devices(device_id),
   device_sequence bigint not null,
   challenge_id text not null references claim_challenges(challenge_id),
@@ -312,8 +326,8 @@ create table claims (
   accounting_profile_id text not null,
   token_burn_total bigint not null check (token_burn_total >= 0),
   received_at timestamptz not null,
-  unique (device_id, device_sequence),
-  unique (device_id, payload_hash)
+  unique (lineage_id, device_sequence),
+  unique (lineage_id, payload_hash)
 );
 
 create table claim_payloads (
@@ -819,14 +833,84 @@ create table native_sessions (
 );
 
 
+-- The authorization ledger for every device-key transition, and the row that has to
+-- carry *both* authorizations of an ordinary rotation.
+--
+-- It carried one. `continuity_signature` was a single nullable blob, so the row could
+-- not distinguish a rotation signed by the outgoing key from one signed by the
+-- incoming key, and it had no column at all for the account-level authorization.
+-- `docs/architecture/VIBEPROOF_V1_PROTOCOL.md` section "Rotation, recovery and gaps"
+-- names three separate things — one payload "signed independently by both old and new
+-- keys", and a server that "verifies recent authentication" — and
+-- `packages/schemas/device-lineage.schema.json` records `old_key_signature`,
+-- `account_recent_auth` and `recovery_approval` as three separate fields. One blob
+-- could represent none of that, so an ordinary rotation and a single-signature
+-- forgery were the same row.
+--
+-- Dual authorization is the key pair: `dual-authorized-rotation-v1` in the CDDL is
+-- literally two COSE_Sign1 rotation envelopes over identical payload bytes, one from
+-- the outgoing key proving continuity and one from the incoming key proving control.
+-- Account recent authentication is a third, separate gate at a different layer, and it
+-- is recorded rather than conflated because a rotation authorized by an account
+-- session alone is precisely the takeover the key signatures exist to refuse.
+--
+-- Lost-key recovery is the case that cannot satisfy the pair: the old key is gone, so
+-- `old_key_signature` is null and an approved recovery case is the authority instead.
+-- The check constraints make the two paths mutually exclusive rather than merely
+-- discouraged — a `recovered` row carrying an old-key signature would be a rotation
+-- claiming to be a recovery, and a `rotated` row missing either signature would be a
+-- recovery claiming to be a rotation.
+--
+-- `lineage_id` is here because continuity is lineage-scoped. A key event on a device
+-- row that could not be resolved to its lineage was unusable to the fork counter.
 create table device_key_events (
   device_key_event_id uuid primary key,
+  lineage_id uuid not null references device_lineages(lineage_id),
   device_id uuid not null references devices(device_id),
   previous_key_id text,
   next_key_id text not null,
   action text not null check (action in ('enrolled','rotated','revoked','recovered')),
-  continuity_signature bytea,
-  occurred_at timestamptz not null
+  old_key_signature bytea,
+  new_key_signature bytea,
+  account_recent_auth boolean not null default false,
+  recovery_approval text not null default 'not-required'
+    check (recovery_approval in ('not-required','pending','approved','denied')),
+  occurred_at timestamptz not null,
+  -- An ordinary rotation carries both key signatures and the account authorization.
+  constraint device_key_events_rotation_is_dual_authorized check (
+    action <> 'rotated'
+    or (old_key_signature is not null
+        and new_key_signature is not null
+        and account_recent_auth
+        and previous_key_id is not null)
+  ),
+  -- A recovery cannot forge the old signature and is authorized by an approved case.
+  constraint device_key_events_recovery_has_no_old_signature check (
+    action <> 'recovered'
+    or (old_key_signature is null
+        and new_key_signature is not null
+        and recovery_approval = 'approved')
+  ),
+  -- Only a recovery is authorized by a recovery case.
+  constraint device_key_events_recovery_approval_is_scoped check (
+    action = 'recovered' or recovery_approval = 'not-required'
+  ),
+  -- Enrolment has no predecessor; every other action does. An enrolment that names
+  -- one is a rotation, and calling it an enrolment is how a rotation would avoid
+  -- needing the outgoing key's signature.
+  constraint device_key_events_enrolment_has_no_predecessor check (
+    (action = 'enrolled') = (previous_key_id is null)
+  ),
+  -- Every action that installs a key proves control of it. A revocation installs
+  -- none, which is the whole point of revoking a key you no longer hold.
+  constraint device_key_events_new_key_is_authorized check (
+    action = 'revoked' or new_key_signature is not null
+  ),
+  -- A revocation is authorized by the account, because the key it revokes is
+  -- exactly the thing that may be lost or in someone else's hands.
+  constraint device_key_events_revocation_is_account_authorized check (
+    action <> 'revoked' or account_recent_auth
+  )
 );
 
 create table verifier_appraisals (
@@ -841,15 +925,35 @@ create table verifier_appraisals (
   created_at timestamptz not null
 );
 
+-- The server's acknowledged head, and the third table SR-007 named as disagreeing
+-- with the lineage-scoped continuity rule. It was keyed on the device row while
+-- `device_sequences.server_checkpoint_head` — the value a receipt is supposed to
+-- advance — is keyed on the lineage, so the head and the receipts that produce it were
+-- scoped differently. A restored or cloned store enrolling as a second device row
+-- acquired its own private receipt chain, and no index in this file objected.
+--
+-- `unique (lineage_id, last_sequence)` is the constraint, and it is the
+-- `checkpoint-mismatch` detection basis expressed as a write refusal: two receipts
+-- acknowledging the same head inside one lineage are two branches, and the second
+-- insert fails rather than quietly creating a fork nobody counted.
+--
+-- Newest wins. When a lineage presents two acknowledged heads the receipt with the
+-- greater `last_sequence` is authoritative and the server never rolls its head
+-- backwards; a device arriving with an older head is behind, not correct, and must
+-- declare a gap or requalify. Ordering by `created_at` instead would let a clone with
+-- a fast clock win, so the ordering is over the sequence the server itself issued.
+-- `docs/security/INTEGRITY_MODEL.md` owns the rule; this table is where it is stored.
 create table checkpoint_receipts (
   checkpoint_receipt_id uuid primary key,
+  lineage_id uuid not null references device_lineages(lineage_id),
   device_id uuid not null references devices(device_id),
   first_sequence bigint not null check (first_sequence >= 0),
   last_sequence bigint not null check (last_sequence >= first_sequence),
   batch_digest bytea not null check (octet_length(batch_digest) = 32),
   previous_receipt_digest bytea,
   signed_receipt bytea not null,
-  created_at timestamptz not null
+  created_at timestamptz not null,
+  unique (lineage_id, last_sequence)
 );
 
 create table ranking_views (
@@ -2261,6 +2365,8 @@ create index device_enrollment_grants_account_idx on device_enrollment_grants (a
 create index adapter_installations_device_idx on adapter_installations (device_id);
 create index device_lineages_account_idx on device_lineages (account_id);
 create index device_key_events_device_idx on device_key_events (device_id, occurred_at desc);
+-- The lineage ordering is the one a rotation audit and a fork case both read.
+create index device_key_events_lineage_idx on device_key_events (lineage_id, occurred_at desc);
 create index checkpoint_receipts_device_idx on checkpoint_receipts (device_id, last_sequence desc);
 
 -- Foreign-key referencing side: claims and verification.

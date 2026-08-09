@@ -138,6 +138,20 @@ def validate_json_schemas_and_examples() -> None:
         ),
         "forbidden normalized-event field",
     )
+    # An uncertified capture is representable, and representable only as private
+    # analytics. The valid example is the uncertified shape because it is the only
+    # one this repository can actually reach: every producer binding here carries a
+    # null bundle digest, and the example previously filled the field with sixty-four
+    # `f` characters, which is a placeholder standing where the honest answer is.
+    expect_invalid(
+        event_schema,
+        load_json(
+            SCHEMAS
+            / "examples"
+            / "normalized-event.invalid-uncertified-competitive.json"
+        ),
+        "uncertified normalized event admitted beyond private analytics",
+    )
 
     accounting_registry = load_json(
         CONFORMANCE / "accounting" / "accounting-profiles-v1.json"
@@ -1814,6 +1828,535 @@ def validate_vibeproof_negative_corpus() -> None:
         raise ValidationFailure(f"negative corpus names undeclared signals: {unknown}")
 
 
+FORK_ROTATION_PATH = CONFORMANCE / "vibeproof" / "v1" / "fork-and-rotation-vectors.json"
+
+# The device-key authorization rules, as the DDL states them. Each entry is a
+# constraint name in `device_key_events` and the exact text that must be present, so
+# this function and PostgreSQL cannot come to different conclusions about the same
+# transition without the mismatch failing here.
+DEVICE_KEY_EVENT_CONSTRAINTS: dict[str, str] = {
+    "device_key_events_rotation_is_dual_authorized": (
+        "check ( action <> 'rotated' or (old_key_signature is not null "
+        "and new_key_signature is not null and account_recent_auth "
+        "and previous_key_id is not null) )"
+    ),
+    "device_key_events_recovery_has_no_old_signature": (
+        "check ( action <> 'recovered' or (old_key_signature is null "
+        "and new_key_signature is not null and recovery_approval = 'approved') )"
+    ),
+    "device_key_events_recovery_approval_is_scoped": (
+        "check ( action = 'recovered' or recovery_approval = 'not-required' )"
+    ),
+    "device_key_events_enrolment_has_no_predecessor": (
+        "check ( (action = 'enrolled') = (previous_key_id is null) )"
+    ),
+    "device_key_events_new_key_is_authorized": (
+        "check ( action = 'revoked' or new_key_signature is not null )"
+    ),
+    "device_key_events_revocation_is_account_authorized": (
+        "check ( action <> 'revoked' or account_recent_auth )"
+    ),
+}
+
+KEY_EVENT_REFUSAL = "DEVICE_KEY_CONTINUITY_BROKEN"
+
+
+def admit_key_event(case: dict[str, Any]) -> tuple[bool, str | None]:
+    """Decide whether one device-key transition carries its own authorization.
+
+    The rules are `docs/architecture/VIBEPROOF_V1_PROTOCOL.md` section "Rotation,
+    recovery and gaps" and the check constraints on `device_key_events`, which
+    `validate_lineage_fork_and_rotation` asserts are present verbatim so this function
+    cannot drift away from the table it describes.
+
+    Dual authorization is the key pair. `dual-authorized-rotation-v1` is two COSE_Sign1
+    envelopes over identical payload bytes: the outgoing key proves continuity, the
+    incoming key proves control. Recent account authentication is a third gate at a
+    different layer, not a substitute for either half, because a device holding both
+    keys is the position a stolen laptop is in. Lost-key recovery is a separate action
+    rather than a rotation with a waiver — if the outgoing key can still sign, the key
+    is not lost — so a rotation can never be admitted by asserting a recovery.
+    """
+    action = case["action"]
+    previous = case["previous_key_present"]
+    old_signature = case["old_key_signature_present"]
+    new_signature = case["new_key_signature_present"]
+    recent_auth = case["account_recent_auth"]
+    approval = case["recovery_approval"]
+
+    if (action == "enrolled") != (not previous):
+        return False, KEY_EVENT_REFUSAL
+    if action != "recovered" and approval != "not-required":
+        return False, KEY_EVENT_REFUSAL
+    if action != "revoked" and not new_signature:
+        return False, KEY_EVENT_REFUSAL
+
+    if action == "rotated":
+        if not (old_signature and new_signature and recent_auth):
+            return False, KEY_EVENT_REFUSAL
+        return True, None
+    if action == "recovered":
+        if old_signature or approval != "approved":
+            return False, KEY_EVENT_REFUSAL
+        return True, None
+    if action == "revoked":
+        if not recent_auth:
+            return False, KEY_EVENT_REFUSAL
+        return True, None
+    if action == "enrolled":
+        if old_signature:
+            return False, KEY_EVENT_REFUSAL
+        return True, None
+    raise ValidationFailure(f"unknown device-key action: {action}")
+
+
+def resolve_lineage(lineage: dict[str, Any]) -> dict[str, Any]:
+    """Replay one lineage's submissions and return what a decoder must conclude.
+
+    A lineage starts at generation 0 holding the head token `genesis`. A submission
+    extends the tip when it names the tip as its previous head and carries the next
+    sequence. Naming an *earlier* head of the same lineage is a fork at that
+    generation, because two continuations of one generation now exist; naming a head
+    the lineage never held is refused instead, since nothing about it identifies a
+    branch to quarantine.
+
+    Two rules here are D-072 rather than bookkeeping. The fork quarantines every
+    post-fork branch, so submissions already accepted above the fork generation are
+    quarantined retroactively and arriving first is not a way to win a fork. And
+    everything at or below the fork generation stays accepted, because a fork says
+    nothing about work already accepted.
+
+    Duplicate installation identity is checked before either head rule, because a
+    copied store presents it at enrolment — before it presents a conflicting sequence
+    — and waiting for the collision would accept one more generation from a store
+    already known to be duplicated.
+    """
+    tip_generation = 0
+    heads: dict[str, int] = {"genesis": 0}
+    installations: dict[str, str] = {}
+    accepted: list[dict[str, Any]] = []
+    dispositions: dict[str, tuple[str, str | None]] = {}
+    fork_generation: int | None = None
+    detection_basis: str | None = None
+
+    for submission in lineage["submissions"]:
+        ref = submission["submission_ref"]
+        if fork_generation is not None:
+            dispositions[ref] = ("quarantined", "CLAIM_CHAIN_FORK")
+            continue
+
+        owner = installations.get(submission["installation_ref"])
+        if owner is not None and owner != submission["device_ref"]:
+            fork_generation = tip_generation
+            detection_basis = "duplicate-installation-identity"
+            dispositions[ref] = ("quarantined", "CLAIM_CHAIN_FORK")
+        else:
+            ancestor = heads.get(submission["previous_head"])
+            if ancestor is None:
+                dispositions[ref] = ("refused", "CLAIM_GAP_DECLARATION_REQUIRED")
+                continue
+            if ancestor < tip_generation:
+                fork_generation = ancestor
+                detection_basis = (
+                    "duplicate-sequence-continuation"
+                    if submission["sequence"] <= tip_generation
+                    else "divergent-commitment-chain"
+                )
+                dispositions[ref] = ("quarantined", "CLAIM_CHAIN_FORK")
+            elif submission["sequence"] != tip_generation + 1:
+                dispositions[ref] = ("refused", "CLAIM_SEQUENCE_UNEXPECTED")
+                continue
+            else:
+                tip_generation += 1
+                heads[submission["head"]] = tip_generation
+                installations[submission["installation_ref"]] = submission["device_ref"]
+                accepted.append(submission)
+                dispositions[ref] = ("accepted", None)
+                continue
+
+        # A fork was just opened. Everything already accepted above the fork
+        # generation belongs to a post-fork branch and is quarantined with it.
+        for earlier in accepted:
+            if earlier["sequence"] > fork_generation:
+                dispositions[earlier["submission_ref"]] = (
+                    "quarantined",
+                    "CLAIM_CHAIN_FORK",
+                )
+
+    branches: dict[str, dict[str, Any]] = {}
+    if fork_generation is not None:
+        for submission in lineage["submissions"]:
+            if dispositions[submission["submission_ref"]][0] != "quarantined":
+                continue
+            branch = branches.setdefault(
+                submission["device_ref"],
+                {
+                    "device_ref": submission["device_ref"],
+                    "disposition": "quarantined",
+                    "post_fork_claim_count": 0,
+                    "branch_head_sequence": 0,
+                },
+            )
+            branch["post_fork_claim_count"] += 1
+            branch["branch_head_sequence"] = max(
+                branch["branch_head_sequence"], submission["sequence"]
+            )
+
+    return {
+        "fork": fork_generation is not None,
+        "fork_generation": fork_generation,
+        "detection_basis": detection_basis,
+        "dispositions": dispositions,
+        "branches": branches,
+    }
+
+
+def resolve_checkpoint_heads(case: dict[str, Any]) -> dict[str, Any]:
+    """Newest wins, and equals do not resolve.
+
+    The ordering is over `last_sequence`, which the server issued, and never over
+    arrival time, which a clone with a fast clock controls. Two devices acknowledging
+    the same head are two branches of one lineage, which is the `checkpoint-mismatch`
+    detection basis, and `unique (lineage_id, last_sequence)` on `checkpoint_receipts`
+    refuses the second write.
+    """
+    heads = case["acknowledged_heads"]
+    highest = max(head["last_sequence"] for head in heads)
+    winners = [head for head in heads if head["last_sequence"] == highest]
+    if len(winners) != 1:
+        return {
+            "fork": True,
+            "authoritative_last_sequence": None,
+            "behind": [],
+            "reason_code": "CLAIM_CHAIN_FORK",
+        }
+    return {
+        "fork": False,
+        "authoritative_last_sequence": highest,
+        "behind": sorted(
+            head["device_ref"] for head in heads if head["last_sequence"] < highest
+        ),
+        "reason_code": None,
+    }
+
+
+def validate_lineage_fork_and_rotation(
+    fixture: dict[str, Any] | None = None,
+) -> None:
+    """Run the fork and rotation vectors and prove they say what the contracts say.
+
+    Six things, and the sixth is why the first five are worth recording.
+
+    **The lineage vectors are resolved, not read.** Every submission's disposition is
+    recomputed by `resolve_lineage` and compared to the one the fixture declares, so a
+    vector cannot record an outcome the stated rules do not produce.
+
+    **Every post-fork branch is quarantined and every pre-fork claim is accepted.**
+    Checked as a property of the resolver output rather than as a restatement of the
+    fixture: for each forked lineage, no submission at or below the fork generation is
+    quarantined, every branch carries the `quarantined` disposition, and at least two
+    branches exist — a resolution with one branch is not a fork.
+
+    **Quarantining everything is not a pass.** A control lineage accepts every
+    submission and a refusal lineage produces two refusals that open no case, so a
+    resolver that answered `quarantined` to every input fails three of the five
+    lineages. This corpus would otherwise reward exactly that.
+
+    **The resolution is expressible.** Each forked lineage is assembled into a
+    `packages/schemas/fork-resolution-v1.schema.json` record and validated against it,
+    so the fixture cannot describe a resolution the normative record has no shape for.
+
+    **Both authorizations of an ordinary rotation are required, and separately.**
+    Three rotation vectors remove one of the outgoing signature, the incoming
+    signature and the account authentication each, and each must be refused, so the
+    rule cannot be satisfied by any one of them.
+
+    **The rules match the table.** Every check constraint on `device_key_events` is
+    asserted present verbatim, so `admit_key_event` and PostgreSQL cannot disagree
+    about a transition without this failing.
+
+    None of it is evidence that a decoder exists. No VibeProof implementation reads
+    this corpus, and the acceptance path it describes has never been executed by one.
+    """
+    if fixture is None:
+        fixture = load_json(FORK_ROTATION_PATH)
+
+    reason_codes = {
+        item["code"] for item in load_json(SCHEMAS / "reason-codes-v1.json")["codes"]
+    }
+    fork_schema = validate_schema_file(SCHEMAS / "fork-resolution-v1.schema.json")
+    bases = set(
+        fork_schema["$defs"]["fork_case"]["properties"]["detection_basis"]["enum"]
+    )
+
+    declared_precedence = fixture["detection_precedence"]
+    if set(declared_precedence) != bases:
+        raise ValidationFailure(
+            "the fixture's detection precedence is not the registered basis set: "
+            f"only-in-fixture={sorted(set(declared_precedence) - bases)} "
+            f"only-in-schema={sorted(bases - set(declared_precedence))}"
+        )
+
+    exercised_bases: set[str] = set()
+    for lineage in fixture["lineages"]:
+        label = lineage["lineage_case_id"]
+        resolved = resolve_lineage(lineage)
+
+        if resolved["fork"] != lineage["expected_fork"]:
+            raise ValidationFailure(
+                f"{label}: the resolver {'forks' if resolved['fork'] else 'does not fork'} "
+                f"this lineage and the fixture says the opposite"
+            )
+        if resolved["fork_generation"] != lineage["expected_fork_generation"]:
+            raise ValidationFailure(
+                f"{label}: fork generation is {resolved['fork_generation']}, the "
+                f"fixture records {lineage['expected_fork_generation']}"
+            )
+        if resolved["detection_basis"] != lineage["expected_detection_basis"]:
+            raise ValidationFailure(
+                f"{label}: detection basis is {resolved['detection_basis']}, the "
+                f"fixture records {lineage['expected_detection_basis']}"
+            )
+        if resolved["detection_basis"] is not None:
+            exercised_bases.add(resolved["detection_basis"])
+
+        for submission in lineage["submissions"]:
+            ref = submission["submission_ref"]
+            disposition, code = resolved["dispositions"][ref]
+            if disposition != submission["expected_disposition"]:
+                raise ValidationFailure(
+                    f"{label}/{ref}: resolved {disposition}, the fixture records "
+                    f"{submission['expected_disposition']}"
+                )
+            if code != submission["expected_reason_code"]:
+                raise ValidationFailure(
+                    f"{label}/{ref}: resolved reason {code}, the fixture records "
+                    f"{submission['expected_reason_code']}"
+                )
+            if code is not None and code not in reason_codes:
+                raise ValidationFailure(
+                    f"{label}/{ref}: names a reason code that does not resolve in "
+                    f"reason-codes-v1.json: {code}"
+                )
+
+        if not resolved["fork"]:
+            if lineage["expected_branches"]:
+                raise ValidationFailure(
+                    f"{label}: declares branches for a lineage that does not fork"
+                )
+            if not any(
+                submission["expected_disposition"] == "accepted"
+                for submission in lineage["submissions"]
+            ):
+                raise ValidationFailure(
+                    f"{label}: an unforked lineage that accepts nothing would let a "
+                    "resolver that refuses everything pass"
+                )
+            continue
+
+        # Pre-fork claims are preserved. Asserted over the resolver's own output, so
+        # a fixture that recorded a quarantined pre-fork claim would fail here too.
+        for submission in lineage["submissions"]:
+            disposition = resolved["dispositions"][submission["submission_ref"]][0]
+            if (
+                submission["sequence"] <= resolved["fork_generation"]
+                and disposition != "accepted"
+            ):
+                raise ValidationFailure(
+                    f"{label}/{submission['submission_ref']}: a claim at or below the "
+                    f"fork generation resolved {disposition}; D-072 preserves accepted "
+                    "pre-fork claims"
+                )
+
+        branches = resolved["branches"]
+        if len(branches) < 2:
+            raise ValidationFailure(
+                f"{label}: a fork resolved to {len(branches)} branch(es); a fork with "
+                "fewer than two continuations is not a fork"
+            )
+        for branch in branches.values():
+            if branch["disposition"] != "quarantined":
+                raise ValidationFailure(
+                    f"{label}/{branch['device_ref']}: a post-fork branch resolved "
+                    f"{branch['disposition']}; D-072 quarantines every one of them"
+                )
+        expected_branches = {
+            branch["device_ref"]: branch for branch in lineage["expected_branches"]
+        }
+        if set(expected_branches) != set(branches):
+            raise ValidationFailure(
+                f"{label}: branch set differs: only-in-fixture="
+                f"{sorted(set(expected_branches) - set(branches))} "
+                f"only-in-resolver={sorted(set(branches) - set(expected_branches))}"
+            )
+        for device_ref, branch in branches.items():
+            if expected_branches[device_ref] != branch:
+                raise ValidationFailure(
+                    f"{label}/{device_ref}: resolved {branch}, the fixture records "
+                    f"{expected_branches[device_ref]}"
+                )
+
+        record = {
+            "schema_version": 1,
+            "case": {
+                "lineage_fork_case_id": "00000000-0000-7000-8000-000000000001",
+                "lineage_id": "00000000-0000-7000-8000-000000000002",
+                "ranked_identity_id": "00000000-0000-7000-8000-000000000003",
+                "state": "quarantined",
+                "detection_basis": resolved["detection_basis"],
+                "fork_generation": resolved["fork_generation"],
+                "detected_at": "2026-08-09T00:00:00Z",
+                "quarantined_at": "2026-08-09T00:00:00Z",
+                "revision": 1,
+            },
+            "branches": [
+                {
+                    "lineage_fork_branch_id": (
+                        f"00000000-0000-7000-8000-00000000{index:04d}"
+                    ),
+                    "device_id": f"00000000-0000-7000-8000-10000000{index:04d}",
+                    "branch_head_sequence": branches[device_ref][
+                        "branch_head_sequence"
+                    ],
+                    "disposition": branches[device_ref]["disposition"],
+                    "post_fork_claim_count": branches[device_ref][
+                        "post_fork_claim_count"
+                    ],
+                    "created_at": "2026-08-09T00:00:00Z",
+                }
+                for index, device_ref in enumerate(sorted(branches))
+            ],
+        }
+        validate_instance(fork_schema, record, f"{label} fork resolution")
+
+    if exercised_bases != bases - {"checkpoint-mismatch"}:
+        raise ValidationFailure(
+            "the lineage vectors do not exercise every claim-level detection basis: "
+            f"missing={sorted(bases - {'checkpoint-mismatch'} - exercised_bases)}"
+        )
+
+    checkpoint_fork_seen = False
+    for case in fixture["checkpoint_resolutions"]:
+        label = case["checkpoint_case_id"]
+        resolved = resolve_checkpoint_heads(case)
+        checkpoint_fork_seen = checkpoint_fork_seen or resolved["fork"]
+        for key, expected_key in (
+            ("fork", "expected_fork"),
+            ("authoritative_last_sequence", "expected_authoritative_last_sequence"),
+            ("reason_code", "expected_reason_code"),
+        ):
+            if resolved[key] != case[expected_key]:
+                raise ValidationFailure(
+                    f"{label}: resolved {key}={resolved[key]}, the fixture records "
+                    f"{case[expected_key]}"
+                )
+        if resolved["behind"] != sorted(case["expected_behind_device_refs"]):
+            raise ValidationFailure(
+                f"{label}: resolved behind={resolved['behind']}, the fixture records "
+                f"{sorted(case['expected_behind_device_refs'])}"
+            )
+    if not checkpoint_fork_seen:
+        raise ValidationFailure(
+            "no checkpoint vector produces a mismatch, so newest-wins is only ever "
+            "asked a question it can answer"
+        )
+
+    body = _planning_table_bodies().get("device_key_events")
+    if body is None:
+        raise ValidationFailure("planning DDL lacks the device_key_events table")
+    # Comments are stripped, so prose describing an invariant cannot satisfy the
+    # check that the invariant is declared.
+    normalised = " ".join(
+        " ".join(line.split("--", 1)[0] for line in body.splitlines()).split()
+    )
+    for name, constraint in DEVICE_KEY_EVENT_CONSTRAINTS.items():
+        if f"constraint {name} {constraint}" not in normalised:
+            raise ValidationFailure(
+                f"device_key_events lacks its required invariant {name}: {constraint}"
+            )
+    for column in (
+        "lineage_id",
+        "old_key_signature",
+        "new_key_signature",
+        "account_recent_auth",
+        "recovery_approval",
+    ):
+        if column not in normalised:
+            raise ValidationFailure(
+                f"device_key_events no longer records {column}, so a rotation's "
+                "authorizations cannot all be written down"
+            )
+
+    admitted = 0
+    refused_actions: set[str] = set()
+    for case in fixture["rotations"]:
+        label = case["rotation_case_id"]
+        allowed, code = admit_key_event(case)
+        if allowed != case["expected_admitted"]:
+            raise ValidationFailure(
+                f"{label}: the rule {'admits' if allowed else 'refuses'} this "
+                "transition and the fixture says the opposite"
+            )
+        if code != case["expected_reason_code"]:
+            raise ValidationFailure(
+                f"{label}: resolved reason {code}, the fixture records "
+                f"{case['expected_reason_code']}"
+            )
+        if code is not None and code not in reason_codes:
+            raise ValidationFailure(
+                f"{label}: names a reason code that does not resolve in "
+                f"reason-codes-v1.json: {code}"
+            )
+        if allowed:
+            admitted += 1
+        else:
+            refused_actions.add(case["action"])
+
+    if admitted == 0:
+        raise ValidationFailure(
+            "no rotation vector is admitted, so the refusals are satisfied by a rule "
+            "that refuses everything"
+        )
+
+    # Each of the three authorizations of an ordinary rotation must be independently
+    # load-bearing. Dropping one and keeping the other two has to be refused, or the
+    # rule is a disjunction wearing a conjunction's description.
+    ordinary = next(
+        case
+        for case in fixture["rotations"]
+        if case["rotation_case_id"] == "RT-ORDINARY"
+    )
+    for field in (
+        "old_key_signature_present",
+        "new_key_signature_present",
+        "account_recent_auth",
+    ):
+        weakened = dict(ordinary)
+        weakened[field] = False
+        allowed, _ = admit_key_event(weakened)
+        if allowed:
+            raise ValidationFailure(
+                f"an ordinary rotation is admitted without {field}, so it is not "
+                "dual authorized"
+            )
+        if not any(
+            case["action"] == "rotated"
+            and not case["expected_admitted"]
+            and case[field] is False
+            for case in fixture["rotations"]
+        ):
+            raise ValidationFailure(
+                f"no rotation vector records the refusal of a transition missing "
+                f"{field}; the rule holds and the corpus does not say so"
+            )
+
+    if "recovered" not in refused_actions:
+        raise ValidationFailure(
+            "no recovery vector is refused, so the recovery authority is never tested "
+            "against a case it must reject"
+        )
+
+
 def validate_protobuf_files() -> None:
     local_control = (SCHEMAS / "local-control-v1.proto").read_text(encoding="utf-8")
     for forbidden in (
@@ -2222,16 +2765,59 @@ CERTIFICATION_EXAMPLES: tuple[tuple[str, str, bool], ...] = (
 )
 
 
+def certification_count_mismatch(result: dict[str, Any]) -> str | None:
+    """Return why a result's declared counts differ from its case list, or None.
+
+    `case_count`, `negative_case_count` and `failed_case_count` are written by the
+    runner and read by everything downstream, including the `certification_results`
+    check constraint that refuses a pass with no negative case. Nothing bound them to
+    `cases`, so a suite could report twelve cases and list two, and a failing run could
+    be made to pass by deleting the entry that failed.
+    """
+    cases = result["cases"]
+    derived = {
+        "case_count": len(cases),
+        "negative_case_count": sum(
+            1 for case in cases if case["polarity"] == "negative"
+        ),
+        "failed_case_count": sum(1 for case in cases if case["outcome"] == "failed"),
+    }
+    differing = {
+        field: (result[field], value)
+        for field, value in derived.items()
+        if result[field] != value
+    }
+    if differing:
+        return "the declared counts are not the case list: " + ", ".join(
+            f"{field} declared {declared}, derived {value}"
+            for field, (declared, value) in sorted(differing.items())
+        )
+    identifiers = [case["case_id"] for case in cases]
+    if len(set(identifiers)) != len(identifiers):
+        return "one case identifier appears twice, so a case is counted twice"
+    return None
+
+
 def validate_certification_contracts() -> None:
     """Prove the certification cluster cannot advertise support it has not exercised.
 
-    Four checks. The lifecycle vocabulary equals the registered machine's. Every
-    state other than `active` is pinned to a `private-analytics` ceiling in the
-    schema as well as in the DDL, so a registry cannot imply exercised support for
-    a planned, expired, suspended or superseded tuple. The tuple's platform
-    profile resolves to a registered profile. And a passing result with no
-    negative case is refused, because a suite that has never failed carries no
-    information.
+    Seven checks. The lifecycle vocabulary equals the registered machine's, in the
+    result schema, in the DDL and in the API — the third was missing, and `PF-016`'s
+    own note recorded it: `openapi-v1.yaml` published no certification state at all,
+    so a participant could read which certification a claim was appraised under and
+    not whether it was still active. Every state other than `active` is pinned to a
+    `private-analytics` ceiling in the schema as well as in the DDL, so a registry
+    cannot imply exercised support for a planned, expired, suspended or superseded
+    tuple. The tuple's platform profile resolves to a registered profile. A passing
+    result with no negative case is refused, because a suite that has never failed
+    carries no information. And the three case counts are derived from the case list
+    rather than believed, because a self-reported `failed_case_count` improves when
+    you delete the case that failed.
+
+    The API vocabulary is the machine's states plus `uncertified`, which is not a
+    state of the machine: a capture bound to no certification has no aggregate, and
+    every capture this repository can currently take is in exactly that position. It
+    is admitted so that the absence can be stated rather than inferred from a null.
 
     This proves the records agree with each other. No suite has been run and no
     tuple is certified: every certification state reachable from this repository
@@ -2262,6 +2848,35 @@ def validate_certification_contracts() -> None:
             f"only-in-registry={sorted(expected - lifecycle)}"
         )
 
+    # The API third, which PF-016's own note recorded as unmet. `uncertified` is the
+    # one admitted addition and it is not a state of the machine: a capture bound to
+    # no certification has no aggregate to be in a state.
+    api_state = load_yaml(SCHEMAS / "openapi-v1.yaml")["components"]["schemas"][
+        "AppraisalSummary"
+    ]["properties"]["evaluated"]["properties"].get("certification_state")
+    if api_state is None:
+        raise ValidationFailure(
+            "the API publishes no certification state, so a participant can read "
+            "which certification their claim was appraised under and not whether it "
+            "was still active"
+        )
+    published = set(api_state["enum"])
+    if published != expected | {"uncertified"}:
+        raise ValidationFailure(
+            "the published certification vocabulary is not the machine's states plus "
+            f"uncertified: only-in-api={sorted(published - expected - {'uncertified'})} "
+            f"only-in-registry={sorted(expected - published)}"
+        )
+    sql_states = _sql_check_vocabulary(
+        _planning_table_bodies()["source_certifications"], "state"
+    )
+    if sql_states != expected:
+        raise ValidationFailure(
+            "source_certifications.state differs from source-certification: "
+            f"only-in-sql={sorted(sql_states - expected)} "
+            f"only-in-registry={sorted(expected - sql_states)}"
+        )
+
     # Every non-active state must be pinned to private-analytics by the schema and
     # not only by the DDL, so a record that never reaches PostgreSQL is still
     # refused.
@@ -2288,6 +2903,30 @@ def validate_certification_contracts() -> None:
             validate_instance(schemas[filename], instance, example)
         else:
             expect_invalid(schemas[filename], instance, example)
+
+    # The three counts are self-reported and JSON Schema cannot bind them to the case
+    # list, so they are derived here. Without this, the way to turn a failing suite
+    # into a passing one is to delete the failing entry: `failed_case_count` would
+    # stay whatever the writer put there, and `negative_case_count` — the number the
+    # DDL check constraint reads to refuse an untested pass — would improve as cases
+    # were removed from the thing it counts.
+    valid_result = load_json(SCHEMAS / "examples" / "certification-result.valid.json")
+    mismatch = certification_count_mismatch(valid_result["result"])
+    if mismatch is not None:
+        raise ValidationFailure(f"certification-result.valid.json: {mismatch}")
+    drift = load_json(
+        SCHEMAS / "examples" / "certification-result.invalid-counts-omit-a-case.json"
+    )
+    # Schema-valid on purpose: the whole point is that the schema cannot see it.
+    validate_instance(
+        result_schema, drift, "certification-result.invalid-counts-omit-a-case.json"
+    )
+    if certification_count_mismatch(drift["result"]) is None:
+        raise ValidationFailure(
+            "certification-result.invalid-counts-omit-a-case.json drops a case from "
+            "the list and keeps the count, and the derivation did not notice; the "
+            "counts are not bound to the cases"
+        )
 
     profiles = {
         profile["profile_id"]
@@ -4257,21 +4896,61 @@ def validate_otel_accounting_profile() -> None:
             "describes nothing"
         )
 
-    # The certification gap is computed the same way: a binding that acquires a
-    # bundle digest must not keep a declaration saying it has none.
+    # The certification gap is computed the same way, and from the target schema
+    # rather than from a declaration about it. The contradiction was that
+    # `normalized-event.schema.json` required a bundle digest no binding here has, so
+    # no event could be built from any capture this repository can take. Whether that
+    # is still true is a property of the schema, so it is read out of the schema: a
+    # declaration that the gap exists is refused once the schema admits the null, and
+    # a missing declaration is refused while it does not.
     bundle = binding["certification"]["tuple"]["bundle_sha256"]
     certification_declared = "certification" in declared_contradictions
-    if bundle is None and not certification_declared:
+    event_schema = load_json(SCHEMAS / "normalized-event.schema.json")
+    bundle_field = event_schema["properties"]["certification"]["properties"][
+        "bundle_sha256"
+    ]
+    admits_null = (
+        any(branch.get("type") == "null" for branch in bundle_field.get("oneOf", []))
+        or bundle_field.get("type") == "null"
+    )
+    if bundle is None and not admits_null and not certification_declared:
         raise ValidationFailure(
             f"{profile['binding_id']} carries no certification bundle digest while "
             "normalized-event.schema.json requires one, and no known_contradictions "
             "entry declares it"
+        )
+    if bundle is None and admits_null and certification_declared:
+        raise ValidationFailure(
+            "normalized-event.schema.json now admits an uncertified capture; the "
+            "declared certification contradiction has outlived its hole"
         )
     if bundle is not None and certification_declared:
         raise ValidationFailure(
             f"{profile['binding_id']} now carries a certification bundle digest; the "
             "declared certification contradiction has outlived its hole"
         )
+
+    # Admitting the null is a representation, never a permission. An event that names
+    # no certified tuple must be pinned to private analytics by the schema itself,
+    # because a collector that forgets to set the disposition is indistinguishable
+    # from one that decided to.
+    if admits_null:
+        pinned = any(
+            clause.get("then", {})
+            .get("properties", {})
+            .get("rule_result", {})
+            .get("properties", {})
+            .get("disposition", {})
+            .get("const")
+            == "private-analytics"
+            for clause in event_schema.get("allOf", [])
+        )
+        if not pinned:
+            raise ValidationFailure(
+                "normalized-event.schema.json admits an uncertified capture without "
+                "pinning it to private-analytics, which turns a representation gap "
+                "into a permission"
+            )
 
 
 def resolve_observations(
@@ -4890,6 +5569,10 @@ def main() -> int:
         ("VibeProof CDDL rule ownership", validate_vibeproof_rule_ownership),
         ("VibeProof negative corpus", validate_vibeproof_negative_corpus),
         ("VibeProof vector reproducibility", validate_vector_reproducibility),
+        (
+            "lineage fork and device-key rotation vectors",
+            validate_lineage_fork_and_rotation,
+        ),
         ("planning document generation", validate_planning_doc_generation),
         ("decision traceability coverage", validate_decision_traceability),
         ("Protobuf", validate_protobuf_files),

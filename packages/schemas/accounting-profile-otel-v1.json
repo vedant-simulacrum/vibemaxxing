@@ -100,15 +100,6 @@
       "other_value": "cloud-separate-cache-v1 declares every one of its four source fields provider-reported",
       "effect": "The same number is described twice with two different authorities, and provider-reported is the stronger evidence claim. The collector never sees a provider response: it sees a counter the CLI process emits, unsigned, and D-077 keeps every locally observed mechanism attested-local while D-100 records that no provider offers an individual-account attestation path. This profile writes runtime-reported, which is what docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md section 7 requires and what section 6 of the same document contradicts. Repairing it means registering a narrower accounting profile and re-pointing the binding, which changes the adapter's bound identity and is not this unit's to change.",
       "owner": "A-001"
-    },
-    {
-      "contradiction_id": "otel-certification-bundle-absent",
-      "field": "certification",
-      "this_profile": "cannot be written from any binding in this repository",
-      "other_authority": "packages/schemas/normalized-event.schema.json",
-      "other_value": "certification.bundle_sha256 is required and must be 64 hexadecimal characters, with no null admitted",
-      "effect": "claude-code-otel-v1 is a candidate binding whose certification tuple carries bundle_sha256 null, and every other binding here is uncertified. So no NormalizedAccountingEvent can be constructed from any OTLP capture this repository can actually take: the event schema has no representation for an uncertified capture, while the publication rule of the binding registry says every binding is private analytics today. The only fixture that fills the field uses a placeholder of sixty-four f characters. This is why the field's derivation is blocked rather than declared, and it is why an end-to-end map from payload to event is not claimed.",
-      "owner": "PF-016"
     }
   ],
   "derivations": [
@@ -150,9 +141,8 @@
     {
       "field": "certification",
       "origin": "producer-binding",
-      "determinism": "not-observable",
-      "rule": "platform_profile_id from packages/schemas/platform-profile-registry-v1.json and capture_mode otel are both available. bundle_sha256 is not: the binding's certification tuple carries null and the target schema admits no null, so this field cannot be written today and the derivation is blocked rather than described.",
-      "blocked_by": "otel-certification-bundle-absent"
+      "determinism": "deterministic",
+      "rule": "platform_profile_id comes from packages/schemas/platform-profile-registry-v1.json and capture_mode is otel. bundle_sha256 is the binding's certification tuple digest, which is null for every binding in this repository, and PF-016 made packages/schemas/normalized-event.schema.json admit that null rather than requiring a digest nobody has. Writing null is not a gap in this derivation: it is the derivation. The target schema pins an event whose bundle digest is null to a private-analytics disposition, so the field can now be written and cannot be written into a competitive claim."
     },
     {
       "field": "source_id",

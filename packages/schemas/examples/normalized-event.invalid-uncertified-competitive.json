@@ -72,10 +72,8 @@
   "local_fingerprint": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
   "rule_result": {
     "bundle_id": "deterministic-rules-v1",
-    "disposition": "private-analytics",
-    "reason_codes": [
-      "uncertified-source-tuple"
-    ]
+    "disposition": "accept-local",
+    "reason_codes": []
   },
   "privacy_scan": {
     "policy_id": "claim-egress-v1",

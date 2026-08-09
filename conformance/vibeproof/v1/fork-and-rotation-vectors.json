@@ -1,0 +1,298 @@
+{
+  "schema_version": 1,
+  "fixture_id": "fork-and-rotation-vectors-v1",
+  "normative_owners": [
+    "docs/architecture/VIBEPROOF_V1_PROTOCOL.md",
+    "docs/security/INTEGRITY_MODEL.md",
+    "packages/schemas/fork-resolution-v1.schema.json"
+  ],
+  "note": "What a decoder must conclude when one lineage presents two continuations, and what a device-key transition must carry to be authorized. Every vector states its expected outcome and validate_lineage_fork_and_rotation in scripts/repository/validate_planning_artifacts.py recomputes it, so a vector cannot record an outcome the stated rules do not produce. The resolution of each forked lineage is additionally built into a packages/schemas/fork-resolution-v1.schema.json record and validated against that schema, so the fixture cannot describe a resolution the normative record has no shape for. This is a fixture. No VibeProof implementation reads it, and passing it is not evidence that a decoder exists.",
+  "detection_precedence": [
+    "duplicate-installation-identity",
+    "duplicate-sequence-continuation",
+    "divergent-commitment-chain",
+    "checkpoint-mismatch"
+  ],
+  "resolver_rules": [
+    "A lineage starts at generation 0 with the head token 'genesis' and no bound installation.",
+    "An installation reference already bound to a different device forks the lineage at the current tip generation. It is checked first because a copied store presents it before it presents a claim.",
+    "A submission whose stated previous head is not a head this lineage ever held is refused with CLAIM_GAP_DECLARATION_REQUIRED. It is refused rather than quarantined: nothing about it identifies a branch.",
+    "A submission whose previous head is the current tip and whose sequence is one past the tip generation is accepted and becomes the new tip.",
+    "A submission whose previous head is the current tip and whose sequence is anything else is refused with CLAIM_SEQUENCE_UNEXPECTED.",
+    "A submission whose previous head is an earlier head of this lineage forks it at that generation. The basis is duplicate-sequence-continuation when the sequence is one the lineage already issued, and divergent-commitment-chain when it is not.",
+    "On a fork, every submission already accepted above the fork generation is quarantined retroactively, together with the submission that caused the fork. D-072 quarantines every post-fork branch, including the one that arrived first, so arriving first is not a way to win a fork.",
+    "Every submission after a fork is quarantined with CLAIM_CHAIN_FORK, whichever device sent it.",
+    "Claims at or below the fork generation stay accepted. A fork says nothing about work already accepted.",
+    "Two acknowledged heads in one lineage resolve to the greater sequence, which the server issued; two equal heads are a checkpoint mismatch and fork the lineage. Ordering by arrival time would let a clone with a fast clock win."
+  ],
+  "lineages": [
+    {
+      "lineage_case_id": "LN-CONTROL",
+      "title": "One device, one chain, nothing to resolve",
+      "note": "The control. Without it every assertion below is satisfied by a resolver that quarantines everything, which is the failure mode a fork corpus invites.",
+      "expected_fork": false,
+      "expected_fork_generation": null,
+      "expected_detection_basis": null,
+      "submissions": [
+        {"submission_ref": "control-1", "device_ref": "device-a", "installation_ref": "install-a", "sequence": 1, "previous_head": "genesis", "head": "head-a1", "expected_disposition": "accepted", "expected_reason_code": null},
+        {"submission_ref": "control-2", "device_ref": "device-a", "installation_ref": "install-a", "sequence": 2, "previous_head": "head-a1", "head": "head-a2", "expected_disposition": "accepted", "expected_reason_code": null},
+        {"submission_ref": "control-3", "device_ref": "device-a", "installation_ref": "install-a", "sequence": 3, "previous_head": "head-a2", "head": "head-a3", "expected_disposition": "accepted", "expected_reason_code": null},
+        {"submission_ref": "control-4", "device_ref": "device-a", "installation_ref": "install-a", "sequence": 4, "previous_head": "head-a3", "head": "head-a4", "expected_disposition": "accepted", "expected_reason_code": null}
+      ],
+      "expected_branches": []
+    },
+    {
+      "lineage_case_id": "LN-DUPLICATE-SEQUENCE",
+      "title": "A copied store re-issues a sequence the lineage already used",
+      "note": "The case D-592 rekeyed device_sequences to make observable, carried one table further. device-b holds a copy of device-a's store and continues from generation 2 with sequence 3, which device-a has already spent. Both branches lose their post-fork claims; generations 1 and 2 are untouched.",
+      "expected_fork": true,
+      "expected_fork_generation": 2,
+      "expected_detection_basis": "duplicate-sequence-continuation",
+      "submissions": [
+        {"submission_ref": "dup-1", "device_ref": "device-a", "installation_ref": "install-a2", "sequence": 1, "previous_head": "genesis", "head": "head-b1", "expected_disposition": "accepted", "expected_reason_code": null},
+        {"submission_ref": "dup-2", "device_ref": "device-a", "installation_ref": "install-a2", "sequence": 2, "previous_head": "head-b1", "head": "head-b2", "expected_disposition": "accepted", "expected_reason_code": null},
+        {"submission_ref": "dup-3", "device_ref": "device-a", "installation_ref": "install-a2", "sequence": 3, "previous_head": "head-b2", "head": "head-b3", "expected_disposition": "quarantined", "expected_reason_code": "CLAIM_CHAIN_FORK"},
+        {"submission_ref": "dup-4", "device_ref": "device-b", "installation_ref": "install-b", "sequence": 3, "previous_head": "head-b2", "head": "head-c3", "expected_disposition": "quarantined", "expected_reason_code": "CLAIM_CHAIN_FORK"},
+        {"submission_ref": "dup-5", "device_ref": "device-a", "installation_ref": "install-a2", "sequence": 4, "previous_head": "head-b3", "head": "head-b4", "expected_disposition": "quarantined", "expected_reason_code": "CLAIM_CHAIN_FORK"}
+      ],
+      "expected_branches": [
+        {"device_ref": "device-a", "disposition": "quarantined", "post_fork_claim_count": 2, "branch_head_sequence": 4},
+        {"device_ref": "device-b", "disposition": "quarantined", "post_fork_claim_count": 1, "branch_head_sequence": 3}
+      ]
+    },
+    {
+      "lineage_case_id": "LN-DIVERGENT-CHAIN",
+      "title": "A restored store extends a head the lineage moved past",
+      "note": "device-d was restored from a backup taken at generation 1 and continues with a sequence the lineage has not issued. The sequence number alone shows nothing wrong; the commitment head does. The fork is at generation 1, so generation 1 survives and device-c's generations 2 and 3 do not.",
+      "expected_fork": true,
+      "expected_fork_generation": 1,
+      "expected_detection_basis": "divergent-commitment-chain",
+      "submissions": [
+        {"submission_ref": "div-1", "device_ref": "device-c", "installation_ref": "install-c", "sequence": 1, "previous_head": "genesis", "head": "head-d1", "expected_disposition": "accepted", "expected_reason_code": null},
+        {"submission_ref": "div-2", "device_ref": "device-c", "installation_ref": "install-c", "sequence": 2, "previous_head": "head-d1", "head": "head-d2", "expected_disposition": "quarantined", "expected_reason_code": "CLAIM_CHAIN_FORK"},
+        {"submission_ref": "div-3", "device_ref": "device-c", "installation_ref": "install-c", "sequence": 3, "previous_head": "head-d2", "head": "head-d3", "expected_disposition": "quarantined", "expected_reason_code": "CLAIM_CHAIN_FORK"},
+        {"submission_ref": "div-4", "device_ref": "device-d", "installation_ref": "install-d", "sequence": 4, "previous_head": "head-d1", "head": "head-e4", "expected_disposition": "quarantined", "expected_reason_code": "CLAIM_CHAIN_FORK"}
+      ],
+      "expected_branches": [
+        {"device_ref": "device-c", "disposition": "quarantined", "post_fork_claim_count": 2, "branch_head_sequence": 3},
+        {"device_ref": "device-d", "disposition": "quarantined", "post_fork_claim_count": 1, "branch_head_sequence": 4}
+      ]
+    },
+    {
+      "lineage_case_id": "LN-DUPLICATE-INSTALLATION",
+      "title": "Two devices present one installation identity",
+      "note": "The clone copied the root installation identity along with everything else, so it is observable before either device submits a conflicting sequence. Detection precedence puts it first for that reason: waiting for the sequence collision would accept one more generation from a store known to be duplicated.",
+      "expected_fork": true,
+      "expected_fork_generation": 2,
+      "expected_detection_basis": "duplicate-installation-identity",
+      "submissions": [
+        {"submission_ref": "inst-1", "device_ref": "device-e", "installation_ref": "install-e", "sequence": 1, "previous_head": "genesis", "head": "head-f1", "expected_disposition": "accepted", "expected_reason_code": null},
+        {"submission_ref": "inst-2", "device_ref": "device-e", "installation_ref": "install-e", "sequence": 2, "previous_head": "head-f1", "head": "head-f2", "expected_disposition": "accepted", "expected_reason_code": null},
+        {"submission_ref": "inst-3", "device_ref": "device-f", "installation_ref": "install-e", "sequence": 3, "previous_head": "head-f2", "head": "head-g3", "expected_disposition": "quarantined", "expected_reason_code": "CLAIM_CHAIN_FORK"},
+        {"submission_ref": "inst-4", "device_ref": "device-e", "installation_ref": "install-e", "sequence": 3, "previous_head": "head-f2", "head": "head-f3", "expected_disposition": "quarantined", "expected_reason_code": "CLAIM_CHAIN_FORK"}
+      ],
+      "expected_branches": [
+        {"device_ref": "device-f", "disposition": "quarantined", "post_fork_claim_count": 1, "branch_head_sequence": 3},
+        {"device_ref": "device-e", "disposition": "quarantined", "post_fork_claim_count": 1, "branch_head_sequence": 3}
+      ]
+    },
+    {
+      "lineage_case_id": "LN-REFUSALS",
+      "title": "A gap and an out-of-order sequence are refused, not quarantined",
+      "note": "Neither identifies a branch, so neither opens a fork case. Without these two the resolver could answer every input with 'quarantined' and still match the corpus.",
+      "expected_fork": false,
+      "expected_fork_generation": null,
+      "expected_detection_basis": null,
+      "submissions": [
+        {"submission_ref": "ref-1", "device_ref": "device-g", "installation_ref": "install-g", "sequence": 1, "previous_head": "genesis", "head": "head-h1", "expected_disposition": "accepted", "expected_reason_code": null},
+        {"submission_ref": "ref-2", "device_ref": "device-g", "installation_ref": "install-g", "sequence": 2, "previous_head": "head-unknown", "head": "head-h2", "expected_disposition": "refused", "expected_reason_code": "CLAIM_GAP_DECLARATION_REQUIRED"},
+        {"submission_ref": "ref-3", "device_ref": "device-g", "installation_ref": "install-g", "sequence": 7, "previous_head": "head-h1", "head": "head-h7", "expected_disposition": "refused", "expected_reason_code": "CLAIM_SEQUENCE_UNEXPECTED"},
+        {"submission_ref": "ref-4", "device_ref": "device-g", "installation_ref": "install-g", "sequence": 2, "previous_head": "head-h1", "head": "head-h2", "expected_disposition": "accepted", "expected_reason_code": null}
+      ],
+      "expected_branches": []
+    }
+  ],
+  "checkpoint_resolutions": [
+    {
+      "checkpoint_case_id": "CP-NEWEST-WINS",
+      "title": "A restored device presents an older acknowledged head",
+      "note": "The owner decision is that the newest checkpoint wins. The server issued both sequences, so the ordering is over its own counter and not over either device's clock.",
+      "acknowledged_heads": [
+        {"device_ref": "device-a", "last_sequence": 6},
+        {"device_ref": "device-h", "last_sequence": 3}
+      ],
+      "expected_authoritative_last_sequence": 6,
+      "expected_behind_device_refs": ["device-h"],
+      "expected_fork": false,
+      "expected_reason_code": null
+    },
+    {
+      "checkpoint_case_id": "CP-MISMATCH",
+      "title": "Two devices acknowledge the same head",
+      "note": "Newest-wins cannot choose between equals, and two receipts at one head inside one lineage are two branches. unique (lineage_id, last_sequence) on checkpoint_receipts refuses the second write, which is this row expressed as a constraint.",
+      "acknowledged_heads": [
+        {"device_ref": "device-a", "last_sequence": 6},
+        {"device_ref": "device-i", "last_sequence": 6}
+      ],
+      "expected_authoritative_last_sequence": null,
+      "expected_behind_device_refs": [],
+      "expected_fork": true,
+      "expected_reason_code": "CLAIM_CHAIN_FORK"
+    }
+  ],
+  "rotations": [
+    {
+      "rotation_case_id": "RT-ORDINARY",
+      "title": "An ordinary rotation carries both key authorizations and the account authorization",
+      "action": "rotated",
+      "previous_key_present": true,
+      "old_key_signature_present": true,
+      "new_key_signature_present": true,
+      "account_recent_auth": true,
+      "recovery_approval": "not-required",
+      "expected_admitted": true,
+      "expected_reason_code": null
+    },
+    {
+      "rotation_case_id": "RT-MISSING-OLD-KEY-SIGNATURE",
+      "title": "The outgoing key did not sign",
+      "note": "The continuity half of the pair. Admitting this is admitting a rotation by whoever holds the account session, which is the takeover the pair exists to refuse.",
+      "action": "rotated",
+      "previous_key_present": true,
+      "old_key_signature_present": false,
+      "new_key_signature_present": true,
+      "account_recent_auth": true,
+      "recovery_approval": "not-required",
+      "expected_admitted": false,
+      "expected_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    },
+    {
+      "rotation_case_id": "RT-MISSING-NEW-KEY-SIGNATURE",
+      "title": "The incoming key did not sign",
+      "note": "The control half of the pair. Without it a lineage can be rotated onto a key nobody has demonstrated possession of.",
+      "action": "rotated",
+      "previous_key_present": true,
+      "old_key_signature_present": true,
+      "new_key_signature_present": false,
+      "account_recent_auth": true,
+      "recovery_approval": "not-required",
+      "expected_admitted": false,
+      "expected_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    },
+    {
+      "rotation_case_id": "RT-MISSING-ACCOUNT-AUTH",
+      "title": "Both keys signed and the account did not re-authenticate",
+      "note": "The third gate, at a different layer from the pair. A device that already holds both keys is exactly the position a stolen laptop is in.",
+      "action": "rotated",
+      "previous_key_present": true,
+      "old_key_signature_present": true,
+      "new_key_signature_present": true,
+      "account_recent_auth": false,
+      "recovery_approval": "not-required",
+      "expected_admitted": false,
+      "expected_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    },
+    {
+      "rotation_case_id": "RT-RECOVERY",
+      "title": "Lost-key recovery, authorized by an approved recovery case",
+      "note": "The path that cannot produce the outgoing signature, because the key is gone. It is a separate action rather than a rotation with a waiver, so no rotation can be admitted by asserting a recovery.",
+      "action": "recovered",
+      "previous_key_present": true,
+      "old_key_signature_present": false,
+      "new_key_signature_present": true,
+      "account_recent_auth": true,
+      "recovery_approval": "approved",
+      "expected_admitted": true,
+      "expected_reason_code": null
+    },
+    {
+      "rotation_case_id": "RT-RECOVERY-NOT-APPROVED",
+      "title": "A recovery still inside its cooling-off window",
+      "action": "recovered",
+      "previous_key_present": true,
+      "old_key_signature_present": false,
+      "new_key_signature_present": true,
+      "account_recent_auth": true,
+      "recovery_approval": "pending",
+      "expected_admitted": false,
+      "expected_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    },
+    {
+      "rotation_case_id": "RT-RECOVERY-WITH-OLD-SIGNATURE",
+      "title": "A recovery presenting an outgoing-key signature",
+      "note": "A rotation wearing a recovery's authorization. If the outgoing key can sign, the key is not lost and the ordinary path applies; admitting this makes the recovery authority reachable without losing anything.",
+      "action": "recovered",
+      "previous_key_present": true,
+      "old_key_signature_present": true,
+      "new_key_signature_present": true,
+      "account_recent_auth": true,
+      "recovery_approval": "approved",
+      "expected_admitted": false,
+      "expected_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    },
+    {
+      "rotation_case_id": "RT-ROTATION-CLAIMING-RECOVERY-AUTHORITY",
+      "title": "A rotation carrying a recovery approval",
+      "note": "The mirror image. A recovery approval on a rotation row is a second authority for one act, and the one that would be reached for when a key signature is missing.",
+      "action": "rotated",
+      "previous_key_present": true,
+      "old_key_signature_present": true,
+      "new_key_signature_present": true,
+      "account_recent_auth": true,
+      "recovery_approval": "approved",
+      "expected_admitted": false,
+      "expected_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    },
+    {
+      "rotation_case_id": "RT-ENROLMENT",
+      "title": "First enrolment, which has no predecessor to sign",
+      "action": "enrolled",
+      "previous_key_present": false,
+      "old_key_signature_present": false,
+      "new_key_signature_present": true,
+      "account_recent_auth": true,
+      "recovery_approval": "not-required",
+      "expected_admitted": true,
+      "expected_reason_code": null
+    },
+    {
+      "rotation_case_id": "RT-ENROLMENT-WITH-PREDECESSOR",
+      "title": "An enrolment naming a previous key",
+      "note": "An enrolment that has a predecessor is a rotation, and calling it an enrolment is how a rotation avoids needing the outgoing key's signature.",
+      "action": "enrolled",
+      "previous_key_present": true,
+      "old_key_signature_present": false,
+      "new_key_signature_present": true,
+      "account_recent_auth": true,
+      "recovery_approval": "not-required",
+      "expected_admitted": false,
+      "expected_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    },
+    {
+      "rotation_case_id": "RT-REVOCATION",
+      "title": "Revoking a key the participant may no longer hold",
+      "note": "The one action that installs no key and therefore proves control of none. Requiring a key signature here would make a lost key unrevokable, which is the situation revocation exists for.",
+      "action": "revoked",
+      "previous_key_present": true,
+      "old_key_signature_present": false,
+      "new_key_signature_present": false,
+      "account_recent_auth": true,
+      "recovery_approval": "not-required",
+      "expected_admitted": true,
+      "expected_reason_code": null
+    },
+    {
+      "rotation_case_id": "RT-REVOCATION-WITHOUT-ACCOUNT-AUTH",
+      "title": "A revocation nobody re-authenticated for",
+      "note": "Revocation is the only path with no key authorization at all, so the account authorization is the only thing standing between a stale session and cutting a competitor's device out of its lineage.",
+      "action": "revoked",
+      "previous_key_present": true,
+      "old_key_signature_present": false,
+      "new_key_signature_present": false,
+      "account_recent_auth": false,
+      "recovery_approval": "not-required",
+      "expected_admitted": false,
+      "expected_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    }
+  ]
+}

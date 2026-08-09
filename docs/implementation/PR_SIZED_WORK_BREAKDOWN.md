@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 196 |
-| `in-progress` | 8 |
-| `landed` | 50 |
+| `not-started` | 195 |
+| `in-progress` | 7 |
+| `landed` | 52 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 196 assertions across 50 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 206 assertions across 52 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 13.
+Startable now — not done, and every dependency done: 11.
 
-`PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-048`, `OS-001`, `OS-003`, `OS-009`.
+`PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-048`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,7 +90,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 9 | `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
+| 1 | 7 | `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
 | 2 | 5 | `PF-018`, `PF-022`, `PF-027`, `PF-031`, `PF-032` |
 | 3 | 1 | `PF-023` |
 | 4 | 1 | `PF-029` |
@@ -99,7 +99,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 | 7 | 1 | `PF-035` |
 | 8 | 1 | `PF-036` |
 
-Statuses additionally checkable against artifact presence: 196 of 260. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 195 of 260. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -323,13 +323,31 @@ Evidence: unittest tests.ci.test_lineage_continuity
 - lineage-scoped rather than device-row-scoped continuity.
 
 ### PF-010 — Rotation, lost-key recovery, fork and requalification
-Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/planning-schema.sql`, `conformance/vibeproof/v1/fork-and-rotation-vectors.json` (new), `docs/security/INTEGRITY_MODEL.md`
-Acceptance: the fork fixture contains a lineage that branches, and a decoder run over it quarantines every post-fork branch while accepting every pre-fork claim; `device_key_events` records both authorizations for an ordinary rotation.
+Files: `packages/schemas/planning-schema.sql`, `conformance/vibeproof/v1/fork-and-rotation-vectors.json` (new), `conformance/vibeproof/v1/manifest.json`, `conformance/vibeproof/v1/README.md`, `docs/security/INTEGRITY_MODEL.md`, `docs/security/AUTHENTICATION_AND_RECOVERY.md`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_fork_and_rotation.py` (new), `conformance/planning/decision-traceability-v1.json`
+Acceptance: the fork fixture contains a lineage that branches, and a decoder run over it quarantines every post-fork branch while accepting every pre-fork claim, with at least one lineage that forks nothing and one whose malformed submissions are refused rather than quarantined, so the corpus is not satisfied by a resolver that quarantines every input; each forked lineage's resolution validates against `packages/schemas/fork-resolution-v1.schema.json`; `device_key_events` records the outgoing key signature, the incoming key signature and the account authentication as three separate columns and refuses an ordinary rotation missing any one of them, which the vectors exercise by removing each in turn; `python3 -m unittest tests.ci.test_fork_and_rotation` exits 0.
 Depends: PF-009
 Repair: P-1140F-2
 Serves: SR-007
 Est: 12-16
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_fork_and_rotation
+Evidence: exists conformance/vibeproof/v1/fork-and-rotation-vectors.json
+Evidence: contains 1 packages/schemas/planning-schema.sql :: unique (lineage_id, device_sequence)
+Evidence: contains 1 packages/schemas/planning-schema.sql :: unique (lineage_id, last_sequence)
+Evidence: absent packages/schemas/planning-schema.sql :: continuity_signature bytea
+
+The acceptance was rewritten, and the reason is the same one that has forced ten other rewrites here. "A decoder run over it quarantines every post-fork branch" is satisfied in full by a decoder that quarantines everything, and a corpus made only of forks rewards exactly that. The rewrite adds the control lineage and the refusal lineage that make the claim falsifiable, names the record schema the resolution has to be expressible in, and states what "both authorizations" are — because the two authorities disagreed about it and the row could represent neither.
+
+`packages/schemas/state-machine-registry-v1.json` left the `Files:` line. The `lineage-fork-case` machine already declares all eight states with the right transitions and terminal set under D-383; nothing in this unit needed to change it, and listing a file a unit did not touch is how a `Files:` line stops meaning anything. Six files it did touch were added instead.
+
+**The live defects.** D-592 rekeyed `device_sequences` onto the lineage and stopped one table short. The counter became lineage-scoped while the uniqueness that enforces it stayed device-scoped: `claims` carried `unique (device_id, device_sequence)` and `unique (device_id, payload_hash)`, so two device rows inside one lineage could each hold sequence 42 and each hold the same payload, and both indexes accepted it. The sequence a clone could no longer obtain from the counter it could still write into the claim table. `checkpoint_receipts` was device-keyed for the same reason while `device_sequences.server_checkpoint_head` — the value a receipt advances — was lineage-keyed, so a restored store acquired a private receipt chain that nothing compared against the lineage's. Both are now lineage-scoped, and `unique (lineage_id, last_sequence)` is the `checkpoint-mismatch` detection basis expressed as a write refusal.
+
+`device_key_events` held one nullable `continuity_signature` and no account authorization column at all. `docs/architecture/VIBEPROOF_V1_PROTOCOL.md` names three separate things — a payload "signed independently by both old and new keys", and a server that "verifies recent authentication" — and `device-lineage.schema.json` records three separate fields. One blob could represent none of it, so an ordinary rotation and a single-signature forgery were the same row. Dual authorization is the key pair, because `dual-authorized-rotation-v1` is literally two COSE_Sign1 envelopes; recent account authentication is a third gate at a different layer, recorded rather than conflated, because a rotation authorized by a session alone is the takeover the pair exists to refuse. Lost-key recovery is now a separate action that *forbids* the outgoing signature rather than a rotation with a waiver.
+
+And D-561 — exhausting every device and every recovery code permanently ends a ranked identity, with no manual appeal — was recorded in the register and in its traceability row and stated nowhere in `docs/security/AUTHENTICATION_AND_RECOVERY.md`, the file that row names as its normative owner. That document's recovery order ended with "human appeal with cooling-off and limited restoration powers", which is the opposite of the accepted decision. The step is removed and the decision is stated where it was supposed to live.
+
+D-383's traceability row cited "the fork and rotation vectors PF-010 authors", which was accurate only while the file did not exist. It, D-072 and D-592 now name `conformance/vibeproof/v1/fork-and-rotation-vectors.json`.
 
 - dual authorization for ordinary rotation;
 - lost-key recovery authority;
@@ -419,15 +437,27 @@ The schema landed under D-387 and requires every component, with the nine observ
 - canonical digest construction.
 
 ### PF-016 — Certification lifecycle and revocation
-Files: `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/certification-result-v1.schema.json` (new), `docs/integrations/ADAPTER_CERTIFICATION_POLICY.md`
-Acceptance: the `certification` machine declares all eight states with one vocabulary across registry, SQL and API under `validate_state_vocabularies.py`; the result schema requires suite and case digests, a validity interval and a signer reference, and rejects a bundle missing any of them.
+Files: `packages/schemas/certification-result-v1.schema.json`, `packages/schemas/normalized-event.schema.json`, `packages/schemas/accounting-profile-otel-v1.json`, `packages/schemas/appraisal-result-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/examples/normalized-event.valid.json`, `packages/schemas/examples/normalized-event.invalid-uncertified-competitive.json` (new), `packages/schemas/examples/certification-result.valid.json`, `packages/schemas/examples/certification-result.invalid-counts-omit-a-case.json` (new), `conformance/evidence/`, `docs/integrations/ADAPTER_CERTIFICATION_POLICY.md`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_certification_lifecycle.py` (new)
+Acceptance: the `source-certification` machine's eight states are one vocabulary across the registry, `source_certifications.state` and `evaluated.certification_state` on `AppraisalSummary`, the API set being the machine's states plus `uncertified`, which is not a machine state because a capture bound to no certification has no aggregate; the result schema requires a suite manifest digest, a per-case digest, a validity interval and a signer reference, requires a non-empty case list, and `case_count`, `negative_case_count` and `failed_case_count` are derived from that list rather than believed, so deleting the case that failed no longer improves the result; `normalized-event.schema.json` admits a null certification bundle digest and pins any event carrying one to a `private-analytics` disposition; `python3 -m unittest tests.ci.test_certification_lifecycle` exits 0.
 Depends: PF-015
 Repair: P-1140F-3
 Serves: SR-009
 Est: 10-14
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_certification_lifecycle
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: certification_state
+Evidence: absent packages/schemas/examples/normalized-event.valid.json :: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 
-The machine is registered as `source-certification` with all eight states, `source_certifications` is its persistence owner, and `certification_results` holds the signed bundles; `validate_state_vocabularies.py` binds registry and SQL. It is named `source-certification` rather than `certification` because `platform-certification` already exists and certifies an operating-system profile, which is a different thing. The API third of the acceptance is not met: `packages/schemas/openapi-v1.yaml` publishes no certification state at all.
+The machine is registered as `source-certification` with all eight states, `source_certifications` is its persistence owner, and `certification_results` holds the signed bundles. It is named `source-certification` rather than `certification` because `platform-certification` already exists and certifies an operating-system profile, which is a different thing. The acceptance was rewritten: it named `validate_state_vocabularies.py` as the binder of all three vocabularies and that script binds registry and SQL only, so the API third could never have been proved by the check the acceptance named. `validate_certification_contracts` now reads all three.
+
+**What this unit could not honestly close.** Nothing is certified. No conformance suite has been run against any exact tuple, no result bundle has been signed, and every certification state reachable from this repository is `candidate`. A lifecycle can be specified without asserting that anything has moved through it, and that is all this unit did; `tests/ci/test_certification_lifecycle.py` asserts the absence rather than leaving it to be assumed. No tuple was marked certified and no bundle digest was invented — the fixture that used sixty-four `f` characters was removed rather than replaced with a more convincing constant.
+
+**The live defects.** `normalized-event.schema.json` required `certification.bundle_sha256` as sixty-four hexadecimal characters with no null admitted while every producer binding in this repository carries null, so no `NormalizedAccountingEvent` could be constructed from any OTLP capture this repository can actually take. Four other artifacts had already made the same field nullable for the same reason — `evidence-bundle-v1.cddl` names the case, "nil while uncertified", and `producer-accounting-binding-v1.schema.json`, `appraisal-result-v1.schema.json` and `openapi-v1.yaml` all admit the null — so the event schema was the one out of step, and the placeholder was standing exactly where the honest answer belonged. Admitting the null without pinning the disposition would have converted a representation gap into a permission, so an event with a null digest is pinned to `private-analytics` in the schema; a collector that forgets is otherwise indistinguishable from one that decided. `accounting-profile-otel-v1.json` recorded this as a computed contradiction and blocked the field's derivation behind it, and `validate_otel_accounting_profile` now reads admissibility out of the schema, so neither the gap nor the declaration of it can outlive the other.
+
+The result bundle's three case counts were self-reported and bound to nothing: a run could declare twelve cases and list two, and the way to turn a failing suite into a passing one was to delete the entry that failed — including `negative_case_count`, the number the `certification_results` check constraint reads to refuse an untested pass. The committed valid example did exactly that, declaring twelve cases while listing two. Counts are now derived. And a case was bound by identifier alone: the manifest digest binds the set of cases, and nothing noticed a fixture rewritten under an unchanged manifest, so each case now carries its own `case_sha256`.
+
+The API third is met by publishing `evaluated.certification_state` on `AppraisalSummary`. The document already published *which* certification a claim was appraised under, by digest, and nothing about whether it was still active when it was read; a claim capped at private analytics because its tuple had expired is entitled to be told that rather than to infer it from a ceiling.
 
 - candidate, testing, active, degraded, suspended, expired, superseded, retired;
 - signed result bundle, suite/case digests, validity interval, signer/verifier policy;
@@ -1483,11 +1513,13 @@ Est: 8-12
 Status: not-started
 
 ### P-007 Rotation/gap/correction/fork vectors
-Files: `conformance/vibeproof/v1/fork-and-rotation-vectors.json` (new), `scripts/repository/generate_vibeproof_vectors.py`
-Acceptance: the generator's `--check` mode exits 0; the file covers rotation, sequence gap, correction and fork, each carrying an expected accept-or-quarantine verdict; Rust and Go agree on every verdict.
+Files: `conformance/vibeproof/v1/fork-and-rotation-vectors.json`, `scripts/repository/generate_vibeproof_vectors.py`
+Acceptance: the generator's `--check` mode reproduces `fork-and-rotation-vectors.json` and exits 0, so a hand-edited verdict fails rather than persists; the file additionally covers a correction record, which the hand-written corpus does not; Rust and Go each resolve every lineage, checkpoint and rotation vector to the verdict the file records, and disagree on none.
 Depends: P-006
 Est: 8-12
 Status: not-started
+
+The file is no longer `(new)`. `PF-010` wrote it by hand and a Python resolver in `validate_planning_artifacts.py` replays it, which is one subject and no generator. This unit's acceptance is what it has always been and is still entirely unmet: nothing regenerates the file, so an edited verdict persists, and no VibeProof implementation has ever been asked any of these questions. The acceptance is narrowed to the part this unit actually adds rather than restating what already landed.
 
 ### P-008 Malformed, mutation and resource corpus
 Files: `conformance/vibeproof/v1/malformed-resource-corpus.json`

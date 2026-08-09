@@ -13,12 +13,21 @@
     "suite_id": "claude-code-otel",
     "suite_manifest_sha256": "ff6677889900aa11bb22cc33dd44ee55ff6677889900aa11bb22cc33dd44ee55",
     "outcome": "passed",
-    "case_count": 8,
+    "case_count": 1,
     "negative_case_count": 0,
     "failed_case_count": 0,
     "result_digest": "0011223344556677889900aabbccddeeff0011223344556677889900aabbccdd",
     "cose_sign1_b64": "0oRDoQEnoFgkcGxhbm5pbmctcGxhY2Vob2xkZXItbm90LWEtcmVhbC1zaWduYXR1cmVAWEA",
     "signing_key_id": "planning-certification-key-v1",
-    "executed_at": "2026-08-01T00:00:00Z"
+    "executed_at": "2026-08-01T00:00:00Z",
+    "cases": [
+      {
+        "case_id": "schema-url-declared",
+        "case_sha256": "4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d",
+        "polarity": "positive",
+        "outcome": "passed",
+        "clause": "D-264: a binding pins the producer's schema surface"
+      }
+    ]
   }
 }

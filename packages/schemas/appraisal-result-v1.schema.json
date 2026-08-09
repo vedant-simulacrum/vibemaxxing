@@ -268,6 +268,7 @@
       "additionalProperties": false,
       "required": [
         "certification_bundle_sha256",
+        "certification_state",
         "deterministic_rule_bundle_id",
         "accounting_profile_id",
         "observer_equivalence_rule_id",
@@ -282,6 +283,20 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "certification_state": {
+          "description": "The lifecycle state of the tuple this claim was appraised under, at the moment of appraisal, from the source-certification machine. The bundle digest above says which certification was read; it does not say whether that certification was still active, and the two are different facts an appeal argues from - a claim appraised under a suspended or expired tuple was capped at private analytics for a reason the participant is entitled to see. `uncertified` is the state of a capture bound to no certification at all, which is every capture this repository can currently take; it is not a state of the machine, because a tuple that was never submitted has no aggregate.",
+          "enum": [
+            "uncertified",
+            "candidate",
+            "testing",
+            "active",
+            "degraded",
+            "suspended",
+            "expired",
+            "superseded",
+            "retired"
           ]
         },
         "deterministic_rule_bundle_id": {

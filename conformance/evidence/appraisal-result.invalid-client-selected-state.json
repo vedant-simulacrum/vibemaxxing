@@ -29,6 +29,7 @@
   },
   "evaluated": {
     "certification_bundle_sha256": null,
+    "certification_state": "uncertified",
     "deterministic_rule_bundle_id": "deterministic-rules-v1",
     "accounting_profile_id": "cloud-separate-cache-v1",
     "observer_equivalence_rule_id": "observer-equivalence-v1",

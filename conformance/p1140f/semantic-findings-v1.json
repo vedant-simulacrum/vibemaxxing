@@ -32,7 +32,7 @@
     {
       "finding_id": "SR-006",
       "severity": "P1",
-      "state": "open",
+      "state": "repaired-pending-review",
       "title": "OAuth, linked identity, recovery, and ranked identity",
       "repair_task": "P-1140F-2",
       "finding_class": "contradiction",
@@ -47,7 +47,12 @@
         "packages/schemas/planning-schema.sql#linked_identities",
         "packages/schemas/planning-schema.sql#recovery_codes"
       ],
-      "closure_evidence": [],
+      "closure_evidence": [
+        "PF-005 at cb04718c0e21ab365ea55ebe2e9c9a8763bff8f0: the OAuth provider registry exists and the mix-up control is evaluable. /auth/github/callback declared the RFC 9207 iss parameter and /auth/x/callback did not, while reason-codes-v1.json bound OAUTH_ISSUER_MISMATCH to both; the parameter deferred to a stored provider-capability record that did not exist, so ADR-015's control could not be evaluated at all. Sixteen mix-up vectors are derived from the registry rather than listed.",
+        "PF-006 at cb04718c0e21ab365ea55ebe2e9c9a8763bff8f0: every identity mutation reaches one transaction. linkIdentity took a bare authorization_code, so redirect, state, PKCE, provider revision and lifetime were optional in practice; oauth_transactions now binds all eighteen bindings the contract names, four as check constraints, and intended_action had no CHECK at all in the DDL while the API spelled it snake_case.",
+        "PF-007 at cb04718c0e21ab365ea55ebe2e9c9a8763bff8f0: unlinking a provider account was silently permanent product-wide: provider_subject was not null under a total unique (provider, provider_subject), so a retained unlinked row blocked that provider account from ever being linked to any account, and DATA_MAP.md's delete-on-unlink promise could only be honoured by deleting the row the constraint required. Both personal-data fields are now null exactly when the binding has ended.",
+        "PF-008 at cb04718c0e21ab365ea55ebe2e9c9a8763bff8f0: consolidation has a path. The account-consolidation machine declares consolidation-confirm with actor user and the API declared no consolidation operation at all, so a case left awaiting-confirmation only by expiring. D-564, that the older ranked identity survives, was recorded in no machine-readable place and is now checkable with a matched negative fixture."
+      ],
       "reviewed_commit": null,
       "review_verdict": "pending"
     },
