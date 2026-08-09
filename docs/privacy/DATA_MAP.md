@@ -52,6 +52,24 @@ Case C-413/23 P *EDPS v SRB*, decided 4 September 2025, does not change this for
 
 Every row is a processing activity in the Article 30(1) sense. "Crosses device boundary" states whether the category ever leaves the participant's machine; the absolute rule in `docs/privacy/PRIVACY_CONTRACT.md` is that only fixed-schema aggregate accounting and integrity claims do.
 
+### The seven domains, named once
+
+Each section below is one data domain, and the key beside it is how every other artifact refers to it. The keys exist because "cover every domain" was a sentence in a work unit that nothing could evaluate: an export manifest listed files and a deletion job listed subsystems, neither vocabulary was closed, and neither could be compared to this record or to each other. A closed key set makes completeness decidable — an export package that answers for six of the seven is refused, and so is a hosted deletion plan.
+
+| Domain key | Section | What an export and a deletion plan must answer for |
+|---|---|---|
+| `account-identity` | Account and identity | The account, its handles, the linked provider identities, the ranked identity, and the identity, recovery, consolidation and fork cases about it |
+| `authentication-session` | Authentication and session | Sessions, families, refresh material, recovery codes, authenticators and OAuth transactions |
+| `device-collection` | Device and collection | Device registrations, keys, lineages, sequences, adapter installations and installed updates |
+| `usage-claims-scores` | Usage claims and scores | Accepted claims, their payloads and corrections, the minute and period projections, and the sealed ranking rows keyed on the erasure-domain pseudonym |
+| `social-presence-notifications` | Social, presence and notifications | Friend, rival and block edges, board memberships, presence and the notification inbox |
+| `integrity-moderation-appeals` | Integrity, moderation and appeals | Appraisals, quarantines, moderation cases, appeals and security audit events |
+| `requests-exports-deletion` | Requests, exports and deletion | Export jobs and their artifacts, deletion jobs and device commands, idempotency records and the erasure-domain rows |
+
+`packages/schemas/data-disposition-v1.json` carries the key on every row it covers, so the assignment is one field per table rather than a paragraph, and `scripts/repository/validate_planning_artifacts.py` compares this table to that enum in both directions and refuses a table this record names inside a section whose registry row claims a different domain.
+
+Two kinds of row carry no key, and the distinction is the point rather than an exemption. A `non-personal` row never identified anybody. A `pseudonymous` row whose `attribution_retention` is `no-retention` — `deletion_tombstones` and `outbox_events` — kept the means to attribute it for no time at all. Neither is in any participant's export or deletion plan, so putting either into a domain would add a table to a coverage set that no participant can ask a question about. Widening that exemption means changing a retention claim in this record, which is a louder edit than dropping a label.
+
 ### Account and identity
 
 | Data | Where collected | Crosses device boundary | Article 6 basis | Retention | Recipients |
@@ -70,7 +88,6 @@ Every row is a processing activity in the Article 30(1) sense. "Crosses device b
 | Account recovery case: the factor class verified, the cooling-off window, and whether sessions were revoked and devices quarantined (`recovery_cases`) | Server, when the participant opens a recovery | Server-side only | 6(1)(f) legitimate interests for the security control, with the account rebinding itself under 6(1)(a) | Security-audit window, per `security_audit_retention_days` | Hosting processor. Never public |
 | Consolidation case and its claim-level contributions: survivor, absorbed identity, and one row per considered claim with its original period and raw quantity (`consolidation_cases`, `consolidation_contributions`) | Server, when a participant or an investigation opens a consolidation | Server-side only | 6(1)(a) consent | Life of the surviving ranked identity, because it is the explanation of that identity's standing | Hosting processor. Never public |
 | Lineage fork case and branches: fork generation, survivor device, resumed generation, and one row per branch (`lineage_fork_cases`, `lineage_fork_branches`) | Server, when a deterministic control detects two continuations of one lineage generation | Server-side only | 6(1)(f) legitimate interests, confined by D-101 to fraud prevention and security | Security-audit window, per `security_audit_retention_days` | Hosting processor. Never public |
-| Presence pulse admission for the current lease generation: device, generation, and whether the device was doing qualifying work (`presence_events`) | Server, from qualifying native pulses | Fixed-schema aggregate only; the pulse carries a boolean and never what the device was doing | 6(1)(a) consent | None. Rows are discarded when their lease generation closes, which is the stated basis on which ADR-019 accepts the presence-inference risk | Hosting processor. Never public; the coarse projection is shown only to currently authorized viewers |
 
 Article 14 applies to the two provider-sourced rows because they are obtained from GitHub and X rather than from the participant. The Article 14(2)(f) source statement is in `PRIVACY.md` and names those two providers.
 
@@ -119,6 +136,7 @@ Article 14 applies to the two provider-sourced rows because they are obtained fr
 | Friend, rival and block edges (`friend_edges`, `rival_edges`, `blocks`) | Server | Server-side only | 6(1)(a) consent | Until removed by the participant or account erasure. Blocks are directional and are not disclosed to the blocked participant | Hosting processor; authorized viewers only |
 | Board membership and role (`board_memberships`, `boards`) | Server | Server-side only | 6(1)(a) consent | Until the membership ends or the account is erased | Hosting processor; board members |
 | Presence state (`presence_leases`) | Derived server-side from qualifying device activity | Activity pulse crosses; it carries no project, path or repository detail | 6(1)(a) consent | Current state only. The row expires 300 seconds after the last qualifying pulse under D-073. **No presence history is retained** | Hosting processor; viewers the participant has authorized |
+| Presence pulse admission for the current lease generation: device, generation, and whether the device was doing qualifying work (`presence_events`) | Server, from qualifying native pulses | Fixed-schema aggregate only; the pulse carries a boolean and never what the device was doing | 6(1)(a) consent | None. Rows are discarded when their lease generation closes, which is the stated basis on which ADR-019 accepts the presence-inference risk | Hosting processor. Never public; the coarse projection is shown only to currently authorized viewers |
 | Notifications (`notifications`, `notification_preferences`) | Derived server-side | Server-side only | 6(1)(a) consent | 90 days from creation, then deleted. The server inbox is the only delivery channel at launch under D-086 | Hosting processor; the recipient |
 
 Presence is the subject of an accepted, unmitigated residual risk. RR-001 in ADR-019 records that an authorized viewer sampling presence repeatedly can reconstruct a participant's working hours, sleep schedule and absences, that nothing in the design bounds this, and that it is not being fixed for launch. `PRIVACY.md` states it to participants because a privacy notice that omits a recorded internal exposure is a worse position than one that describes it.
@@ -142,7 +160,9 @@ Presence is the subject of an accepted, unmitigated residual risk. RR-001 in ADR
 | Idempotency records (`idempotency_records`) | Server | Server-side only | 6(1)(f) correctness of high-impact mutations | 30 days, per D-075 | Hosting processor |
 | Personal-data-breach records | Server and controller notes | Not applicable | 6(1)(c) legal obligation, Article 33(5) | 5 years from the incident | Hosting processor; supervisory authorities on request |
 
-The deletion cooling-off window is 7 days and is cancellable within it. `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` already records that the server-deletion machine has no `cancelled` state and no transition out of `cooling-off` other than forward, so the cancellation this map promises is not currently expressible in the state machine. That is a defect in the machine, not a softening of the window, and it is owned by PF-029.
+The deletion cooling-off window is 7 days and is cancellable within it. That is now expressible: the `server-deletion` machine has a `cancelled` state, `deletion-cancel` runs from `cooling-off` with the participant as actor under recent authentication, `cancelDeletion` is its route, and `deletion_jobs` will not record a cancellation whose time is not before `effective_after`. Until PF-029 the machine had no `cancelled` state and no transition out of `cooling-off` other than forward, so this record described a reversal no owner in the repository could perform.
+
+A deletion may also be held. `deletion_jobs.legal_hold_reference` and `legal_hold_placed_at` are present together or not at all, and a held job may not be in `processing`, `rebuilding-projections`, `awaiting-local-receipt` or `complete`. Article 12(4) requires the controller to tell the participant when it is not acting on their request, which `DeletionJob.blocked_by_legal_hold` publishes: that the request is held, and not what the hold is. No hold has ever been placed, because nothing is provisioned.
 
 ### Data that is not held at all
 

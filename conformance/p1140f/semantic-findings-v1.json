@@ -163,7 +163,7 @@
     {
       "finding_id": "SR-011",
       "severity": "P1",
-      "state": "repair-in-progress",
+      "state": "repaired-pending-review",
       "title": "Social relationships, boards, presence, and notifications",
       "repair_task": "P-1140F-4",
       "finding_class": "contradiction",
@@ -179,7 +179,10 @@
         "packages/schemas/openapi-v1.yaml#renewPresence"
       ],
       "closure_evidence": [
-        "PF-024 at f7db7bb052cf8fef10f72ff8cbae802d13d1cf51 (social relationships only): blocked is removed from the friendship and rivalry machines and from friend_requests.state and rival_edges.state, so a directional block no longer drives a symmetric aggregate to a terminal state. Six executable cases in conformance/social/block-independence-vectors.json. Boards, presence and notifications are untouched and remain open under PF-025, PF-026 and PF-027."
+        "PF-024 at f7db7bb052cf8fef10f72ff8cbae802d13d1cf51 (social relationships only): blocked is removed from the friendship and rivalry machines and from friend_requests.state and rival_edges.state, so a directional block no longer drives a symmetric aggregate to a terminal state. Six executable cases in conformance/social/block-independence-vectors.json. Boards, presence and notifications are untouched and remain open under PF-025, PF-026 and PF-027.",
+        "PF-025 at e253dfa65b4802bf6fba87ce404ec575cf5232ba: the block repair never reached boards. board-membership.blocked and board-invitation.invalidated-by-block were terminal with reversal none and reached by a user's block-cascade, so a block between two accounts permanently destroyed a membership and an invitation granted by a third party, the board owner, who was not party to it. test_block_independence.py named only friendship and rivalry in SHARED_AGGREGATES, so a test reading as coverage of the rule covered half of it, and the block-race SQL plan still asserted the pre-D-585 behaviour PF-024 had removed. board_invites also held no role column and no invitee while the acceptance said the operation cannot grant an admin or owner role.",
+        "PF-026 at e253dfa65b4802bf6fba87ce404ec575cf5232ba: a browser could fabricate presence. renewPresence accepted a session cookie and a body whose only field was availability, against the rule that presence is server-derived from qualifying device activity, and validate_state_vocabularies.py declared that field a projection of the server-derived machine, which is a coarsening running inbound. The generation discard rule was enforced on the read side while the write path carried neither the device nor the generation. idle was unreachable because the lease expired at 90 seconds and idle began at 300; D-385 deferred the rename because a validator required those spellings, and that validator is in this repository.",
+        "PF-027 at e253dfa65b4802bf6fba87ce404ec575cf5232ba: notification categories, the inbox and the channel model are bound. Four preference flags governed eight event types with the mapping declared nowhere, so whether a security notification could be muted depended on which mapping a reader assumed; notifications.retraction_reason_code had no CHECK, making one of three registered codes a convention; and notification_preferences had no API operation at all."
       ],
       "reviewed_commit": null,
       "review_verdict": "pending"

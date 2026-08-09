@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "export_id": "3f2a1c88-0d7c-4a9e-9a4f-2b6d5e0c1a70",
+  "account_id": "9c1d4b02-7e35-4f18-8a6b-1d0e2f3a4b5c",
+  "scope": "all",
+  "requested_at": "2026-08-09T09:14:02Z",
+  "snapshot_cutoff_at": "2026-08-09T09:14:07Z",
+  "generated_at": "2026-08-09T09:19:44Z",
+  "expires_at": "2026-08-16T09:19:44Z",
+  "archive_digest": "0eb3e36bfb24dcd9bb1d1bece1531216b59539a8fde17ee80224af0653c92aa3",
+  "encryption": {
+    "scheme": "aes-256-gcm",
+    "key_reference": "export-kek-2026-08"
+  },
+  "deletion_state_at_generation": "cooling_off",
+  "domains": [
+    {
+      "data_domain": "account-identity",
+      "disposition": "included",
+      "record_count": 412,
+      "content_digest": "0ea2cb7e5a3457c4c0c5160fd5026dbd3df328dcd148eb84006337e3c09f2920"
+    },
+    {
+      "data_domain": "authentication-session",
+      "disposition": "included",
+      "record_count": 9,
+      "content_digest": "572a30832396a9e11617884be2f8be5a3fe68995e98ee8f17ba9ba1b67ffa034"
+    },
+    {
+      "data_domain": "device-collection",
+      "disposition": "included",
+      "record_count": 3,
+      "content_digest": "5da21065d6a1e8098edcc7a168e1ea98d787ae84a4a82d8eca9aa060e7c8b498"
+    },
+    {
+      "data_domain": "usage-claims-scores",
+      "disposition": "included",
+      "record_count": 58211,
+      "content_digest": "de8d4733bb49855f1fd3f932d9a185a44e62bf73e728975899ee65ec0461b5e9"
+    },
+    {
+      "data_domain": "social-presence-notifications",
+      "disposition": "included",
+      "record_count": 74,
+      "content_digest": "8d9e0055daf6d06996e0d0e3a5d6059f97093d72a7e9fb845f84585a246024ed"
+    },
+    {
+      "data_domain": "integrity-moderation-appeals",
+      "disposition": "excluded",
+      "record_count": 0,
+      "exclusion_reason": "rights-of-others"
+    },
+    {
+      "data_domain": "requests-exports-deletion",
+      "disposition": "included",
+      "record_count": 6,
+      "content_digest": "552b864dc6bec040f296ba5821efa20d0635910e7ff84c10ba36b9650c207a68"
+    }
+  ],
+  "files": [
+    {
+      "logical_name": "account-identity/account.json",
+      "data_domain": "account-identity",
+      "media_type": "application/json",
+      "size_bytes": 2048,
+      "digest": "3f524cdc07a11d7c6220bdb049fe8dd41b27483c96cc59b581e022d547290d69",
+      "record_count": 412
+    },
+    {
+      "logical_name": "authentication-session/sessions.jsonl",
+      "data_domain": "authentication-session",
+      "media_type": "application/jsonl",
+      "size_bytes": 1024,
+      "digest": "e4ab4e3b1493d5a997b4e51cdefbaa10570ef3ea9432bd72e7b6a89654ceb7f6",
+      "record_count": 9
+    },
+    {
+      "logical_name": "device-collection/devices.jsonl",
+      "data_domain": "device-collection",
+      "media_type": "application/jsonl",
+      "size_bytes": 900,
+      "digest": "625e0f649de27800fc3bcf4c118ef79f69dcb762c2e73fbb1cfce0e7a86f6b80",
+      "record_count": 3
+    },
+    {
+      "logical_name": "usage-claims-scores/claims.jsonl",
+      "data_domain": "usage-claims-scores",
+      "media_type": "application/jsonl",
+      "size_bytes": 10485760,
+      "digest": "608cdb524384f5ee06edc2830d6b13a92047229398768ff88e28ad68d02569e8",
+      "record_count": 58211
+    },
+    {
+      "logical_name": "social-presence-notifications/social.jsonl",
+      "data_domain": "social-presence-notifications",
+      "media_type": "application/jsonl",
+      "size_bytes": 4096,
+      "digest": "b6e1288527a6032c0f29c9da2c599202cc250fb404e4783820d4ce0b09459989",
+      "record_count": 74
+    },
+    {
+      "logical_name": "requests-exports-deletion/requests.jsonl",
+      "data_domain": "requests-exports-deletion",
+      "media_type": "application/jsonl",
+      "size_bytes": 512,
+      "digest": "3efda6ee78c31bab6995b1122ec13f6adf73e55fb20b18be11027cba91bcc254",
+      "record_count": 6
+    }
+  ]
+}

@@ -2,20 +2,29 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.vibemaxxing.dev/export-manifest-v1.schema.json",
   "title": "Account export manifest v1",
+  "description": "What one export package says about itself. docs/privacy/PRIVACY_CONTRACT.md#export-privacy is the normative owner, docs/privacy/DATA_MAP.md names the seven domains and owns the Article 20 portability split, packages/schemas/planning-schema.sql#exports, #export_artifacts and #export_download_grants are the persistence owners, and the export-job machine owns the lifecycle.\n\nThe manifest answers for every domain, included or not. A package that simply omitted a domain was previously indistinguishable from a package that held nothing for it and from one whose producer forgot it existed, because the file list was the only inventory and a file list cannot record an absence. Every exclusion now carries a reason from a closed set, so the participant is told what is not in the package and why, and the completeness check is decidable rather than a count of files.\n\nNothing here is implemented. No export has been produced, no manifest has been written, and no grant has been issued.",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "export_id",
     "account_id",
     "scope",
     "requested_at",
+    "snapshot_cutoff_at",
     "generated_at",
     "expires_at",
     "archive_digest",
+    "encryption",
+    "domains",
     "files",
     "deletion_state_at_generation"
   ],
   "properties": {
+    "schema_version": {
+      "description": "The manifest format version. A package whose reader cannot tell which format it is holding is a package whose digests mean nothing, because what is digested is decided by the format.",
+      "const": 1
+    },
     "export_id": {
       "type": "string",
       "format": "uuid"
@@ -25,6 +34,7 @@
       "format": "uuid"
     },
     "scope": {
+      "description": "The typed scope the participant asked for. It selects which domains are in scope; it never decides on its own that a domain may be silently absent, which is what the domain plan below is for.",
       "enum": [
         "account",
         "claims",
@@ -33,6 +43,11 @@
       ]
     },
     "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "snapshot_cutoff_at": {
+      "description": "The single instant every included domain was read as of. One cutoff for the whole package rather than one per domain: two domains read at two instants produce a package whose social edges and whose claims disagree about what existed, and no reader can tell which half is current. docs/privacy/PRIVACY_CONTRACT.md records the export package as the one snapshot-time exception to rechecking authorization at read time, and that exception is only defensible because the subject and the viewer are the same person.",
       "type": "string",
       "format": "date-time"
     },
@@ -48,13 +63,50 @@
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
     },
+    "encryption": {
+      "description": "How the package is protected at rest, and under which key. The reference is an identifier and nothing that opens anything: a manifest travels beside the ciphertext it describes, so a manifest that carried what unlocks it would make the encryption a label. The planning validator refuses this schema if it names a property that could hold one.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scheme",
+        "key_reference"
+      ],
+      "properties": {
+        "scheme": {
+          "enum": [
+            "aes-256-gcm"
+          ]
+        },
+        "key_reference": {
+          "description": "An opaque identifier for the key the package was sealed under. It resolves inside the key store and nowhere else.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+        }
+      }
+    },
     "deletion_state_at_generation": {
+      "description": "The state of this account's deletion job when the package was generated, in the vocabulary the API publishes for it, which is the server-deletion machine less rebuilding-projections. That state is declared internal in docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md and DeletionJob.state does not carry it; a manifest is handed to the participant, so publishing it here would leak through the package what the API declines to say. It previously carried a fourth spelling of that vocabulary, in which the cooling-off state was snake-cased and the processing and complete states had different words entirely, and no machine, table or API enum used any of the three, so a manifest and the deletion job it described could not be compared at all.",
       "enum": [
         "none",
-        "cooling_off",
-        "executing",
-        "completed"
+        "requested",
+        "recent-auth-verified",
+        "cooling-off",
+        "processing",
+        "awaiting-local-receipt",
+        "complete",
+        "cancelled",
+        "failed"
       ]
+    },
+    "domains": {
+      "description": "One entry per domain in docs/privacy/DATA_MAP.md, always all seven. The planning validator compares this list to the domain enum in packages/schemas/data-disposition-v1.schema.json, so a domain added to the Article 30 record makes every fixture here incomplete rather than leaving the manifest quietly narrower than the record.",
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/domain_entry"
+      }
     },
     "files": {
       "type": "array",
@@ -65,6 +117,7 @@
         "additionalProperties": false,
         "required": [
           "logical_name",
+          "data_domain",
           "media_type",
           "size_bytes",
           "digest",
@@ -74,6 +127,10 @@
           "logical_name": {
             "type": "string",
             "pattern": "^[a-z0-9][a-z0-9._/-]{0,127}$"
+          },
+          "data_domain": {
+            "description": "Which domain this file belongs to. A file that belongs to no domain is a file the per-domain counts cannot be checked against.",
+            "$ref": "#/$defs/data_domain"
           },
           "media_type": {
             "enum": [
@@ -98,5 +155,138 @@
         }
       }
     }
-  }
+  },
+  "$defs": {
+    "data_domain": {
+      "enum": [
+        "account-identity",
+        "authentication-session",
+        "device-collection",
+        "usage-claims-scores",
+        "social-presence-notifications",
+        "integrity-moderation-appeals",
+        "requests-exports-deletion"
+      ]
+    },
+    "domain_entry": {
+      "description": "What the package holds for one domain. There is no value meaning \"we did not look\": a domain that held nothing is `included` with a record count of zero, which is a statement about the account, whereas an enum member for silence would let a package be complete by declining to answer — the same reason packages/schemas/consolidation-plan-v1.schema.json refuses a not-applicable disposition.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_domain",
+        "disposition",
+        "record_count"
+      ],
+      "properties": {
+        "data_domain": {
+          "$ref": "#/$defs/data_domain"
+        },
+        "disposition": {
+          "enum": [
+            "included",
+            "excluded"
+          ]
+        },
+        "record_count": {
+          "description": "How many records of this domain the package holds. Zero on an excluded domain, and zero on an included domain that held nothing.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "content_digest": {
+          "description": "The SHA-256 over this domain's records, present exactly when the domain is included. It is what makes a per-domain count checkable rather than asserted: a count with no digest beside it is a number the producer chose.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "exclusion_reason": {
+          "description": "Why the domain is absent, present exactly when it is excluded. The set is closed because an open one lets any omission be written into acceptability. `derived-not-portable` is the Article 20 split D-108 records, and a domain excluded for it is still supplied under Article 15 — the manifest says so rather than implying the data does not exist. `rights-of-others` is the Article 20(4) limit. `out-of-scope-for-request` is the participant's own typed scope and is refused when the scope is `all`.",
+          "enum": [
+            "derived-not-portable",
+            "rights-of-others",
+            "out-of-scope-for-request"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "disposition": {
+                "const": "included"
+              }
+            },
+            "required": [
+              "disposition"
+            ]
+          },
+          "then": {
+            "required": [
+              "content_digest"
+            ],
+            "not": {
+              "required": [
+                "exclusion_reason"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "disposition": {
+                "const": "excluded"
+              }
+            },
+            "required": [
+              "disposition"
+            ]
+          },
+          "then": {
+            "required": [
+              "exclusion_reason"
+            ],
+            "not": {
+              "required": [
+                "content_digest"
+              ]
+            },
+            "properties": {
+              "record_count": {
+                "const": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "description": "A request for everything cannot exclude a domain for being outside the request. The scope is the participant's own instruction and `all` is the instruction that leaves no domain outside it.",
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "all"
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      },
+      "then": {
+        "properties": {
+          "domains": {
+            "items": {
+              "properties": {
+                "exclusion_reason": {
+                  "not": {
+                    "const": "out-of-scope-for-request"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

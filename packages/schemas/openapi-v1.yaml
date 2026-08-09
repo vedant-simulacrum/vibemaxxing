@@ -2450,6 +2450,66 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExportRequest'
+  /exports/{export_id}/download-grant:
+    delete:
+      operationId: revokeExportDownloadGrant
+      description: >-
+        Revoke the download grant on one export package. `docs/privacy/PRIVACY_CONTRACT.md`
+        requires the grant to be short-lived and revocable, and revocable was a word:
+        the grant row carried no expiry, no revocation time and no reference to the
+        export, and no operation could end one. A participant who shared a link, or
+        opened one on a machine they no longer trust, had no way to close it and could
+        only wait for a purge that nothing bounded.
+        Revocation ends the grant and not the export. The package stays where it is and
+        the job stays in the state it reached, because destroying an export the
+        participant may still want is not what closing a link means; issuing a new grant
+        is a separate act.
+      x-authorization: authenticated-account
+      x-recent-auth: required
+      x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: ExportJob
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportJob'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: export_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
   /deletion-requests:
     post:
       operationId: requestDeletion
@@ -2501,6 +2561,70 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DeletionRequest'
+  /deletion-requests/{deletion_job_id}/cancellation:
+    post:
+      operationId: cancelDeletion
+      summary: Cancel a deletion request inside its cooling-off window
+      description: >-
+        `docs/privacy/DATA_MAP.md` states, as part of the Article 30 record, that the
+        deletion cooling-off window is seven days and is cancellable within it. The
+        `server-deletion` machine had no `cancelled` state and no transition out of
+        `cooling-off` other than forward, and no operation existed, so the window was a
+        delay rather than a reversal and the record described behaviour nothing could
+        perform. This is that transition's only route.
+        It is refused outside the window. `deletion_jobs` will not record a cancellation
+        whose time is not before `effective_after`, so a request that has begun
+        executing cannot be pulled back by a late call — the rows it has already deleted
+        are gone, and a cancellation that pretended otherwise would be a worse answer
+        than a refusal.
+        The actor is the participant under recent authentication. A worker cannot cancel
+        an erasure, because an erasure a worker can call off is not a right.
+      x-authorization: authenticated-account
+      x-recent-auth: required
+      x-idempotency: required-durable-request-hash
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: DeletionJob
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletionJob'
+          headers:
+            Idempotency-Replayed:
+              required: false
+              description: Present and true when this response was replayed byte-identically from the idempotency ledger rather than produced by executing the request.
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: deletion_job_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
   /consolidations/{consolidation_case_id}:
     get:
       operationId: getConsolidationPlan
@@ -4952,13 +5076,22 @@ components:
             - social
             - all
     ExportJob:
+      description: >-
+        One export request, as the participant sees it. `domains` is required and holds
+        one entry per domain in `docs/privacy/DATA_MAP.md`, always all seven, so the
+        surface cannot render a package as complete while being silent about a domain
+        it left out. `packages/schemas/export-manifest-v1.schema.json` is the manifest
+        inside the package and this is its projection; the two carry the same seven
+        keys and the same closed exclusion reasons.
       type: object
       additionalProperties: false
       required:
         - export_id
         - state
+        - scope
         - requested_at
         - expires_at
+        - domains
       properties:
         export_id:
           type: string
@@ -4972,12 +5105,88 @@ components:
             - downloaded
             - purged
             - failed
+        scope:
+          enum:
+            - account
+            - claims
+            - social
+            - all
         requested_at:
           type: string
           format: date-time
+        snapshot_cutoff_at:
+          description: >-
+            The instant every included domain was read as of. Absent until the snapshot
+            is taken, and never inferred from the request time: a package assembled
+            minutes after the request describes the account at the cutoff, not at the
+            moment the participant asked.
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
         expires_at:
           type: string
           format: date-time
+        download_grant:
+          description: >-
+            The current download grant, absent when none is outstanding. `revoked_at`
+            and `expires_at` are separate because they are different endings, and a
+            client that shows only one of them cannot tell the participant whether
+            their link closed because they closed it.
+          type: object
+          additionalProperties: false
+          required:
+            - expires_at
+          properties:
+            expires_at:
+              type: string
+              format: date-time
+            revoked_at:
+              oneOf:
+                - type: string
+                  format: date-time
+                - type: 'null'
+        domains:
+          type: array
+          minItems: 7
+          maxItems: 7
+          items:
+            $ref: '#/components/schemas/ExportDomainOutcome'
+    ExportDomainOutcome:
+      description: >-
+        What the package holds for one domain. There is no value meaning that the
+        producer did not look: a domain that held nothing is `included` with a count of
+        zero, and every exclusion names a reason from the closed set the manifest
+        schema declares. `derived-not-portable` is the Article 20 split D-108 records,
+        and a domain excluded for it is still supplied under Article 15.
+      type: object
+      additionalProperties: false
+      required:
+        - data_domain
+        - disposition
+        - record_count
+      properties:
+        data_domain:
+          enum:
+            - account-identity
+            - authentication-session
+            - device-collection
+            - usage-claims-scores
+            - social-presence-notifications
+            - integrity-moderation-appeals
+            - requests-exports-deletion
+        disposition:
+          enum:
+            - included
+            - excluded
+        record_count:
+          type: integer
+          minimum: 0
+        exclusion_reason:
+          enum:
+            - derived-not-portable
+            - rights-of-others
+            - out-of-scope-for-request
     DeletionRequest:
       type: object
       additionalProperties: false
@@ -4997,6 +5206,8 @@ components:
         - state
         - requested_at
         - effective_after
+        - blocked_by_legal_hold
+        - domain_effects
         - device_outcomes
       properties:
         deletion_job_id:
@@ -5010,13 +5221,38 @@ components:
             - processing
             - awaiting-local-receipt
             - complete
+            - cancelled
             - failed
         requested_at:
           type: string
           format: date-time
         effective_after:
+          description: >-
+            The end of the cooling-off window. Until it passes the request is
+            cancellable through cancelDeletion, and `deletion_jobs` refuses to record a
+            cancellation after it.
           type: string
           format: date-time
+        blocked_by_legal_hold:
+          description: >-
+            Whether a legal hold is stopping this request from executing. Article 12(4)
+            requires the controller to tell the participant when it is not acting on
+            their request, and a job that sits in cooling-off indefinitely with no
+            explanation is that failure. The field says the request is held; it does not
+            say what the hold is, and no field here does.
+          type: boolean
+        domain_effects:
+          description: >-
+            One entry per domain in `docs/privacy/DATA_MAP.md`, always all seven. A
+            hosted deletion that reported one aggregate outcome could not tell a
+            participant that their claims were deleted and their moderation record was
+            retained unlinked, which are different answers about different data and are
+            both true.
+          type: array
+          minItems: 7
+          maxItems: 7
+          items:
+            $ref: '#/components/schemas/DeletionDomainEffect'
         device_outcomes:
           description: >-
             One entry per enrolled device, always. D-076 requires each device to be
@@ -5029,6 +5265,51 @@ components:
           maxItems: 200
           items:
             $ref: '#/components/schemas/LocalDeletionOutcome'
+    DeletionDomainEffect:
+      description: >-
+        What the hosted erasure did to one domain. `erasure_action` is the disposition
+        registry's own vocabulary rather than a second spelling of it: `delete` removed
+        the rows, `key-destroy-retain` kept them and destroyed the key that bound them
+        to this person, `retain-unlinked` kept rows whose subject row is gone, and
+        `retain-pseudonymous` kept rows that were never bound by a destroyable key.
+        There is no state meaning that the domain was not looked at. A domain that held
+        nothing is `complete` with an affected count of zero.
+      type: object
+      additionalProperties: false
+      required:
+        - data_domain
+        - state
+        - erasure_action
+      properties:
+        data_domain:
+          enum:
+            - account-identity
+            - authentication-session
+            - device-collection
+            - usage-claims-scores
+            - social-presence-notifications
+            - integrity-moderation-appeals
+            - requests-exports-deletion
+        state:
+          enum:
+            - pending
+            - executing
+            - complete
+            - failed
+        erasure_action:
+          enum:
+            - delete
+            - key-destroy-retain
+            - retain-pseudonymous
+            - retain-unlinked
+        affected_row_count:
+          description: >-
+            Present exactly when the effect is complete, and never inferred from its
+            absence. A pending domain reports no count because nothing has been counted.
+          oneOf:
+            - type: integer
+              minimum: 0
+            - type: 'null'
     LocalDeletionOutcome:
       description: >-
         What one device did with one deletion command. `disposition` is the whole

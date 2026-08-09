@@ -873,19 +873,106 @@ create table audit_events (
 
 create table audit_events_default partition of audit_events default;
 
+-- One Article 15 or Article 20 request. PF-028, SR-013.
+--
+-- The row held four columns: an id, an account, a state and a nullable expiry. Every
+-- other thing `docs/privacy/PRIVACY_CONTRACT.md` requires of an export -- a typed
+-- scope, a coherent snapshot time, a manifest, checksums, encryption, and a
+-- short-lived revocable grant -- had no column, so the `export-job` machine could
+-- move through `snapshotting`, `encrypting` and `ready` while the table recorded
+-- nothing any of those three words produced.
+--
+-- `snapshot_cutoff_at` is one instant for the whole package rather than one per
+-- domain. Two domains read at two instants produce a package whose claims and whose
+-- social edges disagree about what existed, and a reader cannot tell which half is
+-- current. The privacy contract records the export as the single snapshot-time
+-- exception to rechecking authorization at read time, and that exception holds only
+-- because the subject and the viewer are the same person.
+--
+-- `recent_auth_verified_at` is the frozen grant. It is recorded when the request is
+-- made and never refreshed, so a package produced minutes later rests on the
+-- authentication the participant actually performed rather than on the session still
+-- being open when a worker got to it.
+--
+-- The state-dependent checks are the part a worker cannot skip. A job cannot reach
+-- `ready` without a manifest digest, an encryption key reference and an expiry: an
+-- export that is downloadable and unsealed, or downloadable and eternal, is refused
+-- by the table rather than by a worker's discipline.
 create table exports (
   export_id uuid primary key,
   account_id uuid not null references accounts(account_id),
+  scope text not null check (scope in ('account','claims','social','all')),
   state text not null check (state in ('requested','snapshotting','encrypting','ready','downloaded','purged','failed')),
-  expires_at timestamptz
+  revision integer not null default 1 check (revision > 0),
+  requested_at timestamptz not null,
+  recent_auth_verified_at timestamptz not null,
+  snapshot_cutoff_at timestamptz,
+  manifest_digest bytea check (octet_length(manifest_digest) = 32),
+  encryption_key_reference text,
+  generated_at timestamptz,
+  expires_at timestamptz,
+  purged_at timestamptz,
+  check (recent_auth_verified_at <= requested_at),
+  check (snapshot_cutoff_at is null or snapshot_cutoff_at >= requested_at),
+  check (state not in ('snapshotting','encrypting','ready','downloaded','purged') or snapshot_cutoff_at is not null),
+  check (
+    state not in ('ready','downloaded')
+    or (manifest_digest is not null and encryption_key_reference is not null
+        and generated_at is not null and expires_at is not null)
+  ),
+  check (expires_at is null or expires_at > requested_at),
+  check ((state = 'purged') = (purged_at is not null))
 );
 
+-- One Article 17 request and the plan it executes. PF-029, SR-013.
+--
+-- The row held four columns and could not express the thing the Article 30 record
+-- promises about it. `docs/privacy/DATA_MAP.md` states a seven-day cooling-off window
+-- that is cancellable within it; the machine had no `cancelled` state, the table had no
+-- window to be inside, and `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
+-- recorded the gap as an open item. A cancellation the participant is promised and the
+-- schema cannot hold is a promise made to a supervisory authority and to nobody else.
+--
+-- `effective_after` is that window as a value rather than as a sentence, and
+-- `cancelled_at < effective_after` is the rule that a cancellation happens inside it.
+-- The constraint is on the write. A worker reading "is it still cooling off?" and
+-- deciding correctly every time is not a control; a row that cannot record a
+-- cancellation after the window closed is.
+--
+-- `recent_auth_verified_at` is frozen at request time and never refreshed, so the
+-- erasure a worker performs a week later rests on the authentication the participant
+-- actually performed.
+--
+-- The legal hold is two columns and one refusal. A held job may sit in the states
+-- before execution and may be cancelled or fail; it may not be in `processing`,
+-- `rebuilding-projections`, `awaiting-local-receipt` or `complete`. Article 12(4)
+-- requires the participant to be told the request is not being acted on, which is what
+-- `DeletionJob.blocked_by_legal_hold` publishes -- that it is held, and not what the
+-- hold is.
 create table deletion_jobs (
   deletion_job_id uuid primary key,
   -- Deliberately not a foreign key: the job is the proof the deletion happened; it cannot reference what it deleted.
   account_id uuid not null,
   scope text not null check (scope in ('server','local','everything')),
-  state text not null check (state in ('requested','recent-auth-verified','cooling-off','processing','rebuilding-projections','awaiting-local-receipt','complete','failed'))
+  state text not null check (state in ('requested','recent-auth-verified','cooling-off','processing','rebuilding-projections','awaiting-local-receipt','complete','cancelled','failed')),
+  revision integer not null default 1 check (revision > 0),
+  requested_at timestamptz not null,
+  recent_auth_verified_at timestamptz not null,
+  effective_after timestamptz not null,
+  legal_hold_reference text,
+  legal_hold_placed_at timestamptz,
+  cancelled_at timestamptz,
+  completed_at timestamptz,
+  check (recent_auth_verified_at <= requested_at),
+  check (effective_after > requested_at),
+  check ((state = 'cancelled') = (cancelled_at is not null)),
+  check ((state = 'complete') = (completed_at is not null)),
+  check (cancelled_at is null or cancelled_at < effective_after),
+  check ((legal_hold_reference is null) = (legal_hold_placed_at is null)),
+  check (
+    legal_hold_reference is null
+    or state in ('requested','recent-auth-verified','cooling-off','cancelled','failed')
+  )
 );
 
 create table feature_flags (
@@ -1265,9 +1352,16 @@ create table appeal_decisions (
 );
 
 
+-- One file inside one package, and the domain it answers for. PF-028.
+--
+-- `data_domain` is the seven-key vocabulary `docs/privacy/DATA_MAP.md` declares and
+-- `packages/schemas/data-disposition-v1.json` carries on every row it covers. Without
+-- it a package was a list of file names, so "the export covers every domain" could not
+-- be evaluated against anything: a logical name is whatever the producer typed.
 create table export_artifacts (
   export_id uuid not null references exports(export_id),
   logical_name text not null,
+  data_domain text not null check (data_domain in ('account-identity','authentication-session','device-collection','usage-claims-scores','social-presence-notifications','integrity-moderation-appeals','requests-exports-deletion')),
   media_type text not null check (media_type in ('application/jsonl','application/json','application/cbor')),
   artifact_digest bytea not null check (octet_length(artifact_digest) = 32),
   size_bytes bigint not null check (size_bytes >= 0),
@@ -1275,13 +1369,39 @@ create table export_artifacts (
   primary key (export_id, logical_name)
 );
 
+-- The immutable domain-and-effect plan: one row per data domain per job. PF-029.
+--
+-- The column named a subsystem, was declared not null, and carried no vocabulary at
+-- all, so "the plan covers every domain" was unevaluable in the strongest sense -- any
+-- two workers could spell one subsystem two ways and both rows were accepted. `data_domain`
+-- is the seven-key set `docs/privacy/DATA_MAP.md` declares and
+-- `packages/schemas/data-disposition-v1.json` carries on every row it covers, so a
+-- plan is complete against the Article 30 record or it is not, and the primary key
+-- makes a domain appear exactly once.
+--
+-- `not-applicable` is gone from the state vocabulary, for the reason
+-- `packages/schemas/consolidation-plan-v1.schema.json` refuses the same value in the
+-- same position: it is a member meaning "we did not look", and with it every domain
+-- could be covered by declining to answer. A domain that held nothing for this account
+-- reaches `complete` with `affected_row_count` zero, which is a statement about the
+-- account rather than about the worker.
+--
+-- `erasure_action` repeats the disposition registry's own vocabulary rather than
+-- inventing a second one. It is what this job did to the domain -- deleted the rows,
+-- destroyed the key that bound them, kept them unlinked, kept them pseudonymous -- and
+-- because it is the registry's spelling, the effect can be compared to what the
+-- registry says the domain's tables were supposed to receive.
 create table deletion_effects (
   deletion_job_id uuid not null references deletion_jobs(deletion_job_id),
-  subsystem text not null,
-  state text not null check (state in ('pending','executing','complete','failed','not-applicable')),
-  effect_digest bytea,
+  data_domain text not null check (data_domain in ('account-identity','authentication-session','device-collection','usage-claims-scores','social-presence-notifications','integrity-moderation-appeals','requests-exports-deletion')),
+  state text not null check (state in ('pending','executing','complete','failed')),
+  erasure_action text not null check (erasure_action in ('delete','key-destroy-retain','retain-pseudonymous','retain-unlinked')),
+  affected_row_count bigint check (affected_row_count >= 0),
+  effect_digest bytea check (effect_digest is null or octet_length(effect_digest) = 32),
   completed_at timestamptz,
-  primary key (deletion_job_id, subsystem)
+  primary key (deletion_job_id, data_domain),
+  check ((state = 'complete') = (completed_at is not null)),
+  check (state <> 'complete' or affected_row_count is not null)
 );
 
 -- One command per enrolled device per deletion job. The state column is the
@@ -1642,11 +1762,35 @@ create table deletion_tombstones (
   check ((tombstone_class = 'erasure-domain') = (erasure_record_id is not null))
 );
 
+-- The short-lived revocable download grant. PF-028.
+--
+-- It held a subject, a revision and a creation time: no expiry, no revocation, and no
+-- reference to the export it granted access to. "Short-lived" and "revocable" are the
+-- two words `docs/privacy/PRIVACY_CONTRACT.md` uses about it, and the row could express
+-- neither, so the only thing bounding a download link was that nobody had written the
+-- code yet.
+--
+-- `expires_at` is `not null`, which is the shortness. A nullable expiry is an eternal
+-- grant one omitted value away, and the table is where that is refused rather than in
+-- the issuing worker.
+--
+-- Revocation and consumption are separate timestamps because they are separate facts:
+-- a participant who revokes a link that was already used is telling the product
+-- something different from one who revokes an unused link, and one column meaning
+-- "over" would lose which of the two happened.
 create table export_download_grants (
   export_download_grant_id uuid primary key,
-  subject_id uuid not null,
+  export_id uuid not null references exports(export_id),
+  grant_digest bytea not null check (octet_length(grant_digest) = 32),
   revision integer not null default 1 check (revision > 0),
-  created_at timestamptz not null
+  issued_at timestamptz not null,
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  consumed_at timestamptz,
+  created_at timestamptz not null,
+  check (expires_at > issued_at),
+  check (revoked_at is null or revoked_at >= issued_at),
+  check (consumed_at is null or consumed_at >= issued_at)
 );
 
 -- One row per transport attempt. This table exists at launch and holds only
@@ -2791,6 +2935,7 @@ create index invite_codes_issuer_idx on invite_codes (issued_by_account_id);
 
 -- Foreign-key referencing side: rights, erasure, release.
 create index exports_account_idx on exports (account_id);
+create index export_download_grants_export_idx on export_download_grants (export_id);
 create index deletion_jobs_account_idx on deletion_jobs (account_id);
 create index local_deletion_commands_job_idx on local_deletion_commands (deletion_job_id);
 create index local_deletion_commands_device_idx on local_deletion_commands (device_id);

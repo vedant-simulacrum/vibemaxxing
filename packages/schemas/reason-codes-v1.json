@@ -28,6 +28,7 @@
   },
   "operation_classes": {
     "all": [
+      "cancelDeletion",
       "cancelIdentityUnlink",
       "completeGitHubAuth",
       "completeXAuth",
@@ -81,6 +82,7 @@
       "requestExport",
       "revokeAllSessions",
       "revokeDevice",
+      "revokeExportDownloadGrant",
       "revokeSession",
       "rotateDeviceKey",
       "startDeviceAuth",
@@ -104,6 +106,7 @@
       "startXAuth"
     ],
     "authenticated": [
+      "cancelDeletion",
       "cancelIdentityUnlink",
       "confirmConsolidation",
       "createAppeal",
@@ -150,6 +153,7 @@
       "requestExport",
       "revokeAllSessions",
       "revokeDevice",
+      "revokeExportDownloadGrant",
       "revokeSession",
       "rotateDeviceKey",
       "submitClaimBatch",
@@ -163,6 +167,7 @@
       "submitClaimBatch"
     ],
     "mutating": [
+      "cancelDeletion",
       "cancelIdentityUnlink",
       "confirmConsolidation",
       "createAppeal",
@@ -188,6 +193,7 @@
       "requestExport",
       "revokeAllSessions",
       "revokeDevice",
+      "revokeExportDownloadGrant",
       "revokeSession",
       "rotateDeviceKey",
       "startDeviceAuth",
@@ -199,6 +205,7 @@
       "updateNotificationPreferences"
     ],
     "mutating-authenticated": [
+      "cancelDeletion",
       "cancelIdentityUnlink",
       "confirmConsolidation",
       "createAppeal",
@@ -222,6 +229,7 @@
       "requestExport",
       "revokeAllSessions",
       "revokeDevice",
+      "revokeExportDownloadGrant",
       "revokeSession",
       "rotateDeviceKey",
       "submitClaimBatch",
@@ -230,6 +238,7 @@
       "updateNotificationPreferences"
     ],
     "recent-auth": [
+      "cancelDeletion",
       "cancelIdentityUnlink",
       "confirmConsolidation",
       "createAppeal",
@@ -241,11 +250,13 @@
       "requestExport",
       "revokeAllSessions",
       "revokeDevice",
+      "revokeExportDownloadGrant",
       "revokeSession",
       "rotateDeviceKey",
       "unlinkIdentity"
     ],
     "idempotent-durable": [
+      "cancelDeletion",
       "cancelIdentityUnlink",
       "confirmConsolidation",
       "createAppeal",
@@ -267,6 +278,7 @@
       "requestExport",
       "revokeAllSessions",
       "revokeDevice",
+      "revokeExportDownloadGrant",
       "revokeSession",
       "rotateDeviceKey",
       "submitClaimBatch",
@@ -296,6 +308,7 @@
       "listSessions"
     ],
     "path-addressed": [
+      "cancelDeletion",
       "cancelIdentityUnlink",
       "confirmConsolidation",
       "createBoardInvitation",
@@ -309,6 +322,7 @@
       "markNotificationRead",
       "reportProviderAccess",
       "revokeDevice",
+      "revokeExportDownloadGrant",
       "revokeSession",
       "rotateDeviceKey"
     ],

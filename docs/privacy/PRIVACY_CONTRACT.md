@@ -337,6 +337,20 @@ Server deletion and local deletion are separate state machines.
 - “Delete everything” is a coordinated UX workflow, not one server command claiming remote local erasure.
 - Restored backups must reapply deletion tombstones before serving production traffic.
 
+### The hosted deletion plan
+
+One row per data domain per job, in `deletion_effects`, keyed on the seven keys `docs/privacy/DATA_MAP.md` declares. The plan is immutable in the sense that matters: a domain appears exactly once per job, so the set of questions a job answers is fixed when it is created and cannot be narrowed later by a worker that skipped one.
+
+Each row carries what the erasure did to that domain, in the disposition registry's own vocabulary — `delete`, `key-destroy-retain`, `retain-unlinked`, `retain-pseudonymous` — rather than in a second spelling of it. That is what lets a participant be told two true things at once: their accepted claims were deleted, and their moderation record was retained with its subject gone.
+
+There is no state meaning that a domain was not looked at. A domain that held nothing for this account reaches `complete` with an affected row count of zero, which is a statement about the account; an enum member for silence would have let every plan be complete by declining to answer, which is the reason `packages/schemas/consolidation-plan-v1.schema.json` refuses the same value in the same position.
+
+**During execution the account is frozen.** `accounts.state` is `deletion-pending` from the request until the job leaves the machine, and `packages/schemas/projection-authorization-v1.json` already makes `deletion-pending` deny every surface. A cancellation inside the cooling-off window returns the account to `active`; a restriction that was in force before the request is re-applied from the append-only moderation effects, because one state column cannot hold "pending deletion" and "restricted" at once.
+
+**A held deletion is not a silent one.** A legal hold stops the job before execution and is published to the participant as the fact that the request is held. What the hold is stays server-side.
+
+Nothing here is implemented. No plan has been built, no domain has been erased, and no hold has been placed.
+
 ### Per-device deletion
 
 `packages/schemas/local-deletion-v1.schema.json` is the machine-readable form of this section; `packages/schemas/planning-schema.sql` holds `local_deletion_commands` and `local_deletion_receipts`, and the `local-deletion-command` machine owns the lifecycle. Nothing here is implemented: no command has been issued, no daemon has executed one, and no receipt has been signed.
@@ -367,6 +381,18 @@ Exports require:
 - short-lived revocable download grant;
 - download and purge audit;
 - exclusion of other users' private data and internal abuse thresholds.
+
+`packages/schemas/export-manifest-v1.schema.json` is the manifest and `packages/schemas/planning-schema.sql` holds `exports`, `export_artifacts` and `export_download_grants`. Four of the requirements above were words until PF-028: the row had no scope, no snapshot time, no manifest digest and no encryption reference, and the grant row had no expiry, no revocation and no reference to the export it opened.
+
+**The package answers for every domain, included or not.** One entry per key in `docs/privacy/DATA_MAP.md`, always all seven. A file list cannot record an absence, so a package that omitted a domain was indistinguishable from one that held nothing for it and from one whose producer forgot it existed. Every exclusion now names a reason from a closed set: `derived-not-portable` for the Article 20 split D-108 records, `rights-of-others` for the Article 20(4) limit, and `out-of-scope-for-request` for the participant's own typed scope — which a request for everything may not use. A domain excluded as derived is still supplied under Article 15, and the manifest says so rather than implying the data does not exist.
+
+**One snapshot instant for the whole package.** Two domains read at two instants produce a package whose claims and whose social edges disagree about what existed, and no reader can tell which half is current. This is the single snapshot-time exception recorded above, and it holds only because the subject and the viewer are the same person.
+
+**The grant is short-lived and revocable, as values.** `expires_at` is `not null`, so an eternal grant is one the table refuses rather than one an issuing worker forgot to bound; `revokeExportDownloadGrant` is the route that ends one, and revocation and expiry are separate timestamps because they are different endings. Revoking a grant does not destroy the package: closing a link is not the same act as discarding an export the participant may still want.
+
+**The manifest carries no key material.** `encryption.key_reference` is an identifier that resolves inside the key store. A manifest travels beside the ciphertext it describes, and a manifest holding the key would make the encryption a label.
+
+No export has been produced, no manifest has been written and no grant has been issued.
 
 ## Local detector privacy
 
