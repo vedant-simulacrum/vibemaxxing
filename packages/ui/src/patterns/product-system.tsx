@@ -333,7 +333,7 @@ export function ProductActivityEventRow({
 
 export function ProductTrendChart({
   compare = false,
-  label = "Token Burn trend",
+  label = "Credited Token Burn trend",
 }: {
   compare?: boolean;
   label?: string;

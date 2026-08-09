@@ -17,7 +17,7 @@ The UI thesis is:
 1. **Ledger first.** Rank, identity, evidence, period, and burn must remain visually dominant.
 2. **Competition through data.** Social energy comes from rivals, overtakes, movement, streaks, and presence—not decorative gamification.
 3. **Privacy made visible.** The UI explains what leaves the device and what never does.
-4. **Exact language.** Token Burn is canonical; cash is always Estimated Cash Burn.
+4. **Exact language.** Credited Token Burn is what public surfaces publish; Token Burn is the raw figure and is confined to the participant's own surface under D-144. Cash is always Estimated Cash Burn.
 5. **Calm density.** Tables may be information-rich without becoming cramped or dashboard-like.
 6. **Honest evidence.** Standard, Hardened, and Imported are never visually conflated.
 7. **Responsive recomposition.** Mobile is a deliberate hierarchy, not a shrunken desktop table.
@@ -218,13 +218,13 @@ A quiet top navigation carrying: Rankings, Friends, Boards, Search, Notification
 
 - Period: Today, Week, Month, Season, Year, All time.
 - Scope: Global, Friends, Private boards, Organizations, Countries. Country scope is post-launch and must not appear as a launch-ready surface.
-- Metric: Token Burn, Estimated Cash Burn.
+- Metric: Credited Token Burn on public surfaces, Token Burn on the participant's own surface, Estimated Cash Burn.
 
 These controls appear once per screen. Do not duplicate them in multiple locations.
 
 ### 14.4 Leaderboard header
 
-Establishes, in one region: scope and period, total network Token Burn, estimated network Cash Burn, live participant count, the current user's rank, and the metric sort.
+Establishes, in one region: scope and period, total network Credited Token Burn, estimated network Cash Burn, live participant count, the current user's rank, and the metric sort.
 
 ### 14.5 Leaderboard table
 
@@ -250,7 +250,7 @@ It never exposes project names, files, paths, or transcript-derived detail.
 
 ### 14.7 Profile
 
-Opens with identity and competitive position: username, handle, country, active agent state, global rank, Token Burn, Estimated Cash Burn, streak, agents used.
+Opens with identity and competitive position: username, handle, country, active agent state, global rank, Credited Token Burn, Estimated Cash Burn, streak, agents used. The participant's own profile additionally shows the raw Token Burn and its confidence weight; a profile viewed by anyone else shows the credited figure only, because publishing both recovers the weight by division.
 
 Tabs: Overview, History, Agents, Models, Boards.
 

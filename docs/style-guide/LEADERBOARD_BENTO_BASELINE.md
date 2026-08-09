@@ -130,12 +130,12 @@ Production work must decide whether period selection is URL state, controlled ap
 The fixture exists to validate layout and must remain internally consistent:
 
 - current user: Vedant, `@vedant`, rank `#07`, up 3;
-- Token Burn today: `86.4M`;
-- seven-day Token Burn: `498.7M`;
+- Credited Token Burn today: `86.4M`;
+- seven-day Credited Token Burn: `498.7M`;
 - top model: `GPT-5.4`;
 - closest rival: Sam Rivera, `@samrivera`, rank `#08`;
-- Sam Token Burn today: `81.1M`;
-- Sam seven-day Token Burn: `476.2M`;
+- Sam Credited Token Burn today: `81.1M`;
+- Sam seven-day Credited Token Burn: `476.2M`;
 - Vedant leads Sam by `5.3M`; therefore the copy is exactly `Sam is 5.3M behind`.
 
 Never describe the relationship as Vedant being behind. Cash values, when added later, must use `Estimated Cash Burn` and cannot be labelled spend or cost.
@@ -160,7 +160,7 @@ Never describe the relationship as Vedant being behind. Cash values, when added 
 - Outer gutter becomes 16px.
 - Summary tiles use 16px internal padding and a tighter 12px grid gap.
 - Period control occupies the ledger width; update status moves below it.
-- Table retains rank, identity, current Token Burn, and the action.
+- Table retains rank, identity, current Credited Token Burn, and the action.
 - Model, seven-day burn, row avatars, and inline movement progressively hide.
 - No primary ledger row uses horizontal scrolling.
 

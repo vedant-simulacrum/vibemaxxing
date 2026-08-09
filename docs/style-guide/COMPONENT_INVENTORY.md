@@ -49,7 +49,7 @@ It absorbed the former `COMPONENTS.md` on 2026-08-06. The rules a component must
 | Product pattern | ProductFriendRow | Implemented | Approved friends-table row composition |
 | Product pattern | ProductBoardStandingRow | Implemented | Approved board-standings row composition |
 | Product pattern | ProductActivityEventRow | Implemented | Typed competitive-event row rhythm |
-| Product pattern | ProductTrendChart | Implemented | Token Burn trend and rival comparison, with accessible summary |
+| Product pattern | ProductTrendChart | Implemented | Credited Token Burn trend and rival comparison, with accessible summary |
 | Product pattern | ProductSparkline | Implemented | Compact rival direction cue supplementing exact text |
 | Product pattern | ProductRankChart | Implemented | Weekly rank movement summary |
 | Template | ProductShell | Implemented | Shared product header, navigation, search, account trigger, and mobile navigation |
@@ -70,7 +70,7 @@ The executable state catalogue lives in Storybook under `packages/ui`; the curat
 | `RankMovement` | Rank direction and magnitude are shown | A generic percentage change is shown | Accessible direction, number, and neutral state |
 | `EvidenceBadge` | Evidence level is Hardened, Standard, or Imported | General product status is shown | Text always carries meaning; shield supplements Hardened |
 | `PresenceIndicator` | Privacy-safe active-agent presence is shown | Project, file, prompt, or task context would be exposed | Announces “Active in”; never accepts private context |
-| `MetricValue` | Token Burn or Estimated Cash Burn is displayed | Unrelated currency or generic metrics are shown | Metric-specific formatting and explicit estimated label |
+| `MetricValue` | Credited Token Burn, Token Burn on the participant's own surface, or Estimated Cash Burn is displayed | Unrelated currency or generic metrics are shown | Metric-specific formatting and explicit estimated label |
 | `Progress` | A bounded value from 0–100 is meaningful | The value is indeterminate | Clamps input and exposes native progressbar values |
 | `LedgerRow` | A public leaderboard record is displayed | A generic data table row is sufficient | Composes rank, identity, presence, evidence, metric, and action |
 | `ProductShell` | A hosted product surface needs the canonical header and navigation | A standalone marketing or native surface is being composed | Owns wordmark, primary navigation, search, and account trigger |
@@ -88,7 +88,7 @@ The executable state catalogue lives in Storybook under `packages/ui`; the curat
 | `ProductFriendRow` | Friends tables show the approved identity, presence, rank, burn, model, and actions | A generic person row is sufficient | Reuses identity, movement, model, and action contracts |
 | `ProductBoardStandingRow` | Board standings show the approved member columns | A non-ranking membership list is shown | Current-user state and rank remain explicit |
 | `ProductActivityEventRow` | Competitive events share the approved ledger rhythm | Arbitrary social feed content is shown | Typed title/detail/trailing structure and unread label |
-| `ProductTrendChart` | Token Burn trend or rival comparison is shown | Exact analytical inspection is required | Accessible summary; code-native data graphic |
+| `ProductTrendChart` | Credited Token Burn trend or rival comparison is shown | Exact analytical inspection is required | Accessible summary; code-native data graphic |
 | `ProductSparkline` | A compact rival direction cue supplements exact text | It would be the only data representation | Requires an accessible label |
 | `ProductRankChart` | Weekly rank movement is summarized | Exact point inspection is required | Accessible summary and non-interactive SVG |
 
