@@ -43,6 +43,7 @@ The technical-specification completeness authority is `docs/planning/SCHEMA_AND_
 - Accounting/time/pricing: `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
 - Adapter stages and VibeProof boundary: `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`
 - VibeProof wire/state protocol: `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`, `packages/schemas/vibeproof-claim-v1.cddl`
+- The eleven-field shadow profile in `protocol/vibeproof-v1.cddl`, its divergence from the normative one and its retirement condition: `docs/architecture/VIBEPROOF_V1_CANONICAL_PROFILE.md`. Despite its filename it is not the canonical profile and does not own canonical encoding, COSE or limits; the line above does
 - Authoritative mutable state and platform behavior: `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
 - Universal compatibility: `docs/integrations/UNIVERSAL_AGENT_COMPATIBILITY.md`
 - Per-adapter integration contracts, one file per adapter: `docs/integrations/`. The first is `docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, which owns the Claude Code OTLP receive surface, its attribute strip list, its stage mapping and its certification tuple

@@ -1,5 +1,39 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "vocabulary_owner": "docs/planning/ARTIFACT_POLICY.md",
+  "evidence_ceilings": [
+    "none",
+    "schema-valid",
+    "structurally-consistent",
+    "fixture-consistent",
+    "cross-language-parity",
+    "normative-conformance",
+    "adversarial-tested",
+    "platform-exercised",
+    "production-evidence"
+  ],
+  "authority_classes": {
+    "normative-planning": {
+      "maximum_evidence_ceiling": "fixture-consistent",
+      "note": "Accepted planning authority. It defines intended behaviour and is never implementation or production evidence, so it cannot reach cross-language parity or above: two implementations agreeing is a property of implementations, not of the specification they read."
+    },
+    "candidate-planning": {
+      "maximum_evidence_ceiling": "structurally-consistent",
+      "note": "A proposed contract under active semantic review. No artifact currently carries this class; the cap is recorded so promoting one is a deliberate edit rather than a default."
+    },
+    "exploratory-prototype": {
+      "maximum_evidence_ceiling": "cross-language-parity",
+      "note": "Built from incomplete, simplified or conflicting contracts. Cross-language parity is the ceiling because two implementations reading the same non-normative format agree about the wrong authority, which is not conformance."
+    },
+    "historical-non-authoritative": {
+      "maximum_evidence_ceiling": "structurally-consistent",
+      "note": "Superseded reports, stale review packets and archived baselines. They may still be internally consistent; they are never current evidence."
+    },
+    "absent": {
+      "maximum_evidence_ceiling": "none",
+      "note": "A declared surface with no artifact at all: an eval suite whose fixtures and implementation do not exist. `none` is the ceiling that makes 'an eval suite reported as not_applicable is an absence of evidence, never a pass' a check rather than a sentence, because a not_applicable suite may declare no other ceiling."
+    }
+  },
   "artifacts": [
     {"path":"packages/schemas/vibeproof-claim-v1.cddl","authority_class":"normative-planning","evidence_ceiling":"schema-valid","normative_owner":"docs/architecture/VIBEPROOF_V1_PROTOCOL.md","known_incompatibilities":[],"prohibited_uses":["production-evidence-claim"]},
     {"path":"conformance/vibeproof/v1/exact-byte-vectors.json","authority_class":"normative-planning","evidence_ceiling":"fixture-consistent","normative_owner":"packages/schemas/vibeproof-claim-v1.cddl","known_incompatibilities":[],"prohibited_uses":["production-evidence-claim"]},

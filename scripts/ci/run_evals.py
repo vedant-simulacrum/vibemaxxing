@@ -23,9 +23,24 @@ from eval_validation import (
 
 
 ROOT = Path(__file__).resolve().parents[2]
-REQUIRED_FIELDS = frozenset({"id", "owner", "blocking_milestone", "status", "reason"})
+REQUIRED_FIELDS = frozenset(
+    {
+        "id",
+        "owner",
+        "blocking_milestone",
+        "status",
+        "reason",
+        "authority_class",
+        "evidence_ceiling",
+    }
+)
 BASELINE_FILENAME = "status-baseline-v1.json"
+AUTHORITY_REGISTRY = "conformance/p1140f/artifact-authority-v1.json"
 STATUSES = frozenset({"ready", "not_applicable"})
+# The ceiling a suite may claim on the strength of its fixture manifest alone, when
+# the manifest declares none of its own. A manifest binds fixture digests to a
+# command; that supports consistency with those fixtures and nothing above it.
+UNDECLARED_MANIFEST_CEILING = "fixture-consistent"
 JsonValue: TypeAlias = (
     str | int | float | bool | None | list["JsonValue"] | dict[str, "JsonValue"]
 )
@@ -193,6 +208,8 @@ def add_suite(suites: dict[str, Suite], record: dict[str, JsonValue]) -> None:
                 "blocking_milestone": record["blocking_milestone"],
                 "status": status,
                 "reason": reason,
+                "authority_class": record["authority_class"],
+                "evidence_ceiling": record["evidence_ceiling"],
                 "command": command,
                 "cases": cases,
                 "fixture_manifest": fixture_manifest,
@@ -233,6 +250,8 @@ def add_suite(suites: dict[str, Suite], record: dict[str, JsonValue]) -> None:
                 "blocking_milestone": record["blocking_milestone"],
                 "status": status,
                 "reason": reason,
+                "authority_class": record["authority_class"],
+                "evidence_ceiling": record["evidence_ceiling"],
                 "not_applicable_until": until,
             }
         case unreachable:
@@ -291,6 +310,141 @@ def introduced_components(suites: dict[str, Suite], root: Path) -> list[str]:
                 f"suite {suite_id} is not_applicable but its owning component exists: "
                 f"{', '.join(present)}; give it a command or restate the justification"
             )
+    return failures
+
+
+def load_authority_vocabulary(root: Path) -> tuple[list[str], dict[str, str]]:
+    """Read the declared authority classes and the ordered evidence-ceiling ladder.
+
+    The vocabulary lives in `conformance/p1140f/artifact-authority-v1.json`, which
+    `docs/planning/ARTIFACT_POLICY.md` owns in prose. It is read rather than
+    duplicated here, because a validator carrying its own copy of a vocabulary is
+    the mechanism by which a registry and its checker drift apart — which is the
+    defect `PF-056` records between this file and `validate_p1140f_authority.py`.
+
+    Fails closed: an unreadable or incoherent vocabulary is a broken constraint, and
+    the only safe reading of a broken constraint is that it is violated.
+    """
+    document = json.loads((root / AUTHORITY_REGISTRY).read_text())
+    ceilings = document.get("evidence_ceilings")
+    classes = document.get("authority_classes")
+    if not isinstance(ceilings, list) or not all(
+        isinstance(item, str) for item in ceilings
+    ):
+        raise ValueError(f"{AUTHORITY_REGISTRY} declares no evidence_ceilings ladder")
+    if len(set(ceilings)) != len(ceilings):
+        raise ValueError(f"{AUTHORITY_REGISTRY} repeats an evidence ceiling")
+    if not isinstance(classes, dict) or not classes:
+        raise ValueError(f"{AUTHORITY_REGISTRY} declares no authority_classes")
+    maxima: dict[str, str] = {}
+    for name, record in classes.items():
+        if not isinstance(record, dict):
+            raise ValueError(f"authority class {name} is not an object")
+        ceiling = record.get("maximum_evidence_ceiling")
+        if ceiling not in ceilings:
+            raise ValueError(
+                f"authority class {name} caps at {ceiling!r}, which is not a declared "
+                "evidence ceiling"
+            )
+        maxima[name] = ceiling
+    return ceilings, maxima
+
+
+def manifest_supported_ceiling(root: Path, suite: Suite) -> str:
+    """The highest ceiling a ready suite's fixture manifest can support.
+
+    This is the half of the check that an empty suite used to satisfy for free. A
+    manifest declaring its own `evidence_ceiling` caps the suite at that value; a
+    manifest that declares fixtures and no ceiling caps it at fixture consistency;
+    and a manifest with no fixtures at all caps it at `none`, so a suite cannot
+    reach a ceiling by having nothing for the ceiling to be about.
+    """
+    relative = suite["fixture_manifest"]
+    assert isinstance(relative, str)
+    document = json.loads((root / relative).read_text())
+    declared = document.get("evidence_ceiling")
+    if isinstance(declared, str) and declared:
+        return declared
+    fixtures = document.get("fixtures")
+    if isinstance(fixtures, list) and fixtures:
+        return UNDECLARED_MANIFEST_CEILING
+    return "none"
+
+
+def evidence_ceiling_violations(
+    suites: dict[str, Suite], root: Path, ceilings: list[str], maxima: dict[str, str]
+) -> list[str]:
+    """Every suite's declared ceiling must be one its own evidence can carry.
+
+    Three caps apply and the lowest wins:
+
+    * the ceiling must be a declared one and the class must be a declared class;
+    * `authority_class` caps the ceiling, so an exploratory suite cannot claim
+      normative conformance;
+    * a `not_applicable` suite is capped at `none`, because it has no fixture
+      manifest by construction and `docs/verification/EVAL_SYSTEM.md` says the
+      status is an absence of evidence rather than a pass. A `ready` suite is
+      capped by what its fixture manifest supports.
+
+    The `not_applicable` cap is the one that matters most here. Twenty-four of the
+    twenty-seven suites carry that status; before this, `authority_class` and
+    `evidence_ceiling` were parsed, allowed through an allowlist, and read by
+    nothing, so every one of them could have declared `production-evidence` and the
+    registry would still have validated.
+    """
+    order = {name: index for index, name in enumerate(ceilings)}
+    failures: list[str] = []
+    for suite_id in sorted(suites):
+        suite = suites[suite_id]
+        authority_class = suite["authority_class"]
+        ceiling = suite["evidence_ceiling"]
+        assert isinstance(authority_class, str) and isinstance(ceiling, str)
+        if authority_class not in maxima:
+            failures.append(
+                f"suite {suite_id} declares authority_class {authority_class!r}, which "
+                f"{AUTHORITY_REGISTRY} does not declare"
+            )
+            continue
+        if ceiling not in order:
+            failures.append(
+                f"suite {suite_id} declares evidence_ceiling {ceiling!r}, which "
+                f"{AUTHORITY_REGISTRY} does not declare"
+            )
+            continue
+        caps = [(maxima[authority_class], f"authority class {authority_class}")]
+        if suite["status"] == "not_applicable":
+            caps.append(
+                (
+                    "none",
+                    "the not_applicable status, which is an absence of evidence and "
+                    "never a pass",
+                )
+            )
+        else:
+            try:
+                caps.append(
+                    (
+                        manifest_supported_ceiling(root, suite),
+                        f"its fixture manifest {suite['fixture_manifest']}",
+                    )
+                )
+            except (OSError, ValueError, json.JSONDecodeError) as error:
+                failures.append(
+                    f"suite {suite_id} is ready and its fixture manifest cannot be "
+                    f"read to bound its evidence ceiling: {error}"
+                )
+                continue
+        for cap, because in caps:
+            if cap not in order:
+                failures.append(
+                    f"suite {suite_id} is capped at {cap!r} by {because}, which "
+                    f"{AUTHORITY_REGISTRY} does not declare"
+                )
+            elif order[ceiling] > order[cap]:
+                failures.append(
+                    f"suite {suite_id} declares evidence_ceiling {ceiling} but is "
+                    f"capped at {cap} by {because}"
+                )
     return failures
 
 
@@ -363,8 +517,15 @@ def validate_registry_against_baseline(
     except ValueError as error:
         print(f"invalid eval status baseline: {error}", file=sys.stderr)
         return 2
-    failures = status_regressions(suites, recorded) + introduced_components(
-        suites, root
+    try:
+        ceilings, maxima = load_authority_vocabulary(root)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        print(f"invalid artifact authority vocabulary: {error}", file=sys.stderr)
+        return 2
+    failures = (
+        status_regressions(suites, recorded)
+        + introduced_components(suites, root)
+        + evidence_ceiling_violations(suites, root, ceilings, maxima)
     )
     if failures:
         print("eval registry validation: FAIL", file=sys.stderr)
@@ -387,8 +548,9 @@ def validate_registry_against_baseline(
             + ", ".join(liftable)
         )
     print(
-        "claim_scope=declared-status-only; a ready suite declares an executable "
-        "command, not a proven property"
+        "claim_scope=declared-status-and-bounded-ceiling-only; a ready suite declares "
+        "an executable command, not a proven property, and a ceiling within its cap "
+        "is a claim its fixtures could support rather than one they have"
     )
     return 0
 

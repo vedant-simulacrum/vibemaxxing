@@ -25,6 +25,7 @@ import hashlib
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
@@ -40,6 +41,36 @@ ALG_ED25519 = -19
 
 COSE_SIGN1_TAG = 18
 CONTEXT_SIGNATURE1 = "Signature1"
+
+# Every way the decoder below refuses an input, as stable symbols. The negative
+# corpus names one of these per byte-level case and
+# `validate_vibeproof_negative_corpus` requires the decoder to raise exactly that
+# one, so a case cannot claim to test a malformation its bytes do not contain.
+# The set is enumerated here rather than inferred, so a refusal the corpus never
+# exercises is visible as a gap instead of being invisible.
+PROFILE_VIOLATIONS = frozenset(
+    {
+        "duplicate-key",
+        "float",
+        "indefinite-length",
+        "non-minimal-integer",
+        "reserved",
+        "simple-value",
+        "tag",
+        "trailing-bytes",
+        "truncated",
+    }
+)
+
+
+class ProfileViolation(ValueError):
+    """An input the VibeProof canonical profile refuses, tagged with which rule."""
+
+    def __init__(self, symbol: str, detail: str) -> None:
+        if symbol not in PROFILE_VIOLATIONS:
+            raise AssertionError(f"undeclared profile violation symbol: {symbol}")
+        super().__init__(f"{symbol}: {detail}")
+        self.symbol = symbol
 
 
 # --- minimal deterministic CBOR ------------------------------------------------
@@ -61,8 +92,18 @@ def encode_head(major: int, argument: int) -> bytes:
 
 
 def encode(value: object) -> bytes:
+    if value is None:
+        # `nil` is a declared value in the grammar: three claim labels are
+        # `X / nil`. It was unencodable here only because the committed payload hex
+        # was never re-encoded from a decoded instance.
+        return bytes([0xF6])
     if isinstance(value, bool):  # before int; bool is an int subclass
-        raise TypeError("the VibeProof profile encodes no booleans")
+        if value is not True:
+            # `29: true` is the whole privacy_pass field. A claim that did not pass
+            # the privacy boundary is never serialized, so `false` has no encoding
+            # rather than a discouraged one.
+            raise TypeError("the VibeProof profile never serializes false")
+        return bytes([0xF5])
     if isinstance(value, int):
         if value >= 0:
             return encode_head(0, value)
@@ -103,25 +144,78 @@ def encode_map(value: dict) -> bytes:
     return encode_head(5, len(items)) + b"".join(key + item for key, item in items)
 
 
-def decode_map_at(data: bytes, offset: int) -> tuple[dict, int]:
-    """Decode just enough CBOR to read a protected-header map back."""
+def decode_map_at(data: bytes, offset: int) -> tuple[Any, int]:
+    """Decode the profile's CBOR subset, starting at `offset`.
+
+    The name says "map" because reading a protected-header map back is what it was
+    written for. It now decodes claim and receipt payloads too, which carry an array
+    of reason codes and the simple values `true` and `nil`, so the committed bytes
+    can be checked against the CDDL rather than only against their own signature.
+
+    Everything outside the profile is refused rather than accommodated: indefinite
+    lengths, floats, `undefined`, and any tag. A decoder that quietly accepts what
+    the profile forbids cannot be used to prove a fixture obeys it.
+    """
+    if offset >= len(data):
+        raise ProfileViolation("truncated", f"no initial byte at offset {offset}")
     initial = data[offset]
     major, additional = initial >> 5, initial & 0x1F
     offset += 1
+    if additional == 31:
+        raise ProfileViolation(
+            "indefinite-length", f"indefinite-length item at offset {offset - 1}"
+        )
+    if 28 <= additional <= 30:
+        raise ProfileViolation(
+            "reserved", f"reserved additional information {additional}"
+        )
+    if major == 7:
+        if additional in {25, 26, 27}:
+            raise ProfileViolation("float", "the VibeProof profile bans floats")
+        simple = {20: False, 21: True, 22: None}
+        if additional not in simple:
+            raise ProfileViolation("simple-value", f"simple value {additional}")
+        return simple[additional], offset
     if additional < 24:
         argument = additional
     else:
         width = {24: 1, 25: 2, 26: 4, 27: 8}[additional]
+        if offset + width > len(data):
+            raise ProfileViolation(
+                "truncated", f"argument runs past the end at offset {offset}"
+            )
         argument = int.from_bytes(data[offset : offset + width], "big")
         offset += width
+        # RFC 8949 s4.2.1 preferred serialization. Accepting 0x1817 as 23 is how a
+        # decoder admits two encodings of one value, which is two different signed
+        # byte strings for one claim.
+        if argument < (24 if width == 1 else 1 << (8 * (width // 2))):
+            raise ProfileViolation(
+                "non-minimal-integer",
+                f"argument {argument} is not in its shortest form",
+            )
+    if major == 6:
+        # The profile permits exactly one tag, 18, and only as the outermost
+        # COSE_Sign1 wrapper. Payloads and header maps carry none, so any tag
+        # reached here is forbidden regardless of its number.
+        raise ProfileViolation("tag", f"tag {argument} at offset {offset - 1}")
+    if major == 4:
+        items = []
+        for _ in range(argument):
+            item, offset = decode_map_at(data, offset)
+            items.append(item)
+        return items, offset
     if major == 0:
         return argument, offset
     if major == 1:
         return -argument - 1, offset
-    if major == 2:
-        return data[offset : offset + argument], offset + argument
-    if major == 3:
-        return data[offset : offset + argument].decode("utf-8"), offset + argument
+    if major in {2, 3}:
+        if offset + argument > len(data):
+            raise ProfileViolation(
+                "truncated", f"string of {argument} bytes runs past the end"
+            )
+        chunk = data[offset : offset + argument]
+        return (chunk if major == 2 else chunk.decode("utf-8")), offset + argument
     if major == 5:
         result = {}
         for _ in range(argument):
@@ -131,10 +225,27 @@ def decode_map_at(data: bytes, offset: int) -> tuple[dict, int]:
                 # RFC 9052 s9: applications MUST NOT parse and process a message
                 # with the same label twice. Most CBOR libraries silently
                 # last-write-wins here, which is why this has to be explicit.
-                raise ValueError(f"duplicate map label on decode: {key!r}")
+                raise ProfileViolation(
+                    "duplicate-key", f"duplicate map label on decode: {key!r}"
+                )
             result[key] = item
         return result, offset
-    raise ValueError(f"unsupported major type {major} at offset {offset}")
+    raise AssertionError(f"unreachable major type {major}")
+
+
+def decode_exact(data: bytes) -> Any:
+    """Decode one profile item and require it to consume every byte.
+
+    Trailing bytes after a complete item are the classic smuggling primitive: a
+    verifier that hashes the whole buffer and a verifier that decodes the first
+    item disagree about what was signed.
+    """
+    value, consumed = decode_map_at(data, 0)
+    if consumed != len(data):
+        raise ProfileViolation(
+            "trailing-bytes", f"{len(data) - consumed} bytes after a complete item"
+        )
+    return value
 
 
 # --- vector construction -------------------------------------------------------

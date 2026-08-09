@@ -89,7 +89,9 @@ class CanonicalEncoderTests(unittest.TestCase):
             self.generator.decode_map_at(duplicated, 0)
 
     def test_distinct_labels_decode_normally(self) -> None:
-        decoded, _ = self.generator.decode_map_at(bytes.fromhex("a2" + "0100" + "0200"), 0)
+        decoded, _ = self.generator.decode_map_at(
+            bytes.fromhex("a2" + "0100" + "0200"), 0
+        )
         self.assertEqual(decoded, {1: 0, 2: 0})
 
     def test_floats_are_refused(self) -> None:
@@ -97,9 +99,19 @@ class CanonicalEncoderTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.generator.encode(1.5)
 
-    def test_booleans_are_refused(self) -> None:
+    def test_false_is_refused_and_true_and_nil_are_not(self) -> None:
+        """`29: true` and three `X / nil` labels are declared by the grammar.
+
+        The encoder refused all three until the vectors were checked against the CDDL,
+        which never surfaced because the committed payload hex was copied rather than
+        re-encoded from a decoded instance. `false` stays unencodable: a claim that did
+        not pass the privacy boundary is never serialized, so it has no encoding rather
+        than a discouraged one.
+        """
+        self.assertEqual(self.generator.encode(True), bytes.fromhex("f5"))
+        self.assertEqual(self.generator.encode(None), bytes.fromhex("f6"))
         with self.assertRaises(TypeError):
-            self.generator.encode(True)
+            self.generator.encode(False)
 
     def test_round_trip_through_the_decoder(self) -> None:
         original = {1: -19, 3: "application/x+cbor", 4: b"\x00" * 16, 1001: 1}

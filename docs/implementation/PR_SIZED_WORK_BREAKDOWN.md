@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 202 |
+| `not-started` | 199 |
 | `in-progress` | 9 |
-| `landed` | 43 |
+| `landed` | 46 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 155 assertions across 43 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 174 assertions across 46 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 17.
+Startable now — not done, and every dependency done: 14.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-048`, `PF-054`, `OS-001`, `OS-003`, `OS-009`.
+`PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-048`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,7 +90,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 12 | `PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
+| 1 | 10 | `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
 | 2 | 6 | `PF-006`, `PF-018`, `PF-022`, `PF-027`, `PF-031`, `PF-032` |
 | 3 | 2 | `PF-007`, `PF-023` |
 | 4 | 2 | `PF-008`, `PF-029` |
@@ -99,7 +99,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 | 7 | 1 | `PF-035` |
 | 8 | 1 | `PF-036` |
 
-Statuses additionally checkable against artifact presence: 197 of 260. The other 63 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 196 of 260. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -136,26 +136,56 @@ Evidence: unittest tests.ci.test_artifact_quarantine
 Exit: one VibeProof v1 wire authority remains.
 
 ### PF-002 — Align normative protocol and conformance ownership
-Files: `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`, `docs/architecture/VIBEPROOF_V1_CANONICAL_PROFILE.md`, `packages/schemas/vibeproof-claim-v1.cddl`, `conformance/vibeproof/v1/exact-byte-vectors.json`, `conformance/vibeproof/v1/malformed-resource-corpus.json`
-Acceptance: `python3 scripts/repository/generate_vibeproof_vectors.py --check` exits 0, and every CDDL rule name in `vibeproof-claim-v1.cddl` appears in exactly one of the two vector files; a second occurrence in a third file fails the check.
+Files: `docs/architecture/VIBEPROOF_V1_CANONICAL_PROFILE.md`, `docs/project/DOCUMENTATION.md`, `conformance/vibeproof/v1/exact-byte-vectors.json`, `conformance/vibeproof/v1/malformed-resource-corpus.json`, `conformance/vibeproof/v1/manifest.json`, `conformance/vibeproof/v1/README.md`, `scripts/repository/cddl_instance.py` (new), `scripts/repository/generate_vibeproof_vectors.py`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_vibeproof_rule_ownership.py` (new), `tests/ci/test_vibeproof_vectors.py`
+Acceptance: `generate_vibeproof_vectors.py --check` exits 0; every rule in `vibeproof-claim-v1.cddl` is declared by exactly one of the two vector files, where a declaration is a JSON string equal to the rule name and a path merely containing one is not; no other JSON document under `conformance/` or `evals/` declares a rule or an ownership key; the rules `exact-byte-vectors.json` pins equal the recomputed reference closure of the six messages it encodes; both payloads and both protected-header maps decode, satisfy their rule with the exact declared label set, and re-encode to the committed bytes; and both COSE_Sign1 envelopes are tag 18 over four elements holding the fixture's own bytes.
 Depends: PF-001
 Repair: P-1140F-1
 Serves: SR-005
 Est: 8-12
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: validator scripts/repository/generate_vibeproof_vectors.py --check
+Evidence: unittest tests.ci.test_vibeproof_rule_ownership
+Evidence: unittest tests.ci.test_vibeproof_vectors
+Evidence: contains 1 conformance/vibeproof/v1/exact-byte-vectors.json :: cddl_rules_pinned
+Evidence: contains 1 conformance/vibeproof/v1/malformed-resource-corpus.json :: cddl_rules_unpinned
+Evidence: missing conformance/vibeproof/v1/negative-vectors.json
+
+**The last acceptance clause was enforced by nothing.** Before this unit no check in the repository read a CDDL rule name against a vector file, in any direction. The clause could not have failed on a third file because it could not have failed on the first two either, and as written it was also unsatisfiable: not one of the twenty-six rule names appeared in either vector file, because both hold hex and neither held a declaration. The rewritten clause is the same intent expressed as something observable — ownership is declared in the file that claims it, and the declaration is checked against the grammar and against the bytes.
+
+**A substring rule would have been worse than none.** `conformance/vibeproof/v1/manifest.json` carries `packages/schemas/vibeproof-claim-v1.cddl` and `packages/schemas/reason-codes-v1.json`, which contain the rule names `vibeproof-claim-v1` and `reason-code` inside them. Substring matching fails on the file that names the authority, and the next author learns to weaken the check rather than to fix a defect. A declaration is therefore whole-string equality. `packages/schemas/` is out of scope for the third-file scan on a stated basis rather than by omission: nine JSON Schema documents there define `$defs` named `digest32`, `uuid7`, `registered-id` and `uint64`, which are definition names in a different language and namespace, and the hazard the clause exists for is a third conformance corpus rather than a coincident word.
+
+**What was actually broken.** `validate_cddl_file` proves the grammar parses and that named rules exist, and says in its own docstring that it validates no instance. Nothing else compared a committed byte to the grammar, so the vectors could have encoded a completely different message, signed it correctly, reproduced from the recorded seed and passed every check. `scripts/repository/cddl_instance.py` now checks the subset the VibeProof messages use — closed integer-labelled maps, ranges, `bytes .size N`, `nil`, `true`, homogeneous arrays with occurrence bounds and named references — and raises rather than skipping anything outside it, because a checker that ignores what it does not understand reports the same green as one that checked.
+
+Two encoder defects surfaced from that work and are fixed here. `decode_map_at` could not decode a claim payload at all — it had no array or simple-value support, and it accepted non-minimal integers, indefinite lengths, tags and truncated items — and `encode` refused `nil` and `true`, both of which the grammar declares (`29: true` and three `X / nil` labels). Neither showed because the committed payload hex was copied rather than round-tripped. `false` stays unencodable: a claim that did not pass the privacy boundary is never serialized.
+
+`docs/architecture/VIBEPROOF_V1_CANONICAL_PROFILE.md` was a second document owning canonical encoding, and it described the wrong profile. `VIBEPROOF_V1_PROTOCOL.md` declares that it owns canonical encoding, COSE, limits and state transitions; the canonical-profile file described the eleven-field shadow codec — three token categories, a 1024-byte limit, a client-selected evidence class, and COSE "intentionally out of scope" — under a filename that says canonical. It now owns the shadow profile's status and retirement condition and says at the top that it is not the canonical profile. It also records a hole `PF-002` cannot close: `protocol/vibeproof-v1.cddl` is the shadow grammar, four of its consumers are classified `exploratory-prototype` in `conformance/p1140f/artifact-authority-v1.json` and the grammar itself is not, and registering it requires a quarantine notice inside `protocol/`, which is outside this unit's paths.
 
 - inventory CDDL labels, COSE headers, external AAD, exact vectors, malformed/resource corpus;
 - define generation boundaries for Rust/Go types;
 - define exact independent implementation evidence expected after P-1104.
 
 ### PF-003 — Artifact/evidence maturity registry
-Files: `conformance/p1140f/artifact-authority-v1.json`, `evals/suites/suites.yaml`, `scripts/ci/run_evals.py`, `docs/verification/EVAL_SYSTEM.md`
-Acceptance: `python3 scripts/ci/run_evals.py --validate-registry` exits 0 and fails when a suite declares an `evidence_ceiling` its fixtures cannot support; every suite in `suites.yaml` carries an `authority_class` drawn from the registry vocabulary.
+Files: `conformance/p1140f/artifact-authority-v1.json`, `conformance/p1140f/artifact-authority-v1.schema.json`, `evals/suites/suites.yaml`, `scripts/ci/run_evals.py`, `scripts/repository/validate_p1140f_authority.py`, `docs/verification/EVAL_SYSTEM.md`, `docs/planning/ARTIFACT_POLICY.md`, `tests/ci/test_run_evals.py`, `tests/ci/test_gate_ledger.py`, `tests/ci/test_generate_issue_plan.py`
+Acceptance: `run_evals.py --validate-registry` exits 0; every suite in `suites.yaml` carries an `authority_class` and an `evidence_ceiling` drawn from the vocabulary `conformance/p1140f/artifact-authority-v1.json` declares, and validation fails on a value the registry does not declare; a suite's ceiling may not exceed the lowest of its authority class's cap, `none` when the suite is `not_applicable`, and what its fixture manifest supports — the manifest's own ceiling, or `fixture-consistent` when it binds fixtures, or `none` when it binds none.
 Depends: PF-001
 Repair: P-1140F-1
 Serves: SR-005
 Est: 8-10
-Status: not-started
+Status: landed
+Evidence: validator scripts/ci/run_evals.py --validate-registry
+Evidence: validator scripts/repository/validate_p1140f_authority.py
+Evidence: unittest tests.ci.test_run_evals
+Evidence: contains 27 evals/suites/suites.yaml :: authority_class
+Evidence: contains 27 evals/suites/suites.yaml :: evidence_ceiling
+Evidence: contains 1 conformance/p1140f/artifact-authority-v1.json :: authority_classes
+Evidence: absent conformance/p1140f/artifact-authority-v1.schema.json :: "enum": ["normative-planning"
+
+**The ceiling check did not exist.** It was not weak and it was not satisfiable by an empty suite; `run_evals.py` admitted `authority_class` and `evidence_ceiling` to its key allowlist and read neither, with a comment saying they are declarative only and carry no execution semantics. One of the twenty-seven suites carried them at all. Every one of the other twenty-six could have declared `production-evidence` and the registry would still have validated.
+
+**Absence had to lower the ceiling, not escape it.** A check phrased as "the fixtures must not contradict the declared ceiling" is satisfied for free by a suite with no fixtures, and twenty-four of the twenty-seven suites are `not_applicable` and have no fixture manifest at all — the emptiest suites in the registry would have been the ones it never questioned. So the cap is derived from what the manifest *binds*: a manifest with no fixtures caps its suite at `none`, and a `not_applicable` suite is capped at `none` directly, which is `docs/verification/EVAL_SYSTEM.md`'s rule that the status is an absence of evidence rather than a pass, expressed as a value.
+
+`none` is new and is the ladder's floor; `absent` is a new authority class and is the only one capped there. Both are declared in `docs/planning/ARTIFACT_POLICY.md`, which owns the vocabulary, and both are machine-readable in the authority registry so the caps are read rather than restated. The schema no longer carries a second copy of the enums, and `validate_p1140f_authority.py` no longer carries a third: it read a hard-coded ladder and applied a cap to exactly one class, so any other class was capped by nothing. That is the same drift `PF-056` records between these two files.
 
 - classify every executable suite and fixture as structural, semantic, prototype, runtime evidence, or certification;
 - rename overclaiming suites;
@@ -935,14 +965,31 @@ Research on 2026-08-05 established that Anthropic's Admin API (`/v1/organization
 
 Consequence: E1 evidence is reachable **today for organizations and unreachable for individuals**. This bears directly on the ranking-integrity limits recorded in `docs/security/THREAT_MODEL.md` and determines whether a credible evidence tier exists at all. It affects the identity and board data model, so it is decided before ranking contracts are frozen rather than after.
 
-### PF-054 — Author the negative CBOR corpus
-Files: `conformance/vibeproof/v1/negative-vectors.json` (new), `docs/architecture/VIBEPROOF_V1_CANONICAL_PROFILE.md`
-Acceptance: a decoder rejects every vector for the stated reason; duplicate keys, non-minimal integers, indefinite-length containers, and trailing bytes are each covered.
+### PF-054 — Make the negative CBOR corpus executable and sole
+Files: `conformance/vibeproof/v1/malformed-resource-corpus.json`, `conformance/vibeproof/v1/manifest.json`, `conformance/vibeproof/v1/README.md`, `scripts/repository/generate_vibeproof_vectors.py`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_vibeproof_rule_ownership.py`, `tests/ci/test_work_unit_status.py`
+Acceptance: every case states its input exactly one way; every case that states it as hex is decoded by the canonical profile decoder and must be refused with the exact `decoder_signal` it declares, so a case cannot claim a malformation its bytes do not contain; every refusal the profile decoder can produce is exercised by at least one case; every `registry_reason_code` resolves in `packages/schemas/reason-codes-v1.json`, which the suite manifest declares as this corpus's reason authority; every stage and outcome is one the corpus declares; and `malformed-resource-corpus.json` is the only negative-vector file, which `PF-002`'s ownership check enforces.
 Depends: none
 Est: 4-6
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_vibeproof_rule_ownership
+Evidence: contains 9 conformance/vibeproof/v1/malformed-resource-corpus.json :: decoder_signal
+Evidence: contains 27 conformance/vibeproof/v1/malformed-resource-corpus.json :: registry_reason_code
+Evidence: missing conformance/vibeproof/v1/negative-vectors.json
 
-`vibeproof-claim-v1.cddl` is the strongest artifact in the repository — all nine types resolve, COSE alg −8 and tag 18 are pinned, byte-exact positive vectors exist. Its gap is that only positive vectors exist, and canonicalization, nesting depth, and allocation ceilings live in prose rather than in testable form. Batch, rotation, gap, and correction vectors are also absent.
+**The original premise was false and the original acceptance was vacuous.** `conformance/vibeproof/v1/malformed-resource-corpus.json` already held twenty negative cases, and duplicate keys, non-minimal integers, indefinite containers and trailing bytes were four of them. All four cases the acceptance named already existed, so it passed on the unrepaired tree and had done since the corpus was written. "Batch, rotation, gap, and correction vectors are also absent" was half wrong too: `batch-257-claims`, `batch-1048577-bytes` and `rotation-payload-mismatch` were there. Gap and correction were the two genuinely missing axes, and are added.
+
+**`negative-vectors.json` is deliberately not created.** The `Files:` line above used to create it, which would have broken `PF-002` in the same pull request: a third file declaring a rule name is exactly what `PF-002`'s ownership check refuses, and `validate_conformance_manifests` separately fails on any file in that directory no manifest case names. `P-008` named the same file and no longer does. The corpus records the decision in its own `note` so a future reader finds it where the file would have been.
+
+**What was actually missing is that nothing decoded the corpus.** `validate_vibeproof_vectors` checked that twenty hard-coded case identifiers were present — the same shape of check as the acceptance, and satisfied by the same twenty strings. A case could name a malformation its bytes did not contain, or carry bytes that decoded cleanly, and no check would notice. Nine cases now carry a `decoder_signal`, the profile decoder must refuse each with exactly that signal, and `PROFILE_VIOLATIONS` enumerates every refusal the decoder can produce so an uncovered one is a failure rather than an invisible gap. Three of the nine — a reserved additional-information value, `undefined`, and a truncated byte string — are new, and each is a refusal the profile requires and the corpus did not exercise.
+
+**Reason codes resolved against nothing.** `manifest.json` has declared `packages/schemas/reason-codes-v1.json` as this suite's reason authority since it was written, and none of the twenty local reason codes — `protocol-duplicate-key` and its siblings — resolved against it; the registry uses `CLAIM_INVALID_CANONICAL_ENCODING` casing. Each case now carries a `registry_reason_code` that resolves, alongside the local identifier the other artifacts cite. The manifest's single `expect_reason_code` names the canonical-decode class and the note records the ten codes the corpus actually spans.
+
+`wrong-algorithm` said "replace protected alg -8 with -7". D-192 and RFC 9864 moved the profile to `-19`, so the case mutated one forbidden algorithm into another and tested no boundary at all. It now reads "-19 with -8".
+
+The eighteen cases that state a mutation, a generator or a transaction state stay prose and are counted as prose. They are not executable until an implementation reads them, and `P-008` is the unit that makes one do so.
+
+Two tests were pinned to this document's shape rather than to its meaning and are repaired here. `test_not_started_contradicted_by_an_existing_artifact_fails` named `PF-054` and the exact `(new)` path on its `Files:` line, so it failed the moment this unit stopped promising that file; it now finds any `not-started` unit that promises one. `test_a_unit_missing_a_required_field_is_not_emitted` asserted a literal line number for `PF-037`, so every edit anywhere above it in this file failed a test about a missing `Acceptance:` field; it now computes the line. Both failures had nothing to do with what the tests check.
 
 ### PF-055 — Repair the P-1140F authority validator
 Files: `scripts/repository/validate_p1140f_authority.py`, `tests/ci/test_validate_p1140f_authority.py` (new)
@@ -1399,8 +1446,10 @@ Est: 8-12
 Status: not-started
 
 ### P-008 Malformed, mutation and resource corpus
-Files: `conformance/vibeproof/v1/malformed-resource-corpus.json`, `conformance/vibeproof/v1/negative-vectors.json` (new)
-Acceptance: both decoders reject every case with its recorded reason; a bounded-allocator test fails when either exceeds the declared allocation ceiling or nesting depth; a single-bit mutation of any accepted vector is rejected rather than decoded.
+Files: `conformance/vibeproof/v1/malformed-resource-corpus.json`
+Acceptance: both decoders reject every case with its recorded reason and, for the cases that carry bytes, with its recorded `decoder_signal`; a bounded-allocator test fails when either exceeds the declared allocation ceiling or nesting depth; a single-bit mutation of any accepted vector is rejected rather than decoded.
+
+`conformance/vibeproof/v1/negative-vectors.json (new)` is removed from the `Files:` line. `PF-054` resolved against the corpus that exists rather than adding a second file, and `PF-002` now fails on a third file declaring a CDDL rule. This unit is what makes the eighteen prose cases executable; it does not need a new file to do it.
 Depends: P-003, P-005
 Est: 10-14
 Status: not-started

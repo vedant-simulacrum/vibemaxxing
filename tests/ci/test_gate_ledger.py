@@ -20,8 +20,8 @@ class GateLedgerTests(unittest.TestCase):
         registry = {
             "version": "1",
             "suites": [
-                {"id": "first", "owner": "security", "blocking_milestone": "g0", "status": "not_applicable", "reason": "Not built.", "not_applicable_until": [ABSENT]},
-                {"id": "second", "owner": "backend", "blocking_milestone": "g1", "status": "not_applicable", "reason": "Not built.", "not_applicable_until": [ABSENT]},
+                {"id": "first", "owner": "security", "blocking_milestone": "g0", "status": "not_applicable", "reason": "Not built.", "authority_class": "absent", "evidence_ceiling": "none", "not_applicable_until": [ABSENT]},
+                {"id": "second", "owner": "backend", "blocking_milestone": "g1", "status": "not_applicable", "reason": "Not built.", "authority_class": "absent", "evidence_ceiling": "none", "not_applicable_until": [ABSENT]},
             ],
         }
         with tempfile.TemporaryDirectory() as temporary_directory:
