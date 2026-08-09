@@ -37,7 +37,7 @@ Two fields are conditional. `Evidence:` is required on a `landed` unit, may repe
 
 A unit missing any of the five is not ready to start, regardless of how well its prose reads.
 
-`scripts/repository/validate_work_unit_status.py` enforces all of it. It fails on a missing, empty or duplicated field, on an `Est:` above the ceiling, on a `Depends:` entry that names no heading, on a dependency cycle, on a dependency pointing at a superseded unit, and on any SQL table in `packages/schemas/planning-schema.sql` that no unit names. `PF-037` remains open for the separate half of that work: `generate_issue_plan.py` still emits records that carry none of these fields and hardcodes a phase gate.
+`scripts/repository/validate_work_unit_status.py` enforces all of it. It fails on a missing, empty or duplicated field, on an `Est:` above the ceiling, on a `Depends:` entry that names no heading, on a dependency cycle, on a dependency pointing at a superseded unit, and on any SQL table in `packages/schemas/planning-schema.sql` that no unit names. `PF-037` closed the separate half of that work: `generate_issue_plan.py` copies all five fields into every issue record, reads the phase gate from `conformance/p1140f/gate-authorization-v1.json` rather than naming one, and fails when its own reading of any unit's status differs from this validator's.
 
 ### How status stays true
 
@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 203 |
+| `not-started` | 202 |
 | `in-progress` | 13 |
-| `landed` | 38 |
+| `landed` | 39 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 120 assertions across 38 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 128 assertions across 39 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 21.
+Startable now — not done, and every dependency done: 20.
 
-`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-037`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `OS-001`, `OS-009`.
+`PF-002`, `PF-003`, `PF-005`, `PF-010`, `PF-016`, `PF-017`, `PF-020`, `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `PF-041`, `PF-043`, `PF-045`, `PF-048`, `PF-049`, `PF-054`, `OS-001`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -659,15 +659,29 @@ Status: not-started
 - require zero open P0/P1 before considering P-1104.
 
 ### PF-037 — Enforce required unit fields in the issue plan generator
-Files: `scripts/repository/generate_issue_plan.py`, `docs/implementation/ISSUE_GENERATION.md`, `tests/ci/test_generate_issue_plan.py` (new)
+Files: `scripts/repository/generate_issue_plan.py`, `docs/implementation/ISSUE_GENERATION.md`, `.github/workflows/planning-checks.yml`, `tests/ci/test_generate_issue_plan.py` (new)
 Acceptance: `python3 scripts/repository/generate_issue_plan.py` emits records carrying `files`, `acceptance`, `depends`, `est` and `status` read from each unit block, and exits non-zero when the generated record set disagrees with `python3 scripts/repository/validate_work_unit_status.py` about any unit's status.
 Depends: none
 Est: 4-6
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/generate_issue_plan.py
+Evidence: unittest tests.ci.test_generate_issue_plan
+Evidence: contains 1 scripts/repository/generate_issue_plan.py :: GATE_RECORD = ROOT / "conformance/p1140f/gate-authorization-v1.json"
+Evidence: contains 1 scripts/repository/generate_issue_plan.py :: REQUIRED_FIELDS = ("Files", "Acceptance", "Depends", "Est", "Status")
+Evidence: absent scripts/repository/generate_issue_plan.py :: POST_LAUNCH_HEADING
+Evidence: absent docs/implementation/ISSUE_GENERATION.md :: post-launch-explicit-approval
+Evidence: absent docs/implementation/ISSUE_GENERATION.md :: <NN> <title>
+Evidence: absent .github/workflows/planning-checks.yml :: P-1104-explicit-implementation-approval
 
-**Field enforcement has moved.** `scripts/repository/validate_work_unit_status.py` now owns it under D-201 and fails on a missing, empty or duplicated field, an over-ceiling `Est:`, an unresolvable `Depends:`, a cycle, a contradicted status, an unowned SQL table and a stale derived block. What remains for this unit is the generator, which still emits records carrying none of those fields, so the issue plan is a list of headings rather than a plan.
+**Field enforcement has moved.** `scripts/repository/validate_work_unit_status.py` owns it under D-201 and fails on a missing, empty or duplicated field, an over-ceiling `Est:`, an unresolvable `Depends:`, a cycle, a contradicted status, an unowned SQL table and a stale derived block. What this unit owned was the generator, which emitted records carrying none of those fields — 260 titles and a component label, from which nobody could read what a unit touches, what would make it done, or whether it had already been done. Each record now carries the unit's own five lines, and the generator refuses to emit a record it cannot fill rather than restating the enforcement rule.
 
-Also corrects three defects in the generator: `labels` hardcodes `blocked` and `phase_gate` hardcodes `P-1104-explicit-implementation-approval` with no gate-state input, so every generated record is mislabeled the moment the gate moves; `POST_LAUNCH_HEADING` and the `PL-` branch are dead code matching a heading that does not exist; and `ISSUE_GENERATION.md` documented stable keys in a two-digit form that the generator's own `\d{3}` key pattern rejects, since corrected to the three-digit headings the breakdown actually carries.
+**The gate is read, not written down.** `phase_gate` and the `blocked` label were literals: every implementation record said `P-1104-explicit-implementation-approval` and `blocked`, and `.github/workflows/planning-checks.yml` asserted the same two literals back, so the pair agreed with each other and with nothing else from the moment the owner opened P-1104 on 2026-08-05. Which gate a unit sits behind is now derived from its epic prefix and its state read from `conformance/p1140f/gate-authorization-v1.json`; the workflow step reads the same record instead of repeating the answer. An unrecognised state blocks rather than releases.
+
+**Two readers, one document.** The generator and `validate_work_unit_status.py` match different heading patterns over the same file, so a heading that lost its title, or one whose prefix is wider than `[A-Z]{1,2}`, is counted by one and not the other — and neither can see that alone. The generator now compares its whole unit set and every status against the validator's and exits non-zero on any difference, before it complains about numbering.
+
+`POST_LAUNCH_HEADING` and the `PL-` branch matched a heading that has never existed and are gone, along with the `post-launch-explicit-approval` gate they invented.
+
+**One defect found while landing this.** `ISSUE_GENERATION.md`'s stable-key section had been corrected to three digits, but the generator-behavior section one paragraph below still documented `### <ID>-<NN> <title>` — a form the generator's own `\d{3}` pattern rejects — and nothing could catch it, because `<NN>` is a placeholder rather than a citation and `validate_cross_references.py` only resolves real IDs. Worse, the same document's phase-gate section still read "work units remain blocked by `P-1104-explicit-implementation-approval` … until the user explicitly authorizes implementation after P-1140F closes", which the gate record has forbidden in five sibling documents since 2026-08-05 and could not forbid here: `ISSUE_GENERATION.md` is not in its `documents` list. A contradiction of the open gate survived in the one planning contract the gate record does not watch. Both are repaired, and `tests/ci/test_generate_issue_plan.py` now asserts against both.
 
 ### PF-038 — Reconcile state vocabularies across API, SQL and registry
 Files: `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`
