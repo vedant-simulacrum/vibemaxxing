@@ -186,12 +186,12 @@ Approved examples:
 - `Public competition. Private transcripts.`
 - `You were overtaken.`
 - `Active in Codex.`
-- `12.8M Token Burn.`
+- `12.8M Credited Token Burn.`
 
 Rules:
 
 - Prefer short declarative sentences.
-- Say precisely what is measured: `Token Burn`, `Estimated Cash Burn`, and `active agent`.
+- Say precisely what is measured. On a public surface the figure is `Credited Token Burn`; `Token Burn` is the raw figure and appears only on the participant's own surface, because D-144 forbids publishing both. Also `Estimated Cash Burn` and `active agent`.
 - Always label cash values as estimated.
 - Treat competition with dry confidence rather than manufactured hype.
 - Privacy explanations must be literal and specific.

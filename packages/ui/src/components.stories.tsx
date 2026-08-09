@@ -179,7 +179,7 @@ export const ProductScreenPatterns: Story = {
       <ProductFriendRow person={{ name: "Maya Patel", handle: "mayapatel", avatar: 6, rank: 2, burn: "112.3M", week: "565.9M", change: 2, model: "Claude 3.7" }} active />
       <ProductBoardStandingRow person={{ name: "Vedant", handle: "vedant", avatar: 0, rank: 4, burn: "86.4M", week: "498.7M", change: 2, model: "GPT-5.4" }} current />
       <ProductActivityEventRow icon={<Icon name="arrow" />} avatar={0} title="You reclaimed #07" detail="Moved up 3 spots" trailing={<time>45m ago</time>} unread />
-      <ProductTrendChart label="Example Token Burn trend" />
+      <ProductTrendChart label="Example Credited Token Burn trend" />
       <ProductSparkline label="Example rising trend" />
       <ProductRankChart />
       <ProductIconButton label="Example compact action"><Icon name="bell" /></ProductIconButton>
