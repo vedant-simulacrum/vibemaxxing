@@ -109,7 +109,7 @@
     {
       "finding_id": "SR-009",
       "severity": "P1",
-      "state": "repair-in-progress",
+      "state": "repaired-pending-review",
       "title": "Universal adapter certification and deterministic accounting",
       "repair_task": "P-1140F-3",
       "finding_class": "contradiction",
@@ -124,7 +124,8 @@
         "packages/schemas/planning-schema.sql#platform_certifications"
       ],
       "closure_evidence": [
-        "PF-015 at da930f9c961ef9d029b68e9bb1aee3561551af2c: the compatibility tuple's canonical digest is proved rather than asserted. The schema stated that the digest is over the RFC 8949 core deterministic CBOR encoding so two implementations cannot disagree about a tuple's identity, and nothing tested it; the unit's own note recorded the digest half as not landed. Two serialisations in opposite key order at every level now produce one digest, and each of the five independent dimensions changes it. Certification lifecycle and accounting reconciliation remain open under PF-016 and PF-018."
+        "PF-015 at da930f9c961ef9d029b68e9bb1aee3561551af2c: the compatibility tuple's canonical digest is proved rather than asserted. The schema stated that the digest is over the RFC 8949 core deterministic CBOR encoding so two implementations cannot disagree about a tuple's identity, and nothing tested it; the unit's own note recorded the digest half as not landed. Two serialisations in opposite key order at every level now produce one digest, and each of the five independent dimensions changes it. Certification lifecycle and accounting reconciliation remain open under PF-016 and PF-018.",
+        "PF-018 at bc5880ae0b3d775ee9ab45d0d46ff401ac6640be: reconciliation and bounds are specified and exhaustively ordered. The acceptance allowed the author to choose two array orderings, which a first-wins reconciler satisfies on any agreeing pair; every permutation is exhausted now under a declared cap that fails rather than sampling. accounting-profile.schema.json spelled the fourth count authority reconstructed while nine artifacts spelled it exact-reconstruction, so a validator comparing them would have reported a contradiction that does not exist for every reconstruction profile, and did not fire only because the one binding it runs over is provider-reported. Summation across readings and selection-based contradiction resolution are forbidden, bounds reject rather than saturate, and capping is recorded forbidden because Token Burn is unnormalized. Nothing is certified: no vector names a certified tuple."
       ],
       "reviewed_commit": null,
       "review_verdict": "pending"
@@ -305,7 +306,7 @@
     {
       "finding_id": "SR-017",
       "severity": "P1",
-      "state": "open",
+      "state": "repaired-pending-review",
       "title": "Source-bound evidence and verifier appraisal authority",
       "repair_task": "P-1140F-3",
       "finding_class": "specification-gap",
@@ -322,7 +323,9 @@
         "packages/schemas/appraisal-result-v1.schema.json",
         "packages/schemas/appraisal-policy-v1.schema.json"
       ],
-      "closure_evidence": [],
+      "closure_evidence": [
+        "PF-017 at bc5880ae0b3d775ee9ab45d0d46ff401ac6640be: source observation and normalized event now carry required operation, observer and reading identity, and the outcome vocabularies cross-resolve. They did not: observation declared aborted-unknown and unknown, the event declared aborted-known and quarantined-unknown, and no mapping existed, so an adapter observing an aborted run with an unknown remainder had to write aborted-known — recording an unknown as known. acp was missing from the observation schema's execution_mode while five other artifacts carried it, making an ACP observation unrepresentable in the schema every ACP adapter writes. TOKEN_ACCOUNTING_SPEC.md was a second vocabulary of eighteen field names existing in no schema. The OTel derivation table now states that the counter names no execution rather than implying it does."
+      ],
       "restatement": {
         "restated_at": "2026-08-06",
         "previous_form": "Stated as a contradiction whose closure required four unwritten schemas, with an artifact set that named nothing existing.",

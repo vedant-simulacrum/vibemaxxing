@@ -38,9 +38,36 @@ x-idempotency-contract:
     ledger_state: expired
     status: 410
     reason_code: IDEMPOTENCY_RECORD_EXPIRED
-    retention_hours: 168
-    condition: The key was committed and its record aged past the retention window, so the response bytes no longer exist to replay. The request is not re-executed under the same key.
-  open_finding: SR-012 stays open. This block is the API half. The persistence half — the nullable response_digest, the missing response-body column and the account-only primary key in packages/schemas/planning-schema.sql — is not repaired here and no closure evidence is recorded.
+    replay_window_hours: 168
+    replay_window_column: expires_at
+    row_retention_column: retain_until
+    row_retention_policy_key: idempotency_record_retention_days
+    condition: The key was committed and its record aged past the replay window, so the response bytes no longer exist to replay. The request is not re-executed under the same key.
+    two_dates: >-
+      PF-020. The replay window and the row's own lifetime are different dates and were
+      the same column. D-225 fixes the window at 168 hours; idempotency_record_retention_days
+      in packages/schemas/policy-defaults-v1.json governs how long the row survives it,
+      default 30 days. While one column bounded both, the only way to stop replaying a
+      response was to delete the row, and a deleted key is a fresh key, so the next request
+      carrying it was executed as a new mutation rather than refused.
+      idempotency_records_retained_past_replay_window requires retain_until to be strictly
+      later than expires_at, and idempotency_records_expired_holds_no_response requires an
+      expired row to hold no status, no body and no digest, so the refusal outlives the
+      answer and the discarded bytes are discarded by constraint rather than by application
+      code.
+  ambiguous_commit: >-
+    The effect, this ledger row, the audit row, the outbox row and the recorded response
+    commit in one transaction. If the ledger row committed separately, a crash between the
+    two commits would leave the same rows as a crash before either and no retry could
+    distinguish them. conformance/p1140e/sql-race-plans-v1.json names the exact rows each of
+    the five ambiguous-commit cases leaves behind, and
+    docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md owns the prose.
+  finding_state: >-
+    SR-012's three persistence defects are repaired. PF-019 keyed the table on the declared
+    scope, PF-049 replaced the nullable digest with a recorded status, body and digest, and
+    PF-020 split the replay window from the row's retention. Repaired is not closed. No agent
+    records a closure verdict, and conformance/p1140f/semantic-findings-v1.json remains the
+    only authority for the finding's state.
 x-origin-policy:
   contract: packages/schemas/origin-policy-v1.json
   normative_owner: docs/security/ORIGIN_AND_LOOPBACK_CONTROLS.md

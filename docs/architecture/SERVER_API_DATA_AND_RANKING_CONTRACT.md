@@ -83,7 +83,7 @@ Every foreign key has an index on its referencing side. PostgreSQL indexes only 
 
 One serializable or explicitly locked transaction:
 
-1. Lock device sequence row.
+1. Lock the lineage sequence row.
 2. Validate account/device/key/challenge status.
 3. Parse and verify canonical claim/signature.
 4. Check challenge expiry/use, expected sequence, previous hash, claim ID, event fingerprint, lateness, adapter eligibility, accounting invariants, and privacy policy.
@@ -93,9 +93,25 @@ One serializable or explicitly locked transaction:
 8. Insert outbox event.
 9. Commit.
 
-Uniqueness constraints protect claim ID, `(device_id,sequence)`, challenge use, and scoped dedup fingerprint. A duplicate race can increase a standing at most once. Those three constraints are global and unpartitioned, which is the reason `claims` is one table.
+Uniqueness constraints protect claim ID, `(lineage_id, device_sequence)`, challenge use, and the scoped dedup fingerprint `(lineage_id, payload_hash)`. A duplicate race can increase a standing at most once. Those three constraints are global and unpartitioned, which is the reason `claims` is one table. D-592 and PF-010 scoped the second and third onto the lineage rather than the device row, because two device rows in one lineage could otherwise each hold sequence 42.
 
 Rejected claims are stored only with privacy-safe metadata, payload hash, reason code, and bounded diagnostics. Invalid raw payloads are not retained by default.
+
+## Transaction boundary and ambiguous commit
+
+The client and the server can disagree about whether a mutation happened. Every mechanism below exists for that disagreement and for nothing else, and `conformance/p1140e/sql-race-plans-v1.json` states, per case, the exact rows a correct implementation leaves behind — the rows that must be present with the column values that make them right, and the rows that must be absent because their presence is the defect.
+
+**One transaction, five things.** The business effect, the idempotency ledger row, the audit row, the outbox row and the recorded response commit together or not at all. Not as a convention: if the ledger row committed separately from the effect, a crash between the two commits would leave the same rows as a crash before either, and no retry could tell the two apart. Committing them together is what makes `abandoned` mean the operation did not run.
+
+- **Crash before commit.** PostgreSQL rolls the whole transaction back. No claim, no outbox row, no audit row. The reservation is left `executing` and a sweeper moves it to `abandoned` when its lease expires, which frees the key: the retry is a first attempt, not a replay.
+- **Crash after commit.** All five committed and the client learned nothing. The retry presents the same key and the same bytes, finds a `committed` row with a matching `request_digest`, and is answered from `response_status`, `response_body` and `response_digest` — byte-identically, under `Idempotency-Replayed`. No second mutation, and the outbox drains regardless of whether any response was ever delivered.
+- **Dropped response.** Indistinguishable from the case above at the server, and it does not need to be distinguished: a replay is a read. It writes no outbox row and no audit row, so a response lost ten times cannot move a standing more than once.
+- **Takeover.** A second request carrying the same key and the same digest waits while the reservation's lease is live; it never seizes a row that may still commit. After the lease expires the row moves to `abandoned` and the key is reserved again — as an update to the same row, because the four key columns are the primary key. There is no second reservation, so there is no path by which a timed-out attempt's response could later be replayed as if it were the answer.
+- **Expiry.** Two dates, and they are not the same date. `expires_at` ends the replay window, at which point the response bytes are discarded and the row moves to `expired`; `retain_until` ends the row, days later under `idempotency_record_retention_days`. A reuse arriving between them is answered 410 with `IDEMPOTENCY_RECORD_EXPIRED` and is not executed.
+
+That last split is the repair PF-020 exists for. One column bounded both, so the only way to stop replaying a response was to delete the row — and a deleted key is a fresh key, so the very next request carrying it was executed as a new mutation. An expired high-impact key silently became a second charge. `idempotency_records_retained_past_replay_window` makes the refusal outlive the answer by construction rather than by sweeper ordering, and `idempotency_records_expired_holds_no_response` makes the discarding of the bytes a constraint rather than a promise kept in application code over data that is still there.
+
+None of these plans has been executed. `execution_state` is `planned-runtime-evidence` on all nineteen cases, and no PostgreSQL instance in this repository has run one.
 
 ## Outbox and aggregation
 

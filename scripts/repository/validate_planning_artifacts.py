@@ -2584,6 +2584,317 @@ def _planning_table_bodies() -> dict[str, str]:
     return bodies
 
 
+# `create index name on table (a, b desc) where predicate;`. The column list is
+# read up to the first close paren, which is exact while no column expression
+# contains one; the predicate then runs to the statement terminator, so an `in
+# (...)` list inside a `where` clause stays with the predicate where it belongs.
+_CREATE_INDEX_RE = re.compile(
+    r"(?is)\bcreate\s+(unique\s+)?index\s+([a-z_][a-z0-9_]*)\s+"
+    r"on\s+([a-z_][a-z0-9_]*)\s*\(([^)]*)\)([^;]*);"
+)
+_PARTITION_BY_RE = re.compile(
+    r"(?is)^\s*partition\s+by\s+range\s*\(\s*([a-z_][a-z0-9_]*)\s*\)\s*$"
+)
+_PARTITION_OF_RE = re.compile(
+    r"(?is)\bcreate\s+table\s+([a-z_][a-z0-9_]*)\s+partition\s+of\s+"
+    r"([a-z_][a-z0-9_]*)\s+default\s*;"
+)
+_COLUMN_RE = re.compile(
+    r"(?is)^([a-z_][a-z0-9_]*)\s+"
+    r"(uuid|text|bytea|bigint|integer|smallint|boolean|timestamptz|numeric|jsonb|inet)\b"
+)
+
+
+def _planning_sql() -> str:
+    """The planning DDL with whole-line `--` comments removed.
+
+    Comments in this file quote column names and index names in prose, so a
+    structural read that keeps them finds declarations that are not there.
+    """
+    sql = (SCHEMAS / "planning-schema.sql").read_text(encoding="utf-8")
+    return "\n".join(
+        line for line in sql.splitlines() if not line.lstrip().startswith("--")
+    )
+
+
+def _split_top_level(body: str) -> list[str]:
+    """Split a table body on commas that are not inside parentheses."""
+    parts: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for character in body:
+        if character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+        if character == "," and depth == 0:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(character)
+    parts.append("".join(current))
+    return [part.strip() for part in parts if part.strip()]
+
+
+class _TableShape:
+    """The columns, foreign keys and total key-column sets of one planning table."""
+
+    def __init__(self, name: str, body: str) -> None:
+        self.name = name
+        self.columns: list[str] = []
+        self.foreign_keys: list[tuple[list[str], str]] = []
+        self.key_columns: list[list[str]] = []
+        for clause in _split_top_level(body):
+            column = _COLUMN_RE.match(clause)
+            if column:
+                self.columns.append(column.group(1))
+
+            composite = re.match(
+                r"(?is)foreign\s+key\s*\((.*?)\)\s*references\s+([a-z_][a-z0-9_]*)",
+                clause,
+            )
+            if composite:
+                self.foreign_keys.append(
+                    (
+                        [item.strip() for item in composite.group(1).split(",")],
+                        composite.group(2),
+                    )
+                )
+            elif column:
+                inline = re.search(r"(?is)\breferences\s+([a-z_][a-z0-9_]*)", clause)
+                if inline:
+                    self.foreign_keys.append(([column.group(1)], inline.group(1)))
+
+            primary = re.match(r"(?is)primary\s+key\s*\((.*?)\)", clause)
+            if primary:
+                self.key_columns.append(
+                    [item.strip() for item in primary.group(1).split(",")]
+                )
+            elif column and re.search(r"(?is)\bprimary\s+key\b", clause):
+                self.key_columns.append([column.group(1)])
+
+            unique = re.match(r"(?is)unique\s*\((.*?)\)", clause)
+            if unique:
+                self.key_columns.append(
+                    [item.strip() for item in unique.group(1).split(",")]
+                )
+            elif column and re.search(r"(?is)\bunique\b", clause):
+                self.key_columns.append([column.group(1)])
+
+
+def _planning_table_shapes() -> dict[str, _TableShape]:
+    """Parse every table body out of the comment-stripped DDL.
+
+    `_planning_table_bodies` keeps the comments, which is right for the substring
+    checks that read them; a clause-by-clause parse needs them gone, or the
+    prose above a column becomes the start of the clause and the column vanishes.
+    """
+    return {name: _TableShape(name, body) for name, body, _ in _planning_table_spans()}
+
+
+def _planning_table_spans() -> list[tuple[str, str, str]]:
+    """Every `create table` as `(name, body, tail)` over the comment-stripped DDL.
+
+    `tail` is what stands between the closing parenthesis and the semicolon, which
+    is where a `partition by` clause lives. Reading it with one regex across the
+    whole file matches the first table's opening against a later table's partition
+    clause, and reports three unpartitioned tables as partitioned.
+    """
+    sql = _planning_sql()
+    spans: list[tuple[str, str, str]] = []
+    for match in _CREATE_TABLE_RE.finditer(sql):
+        depth = 1
+        index = match.end()
+        while index < len(sql) and depth:
+            character = sql[index]
+            if character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+            index += 1
+        end = sql.find(";", index - 1)
+        spans.append((match.group(1), sql[match.end() : index - 1], sql[index:end]))
+    return spans
+
+
+def validate_index_coverage() -> None:
+    """Prove index coverage rather than counting indexes. PF-048.
+
+    The unit's original acceptance was `grep -c "CREATE INDEX" planning-schema.sql`
+    greater than three. That check is wrong twice over. The DDL is written in lower
+    case, so the case-sensitive grep answers zero against a file holding a hundred
+    and thirty-odd indexes -- a satisfied criterion reporting as failed. And a count
+    is not a coverage signal in either direction: it rises when a redundant index is
+    added and falls when a wrong one is removed. Eighteen foreign keys had no index
+    at all while the count stood at 132.
+
+    Four rules, each falsifiable:
+
+    1. every index names a table that exists and columns that exist on it, so a
+       renamed column takes its index with it instead of leaving a dangling one;
+    2. every foreign key's referencing columns lead a *total* index, primary key or
+       unique constraint. Partial does not count: PostgreSQL's referential check on
+       a parent delete looks for any matching child row, including the ones a
+       predicate excludes;
+    3. every index that supports no foreign key names the query it serves in the
+       access-path table of `LEADERBOARD_STORAGE_AND_RANKING.md`, and every index
+       that table names exists here. An index justified by no query cannot be shown
+       to be wrong;
+    4. no index duplicates another index or a unique constraint column for column,
+       and the range-partitioned tables in the DDL are exactly those the contract
+       declares partitioned, each with a default partition.
+
+    This proves the declared access paths are indexable. It proves nothing about
+    latency: no index in this repository has been built against data and no plan has
+    been read.
+    """
+    sql = _planning_sql()
+    shapes = _planning_table_shapes()
+    contract = (
+        ROOT / "docs" / "architecture" / "LEADERBOARD_STORAGE_AND_RANKING.md"
+    ).read_text(encoding="utf-8")
+
+    indexes: list[dict[str, Any]] = []
+    for match in _CREATE_INDEX_RE.finditer(sql):
+        indexes.append(
+            {
+                "unique": bool(match.group(1)),
+                "name": match.group(2),
+                "table": match.group(3),
+                "columns": [
+                    item.strip().split()[0]
+                    for item in match.group(4).split(",")
+                    if item.strip()
+                ],
+                # Sort direction, kept out of the coverage rules and inside the
+                # duplicate rule. An equality lookup does not care which way a
+                # btree runs; `order by a, b desc` cannot be answered by an index
+                # over `(a, b)` in either scan direction, so `(a, b desc)` is a
+                # different index and not a repeat of the unique constraint.
+                "ordered_columns": [
+                    " ".join(item.split()).replace(" asc", "").strip()
+                    for item in match.group(4).split(",")
+                    if item.strip()
+                ],
+                "predicate": " ".join(match.group(5).split()),
+            }
+        )
+    assert_unique([index["name"] for index in indexes], "planning index names")
+
+    # 1. Every index resolves to a real table and real columns.
+    for index in indexes:
+        shape = shapes.get(index["table"])
+        if shape is None:
+            raise ValidationFailure(
+                f"index on a table the planning DDL does not define: "
+                f"{index['name']} on {index['table']}"
+            )
+        unknown = [column for column in index["columns"] if column not in shape.columns]
+        if unknown:
+            raise ValidationFailure(
+                f"index on a column the table does not define: "
+                f"{index['name']} names {unknown} on {index['table']}"
+            )
+
+    # 2. Every foreign key has a total covering index.
+    total_by_table: dict[str, list[list[str]]] = {}
+    for name, shape in shapes.items():
+        total_by_table[name] = [list(key) for key in shape.key_columns]
+    for index in indexes:
+        if not index["predicate"]:
+            total_by_table.setdefault(index["table"], []).append(index["columns"])
+
+    uncovered: list[str] = []
+    for name, shape in shapes.items():
+        for columns, parent in shape.foreign_keys:
+            covered = any(
+                candidate[: len(columns)] == columns
+                for candidate in total_by_table.get(name, [])
+                if candidate
+            )
+            if not covered:
+                uncovered.append(f"{name}.{'+'.join(columns)} -> {parent}")
+    if uncovered:
+        raise ValidationFailure(
+            f"foreign keys with no supporting total index: {sorted(uncovered)}"
+        )
+
+    # 3. No index duplicates another index or a unique constraint. Checked before
+    # the justification rule, because a duplicate would otherwise be reported as an
+    # undocumented index and the reader would go and document it.
+    seen: dict[tuple[str, tuple[str, ...], str], str] = {}
+    for name, shape in shapes.items():
+        for key in shape.key_columns:
+            seen.setdefault((name, tuple(key), ""), "a unique or primary key")
+    for index in indexes:
+        signature = (
+            index["table"],
+            tuple(index["ordered_columns"]),
+            index["predicate"],
+        )
+        if signature in seen:
+            raise ValidationFailure(
+                f"duplicate index: {index['name']} repeats {seen[signature]} on "
+                f"{index['table']} column for column"
+            )
+        seen[signature] = index["name"]
+
+    # 4. Every index that supports no foreign key names the query it serves.
+    documented = {
+        name
+        for name in re.findall(r"`([a-z_][a-z0-9_]*)`", contract)
+        if name.endswith("_idx")
+    }
+    declared = {index["name"] for index in indexes}
+    dangling = sorted(documented - declared)
+    if dangling:
+        raise ValidationFailure(
+            f"index names the access-path contract states and the planning DDL "
+            f"does not define: {dangling}"
+        )
+    undocumented: list[str] = []
+    for index in indexes:
+        shape = shapes[index["table"]]
+        supports_foreign_key = any(
+            index["columns"][: len(columns)] == columns
+            for columns, _ in shape.foreign_keys
+        )
+        if not supports_foreign_key and index["name"] not in documented:
+            undocumented.append(index["name"])
+    if undocumented:
+        raise ValidationFailure(
+            f"indexes that support no foreign key and name no query: "
+            f"{sorted(undocumented)}"
+        )
+
+    # 5. Partitioning agrees with the contract, and every partitioned table has a
+    # default partition to catch a row outside every declared range.
+    partitioned: dict[str, str] = {}
+    for name, _, tail in _planning_table_spans():
+        clause = _PARTITION_BY_RE.match(tail)
+        if clause:
+            partitioned[name] = clause.group(1)
+    defaults = {match.group(2) for match in _PARTITION_OF_RE.finditer(sql)}
+    without_default = sorted(set(partitioned) - defaults)
+    if without_default:
+        raise ValidationFailure(
+            f"range-partitioned tables with no default partition: {without_default}"
+        )
+    section = contract.split("## Partitioning", 1)
+    if len(section) != 2:
+        raise ValidationFailure(
+            "the access-path contract states no Partitioning section"
+        )
+    stated = dict(
+        re.findall(r"(?m)^- `([a-z_][a-z0-9_]*)` on `([a-z_][a-z0-9_]*)`", section[1])
+    )
+    if stated != partitioned:
+        raise ValidationFailure(
+            f"partitioning disagrees: the DDL declares {sorted(partitioned.items())} "
+            f"and the access-path contract states {sorted(stated.items())}"
+        )
+
+
 def validate_data_disposition() -> None:
     """Prove the retention registry covers the schema and resolves to real windows.
 
@@ -6255,6 +6566,7 @@ def main() -> int:
         ("adapter-one OTLP identity boundary", validate_adapter_one_boundary),
         ("policy and observability artifacts", validate_policy_and_observability),
         ("data disposition and retention coverage", validate_data_disposition),
+        ("index coverage and partitioning", validate_index_coverage),
         ("erasure and sealed-generation invariants", validate_erasure_contract),
         ("OpenAPI", validate_openapi_file),
         ("API error matrix and operation classes", validate_api_error_matrix),

@@ -44,7 +44,7 @@ Materialized views may serve historical analytics and slow-changing summaries. T
 
 ## Access paths and the index each needs
 
-Every index in `packages/schemas/planning-schema.sql` is either the referencing side of a foreign key or one of the paths below. PostgreSQL indexes the referenced side of a foreign key and never the referencing side, so an unindexed referencing column turns a delete on the parent into a sequential scan of the child while holding a lock. Ninety-eight tables carried four indexes before this contract, and thirty-one of them reference `accounts`, which the erasure path deletes from.
+Every index in `packages/schemas/planning-schema.sql` is either the referencing side of a foreign key or one of the paths below. PostgreSQL indexes the referenced side of a foreign key and never the referencing side, so an unindexed referencing column turns a delete on the parent into a sequential scan of the child while holding a lock. Thirty-one tables reference `accounts`, which the erasure path deletes from.
 
 | Query | Access path | Index |
 |---|---|---|
@@ -52,18 +52,35 @@ Every index in `packages/schemas/planning-schema.sql` is either the referencing 
 | Suppression of an erased entry | Join to the domain, then to the key, testing `destroyed_at is null` | `erasure_domains` primary key, `erasure_keys_live_idx` |
 | `/rank/me` | Account to domain by keyed digest, then domain to entry | `erasure_domains.subject_lookup_digest` unique, `ranking_entries` unique `(ranking_view_id, generation, erasure_domain_id)` |
 | A participant's own explanation of a period figure | Contributions for one domain in one period | `score_contributions_period_domain_idx` |
+| Erasure of a participant's contributions | Every contribution for one domain, across every period | `score_contributions_domain_idx`. The period-leading index above cannot serve it, and this is the path that runs while the erasure key is being destroyed |
 | Friends board membership, both directions | Canonical pair plus its reverse | `friend_edges` primary key `(account_id_a, account_id_b)` and `friend_edges_reverse_idx` |
 | Directional block check at display | Blocker to blocked and blocked to blocker | `blocks` primary key and `blocks_reverse_idx` |
 | Board leaderboard membership | Board to member, and member to board | `board_memberships` primary key and `board_memberships_account_idx` |
 | Notification inbox | Newest first for one account | `notifications_account_created_idx` |
 | Outbox drain | Unprocessed rows oldest first | `outbox_events_unprocessed_idx`, partial on `processed_at is null` so the index holds only the backlog |
 | Claim history for one account | Newest first | `claims_account_received_idx` |
-| Replay and continuity checks | Exact sequence and exact fingerprint | `claims` unique `(device_id, device_sequence)` and `(device_id, payload_hash)` |
-| Expiry sweeps | One index per `expires_at`, partial where a consumed row is dead | `claim_challenges_expiry_idx`, `presence_leases_expiry_idx`, `idempotency_records_expiry_idx`, `board_invites_expiry_idx`, `exports_expiry_idx`, `oauth_transactions_expiry_idx`, `device_enrollment_grants_expiry_idx`, `local_deletion_commands_expiry_idx` |
+| Replay and continuity checks | Exact sequence and exact fingerprint, both scoped to the lineage rather than the device row | `claims` unique `(lineage_id, device_sequence)` and `(lineage_id, payload_hash)`. D-592 and PF-010 moved both off `device_id`; this row named the old columns until PF-048 |
+| Expiry sweeps | One index per `expires_at`, partial where a consumed or settled row is dead | `claim_challenges_expiry_idx`, `presence_leases_expiry_idx`, `idempotency_records_expiry_idx`, `board_invites_expiry_idx`, `exports_expiry_idx`, `oauth_transactions_expiry_idx`, `device_enrollment_grants_expiry_idx`, `local_deletion_commands_expiry_idx`, `invite_codes_expiry_idx`, `recovery_cases_expiry_idx`, `identity_investigations_expiry_idx`, `consolidation_cases_expiry_idx` |
+| Idempotency row retention, which is a second sweep on a later date | Rows past `retain_until`, whose response bytes went at `expires_at` days earlier | `idempotency_records_retention_idx`. The two dates bound different things and one index over `expires_at` could drive only the first |
 | Erasure enumeration across consolidated identities | Both directions of the domain link | `erasure_domain_links` primary key and `erasure_domain_links_absorbed_idx` |
 | Season and period boundary lookup | Window containment | `seasons_window_idx`, `periods_type_window_idx` |
+| Latest sealed generation for a view | Descending scan on the generation | `score_snapshots_view_generation_idx` on `(ranking_view_id, generation desc)`. The `unique (ranking_view_id, generation)` constraint indexes the same columns ascending, and a backward scan of it orders both columns descending, which is not this order |
+| One participant's moderation and appeal history | Account to case, account to appeal | `moderation_cases_account_idx`, `appeals_account_idx`. Neither column is a foreign key: both records survive the account's erasure unlinked |
+| One participant's deletion job | Account to job | `deletion_jobs_account_idx`. Not a foreign key either — the job is the proof the deletion happened and cannot reference what it deleted |
+| Per-device deletion fan-out and acknowledgement | Job to commands is the unique pair; device to commands and device to receipts are the reverse | `local_deletion_commands_device_idx`, `local_deletion_receipts_device_idx` |
+| Boards and spaces one account owns | Owner to organization, owner to community | `organizations_owner_idx`, `communities_owner_idx`. Both outlive the owner's erasure and neither is a foreign key |
+| Codes one account issued | Issuer to code | `invite_codes_issuer_idx`. An issued code outlives the issuer's erasure |
+| Session revocation across a token family | Family to its sessions | `web_sessions_family_idx` |
+| Social integrity events attributed to one actor | Actor to event | `social_integrity_events_actor_idx`. The event outlives the actor, so the column carries no foreign key |
+| Applying or reversing one correction across views | Correction to its per-view rows | `ranking_corrections_correction_idx` |
+| The active certification for a tuple shape | Exact tuple, live rows only | `source_certifications_active_idx`, unique and partial on `state = 'active'`, so two rows can never make "the exact certified tuple" ambiguous |
+| The live provider binding for a subject | Provider and subject, live states only | `linked_identities_live_subject_idx`, unique and partial, which is the one-live-binding rule rather than a lookup |
 
 Every table with an `expires_at` column names the actor that acts on it in `packages/schemas/data-disposition-v1.json`. An expiry with no actor is a comment.
+
+Two rules govern this table and they are checked, by `validate_index_coverage` in `scripts/repository/validate_planning_artifacts.py`, in both directions. Every foreign key in `packages/schemas/planning-schema.sql` has a *total* index, primary key or unique constraint whose leading columns are its referencing columns — partial indexes do not count, because PostgreSQL's referential check on a parent delete has to see the rows the predicate excludes. And every index that supports no foreign key appears above, naming the query it serves; an index named by no query cannot be shown to be wrong and cannot be dropped by anyone who did not write it.
+
+Eighteen foreign keys had no index when that rule was first written down here, including all five on `oauth_transactions` and `score_contributions.erasure_domain_id`, which is on the erasure path this section exists for. What made them invisible is that the only stated figure was a count — and a count rises when a redundant index is added and falls when a wrong one is removed. There was a redundant one too: a second index over `(aggregate_id, aggregate_revision)` on `social_integrity_events` duplicated that table's own unique constraint column for column, and removing it lowered the count while improving the schema.
 
 ## Partitioning
 
@@ -77,7 +94,7 @@ All three qualify on the same three grounds: the retention window in the disposi
 
 **Not partitioned, and the reason is a constraint rather than a preference.**
 
-- **`claims`.** PostgreSQL requires every unique constraint on a partitioned table to include the partition key. `claims` holds three global uniqueness invariants — `claim_id`, `(device_id, device_sequence)` and `(device_id, payload_hash)` — and the acceptance transaction depends on all three being global; partitioning by receipt month would make each of them per-month, which is not the guarantee. Six tables also carry a foreign key to `claim_id`, and a foreign key must reference a unique constraint. An earlier revision of the server contract asserted partitioning by receipt month; it was not executable and has been corrected rather than worked around.
+- **`claims`.** PostgreSQL requires every unique constraint on a partitioned table to include the partition key. `claims` holds three global uniqueness invariants — `claim_id`, `(lineage_id, device_sequence)` and `(lineage_id, payload_hash)` — and the acceptance transaction depends on all three being global; partitioning by receipt month would make each of them per-month, which is not the guarantee. Six tables also carry a foreign key to `claim_id`, and a foreign key must reference a unique constraint. An earlier revision of the server contract asserted partitioning by receipt month; it was not executable and has been corrected rather than worked around.
 - **`outbox_events` and `social_integrity_events`.** `unique (aggregate_id, aggregate_revision)` is what makes processing exactly-once. A partition key cannot join it without weakening that.
 - **`period_scores`.** Its size is participants times periods times views, not time times participants, so a monthly partition would produce many small partitions and buy nothing.
 

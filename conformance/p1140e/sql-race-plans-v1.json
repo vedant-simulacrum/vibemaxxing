@@ -2,6 +2,7 @@
   "schema_version": 1,
   "maturity": "planning-race-plans-only",
   "database": "PostgreSQL 16",
+  "note": "Each case names the exact rows a correct implementation leaves behind: the rows that must be present with the column values that make them correct, and the rows that must be absent because their presence is the defect. Before PF-020 every case carried the same four generic interleaving steps and a one-line sentence, which described a scenario and asserted nothing a reader could check. `residual_rows` is what makes the plan falsifiable, and `scripts/repository/validate_p1140e_contracts.py` resolves every table and every column named here against `packages/schemas/planning-schema.sql`, so a renamed column breaks the plan rather than quietly outliving it. These are plans. None has been executed: `execution_state` is `planned-runtime-evidence` on every case and no PostgreSQL instance in this repository has run one.",
   "cases": [
     {
       "case_id": "oauth-single-consume",
@@ -11,12 +12,43 @@
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "callback-a-selects-the-transaction-for-update",
+        "callback-b-blocks-on-the-same-row",
+        "callback-a-marks-consumed-and-inserts-its-session",
+        "callback-a-commits",
+        "callback-b-acquires-the-lock-and-rereads-state",
+        "callback-b-refuses-an-already-consumed-transaction"
       ],
       "expected": "one callback consumes one transaction and creates at most one session",
+      "residual_rows": [
+        {
+          "table": "oauth_transactions",
+          "key": "oauth_transaction_id = T",
+          "presence": "present",
+          "columns": {
+            "state": "consumed",
+            "consumed_at": "not null",
+            "resulting_session_id": "S"
+          },
+          "note": "The consumed marker and the session it produced are set in the same transaction, so no state exists in which the transaction is spent and the session is unknown."
+        },
+        {
+          "table": "web_sessions",
+          "key": "session_id = S",
+          "presence": "present",
+          "columns": {
+            "state": "active",
+            "account_id": "A"
+          },
+          "note": "Exactly one, and it is the one the transaction row names."
+        },
+        {
+          "table": "web_sessions",
+          "key": "any row whose session_id is not T.resulting_session_id and whose token_hash was minted from state_hash H",
+          "presence": "absent",
+          "note": "The second callback creates nothing. A second session here is the double-sign-in the single-consume rule exists to refuse."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
@@ -27,181 +59,892 @@
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "refresh-a-locks-the-family-row",
+        "refresh-a-rotates-the-parent-and-inserts-one-child",
+        "refresh-a-commits",
+        "refresh-b-presents-the-same-parent-token",
+        "refresh-b-observes-a-rotated-parent-and-declares-reuse",
+        "refresh-b-revokes-the-family-and-commits"
       ],
       "expected": "one child commits; reuse revokes the token family",
+      "residual_rows": [
+        {
+          "table": "web_sessions",
+          "key": "session_id = P, the parent",
+          "presence": "present",
+          "columns": {
+            "state": "rotated"
+          },
+          "note": "The parent stays. Deleting it is what makes a replayed refresh look like a first use."
+        },
+        {
+          "table": "web_sessions",
+          "key": "session_id = C, the single child",
+          "presence": "present",
+          "columns": {
+            "state": "revoked",
+            "token_family_id": "F"
+          },
+          "note": "Revoked, not deleted: the reuse detection revokes the family and every member of it, and the child is a member."
+        },
+        {
+          "table": "session_families",
+          "key": "token_family_id = F",
+          "presence": "present",
+          "columns": {
+            "state": "replay-detected",
+            "revoked_at": "not null"
+          },
+          "note": "Reuse of a rotated parent is recorded as replay rather than as an ordinary revocation, because the two have different appeal paths."
+        },
+        {
+          "table": "web_sessions",
+          "key": "a second child of P",
+          "presence": "absent",
+          "note": "Two children of one parent is the fork this case exists to refuse, and it is refused before the reuse is even detected."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "challenge-single-use",
       "tables": [
+        "checkpoint_receipts",
         "claim_challenges",
-        "claims",
-        "checkpoint_receipts"
+        "claims"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "batch-a-locks-the-device-sequence-row",
+        "batch-a-consumes-the-challenge-and-inserts-its-claims",
+        "batch-a-advances-the-checkpoint-and-commits",
+        "batch-b-presents-the-same-challenge",
+        "batch-b-finds-consumed_at-set-and-refuses"
       ],
       "expected": "one atomic batch consumes the challenge and advances one checkpoint",
+      "residual_rows": [
+        {
+          "table": "claim_challenges",
+          "key": "challenge_id = X",
+          "presence": "present",
+          "columns": {
+            "consumed_at": "not null",
+            "consumed_by_batch_id": "B"
+          },
+          "note": "The consuming batch is named on the challenge, so a second batch cannot claim to be the one that consumed it."
+        },
+        {
+          "table": "claims",
+          "key": "batch_id = B",
+          "presence": "present",
+          "columns": {
+            "challenge_id": "X",
+            "lineage_id": "L"
+          },
+          "note": "Every claim of the batch, or none: the batch is one transaction."
+        },
+        {
+          "table": "checkpoint_receipts",
+          "key": "lineage_id = L with the greatest last_sequence",
+          "presence": "present",
+          "columns": {
+            "lineage_id": "L",
+            "previous_receipt_digest": "the prior receipt"
+          },
+          "note": "One receipt per accepted batch, chained to its predecessor."
+        },
+        {
+          "table": "checkpoint_receipts",
+          "key": "a second row with the same batch_digest",
+          "presence": "absent",
+          "note": "A duplicate receipt would make the device's chain fork at a point the server signed twice."
+        },
+        {
+          "table": "claims",
+          "key": "any claim carrying challenge_id = X and a batch_id other than B",
+          "presence": "absent",
+          "note": "The refused batch writes nothing."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "idempotency-same-bytes",
       "tables": [
-        "idempotency_records"
+        "claims",
+        "idempotency_records",
+        "outbox_events"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "request-a-inserts-the-executing-reservation",
+        "request-b-collides-on-the-primary-key-and-finds-the-same-request_digest",
+        "request-a-performs-the-mutation-and-records-the-response",
+        "request-a-commits",
+        "request-b-rereads-the-committed-row-and-returns-its-recorded-bytes"
       ],
       "expected": "byte-identical retries return one stored result",
+      "residual_rows": [
+        {
+          "table": "idempotency_records",
+          "key": "(principal_type, principal_id, operation_id, idempotency_key) = ('account', A, 'submitClaimBatch', K)",
+          "presence": "present",
+          "columns": {
+            "state": "committed",
+            "request_digest": "D",
+            "response_status": "not null",
+            "response_body": "not null",
+            "response_digest": "not null"
+          },
+          "note": "All three response columns are set, which is what idempotency_records_replayable_is_answerable requires of a committed row and what makes the second request answerable without re-running anything."
+        },
+        {
+          "table": "claims",
+          "key": "the batch the first request submitted",
+          "presence": "present",
+          "columns": {
+            "lineage_id": "L",
+            "device_sequence": "N"
+          },
+          "note": "One set of rows for two requests."
+        },
+        {
+          "table": "outbox_events",
+          "key": "(aggregate_id, aggregate_revision) = (L, R)",
+          "presence": "present",
+          "columns": {
+            "processed_at": "null until the worker drains it"
+          },
+          "note": "One outbox row, because it committed in the same transaction as the claim and the ledger row."
+        },
+        {
+          "table": "idempotency_records",
+          "key": "a second row for the same four key columns",
+          "presence": "absent",
+          "note": "The primary key refuses it; this is stated so the plan is falsified if the key ever loses a column again."
+        },
+        {
+          "table": "outbox_events",
+          "key": "a second row with the same (aggregate_id, aggregate_revision)",
+          "presence": "absent",
+          "note": "The unique constraint is what makes the outbox exactly-once for its consumer."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "idempotency-conflict",
       "tables": [
+        "claims",
         "idempotency_records"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "request-a-reserves-the-key-with-request_digest-D1",
+        "request-a-commits-its-mutation-and-its-response",
+        "request-b-presents-the-same-key-with-request_digest-D2",
+        "request-b-compares-digests-before-executing-anything",
+        "request-b-answers-409-and-writes-nothing"
       ],
       "expected": "same key with a different digest rejects without business mutation",
+      "residual_rows": [
+        {
+          "table": "idempotency_records",
+          "key": "(principal_type, principal_id, operation_id, idempotency_key) = ('account', A, O, K)",
+          "presence": "present",
+          "columns": {
+            "state": "committed",
+            "request_digest": "D1"
+          },
+          "note": "The first request's row is untouched. The conflict does not overwrite the digest, because overwriting it would make the next retry of the first request a conflict too."
+        },
+        {
+          "table": "idempotency_records",
+          "key": "any row carrying request_digest = D2",
+          "presence": "absent",
+          "note": "A conflict is not recorded as a second ledger row. The state `conflict` exists for a reservation that loses the race, not for a request that was refused by an already-committed one."
+        },
+        {
+          "table": "claims",
+          "key": "any row attributable to the second request",
+          "presence": "absent",
+          "note": "The digest is compared before the mutation, so the refusal costs nothing and leaves nothing."
+        }
+      ],
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "commit-crash-before-commit",
+      "tables": [
+        "audit_events",
+        "claims",
+        "idempotency_records",
+        "outbox_events"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "request-a-inserts-the-executing-reservation-and-commits-only-that",
+        "request-a-opens-the-business-transaction",
+        "request-a-inserts-the-claim-the-outbox-row-and-the-audit-row",
+        "process-a-dies-before-commit",
+        "postgresql-rolls-the-business-transaction-back",
+        "the-reservation-lease-expires-and-a-sweeper-marks-it-abandoned"
+      ],
+      "expected": "nothing committed, so the key becomes usable again and the retry is a first attempt rather than a replay",
+      "residual_rows": [
+        {
+          "table": "idempotency_records",
+          "key": "(principal_type, principal_id, operation_id, idempotency_key) = ('account', A, O, K)",
+          "presence": "present",
+          "columns": {
+            "state": "abandoned",
+            "response_status": "null",
+            "response_body": "null",
+            "response_digest": "null"
+          },
+          "note": "`abandoned` records that the operation did not run. This is the whole reason `abandoned` and `replayable-failure` are separate states: a retry that cannot tell them apart has to guess whether the first attempt had an effect."
+        },
+        {
+          "table": "claims",
+          "key": "any row from the dead attempt",
+          "presence": "absent",
+          "note": "The business effect, the audit row and the outbox row are in one transaction with each other; none of them survives a crash before its commit."
+        },
+        {
+          "table": "outbox_events",
+          "key": "any row from the dead attempt",
+          "presence": "absent",
+          "note": "An outbox row without its claim would publish an aggregate revision that never existed."
+        },
+        {
+          "table": "audit_events",
+          "key": "any row from the dead attempt",
+          "presence": "absent",
+          "note": "An audit row without its effect is worse than no audit row, because it reads as evidence that the effect happened."
+        }
+      ],
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "commit-crash-after-commit",
+      "tables": [
+        "audit_events",
+        "claims",
+        "idempotency_records",
+        "outbox_events"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "request-a-inserts-the-executing-reservation-and-commits-only-that",
+        "request-a-opens-the-business-transaction",
+        "request-a-inserts-the-claim-the-outbox-row-the-audit-row-and-the-recorded-response",
+        "request-a-commits-all-four-together",
+        "process-a-dies-before-the-response-reaches-the-network",
+        "the-client-retries-with-the-same-key-and-the-same-bytes"
+      ],
+      "expected": "everything committed, so the retry replays the recorded response and performs no second mutation",
+      "residual_rows": [
+        {
+          "table": "idempotency_records",
+          "key": "(principal_type, principal_id, operation_id, idempotency_key) = ('account', A, O, K)",
+          "presence": "present",
+          "columns": {
+            "state": "committed",
+            "response_status": "not null",
+            "response_body": "not null",
+            "response_digest": "not null"
+          },
+          "note": "The ledger row commits in the same transaction as the effect. If it did not, this case and crash-before-commit would leave the same rows and be indistinguishable, which is the ambiguity the whole model exists to remove."
+        },
+        {
+          "table": "claims",
+          "key": "the batch the request submitted",
+          "presence": "present",
+          "columns": {
+            "lineage_id": "L"
+          },
+          "note": "Committed. The client never learned this, which is exactly why it must not happen twice."
+        },
+        {
+          "table": "outbox_events",
+          "key": "(aggregate_id, aggregate_revision) = (L, R)",
+          "presence": "present",
+          "columns": {
+            "processed_at": "null until the worker drains it"
+          },
+          "note": "The aggregation still runs: the outbox does not depend on the client having received anything."
+        },
+        {
+          "table": "audit_events",
+          "key": "the row recording the accepted mutation",
+          "presence": "present",
+          "columns": {
+            "actor_type": "account",
+            "target_digest": "not null"
+          },
+          "note": "Committed with the effect, so the audit trail does not depend on the response being delivered."
+        },
+        {
+          "table": "claims",
+          "key": "any second batch from the retry",
+          "presence": "absent",
+          "note": "The retry reads a committed ledger row and returns its bytes."
+        }
+      ],
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "commit-dropped-response",
+      "tables": [
+        "audit_events",
+        "claims",
+        "idempotency_records",
+        "outbox_events"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "request-a-commits-effect-audit-outbox-and-response-together",
+        "the-response-is-lost-in-transit",
+        "the-client-retries-with-the-same-key-and-the-same-bytes",
+        "request-b-reads-the-committed-row-and-compares-request_digest",
+        "request-b-returns-the-recorded-status-and-body-under-idempotency-replayed"
+      ],
+      "expected": "the retry is answered byte-identically from the recorded response and no row changes",
+      "residual_rows": [
+        {
+          "table": "idempotency_records",
+          "key": "(principal_type, principal_id, operation_id, idempotency_key) = ('account', A, O, K)",
+          "presence": "present",
+          "columns": {
+            "state": "committed",
+            "response_body": "the same bytes the first attempt recorded",
+            "response_digest": "the digest of those bytes"
+          },
+          "note": "Unchanged by the replay. A replay that rewrote the row would make byte-identical replay depend on the last retry rather than the first commit."
+        },
+        {
+          "table": "claims",
+          "key": "the single batch",
+          "presence": "present",
+          "columns": {
+            "lineage_id": "L"
+          },
+          "note": "One set of rows, however many times the response is lost."
+        },
+        {
+          "table": "outbox_events",
+          "key": "a second row with the same (aggregate_id, aggregate_revision)",
+          "presence": "absent",
+          "note": "A replay is a read. It publishes nothing, so the aggregation cannot double-count a dropped response."
+        },
+        {
+          "table": "audit_events",
+          "key": "a second row for the same mutation",
+          "presence": "absent",
+          "note": "The replay is not a second mutation and is not audited as one."
+        }
+      ],
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "commit-executing-takeover",
+      "tables": [
+        "claims",
+        "idempotency_records"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "request-a-inserts-the-executing-reservation-and-holds-it",
+        "request-b-arrives-with-the-same-key-and-the-same-request_digest",
+        "request-b-finds-an-executing-row-whose-lease-has-not-expired-and-waits",
+        "request-a-neither-commits-nor-returns-and-its-lease-expires",
+        "the-sweeper-moves-the-row-to-abandoned",
+        "request-b-reserves-the-key-again-and-executes-once"
+      ],
+      "expected": "an executing row is never taken over while its lease is live, and exactly one attempt commits after it expires",
+      "residual_rows": [
+        {
+          "table": "idempotency_records",
+          "key": "(principal_type, principal_id, operation_id, idempotency_key) = ('account', A, O, K)",
+          "presence": "present",
+          "columns": {
+            "state": "committed",
+            "request_digest": "D"
+          },
+          "note": "One row, reused. The key is the primary key, so a takeover is an update of the same row and never a second row that could later answer a replay with the wrong attempt's bytes."
+        },
+        {
+          "table": "claims",
+          "key": "the batch the surviving attempt submitted",
+          "presence": "present",
+          "columns": {
+            "lineage_id": "L"
+          },
+          "note": "One set of rows. If the abandoned attempt had in fact committed, its ledger row would have committed with it and would not have been abandoned."
+        },
+        {
+          "table": "claims",
+          "key": "any row from the abandoned attempt",
+          "presence": "absent",
+          "note": "Takeover is only safe because `abandoned` means the transaction rolled back, which the ledger row and the effect committing together is what establishes."
+        },
+        {
+          "table": "idempotency_records",
+          "key": "a second row for the same four key columns",
+          "presence": "absent",
+          "note": "There is no second reservation to leak, so no path exists by which the timed-out attempt's response could later be replayed."
+        }
+      ],
+      "execution_state": "planned-runtime-evidence"
+    },
+    {
+      "case_id": "commit-key-expiry",
+      "tables": [
+        "claims",
+        "idempotency_records",
+        "outbox_events"
+      ],
+      "isolation": "serializable",
+      "interleaving": [
+        "request-a-commits-and-records-its-response",
+        "the-replay-window-passes-and-the-sweeper-discards-the-response-bytes",
+        "the-sweeper-sets-the-row-to-expired",
+        "the-client-retries-with-the-same-key-after-the-replay-window",
+        "the-server-finds-an-expired-row-and-answers-410",
+        "the-row-is-deleted-only-after-retain_until"
+      ],
+      "expected": "an expired key is refused rather than answered or re-executed, and the row outlives the response so the refusal is possible",
+      "residual_rows": [
+        {
+          "table": "idempotency_records",
+          "key": "(principal_type, principal_id, operation_id, idempotency_key) = ('account', A, O, K)",
+          "presence": "present",
+          "columns": {
+            "state": "expired",
+            "response_status": "null",
+            "response_body": "null",
+            "response_digest": "null",
+            "expires_at": "past",
+            "retain_until": "future, and strictly later than expires_at"
+          },
+          "note": "The row is what refuses the reuse. Before PF-020 one column bounded both the response and the row, so the only way to stop replaying was to delete the row -- and a deleted key is a fresh key, so the retry became a second mutation. idempotency_records_expired_holds_no_response and idempotency_records_retained_past_replay_window are the two halves of that split."
+        },
+        {
+          "table": "claims",
+          "key": "the batch the original request submitted",
+          "presence": "present",
+          "columns": {
+            "lineage_id": "L"
+          },
+          "note": "Accepted claims are immutable and are not affected by the key's expiry. The ledger bounds replay, not the ledger's subject."
+        },
+        {
+          "table": "claims",
+          "key": "any row from the request that presented the expired key",
+          "presence": "absent",
+          "note": "410 and no execution. This is the row that would exist if the key had been deleted at expires_at instead of retained."
+        },
+        {
+          "table": "outbox_events",
+          "key": "any row from the refused request",
+          "presence": "absent",
+          "note": "A refusal publishes nothing, so a client retrying past the window cannot move a standing."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "device-sequence-fork",
       "tables": [
-        "device_sequences",
         "claims",
+        "device_sequences",
         "quarantines"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "submission-a-locks-the-lineage-sequence-row",
+        "submission-b-blocks-on-the-same-lineage-row",
+        "submission-a-inserts-at-next_sequence-and-advances-the-head",
+        "submission-a-commits",
+        "submission-b-acquires-the-lock-and-finds-its-sequence-taken",
+        "submission-b-is-quarantined-rather-than-rejected-silently"
       ],
       "expected": "one sequence wins and the conflicting fork is quarantined",
+      "residual_rows": [
+        {
+          "table": "device_sequences",
+          "key": "lineage_id = L",
+          "presence": "present",
+          "columns": {
+            "next_sequence": "N + 1",
+            "local_commitment_head": "the winner's hash"
+          },
+          "note": "One counter per lineage, not per device row. D-592 moved it, and a device-scoped counter let a restored store hold the same sequence twice."
+        },
+        {
+          "table": "claims",
+          "key": "(lineage_id, device_sequence) = (L, N)",
+          "presence": "present",
+          "columns": {
+            "device_id": "the winning device row"
+          },
+          "note": "Exactly one, held by the unique constraint on the lineage rather than on the device."
+        },
+        {
+          "table": "quarantines",
+          "key": "the losing submission",
+          "presence": "present",
+          "columns": {
+            "claim_id": "null",
+            "reason_code": "a fork basis"
+          },
+          "note": "The loser is recorded. A silently dropped fork is indistinguishable from a network failure, and the fork bases exist to be counted."
+        },
+        {
+          "table": "claims",
+          "key": "a second row at (lineage_id, device_sequence) = (L, N)",
+          "presence": "absent",
+          "note": "This is the constraint PF-010 moved off device_id; the plan names the lineage columns so it fails if it is ever moved back."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "friend-cross-request",
       "tables": [
-        "friend_requests",
         "friend_edges",
+        "friend_requests",
         "social_integrity_events"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "request-a-and-request-b-are-the-two-directions-of-one-pair",
+        "request-a-inserts-its-friend_requests-row",
+        "request-b-inserts-its-friend_requests-row",
+        "request-a-commits-the-canonical-ordered-edge",
+        "request-b-collides-on-the-canonical-pair-and-accepts-instead-of-inserting"
       ],
       "expected": "crossed requests create one canonical ordered friendship",
+      "residual_rows": [
+        {
+          "table": "friend_edges",
+          "key": "(account_id_a, account_id_b) with account_id_a < account_id_b",
+          "presence": "present",
+          "columns": {
+            "established_at": "the earlier of the two commits"
+          },
+          "note": "One row for one friendship. The ordering is a check constraint, so the reverse pair cannot be inserted as a second edge."
+        },
+        {
+          "table": "friend_requests",
+          "key": "both rows",
+          "presence": "present",
+          "columns": {
+            "state": "accepted"
+          },
+          "note": "Both requests are answered. Deleting the loser would lose the record that the second person also asked."
+        },
+        {
+          "table": "social_integrity_events",
+          "key": "(aggregate_id, aggregate_revision) for the edge",
+          "presence": "present",
+          "columns": {
+            "event_type": "the friendship establishment"
+          },
+          "note": "One event for one edge, held unique on the aggregate revision."
+        },
+        {
+          "table": "friend_edges",
+          "key": "the reverse pair (account_id_b, account_id_a)",
+          "presence": "absent",
+          "note": "Two rows for one friendship is what makes an unfriend leave half a relationship behind."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "block-race",
       "tables": [
         "blocks",
+        "board_invites",
         "friend_edges",
-        "rival_edges",
-        "board_invites"
+        "rival_edges"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "the-block-transaction-locks-both-account-rows-in-canonical-order",
+        "a-concurrent-invite-transaction-blocks-on-the-second-of-them",
+        "the-block-deletes-the-friendship-and-the-rivalry-and-inserts-the-block",
+        "the-block-commits",
+        "the-invite-transaction-rereads-and-finds-a-block-in-force"
       ],
       "expected": "block atomically removes incompatible relationships and invitations",
+      "residual_rows": [
+        {
+          "table": "blocks",
+          "key": "(blocker_account_id, blocked_account_id)",
+          "presence": "present",
+          "columns": {
+            "established_at": "not null"
+          },
+          "note": "One directional row. The reverse is a separate decision and is not created here."
+        },
+        {
+          "table": "blocks",
+          "key": "the reverse pair, unless the other party blocked independently",
+          "presence": "absent",
+          "note": "Blocks are directional. A symmetric insert would make one person's block silently speak for the other's."
+        },
+        {
+          "table": "friend_edges",
+          "key": "the canonical pair for the two accounts",
+          "presence": "absent",
+          "note": "Removed in the same transaction as the block, so no window exists in which a block is in force and the friendship still renders."
+        },
+        {
+          "table": "rival_edges",
+          "key": "either direction between the two accounts",
+          "presence": "absent",
+          "note": "Rivalry is separate from friendship and from blocking, and a block ends it in both directions."
+        },
+        {
+          "table": "board_invites",
+          "key": "a pending invite between the two accounts",
+          "presence": "absent",
+          "note": "An invite that outlives the block would deliver a notification from a blocked account."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "board-owner-transfer",
       "tables": [
-        "boards",
-        "board_memberships"
+        "board_memberships",
+        "boards"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "the-transfer-locks-the-board-row",
+        "a-concurrent-transfer-blocks-on-it",
+        "the-first-transfer-demotes-the-outgoing-owner-and-promotes-the-incoming-one",
+        "the-first-transfer-commits",
+        "the-second-transfer-rereads-and-finds-a-different-outgoing-owner"
       ],
       "expected": "exactly one active owner exists before and after transfer",
+      "residual_rows": [
+        {
+          "table": "board_memberships",
+          "key": "(board_id, account_id) for the incoming owner",
+          "presence": "present",
+          "columns": {
+            "role": "owner",
+            "state": "active-owner"
+          },
+          "note": "The partial unique index board_one_active_owner is what makes 'exactly one' a constraint rather than an intention."
+        },
+        {
+          "table": "board_memberships",
+          "key": "(board_id, account_id) for the outgoing owner",
+          "presence": "present",
+          "columns": {
+            "state": "a non-owner active state"
+          },
+          "note": "The outgoing owner stays a member. Removing them would make a transfer and an eviction the same operation."
+        },
+        {
+          "table": "boards",
+          "key": "board_id = B",
+          "presence": "present",
+          "columns": {
+            "state": "unchanged by the transfer"
+          },
+          "note": "Ownership lives on the membership row, so the board row is not the thing that changes."
+        },
+        {
+          "table": "board_memberships",
+          "key": "a second row in state 'active-owner' for the same board",
+          "presence": "absent",
+          "note": "Refused by the index rather than by the ordering of the two updates."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "ranking-generation-promote",
       "tables": [
-        "ranking_views",
         "ranking_projection_generations",
         "score_snapshots"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "the-builder-writes-a-generation-in-a-building-state",
+        "the-validator-seals-it-and-records-its-content-hash",
+        "a-concurrent-promotion-of-an-older-generation-is-attempted",
+        "the-promotion-transaction-supersedes-the-previously-published-generation",
+        "the-older-promotion-finds-its-target-already-superseded-and-stops"
       ],
       "expected": "only a validated complete generation becomes published",
+      "residual_rows": [
+        {
+          "table": "ranking_projection_generations",
+          "key": "(ranking_view_id, generation) = (V, G)",
+          "presence": "present",
+          "columns": {
+            "state": "published",
+            "content_hash": "not null",
+            "sealed_at": "not null",
+            "published_at": "not null",
+            "superseded_by_generation": "null"
+          },
+          "note": "Sealed before published, and the content hash exists before either. A generation published without a hash cannot be shown to be the one that was validated."
+        },
+        {
+          "table": "ranking_projection_generations",
+          "key": "(ranking_view_id, generation) = (V, G - 1)",
+          "presence": "present",
+          "columns": {
+            "superseded_by_generation": "G"
+          },
+          "note": "The previous generation is retained and marked, not deleted: an entry in a sealed generation is immutable and a cursor may still be pointing at it."
+        },
+        {
+          "table": "score_snapshots",
+          "key": "(ranking_view_id, generation) = (V, G)",
+          "presence": "present",
+          "columns": {
+            "content_hash": "the same value the generation carries",
+            "sealed_at": "not null"
+          },
+          "note": "The snapshot and the generation agree on the hash, or the promotion was of something other than what was validated."
+        },
+        {
+          "table": "ranking_projection_generations",
+          "key": "a second row for view V with published_at set and superseded_by_generation null",
+          "presence": "absent",
+          "note": "One active pointer. Two published generations make 'the leaderboard' ambiguous at the moment a page is served."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "moderation-appeal-reversal",
       "tables": [
-        "moderation_cases",
-        "moderation_effects",
-        "appeals",
         "appeal_decisions",
+        "appeals",
+        "moderation_effects",
         "ranking_corrections"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "the-appeal-decision-transaction-locks-the-case-row",
+        "a-concurrent-rebuild-of-the-affected-view-blocks-on-the-correction-insert",
+        "the-decision-appends-the-inverse-effect-and-the-correction",
+        "the-decision-commits",
+        "the-rebuild-reruns-and-observes-the-correction"
       ],
       "expected": "appeal reversal appends inverse effects and schedules rebuild",
+      "residual_rows": [
+        {
+          "table": "appeal_decisions",
+          "key": "appeal_decision_id = D",
+          "presence": "present",
+          "columns": {
+            "decision": "the overturn",
+            "decision_digest": "not null",
+            "decided_at": "not null"
+          },
+          "note": "One decision row per appeal outcome, immutable."
+        },
+        {
+          "table": "appeals",
+          "key": "appeal_id = P",
+          "presence": "present",
+          "columns": {
+            "state": "a terminal decided state"
+          },
+          "note": "The appeal reaches a terminal state in the same transaction as its decision."
+        },
+        {
+          "table": "moderation_effects",
+          "key": "the original effect row",
+          "presence": "present",
+          "columns": {
+            "retracted_at": "not null"
+          },
+          "note": "Retracted, never deleted. The effect happened and the record that it happened is what an appeal is about."
+        },
+        {
+          "table": "ranking_corrections",
+          "key": "correction_id = C",
+          "presence": "present",
+          "columns": {
+            "token_burn_total_delta": "the inverse of the effect's delta"
+          },
+          "note": "The reversal is an appended inverse row, so a rebuild reproduces the same total from the ledger rather than from a mutated figure."
+        },
+        {
+          "table": "moderation_effects",
+          "key": "an edited version of the original row carrying the reversed effect",
+          "presence": "absent",
+          "note": "Mutating the effect in place would erase the fact that the case was ever actioned, which is the record the appeal outcome is evidence about."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "deletion-export-race",
       "tables": [
-        "exports",
-        "export_artifacts",
+        "deletion_effects",
         "deletion_jobs",
-        "deletion_effects"
+        "export_artifacts",
+        "exports"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "the-export-transaction-selects-the-account-row-for-share",
+        "the-deletion-transaction-requests-the-same-row-for-update",
+        "one-of-the-two-commits-first-and-the-other-observes-it",
+        "the-export-either-completes-before-the-deletion-or-is-refused-by-it",
+        "no-interleaving-produces-an-export-artifact-of-deleted-data"
       ],
       "expected": "export snapshot and deletion policy yield one explicit allowed or denied result",
+      "residual_rows": [
+        {
+          "table": "exports",
+          "key": "export_id = E",
+          "presence": "present",
+          "columns": {
+            "state": "either a completed state or an explicitly denied one"
+          },
+          "note": "Never left in progress. An export stuck mid-flight while a deletion commits is the state in which nobody can say whether the data left."
+        },
+        {
+          "table": "deletion_jobs",
+          "key": "deletion_job_id = J",
+          "presence": "present",
+          "columns": {
+            "state": "the state the job reached",
+            "account_id": "A"
+          },
+          "note": "account_id carries no foreign key here: the job is the proof the deletion happened and cannot reference what it deleted."
+        },
+        {
+          "table": "deletion_effects",
+          "key": "(deletion_job_id, subsystem) for every subsystem",
+          "presence": "present",
+          "columns": {
+            "state": "recorded per subsystem",
+            "effect_digest": "not null"
+          },
+          "note": "One row per subsystem, so a partially completed deletion is legible rather than inferred from an overall status."
+        },
+        {
+          "table": "export_artifacts",
+          "key": "any artifact for E if the export was denied",
+          "presence": "absent",
+          "note": "A denied export leaves no artifact. An artifact whose export row says denied is the leak this case exists to refuse."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
@@ -212,30 +955,94 @@
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "the-server-issues-one-signed-command-per-device",
+        "the-device-applies-it-and-returns-a-signed-receipt",
+        "a-duplicate-receipt-for-the-same-command-arrives",
+        "the-primary-key-on-command_id-refuses-the-duplicate",
+        "an-unacknowledged-command-expires-rather-than-waiting-forever"
       ],
       "expected": "one signed command produces at most one device-bound receipt",
+      "residual_rows": [
+        {
+          "table": "local_deletion_commands",
+          "key": "command_id = M",
+          "presence": "present",
+          "columns": {
+            "state": "acknowledged, waived or expired",
+            "device_id": "V"
+          },
+          "note": "Every command reaches one of three ends. A command with no end is a deletion that is neither done nor abandoned."
+        },
+        {
+          "table": "local_deletion_receipts",
+          "key": "command_id = M",
+          "presence": "present",
+          "columns": {
+            "device_id": "V",
+            "receipt_digest": "not null",
+            "cose_sign1": "not null"
+          },
+          "note": "At most one, keyed on the command, and signed by the device key rather than asserted by the server."
+        },
+        {
+          "table": "local_deletion_receipts",
+          "key": "a second row for command_id = M",
+          "presence": "absent",
+          "note": "The key refuses it. Two receipts for one command would let a device claim two different outcomes for the same deletion."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     },
     {
       "case_id": "release-promote-rollback",
       "tables": [
-        "tuf_roots",
         "release_sets",
         "release_targets",
+        "tuf_roots",
         "update_installations"
       ],
       "isolation": "serializable",
       "interleaving": [
-        "transaction-a-locks-authority",
-        "transaction-b-attempts-conflict",
-        "transaction-a-commits",
-        "transaction-b-rechecks"
+        "the-promotion-verifies-threshold-signatures-against-the-current-root",
+        "a-concurrent-root-rotation-blocks-on-the-root-row",
+        "the-promotion-inserts-the-release-set-and-its-targets-in-one-transaction",
+        "a-compatibility-check-fails-and-the-transaction-rolls-back",
+        "the-rollback-leaves-no-partially-published-release"
       ],
       "expected": "only threshold-signed compatible release promotes; failure rolls back",
+      "residual_rows": [
+        {
+          "table": "tuf_roots",
+          "key": "root_version = R",
+          "presence": "present",
+          "columns": {
+            "threshold": "unchanged by a failed promotion"
+          },
+          "note": "The root is not modified by promoting something signed under it."
+        },
+        {
+          "table": "release_sets",
+          "key": "release_set_id = S, only if the promotion succeeded",
+          "presence": "present",
+          "columns": {
+            "state": "published",
+            "tuf_root_version": "R"
+          },
+          "note": "The release names the root it was verified against, so a later root rotation does not silently re-authorize it."
+        },
+        {
+          "table": "release_targets",
+          "key": "any target row for a release_set whose state is not published",
+          "presence": "absent",
+          "note": "Targets and the release set commit together. A target visible before its release set is an artifact a client could fetch under a version that does not exist."
+        },
+        {
+          "table": "update_installations",
+          "key": "any row referencing a release_set that rolled back",
+          "presence": "absent",
+          "note": "A device cannot record installing a release that was never published."
+        }
+      ],
       "execution_state": "planned-runtime-evidence"
     }
   ]
