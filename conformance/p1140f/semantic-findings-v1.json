@@ -184,7 +184,7 @@
     {
       "finding_id": "SR-012",
       "severity": "P1",
-      "state": "repair-in-progress",
+      "state": "repaired-pending-review",
       "title": "Idempotency and ambiguous commit recovery",
       "repair_task": "P-1140F-4",
       "finding_class": "contradiction",
@@ -197,7 +197,8 @@
         "packages/schemas/openapi-v1.yaml#IdempotencyKey"
       ],
       "closure_evidence": [
-        "PF-019 at bf1a128ace7a3d6e8cccc2585270382da242aaee: idempotency_records keys on exactly the key_scope openapi-v1.yaml#x-idempotency-contract declares, so operation_id is inside the key and one key across two operations can no longer be answered with the other operation's recorded response. replayable-failure and abandoned replace a single failed state, which is the distinction a retry needs."
+        "PF-019 at bf1a128ace7a3d6e8cccc2585270382da242aaee: idempotency_records keys on exactly the key_scope openapi-v1.yaml#x-idempotency-contract declares, so operation_id is inside the key and one key across two operations can no longer be answered with the other operation's recorded response. replayable-failure and abandoned replace a single failed state, which is the distinction a retry needs.",
+        "PF-020 at 868e4f867c65442faf51deb79f3a93738258de66: expiry was implemented as deletion, and a deleted key is a fresh key. idempotency_records had one lifetime column, so the only way to stop replaying past the window the wire contract declares was to delete the row — after which the next request carrying that key executed as a new mutation, which is the exact case the unit's prose said must be refused. retain_until now bounds retention separately from replay. sql-race-plans-v1.json asserted nothing: all fourteen cases carried the same four interleaving steps and one sentence, and the validator checked only ids, table existence and a flag, all of which pass on placeholders. Nineteen cases now name the rows a correct implementation leaves behind, present and absent, with 92 column assertions resolving against the DDL. Three stale justifications claiming this finding stays open for defects PF-019 and PF-049 had already repaired were struck."
       ],
       "reviewed_commit": null,
       "review_verdict": "pending"

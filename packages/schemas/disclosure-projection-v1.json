@@ -9,6 +9,7 @@
       "note": "What a leaderboard row is. Every field here is public, which is the point: an entry that carried one narrower field would be a shape the server has to redact per viewer, and a redaction that fails open publishes it.",
       "fields": [
         { "name": "ranking_view_id", "audience": "public", "classification": "non-personal" },
+        { "name": "generation", "audience": "public", "classification": "non-personal" },
         { "name": "snapshot_id", "audience": "public", "classification": "non-personal" },
         { "name": "position", "audience": "public", "classification": "derived-personal" },
         { "name": "previous_position", "audience": "public", "classification": "derived-personal" },

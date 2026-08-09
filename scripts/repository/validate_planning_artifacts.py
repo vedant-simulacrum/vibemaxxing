@@ -115,6 +115,7 @@ EXAMPLE_SCHEMAS: dict[str, str] = {
     "notification-delivery": "notification-delivery-v1.schema.json",
     "presence-pulse": "presence-pulse-v1.schema.json",
     "ranked-identity": "ranked-identity-v1.schema.json",
+    "ranking-view": "ranking-view-v1.schema.json",
     "recovery-case": "recovery-case-v1.schema.json",
     "source-observation": "source-observation.schema.json",
     "tuf-trust": "tuf-trust-v1.schema.json",
@@ -142,6 +143,13 @@ EXAMPLE_COMPUTED_NEGATIVES: dict[str, str] = {
     ),
     "consolidation-plan.invalid-newer-identity-survives.json": (
         "scripts/repository/validate_oauth_identity_contract.py"
+    ),
+    # A 64-hex string is a 64-hex string. The rule broken here is that
+    # `ranking_view_id` must be the digest over *both* halves, and the fixture
+    # carries the definition-only digest instead: the arithmetic is what refuses it,
+    # and `validate_ranking_view_separation` below is what performs the arithmetic.
+    "ranking-view.invalid-view-id-omits-the-audience.json": (
+        "scripts/repository/validate_planning_artifacts.py"
     ),
 }
 
@@ -1062,6 +1070,10 @@ def validate_p1140d_contracts() -> None:
         "ranked-identity-eligibility",
         "idempotency-ledger",
         "ranking-projection",
+        # PF-023. `periods` carried five checked timestamps on `seasons` and no
+        # lifecycle of its own, so nothing recorded which side of the lateness
+        # window a period was on.
+        "period",
         "model-alias-resolution",
         "friendship",
         "rivalry",
@@ -3991,6 +4003,749 @@ def validate_presentation_contracts() -> None:
             )
 
 
+# The property partition of `ranking-view-v1.schema.json`, held here as data and
+# checked against the schema in both directions. A field added to either half without
+# being declared here fails, and a declaration for a field the schema no longer carries
+# fails too, so this cannot become a list that was true once.
+RANKING_DEFINITION_PROPERTIES = frozenset(
+    {
+        "ranking_definition_id",
+        "metric",
+        "metric_version",
+        "period_id",
+        "filters",
+        "tie_policy",
+        "display_order",
+        "rules_digest",
+        "pricing_dataset_digest",
+        "evidence_policy_digest",
+        "weight_table_digest",
+        "source_checkpoint_digest",
+    }
+)
+
+RANKING_AUDIENCE_PROPERTIES = frozenset(
+    {
+        "audience_id",
+        "scope",
+        "board_id",
+        "viewer_ranked_identity_id",
+        "default_visibility",
+        "authorization_inputs",
+        "authorization_revision",
+    }
+)
+
+# Every audience example, by name and by what it is there to demonstrate. Enumerated
+# rather than globbed, because the two facts this check exists to prove -- one
+# definition serving several audiences, and each audience producing its own view
+# identifier -- both get *easier* to satisfy as examples are deleted. A glob over one
+# surviving file would pass while proving nothing.
+RANKING_VIEW_EXAMPLES = {
+    "ranking-view.valid.json": "global",
+    "ranking-view.valid-friends-audience-over-the-same-definition.json": "friends",
+    "ranking-view.valid-board-audience.json": "board",
+}
+
+
+def ranking_view_digests(record: dict[str, Any]) -> tuple[str, str, str]:
+    """Recompute the three identifiers a ranking view carries."""
+    definition_id = record_digest(
+        {
+            key: value
+            for key, value in record["definition"].items()
+            if key != "ranking_definition_id"
+        }
+    )
+    audience_id = record_digest(
+        {
+            key: value
+            for key, value in record["audience"].items()
+            if key != "audience_id"
+        }
+    )
+    view_id = record_digest(
+        {"audience_id": audience_id, "ranking_definition_id": definition_id}
+    )
+    return definition_id, audience_id, view_id
+
+
+def validate_ranking_view_separation() -> None:
+    """Prove the ranking definition and the audience are two things, arithmetically.
+
+    `ranking-view-v1.schema.json` was one flat object holding `scope` and `board_id`
+    beside `rules_digest` and `period_id`, and `ranking_view_id` was a digest over the
+    lot with no name for either half. Nothing could then say that a global board and a
+    friends board over the same period are one ranking read by two audiences, and
+    nothing could refuse a view whose identifier covered only the ranking -- which is
+    the shape in which two audiences collapse onto one sealed generation and a viewer
+    reads a page they were not authorized for.
+
+    Four rules:
+
+    1. the property partition is exact in both directions, so neither half can grow a
+       field of the other's kind unnoticed;
+    2. every declared audience example exists and every ranking-view example is
+       declared, so the demonstration cannot be thinned to nothing;
+    3. all three identifiers recompute from the record's own bytes;
+    4. the declared examples share one `ranking_definition_id` and have three distinct
+       `ranking_view_id` values -- which is the property the split exists for, stated
+       so that it fails if the audience stops reaching the identifier.
+
+    The authorization vocabulary is cross-resolved against
+    `projection-authorization-v1.json` in both directions, and the SQL half is checked
+    for the write-site constraint: `ranking_views` admits `universally-public` on the
+    global scope and on no other. AGENTS.md's rule that only the global leaderboard is
+    universally public by default was, until PF-021, enforced only where a page is
+    rendered.
+    """
+    schema = validate_schema_file(SCHEMAS / "ranking-view-v1.schema.json")
+    definitions = schema["$defs"]
+    declared_definition = set(definitions["ranking_definition"]["properties"])
+    declared_audience = set(definitions["audience"]["properties"])
+
+    if declared_definition != set(RANKING_DEFINITION_PROPERTIES):
+        raise ValidationFailure(
+            "ranking definition properties differ from the declared partition: "
+            f"only-in-schema={sorted(declared_definition - RANKING_DEFINITION_PROPERTIES)} "
+            f"only-in-validator={sorted(RANKING_DEFINITION_PROPERTIES - declared_definition)}"
+        )
+    if declared_audience != set(RANKING_AUDIENCE_PROPERTIES):
+        raise ValidationFailure(
+            "ranking audience properties differ from the declared partition: "
+            f"only-in-schema={sorted(declared_audience - RANKING_AUDIENCE_PROPERTIES)} "
+            f"only-in-validator={sorted(RANKING_AUDIENCE_PROPERTIES - declared_audience)}"
+        )
+    overlap = declared_definition & declared_audience
+    if overlap:
+        raise ValidationFailure(
+            f"a property is declared on both halves of the ranking view: {sorted(overlap)}"
+        )
+
+    profile = load_json(SCHEMAS / "projection-authorization-v1.json")
+    profile_inputs = {entry["input_id"] for entry in profile["inputs"]}
+    schema_inputs = set(
+        definitions["audience"]["properties"]["authorization_inputs"]["items"]["enum"]
+    )
+    if schema_inputs != profile_inputs:
+        raise ValidationFailure(
+            "ranking audience authorization inputs differ from "
+            "projection-authorization-v1.json: "
+            f"only-in-schema={sorted(schema_inputs - profile_inputs)} "
+            f"only-in-profile={sorted(profile_inputs - schema_inputs)}"
+        )
+
+    directory = SCHEMAS / "examples"
+    present = {
+        path.name
+        for path in directory.glob("ranking-view.*.json")
+        if ".valid" in path.name
+    }
+    if present != set(RANKING_VIEW_EXAMPLES):
+        raise ValidationFailure(
+            "ranking-view audience examples differ from the declared set: "
+            f"only-on-disk={sorted(present - set(RANKING_VIEW_EXAMPLES))} "
+            f"only-declared={sorted(set(RANKING_VIEW_EXAMPLES) - present)}"
+        )
+
+    definition_ids: set[str] = set()
+    view_ids: set[str] = set()
+    for name, expected_scope in sorted(RANKING_VIEW_EXAMPLES.items()):
+        record = load_json(directory / name)
+        validate_instance(schema, record, f"example {name}")
+        if record["audience"]["scope"] != expected_scope:
+            raise ValidationFailure(
+                f"example {name} is declared as the {expected_scope} audience and "
+                f"carries scope {record['audience']['scope']!r}"
+            )
+        definition_id, audience_id, view_id = ranking_view_digests(record)
+        if record["definition"]["ranking_definition_id"] != definition_id:
+            raise ValidationFailure(
+                f"example {name} ranking_definition_id does not match its canonical "
+                f"encoding: recorded {record['definition']['ranking_definition_id']}, "
+                f"computed {definition_id}"
+            )
+        if record["audience"]["audience_id"] != audience_id:
+            raise ValidationFailure(
+                f"example {name} audience_id does not match its canonical encoding: "
+                f"recorded {record['audience']['audience_id']}, computed {audience_id}"
+            )
+        if record["ranking_view_id"] != view_id:
+            raise ValidationFailure(
+                f"example {name} ranking_view_id does not bind both halves: recorded "
+                f"{record['ranking_view_id']}, computed {view_id}"
+            )
+        definition_ids.add(definition_id)
+        view_ids.add(view_id)
+
+    if len(definition_ids) != 1:
+        raise ValidationFailure(
+            "the declared audience examples do not share one ranking definition, so "
+            "nothing demonstrates that one ranking serves several audiences"
+        )
+    if len(view_ids) != len(RANKING_VIEW_EXAMPLES):
+        raise ValidationFailure(
+            "two declared audiences produce the same ranking_view_id, so the audience "
+            "does not reach the identifier and two audiences share one sealed generation"
+        )
+
+    negative = directory / "ranking-view.invalid-view-id-omits-the-audience.json"
+    record = load_json(negative)
+    if record["ranking_view_id"] == ranking_view_digests(record)[2]:
+        raise ValidationFailure(
+            f"{negative.name} no longer carries a view identifier that omits the "
+            "audience; the fixture has stopped being the negative it is declared as"
+        )
+
+    bodies = _planning_table_bodies()
+    for table, constraint in {
+        # Only the global leaderboard is universally public by default, stated where
+        # the row is written and not only where a page is rendered.
+        "ranking_views": (
+            "check ((scope = 'global') = (default_visibility = 'universally-public'))"
+        ),
+        # One definition, one audience, one row: the pair is the key.
+        "ranking_views_pair": "unique (ranking_definition_id, audience_id)",
+        # The definition names no viewer, no cohort and no board.
+        "ranking_definitions": "check (metric = 'credited-token-burn')",
+    }.items():
+        body = bodies.get(table.removesuffix("_pair"))
+        if body is None:
+            raise ValidationFailure(f"planning DDL lacks the {table} table")
+        if constraint not in " ".join(body.split()):
+            raise ValidationFailure(
+                f"{table} lacks its required ranking-view invariant: {constraint}"
+            )
+
+    definition_body = " ".join(bodies["ranking_definitions"].split())
+    for audience_column in ("scope", "board_id", "viewer", "audience_id"):
+        if audience_column in definition_body:
+            raise ValidationFailure(
+                f"ranking_definitions carries the audience column {audience_column!r}; "
+                "a definition that names its audience cannot serve a second one"
+            )
+
+    spec = load_yaml(SCHEMAS / "openapi-v1.yaml")
+    declared_public = spec["x-public-operations"]
+    boards = sorted(
+        identifier
+        for identifier, reason in declared_public.items()
+        if reason == "global-board"
+    )
+    if boards != ["getGlobalLeaderboard"]:
+        raise ValidationFailure(
+            f"the global-board reason is held by {boards}; AGENTS.md makes exactly one "
+            "view universally public"
+        )
+    scope_enum = set(spec["components"]["parameters"]["Scope"]["schema"]["enum"])
+    if "global" in scope_enum:
+        raise ValidationFailure(
+            "the Scope path parameter still admits 'global', so the public global "
+            "board and the viewer-relative boards share one operation again"
+        )
+    for operation_id in boards:
+        for path, item in spec["paths"].items():
+            for operation in item.values():
+                if not isinstance(operation, dict):
+                    continue
+                if operation.get("operationId") != operation_id:
+                    continue
+                names = {
+                    spec["components"]["parameters"][
+                        parameter["$ref"].rsplit("/", 1)[1]
+                    ]["name"]
+                    for parameter in operation.get("parameters", [])
+                    if isinstance(parameter, dict) and "$ref" in parameter
+                }
+                if "scope" in names:
+                    raise ValidationFailure(
+                        f"{operation_id} is declared global-board and takes a scope "
+                        "parameter; the reason then covers scopes it does not name"
+                    )
+    entry_classes = set(
+        spec["components"]["schemas"]["RankEntry"]["properties"]["evidence_class"][
+            "enum"
+        ]
+    )
+    if "imported" in entry_classes:
+        raise ValidationFailure(
+            "RankEntry admits the imported evidence class; historical imports never "
+            "enter active competition and produce no ranking entry"
+        )
+
+
+# Which reason code each refusal answers with. Held here rather than read from the
+# vector file, so that a case cannot introduce its own mapping; both directions are
+# checked, and every code named must resolve in reason-codes-v1.json.
+CURSOR_REFUSAL_REASONS = {
+    "unknown-issuer": "PAGINATION_CURSOR_INVALID",
+    "expired": "PAGINATION_CURSOR_INVALID",
+    "viewer-mismatch": "VIEWER_NOT_AUTHORIZED",
+    "generation-mismatch": "PAGINATION_CURSOR_INVALID",
+    "authorization-revision-moved": "PAGINATION_CURSOR_INVALID",
+}
+
+
+def evaluate_cursor(case: dict[str, Any], order: list[str]) -> str | None:
+    """Decide one cursor presentation. A second implementation of the rule.
+
+    The vector file records the outcome it expects; this reaches the outcome from the
+    inputs, in the declared refusal order, and never reads `expected`. A fixture whose
+    recorded answer disagrees with this fails, so the corpus cannot confirm itself.
+    """
+    cursor = case["cursor"]
+    presentation = case["presentation"]
+
+    def issued_by_a_trusted_key() -> bool:
+        return cursor["issuer_key_id"] in presentation["trusted_issuer_key_ids"]
+
+    def expired() -> bool:
+        return presentation["presented_at"] >= cursor["expires_at"]
+
+    def viewer_mismatch() -> bool:
+        return cursor["bound_viewer"] != presentation["presenting_viewer"]
+
+    def generation_mismatch() -> bool:
+        return (
+            cursor["generation"] != presentation["active_generation"]
+            or cursor["snapshot_id"] != presentation["active_snapshot_id"]
+        )
+
+    def revision_moved() -> bool:
+        return (
+            cursor["authorization_revision"]
+            != presentation["current_authorization_revision"]
+        )
+
+    tests = {
+        "unknown-issuer": lambda: not issued_by_a_trusted_key(),
+        "expired": expired,
+        "viewer-mismatch": viewer_mismatch,
+        "generation-mismatch": generation_mismatch,
+        "authorization-revision-moved": revision_moved,
+    }
+    for refusal in order:
+        if tests[refusal]():
+            return refusal
+    return None
+
+
+def validate_ranking_cursor_vectors() -> None:
+    """Prove a leaderboard cursor is viewer-bound, generation-pinned and expiring.
+
+    The `Cursor` parameter asserted that the server "rejects a cursor it did not issue,
+    a cursor issued against a different snapshot_id, and a cursor issued to a different
+    principal". No record in the repository held an issuer, a snapshot or a principal,
+    so all three refusals compared fields that did not exist. A cursor is an opaque
+    string to a client and it is not an opaque string to the contract.
+
+    Five refusals in a fixed order, nine cases, and the order itself is a rule: a
+    presentation that breaks two of them must be refused by the same one every time,
+    or the refusal tells a prober which of the two facts they guessed right.
+
+    Every case is evaluated by `evaluate_cursor` rather than read back, both refusal
+    directions are covered so an unused refusal fails, and the reason codes resolve in
+    `reason-codes-v1.json` against the operations that actually return a page.
+    """
+    cursor_schema = validate_schema_file(SCHEMAS / "ranking-cursor-v1.schema.json")
+    vectors_schema = validate_schema_file(
+        SCHEMAS / "ranking-cursor-vectors-v1.schema.json"
+    )
+    vectors = load_json(CONFORMANCE / "planning" / "ranking-cursor-vectors-v1.json")
+    validate_instance(vectors_schema, vectors, "ranking cursor vectors")
+
+    order = vectors["refusal_order"]
+    if sorted(order) != sorted(CURSOR_REFUSAL_REASONS):
+        raise ValidationFailure(
+            "the cursor refusal order does not cover exactly the declared refusals: "
+            f"only-in-file={sorted(set(order) - set(CURSOR_REFUSAL_REASONS))} "
+            f"only-in-validator={sorted(set(CURSOR_REFUSAL_REASONS) - set(order))}"
+        )
+
+    codes = {
+        item["code"] for item in load_json(SCHEMAS / "reason-codes-v1.json")["codes"]
+    }
+    unknown = sorted(set(CURSOR_REFUSAL_REASONS.values()) - codes)
+    if unknown:
+        raise ValidationFailure(
+            f"a cursor refusal names a reason code the registry does not declare: {unknown}"
+        )
+
+    assert_unique(
+        [case["case_id"] for case in vectors["cases"]], "ranking cursor case IDs"
+    )
+    exercised: set[str] = set()
+    accepted = 0
+    for case in vectors["cases"]:
+        label = case["case_id"]
+        validate_instance(cursor_schema, case["cursor"], f"{label} cursor")
+        computed = evaluate_cursor(case, order)
+        expected = case["expected"]
+        if computed is None:
+            if expected["outcome"] != "accept":
+                raise ValidationFailure(
+                    f"{label} records {expected['refusal']} and the rules accept the "
+                    "presentation"
+                )
+            accepted += 1
+            continue
+        if expected["outcome"] != "refuse":
+            raise ValidationFailure(
+                f"{label} records accept and the rules refuse it with {computed}"
+            )
+        if expected["refusal"] != computed:
+            raise ValidationFailure(
+                f"{label} records refusal {expected['refusal']} and the rules refuse "
+                f"it with {computed}"
+            )
+        if expected["reason_code"] != CURSOR_REFUSAL_REASONS[computed]:
+            raise ValidationFailure(
+                f"{label} answers {computed} with {expected['reason_code']} rather "
+                f"than {CURSOR_REFUSAL_REASONS[computed]}"
+            )
+        exercised.add(computed)
+
+    missing = sorted(set(CURSOR_REFUSAL_REASONS) - exercised)
+    if missing:
+        raise ValidationFailure(
+            f"no case exercises the cursor refusals {missing}; a refusal with no case "
+            "is a rule nothing has ever reached"
+        )
+    if accepted == 0:
+        raise ValidationFailure(
+            "no cursor case is accepted, so the corpus proves only that the rule "
+            "refuses and not that it ever serves a page"
+        )
+
+    # The rule is only worth stating if the storage it anchors in is stable, so the
+    # generation-keyed entry constraints are checked here rather than assumed.
+    bodies = _planning_table_bodies()
+    for table, constraint in {
+        "ranking_entries": "primary key (ranking_view_id, generation, position)",
+        "score_snapshots": "unique (ranking_view_id, generation)",
+    }.items():
+        body = bodies.get(table)
+        if body is None:
+            raise ValidationFailure(f"planning DDL lacks the {table} table")
+        if constraint not in " ".join(body.split()):
+            raise ValidationFailure(
+                f"{table} lacks its generation-keyed constraint: {constraint}"
+            )
+    if "unique (ranking_view_id, generation, erasure_domain_id)" not in " ".join(
+        bodies["ranking_entries"].split()
+    ):
+        raise ValidationFailure(
+            "ranking_entries does not key one participant per generation; a key that "
+            "omits the generation lets one erasure domain hold two live positions"
+        )
+
+    sql = " ".join(_planning_sql().split())
+    active_pointer = (
+        "create unique index ranking_projection_generations_active_idx on "
+        "ranking_projection_generations (ranking_view_id) where state = 'active'"
+    )
+    if active_pointer not in sql:
+        raise ValidationFailure(
+            "ranking_projection_generations has no partial unique index on the active "
+            "state, so a view can hold two active generations and 'the current "
+            "standing' is whichever one a reader's plan finds"
+        )
+
+    spec = load_yaml(SCHEMAS / "openapi-v1.yaml")
+    schemas = spec["components"]["schemas"]
+    for name in ("RankEntry", "LeaderboardPage"):
+        if "generation" not in schemas[name]["properties"]:
+            raise ValidationFailure(
+                f"{name} does not carry the generation; every entry key in the DDL "
+                "includes it and the API projection of an entry must too"
+            )
+    if "generation" not in schemas["LeaderboardPage"]["required"]:
+        raise ValidationFailure("LeaderboardPage may omit the generation it renders")
+
+
+CORRECTION_REJECTION_REASON = "CLAIM_ACCOUNTING_INCONSISTENT"
+
+
+def rebuild_period_total(case: dict[str, Any]) -> tuple[int | None, str | None]:
+    """Fold one participant's period from the ledger, and from the view rows.
+
+    Two independent folds. The ledger fold is the checked sum of additions minus the
+    checked sum of retractions over the rows that are still current. The view fold is
+    the same figure computed from `ranking_corrections`, which is the per-view record
+    of the same corrections. They must agree: if they do not, one of them produced the
+    published standing and nothing says which.
+
+    Returns `(total, None)` on a rebuild and `(None, refusal)` on a rejection. The
+    fixture's own `expected` is never read.
+    """
+    additions = 0
+    retractions = 0
+    ledger_correction_delta = 0
+    for row in case["contributions"]:
+        if row["superseded"]:
+            continue
+        delta = row["token_burn_delta"]
+        if (row["origin"] == "retraction") != (delta < 0):
+            return None, "direction-and-sign-disagree"
+        if delta < 0:
+            retractions += -delta
+        else:
+            additions += delta
+        if row["origin"] in {"correction", "retraction"}:
+            ledger_correction_delta += delta
+
+    view_correction_delta = 0
+    for row in case["corrections"]:
+        if row["direction"] == "addition":
+            view_correction_delta += row["magnitude"]
+        else:
+            view_correction_delta -= row["magnitude"]
+
+    if view_correction_delta != ledger_correction_delta:
+        return None, "correction-rows-disagree-with-the-ledger"
+
+    total = additions - retractions
+    if total < 0:
+        return None, "retractions-exceed-what-they-correct"
+    return total, None
+
+
+def validate_period_correction_rebuild() -> None:
+    """Prove a period rebuilds from its ledger, and that the two records agree.
+
+    Three things were wrong here and each hid the next.
+
+    `periods` had no lifecycle. `seasons` carried five timestamps in a checked order
+    and `periods` carried none of it, so "period results remain provisional through
+    the lateness window, then finalize" had nothing to record which side of it a
+    period was on, and a correction to a closed period was indistinguishable from a
+    claim landing in an open one. `periods.state` and the `period` machine are that
+    record.
+
+    `ranking_corrections` held `(correction_id, ranking_view_id,
+    token_burn_total_delta)` and named no participant and no period: every row said
+    that some total somewhere moved by some amount. PF-023's acceptance asked for a
+    rebuild from this table that reproduces the recorded totals, and no rebuild was
+    possible from it in any form -- a key that omits its discriminator does not become
+    usable by being read more carefully. `erasure_domain_id` and `period_id` are the
+    discriminators, and `direction` with an unsigned `magnitude` is D-263's shape.
+
+    `score_contributions` was called an immutable ledger and nothing stopped an update
+    to it. The two triggers refuse a delete and refuse a rewrite of every column an
+    append-only rule protects, with `claim_id` outside the refusal because an erasure
+    clears it through `on delete set null`, which PostgreSQL performs as an update.
+
+    The fixture states six cases and this function recomputes every one of them.
+    """
+    schema = validate_schema_file(SCHEMAS / "ranking-correction-vectors-v1.schema.json")
+    vectors = load_json(CONFORMANCE / "planning" / "ranking-correction-vectors-v1.json")
+    validate_instance(schema, vectors, "ranking correction vectors")
+
+    codes = {
+        item["code"] for item in load_json(SCHEMAS / "reason-codes-v1.json")["codes"]
+    }
+    if CORRECTION_REJECTION_REASON not in codes:
+        raise ValidationFailure(
+            f"the correction rejection names a reason code the registry does not "
+            f"declare: {CORRECTION_REJECTION_REASON}"
+        )
+
+    assert_unique(
+        [case["case_id"] for case in vectors["cases"]], "period rebuild case IDs"
+    )
+    rebuilt = 0
+    refusals: set[str] = set()
+    for case in vectors["cases"]:
+        label = case["case_id"]
+        total, refusal = rebuild_period_total(case)
+        expected = case["expected"]
+        if refusal is None:
+            if expected["outcome"] != "rebuild":
+                raise ValidationFailure(
+                    f"{label} records a rejection and the ledger rebuilds to {total}"
+                )
+            if expected["token_burn_total"] != total:
+                raise ValidationFailure(
+                    f"{label} records the total {expected['token_burn_total']} and the "
+                    f"ledger rebuilds to {total}"
+                )
+            rebuilt += 1
+            continue
+        if expected["outcome"] != "reject":
+            raise ValidationFailure(
+                f"{label} records the total {expected['token_burn_total']} and the "
+                f"rebuild refuses it: {refusal}"
+            )
+        if expected["reason_code"] != CORRECTION_REJECTION_REASON:
+            raise ValidationFailure(
+                f"{label} answers {refusal} with {expected['reason_code']} rather than "
+                f"{CORRECTION_REJECTION_REASON}"
+            )
+        refusals.add(refusal)
+
+    if rebuilt == 0:
+        raise ValidationFailure(
+            "no period case rebuilds, so the corpus shows only that the fold refuses"
+        )
+    required_refusals = {
+        "retractions-exceed-what-they-correct",
+        "correction-rows-disagree-with-the-ledger",
+    }
+    missing = sorted(required_refusals - refusals)
+    if missing:
+        raise ValidationFailure(
+            f"no case exercises the rebuild refusals {missing}; the equivalence the "
+            "rebuild exists to prove is then never violated by anything"
+        )
+
+    bodies = _planning_table_bodies()
+    for table, constraint in {
+        # The period lifecycle, and the one period that has no end to freeze at.
+        "periods": (
+            "state text not null check (state in "
+            "('open','frozen','closed','corrected','archived'))"
+        ),
+        # D-263's decomposition needs the direction to be recoverable from the row.
+        "score_contributions": (
+            "check ((origin = 'retraction') = (token_burn_delta < 0))"
+        ),
+        # The discriminators the correction key omitted.
+        "ranking_corrections": (
+            "unique (correction_id, ranking_view_id, period_id, erasure_domain_id, "
+            "direction)"
+        ),
+    }.items():
+        body = bodies.get(table)
+        if body is None:
+            raise ValidationFailure(f"planning DDL lacks the {table} table")
+        if constraint not in " ".join(body.split()):
+            raise ValidationFailure(
+                f"{table} lacks its required period-correction invariant: {constraint}"
+            )
+
+    lifetime = "check (period_type <> 'lifetime' or state = 'open')"
+    if lifetime not in " ".join(bodies["periods"].split()):
+        raise ValidationFailure(
+            "the lifetime period may be frozen, closed or archived; it is unbounded, "
+            f"so it has no end to freeze at: {lifetime}"
+        )
+
+    sql = " ".join(_planning_sql().split())
+    for trigger, columns in {
+        "create trigger score_contributions_no_delete before delete on "
+        "score_contributions": (),
+        "create trigger score_contributions_no_rewrite before update on "
+        "score_contributions": (
+            "old.token_burn_delta is distinct from new.token_burn_delta",
+            "old.origin is distinct from new.origin",
+            "old.period_id is distinct from new.period_id",
+            "old.erasure_domain_id is distinct from new.erasure_domain_id",
+            "old.created_at is distinct from new.created_at",
+        ),
+    }.items():
+        if trigger not in sql:
+            raise ValidationFailure(
+                f"score_contributions is called an append-only ledger and declares no "
+                f"trigger enforcing it: {trigger}"
+            )
+        for column in columns:
+            if column not in sql:
+                raise ValidationFailure(
+                    f"the append-only trigger does not protect a column the ledger "
+                    f"rests on: {column}"
+                )
+    # `claim_id` must stay outside the refusal, or an erasure fails instead of a
+    # rewrite: `on delete set null` is performed as an UPDATE on this row.
+    if "old.claim_id is distinct from new.claim_id" in sql:
+        raise ValidationFailure(
+            "the append-only trigger refuses a change to claim_id, which is the column "
+            "an erasure clears through on delete set null; the erasure path would fail "
+            "rather than the rewrite path"
+        )
+
+    registry = load_json(SCHEMAS / "state-machine-registry-v1.json")
+    machine = next(
+        item for item in registry["machines"] if item["machine_id"] == "period"
+    )
+    declared = set(machine["states"])
+    required = {"open", "frozen", "closed", "corrected", "archived"}
+    if declared != required:
+        raise ValidationFailure(
+            f"the period machine declares {sorted(declared)} rather than {sorted(required)}"
+        )
+    correcting = [
+        transition
+        for transition in machine["transitions"]
+        if transition["to"] == "corrected"
+    ]
+    if not correcting:
+        raise ValidationFailure("no transition reaches the corrected state")
+    for transition in correcting:
+        if transition["actor"] == "worker":
+            raise ValidationFailure(
+                f"{transition['transition_id']} lets a worker supersede a sealed "
+                "standing; a correction after close is an appeal decision or an "
+                "operator act, and a scheduled job is neither"
+            )
+    for transition in machine["transitions"]:
+        if transition["to"] == "archived" and "open" in transition["from"]:
+            raise ValidationFailure(
+                f"{transition['transition_id']} archives an open period, skipping the "
+                "freeze and the close it has to pass through"
+            )
+
+
+def validate_ddl_declaration_order() -> None:
+    """Prove the planning DDL can be executed top to bottom.
+
+    `planning-schema.sql` is run as one multi-statement string against a real
+    PostgreSQL instance in CI, and that is the only place it runs: no contributor
+    working without a local database can execute it, so the first execution of any
+    new statement is the pull request. PostgreSQL evaluates an inline `references`
+    at the moment the table is created, so a foreign key naming a table declared
+    later in the file fails with `relation does not exist` -- and every check in this
+    repository that reads the DDL as text passes on it, because the reference does
+    resolve, just not yet.
+
+    Two rules. An inline foreign key names a table declared at or before its own
+    table. And no `alter table` names a table the file never creates, so the escape
+    hatch cannot be used to reference something that does not exist at all.
+
+    Discovered by PF-023: `ranking_corrections` is declared thirty-one tables before
+    `ranking_views`, and its new view reference was written inline.
+    """
+    sql = _planning_sql()
+    order: dict[str, int] = {}
+    for index, match in enumerate(
+        re.finditer(r"(?im)^create\s+table\s+([a-z_][a-z0-9_]*)\s*\(", sql)
+    ):
+        order.setdefault(match.group(1), index)
+
+    for match in re.finditer(
+        r"(?ims)^create\s+table\s+([a-z_][a-z0-9_]*)\s*\((.*?)\n\)", sql
+    ):
+        table, body = match.group(1), match.group(2)
+        for reference in re.finditer(r"references\s+([a-z_][a-z0-9_]*)\s*\(", body):
+            target = reference.group(1)
+            if target not in order:
+                raise ValidationFailure(
+                    f"{table} references {target}, which the planning DDL never creates"
+                )
+            if target != table and order[target] > order[table]:
+                raise ValidationFailure(
+                    f"{table} declares an inline foreign key to {target}, which is "
+                    f"created later in the file; PostgreSQL evaluates the reference "
+                    "when the table is created, so this file cannot be executed top "
+                    "to bottom. Move it to an `alter table` after the referenced table"
+                )
+
+    for match in re.finditer(r"(?im)^alter\s+table\s+([a-z_][a-z0-9_]*)\b", sql):
+        if match.group(1) not in order:
+            raise ValidationFailure(
+                f"alter table names {match.group(1)}, which the planning DDL never creates"
+            )
+
+
 def validate_erasure_contract() -> None:
     """Prove the erasure invariants that a check constraint can carry are carried.
 
@@ -6618,6 +7373,19 @@ def main() -> int:
             "disclosure projections and exceptional surface states",
             validate_presentation_contracts,
         ),
+        (
+            "ranking definition and audience separation",
+            validate_ranking_view_separation,
+        ),
+        (
+            "viewer-bound leaderboard cursor vectors",
+            validate_ranking_cursor_vectors,
+        ),
+        (
+            "period lifecycle and correction rebuild vectors",
+            validate_period_correction_rebuild,
+        ),
+        ("planning DDL declaration order", validate_ddl_declaration_order),
         ("origin validation and loopback controls", validate_origin_policy),
         ("conformance suite manifests", validate_conformance_manifests),
         ("decision register table integrity", validate_decision_register),

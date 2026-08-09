@@ -43,6 +43,7 @@ That rule previously said the reason was "given under Open items", and nothing c
 | `ranked-identity-eligibility` | `ranked-identity-eligibility` | `ranked_identities.state` | `AccountProfile.ranked_state`, `PublicProfile.ranked_state` | `appealed`, `consolidating`, `investigating`, `reversed` |
 | `idempotency-ledger` | `idempotency-ledger` | `idempotency_records.state` | — | — |
 | `ranking-projection` | `ranking-projection` | `ranking_projection_generations.state` | — | — |
+| `period` | `period` | `periods.state` | — | `corrected` |
 | `model-alias-resolution` | `model-alias-resolution` | `cost_interpretations.state`, `pricing_datasets.state` | `PricingDataset.state` | — |
 | `friendship` | `friendship` | `friend_requests.state` | — | — |
 | `rivalry` | `rivalry` | `rival_edges.state` | — | — |
@@ -138,6 +139,7 @@ An absence is not a defect. Not stating one is: an aggregate whose binding was n
 | `oauth-transaction` | `api` | OAuthCompletion.state echoes the terminal value only; see TRANSIENT_API_ENUMS. |
 | `presence-lease` | `api` | PresenceLease.availability is a declared coarser projection; see PROJECTIONS. |
 | `privileged-supervisor` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `period` | `api` | A client reads a period's standing, never its lifecycle; the finalization boundary is server-side and no operation exposes it. |
 | `ranking-projection` | `api` | Generation build state is operational; a client sees a sealed generation or none. |
 | `recovery-case` | `api` | Account recovery under D-380. No operation exposes the case. |
 | `release-trust` | `api` | Local-only; trust in a release is evaluated on the device against TUF metadata. |

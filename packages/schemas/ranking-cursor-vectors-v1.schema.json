@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/ranking-cursor-vectors-v1.schema.json",
+  "title": "Leaderboard cursor presentation vectors v1",
+  "description": "Each case is one cursor and one presentation of it. `expected` records the outcome; scripts/repository/validate_planning_artifacts.py evaluates the rules in packages/schemas/ranking-cursor-v1.schema.json against the inputs and refuses a case whose recorded outcome differs, so the file cannot confirm itself. `refusal_order` fixes which refusal wins when a presentation breaks more than one rule, because a refusal that varies with evaluation order tells a prober something about the state it was refused for.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_version", "refusal_order", "cases"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "registry_version": { "type": "string", "minLength": 1 },
+    "refusal_order": {
+      "description": "Evaluated in this order, first match wins. The issuer check leads because a cursor the server did not issue carries no trustworthy field to evaluate afterwards.",
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "unknown-issuer",
+          "expired",
+          "viewer-mismatch",
+          "generation-mismatch",
+          "authorization-revision-moved"
+        ]
+      }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/case" }
+    }
+  },
+  "$defs": {
+    "principal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["principal_kind"],
+      "properties": {
+        "principal_kind": { "enum": ["ranked-identity", "anonymous"] },
+        "ranked_identity_id": { "type": "string", "format": "uuid" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "principal_kind": { "const": "ranked-identity" } },
+            "required": ["principal_kind"]
+          },
+          "then": { "required": ["ranked_identity_id"] },
+          "else": { "not": { "required": ["ranked_identity_id"] } }
+        }
+      ]
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "title", "cursor", "presentation", "expected"],
+      "properties": {
+        "case_id": { "type": "string", "pattern": "^RC-[0-9]{3}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "cursor": {
+          "description": "One cursor record. Its shape is packages/schemas/ranking-cursor-v1.schema.json, and the validator applies that schema to every case rather than this file re-stating it: a second copy of a shape is a second thing to keep in step.",
+          "type": "object"
+        },
+        "presentation": { "$ref": "#/$defs/presentation" },
+        "expected": { "$ref": "#/$defs/expected" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "presentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The request the cursor arrives on. Every field is what the server knows at read time, and none of it is taken from the cursor.",
+      "required": [
+        "presented_at",
+        "presenting_viewer",
+        "active_generation",
+        "active_snapshot_id",
+        "current_authorization_revision",
+        "trusted_issuer_key_ids"
+      ],
+      "properties": {
+        "presented_at": { "type": "string", "format": "date-time" },
+        "presenting_viewer": { "$ref": "#/$defs/principal" },
+        "active_generation": { "type": "integer", "minimum": 0 },
+        "active_snapshot_id": { "type": "string", "format": "uuid" },
+        "current_authorization_revision": { "type": "integer", "minimum": 0 },
+        "trusted_issuer_key_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "refusal", "reason_code"],
+      "properties": {
+        "outcome": { "enum": ["accept", "refuse"] },
+        "refusal": {
+          "type": ["string", "null"],
+          "enum": [
+            "unknown-issuer",
+            "expired",
+            "viewer-mismatch",
+            "generation-mismatch",
+            "authorization-revision-moved",
+            null
+          ]
+        },
+        "reason_code": {
+          "description": "Resolves in packages/schemas/reason-codes-v1.json. Null exactly when the outcome is accept.",
+          "type": ["string", "null"],
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "outcome": { "const": "accept" } },
+            "required": ["outcome"]
+          },
+          "then": {
+            "properties": {
+              "refusal": { "type": "null" },
+              "reason_code": { "type": "null" }
+            }
+          },
+          "else": {
+            "properties": {
+              "refusal": { "type": "string" },
+              "reason_code": { "type": "string" }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

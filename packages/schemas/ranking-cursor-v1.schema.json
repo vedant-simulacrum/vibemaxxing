@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/ranking-cursor-v1.schema.json",
+  "title": "Viewer-bound leaderboard cursor v1",
+  "description": "The record a leaderboard cursor carries, and the presentation it is evaluated against. The `Cursor` parameter of packages/schemas/openapi-v1.yaml already asserted that the server 'rejects a cursor it did not issue, a cursor issued against a different snapshot_id, and a cursor issued to a different principal'. Nothing in the repository held the fields those three refusals compare, so the sentence was a promise about an opaque string. A cursor names the generation it was issued against, the viewer it was issued to, the authorization revision that held at issue and the instant it stops being honoured; conformance/planning/ranking-cursor-vectors-v1.json states each way a presentation can fail and scripts/repository/validate_planning_artifacts.py evaluates the rules rather than reading the expected outcome back. docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md owns the access path the anchor serves.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "cursor_id",
+    "ranking_view_id",
+    "generation",
+    "snapshot_id",
+    "position_after",
+    "bound_viewer",
+    "authorization_revision",
+    "issued_at",
+    "expires_at",
+    "issuer_key_id",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "cursor_id": { "type": "string", "format": "uuid" },
+    "ranking_view_id": { "$ref": "#/$defs/digest" },
+    "generation": {
+      "description": "The sealed generation the anchor is an offset into. A cursor without it anchors a position in a table whose rows moved, which is how a page repeats an entry and skips another across a promotion.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "snapshot_id": {
+      "description": "The durable client-visible name of that generation. It is carried as well as the generation because the client holds this one and never sees the integer.",
+      "type": "string",
+      "format": "uuid"
+    },
+    "position_after": {
+      "description": "The rank() position the next page starts after. Positions are frozen at seal, so the anchor stays valid while entries are suppressed from the rendered page: a page can be shorter than the limit while more entries remain.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "bound_viewer": { "$ref": "#/$defs/principal" },
+    "authorization_revision": {
+      "description": "The revision of the audience's authorization inputs at issue. A presentation carrying a later revision is refused rather than served, because the alternative is replaying an authorization decision that has since changed — which is the case SR-015 names.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "issuer_key_id": { "type": "string", "minLength": 1 },
+    "signature": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "principal": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Who the cursor was issued to. `anonymous` is admissible only for the global board, which is the one audience with no viewer; it is a named kind rather than an absent field, because an absent viewer and an anonymous viewer must not be the same value.",
+      "required": ["principal_kind"],
+      "properties": {
+        "principal_kind": { "enum": ["ranked-identity", "anonymous"] },
+        "ranked_identity_id": { "type": "string", "format": "uuid" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "principal_kind": { "const": "ranked-identity" } },
+            "required": ["principal_kind"]
+          },
+          "then": { "required": ["ranked_identity_id"] },
+          "else": { "not": { "required": ["ranked_identity_id"] } }
+        }
+      ]
+    }
+  }
+}

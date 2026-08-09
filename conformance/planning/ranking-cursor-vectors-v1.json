@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "registry_version": "2026-08-09",
+  "refusal_order": [
+    "unknown-issuer",
+    "expired",
+    "viewer-mismatch",
+    "generation-mismatch",
+    "authorization-revision-moved"
+  ],
+  "cases": [
+    {
+      "case_id": "RC-001",
+      "title": "the viewer it was issued to reads the next page",
+      "cursor": {
+        "schema_version": 1,
+        "cursor_id": "11111111-1111-4111-8111-111111111111",
+        "ranking_view_id": "32fad8d636d053303ce2c145a99bd4fa80db5ea01796ece1f0c10fec058f76f3",
+        "generation": 12,
+        "snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "position_after": 50,
+        "bound_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "aa11bb22-cc33-4d44-8e55-ff6677889900"
+        },
+        "authorization_revision": 47,
+        "issued_at": "2026-08-09T10:00:00Z",
+        "expires_at": "2026-08-09T10:15:00Z",
+        "issuer_key_id": "ranking-cursor-2026-08",
+        "signature": "aaaa1111bbbb2222cccc3333dddd4444eeee5555ffff6666aaaa7777bbbb8888"
+      },
+      "presentation": {
+        "presented_at": "2026-08-09T10:05:00Z",
+        "presenting_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "aa11bb22-cc33-4d44-8e55-ff6677889900"
+        },
+        "active_generation": 12,
+        "active_snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "current_authorization_revision": 47,
+        "trusted_issuer_key_ids": ["ranking-cursor-2026-08"]
+      },
+      "expected": { "outcome": "accept", "refusal": null, "reason_code": null }
+    },
+    {
+      "case_id": "RC-002",
+      "title": "a second viewer replays the first viewer's cursor",
+      "cursor": {
+        "schema_version": 1,
+        "cursor_id": "11111111-1111-4111-8111-111111111111",
+        "ranking_view_id": "32fad8d636d053303ce2c145a99bd4fa80db5ea01796ece1f0c10fec058f76f3",
+        "generation": 12,
+        "snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "position_after": 50,
+        "bound_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "aa11bb22-cc33-4d44-8e55-ff6677889900"
+        },
+        "authorization_revision": 47,
+        "issued_at": "2026-08-09T10:00:00Z",
+        "expires_at": "2026-08-09T10:15:00Z",
+        "issuer_key_id": "ranking-cursor-2026-08",
+        "signature": "aaaa1111bbbb2222cccc3333dddd4444eeee5555ffff6666aaaa7777bbbb8888"
+      },
+      "presentation": {
+        "presented_at": "2026-08-09T10:05:00Z",
+        "presenting_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "bb22cc33-dd44-4e55-8f66-001122334455"
+        },
+        "active_generation": 12,
+        "active_snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "current_authorization_revision": 47,
+        "trusted_issuer_key_ids": ["ranking-cursor-2026-08"]
+      },
+      "expected": {
+        "outcome": "refuse",
+        "refusal": "viewer-mismatch",
+        "reason_code": "VIEWER_NOT_AUTHORIZED"
+      },
+      "note": "The case the unit exists for. A friends-board cursor is a page of a cohort the second viewer is not in; honouring it would serve one person's social graph to another because they were handed a string."
+    },
+    {
+      "case_id": "RC-003",
+      "title": "an anonymous reader replays a viewer's cursor",
+      "cursor": {
+        "schema_version": 1,
+        "cursor_id": "11111111-1111-4111-8111-111111111111",
+        "ranking_view_id": "32fad8d636d053303ce2c145a99bd4fa80db5ea01796ece1f0c10fec058f76f3",
+        "generation": 12,
+        "snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "position_after": 50,
+        "bound_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "aa11bb22-cc33-4d44-8e55-ff6677889900"
+        },
+        "authorization_revision": 47,
+        "issued_at": "2026-08-09T10:00:00Z",
+        "expires_at": "2026-08-09T10:15:00Z",
+        "issuer_key_id": "ranking-cursor-2026-08",
+        "signature": "aaaa1111bbbb2222cccc3333dddd4444eeee5555ffff6666aaaa7777bbbb8888"
+      },
+      "presentation": {
+        "presented_at": "2026-08-09T10:05:00Z",
+        "presenting_viewer": { "principal_kind": "anonymous" },
+        "active_generation": 12,
+        "active_snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "current_authorization_revision": 47,
+        "trusted_issuer_key_ids": ["ranking-cursor-2026-08"]
+      },
+      "expected": {
+        "outcome": "refuse",
+        "refusal": "viewer-mismatch",
+        "reason_code": "VIEWER_NOT_AUTHORIZED"
+      },
+      "note": "Logging out is the same evasion getPublicProfile admitted. An absent viewer is not a wildcard viewer."
+    },
+    {
+      "case_id": "RC-004",
+      "title": "the global board's anonymous cursor is honoured for an anonymous reader",
+      "cursor": {
+        "schema_version": 1,
+        "cursor_id": "33333333-3333-4333-8333-333333333333",
+        "ranking_view_id": "005ef3ffa5fe48f3530d2d05dd5e6bf5aaf914dde20099d612032a9f44d94f94",
+        "generation": 12,
+        "snapshot_id": "44444444-4444-4444-8444-444444444444",
+        "position_after": 100,
+        "bound_viewer": { "principal_kind": "anonymous" },
+        "authorization_revision": 0,
+        "issued_at": "2026-08-09T10:00:00Z",
+        "expires_at": "2026-08-09T10:15:00Z",
+        "issuer_key_id": "ranking-cursor-2026-08",
+        "signature": "bbbb1111cccc2222dddd3333eeee4444ffff5555aaaa6666bbbb7777cccc8888"
+      },
+      "presentation": {
+        "presented_at": "2026-08-09T10:05:00Z",
+        "presenting_viewer": { "principal_kind": "anonymous" },
+        "active_generation": 12,
+        "active_snapshot_id": "44444444-4444-4444-8444-444444444444",
+        "current_authorization_revision": 0,
+        "trusted_issuer_key_ids": ["ranking-cursor-2026-08"]
+      },
+      "expected": { "outcome": "accept", "refusal": null, "reason_code": null }
+    },
+    {
+      "case_id": "RC-005",
+      "title": "a cursor into a superseded generation",
+      "cursor": {
+        "schema_version": 1,
+        "cursor_id": "55555555-5555-4555-8555-555555555555",
+        "ranking_view_id": "005ef3ffa5fe48f3530d2d05dd5e6bf5aaf914dde20099d612032a9f44d94f94",
+        "generation": 11,
+        "snapshot_id": "66666666-6666-4666-8666-666666666666",
+        "position_after": 100,
+        "bound_viewer": { "principal_kind": "anonymous" },
+        "authorization_revision": 0,
+        "issued_at": "2026-08-09T10:00:00Z",
+        "expires_at": "2026-08-09T10:15:00Z",
+        "issuer_key_id": "ranking-cursor-2026-08",
+        "signature": "cccc1111dddd2222eeee3333ffff4444aaaa5555bbbb6666cccc7777dddd8888"
+      },
+      "presentation": {
+        "presented_at": "2026-08-09T10:05:00Z",
+        "presenting_viewer": { "principal_kind": "anonymous" },
+        "active_generation": 12,
+        "active_snapshot_id": "44444444-4444-4444-8444-444444444444",
+        "current_authorization_revision": 0,
+        "trusted_issuer_key_ids": ["ranking-cursor-2026-08"]
+      },
+      "expected": {
+        "outcome": "refuse",
+        "refusal": "generation-mismatch",
+        "reason_code": "PAGINATION_CURSOR_INVALID"
+      },
+      "note": "A position is an offset into one sealed generation. Applied to the next one it names a different participant, so a page repeats an entry and skips another and neither is visible to the reader."
+    },
+    {
+      "case_id": "RC-006",
+      "title": "an expired cursor",
+      "cursor": {
+        "schema_version": 1,
+        "cursor_id": "77777777-7777-4777-8777-777777777777",
+        "ranking_view_id": "32fad8d636d053303ce2c145a99bd4fa80db5ea01796ece1f0c10fec058f76f3",
+        "generation": 12,
+        "snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "position_after": 50,
+        "bound_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "aa11bb22-cc33-4d44-8e55-ff6677889900"
+        },
+        "authorization_revision": 47,
+        "issued_at": "2026-08-09T10:00:00Z",
+        "expires_at": "2026-08-09T10:15:00Z",
+        "issuer_key_id": "ranking-cursor-2026-08",
+        "signature": "dddd1111eeee2222ffff3333aaaa4444bbbb5555cccc6666dddd7777eeee8888"
+      },
+      "presentation": {
+        "presented_at": "2026-08-09T11:00:00Z",
+        "presenting_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "aa11bb22-cc33-4d44-8e55-ff6677889900"
+        },
+        "active_generation": 12,
+        "active_snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "current_authorization_revision": 47,
+        "trusted_issuer_key_ids": ["ranking-cursor-2026-08"]
+      },
+      "expected": {
+        "outcome": "refuse",
+        "refusal": "expired",
+        "reason_code": "PAGINATION_CURSOR_INVALID"
+      }
+    },
+    {
+      "case_id": "RC-007",
+      "title": "the viewer's authorization moved while the page was held",
+      "cursor": {
+        "schema_version": 1,
+        "cursor_id": "88888888-8888-4888-8888-888888888888",
+        "ranking_view_id": "32fad8d636d053303ce2c145a99bd4fa80db5ea01796ece1f0c10fec058f76f3",
+        "generation": 12,
+        "snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "position_after": 50,
+        "bound_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "aa11bb22-cc33-4d44-8e55-ff6677889900"
+        },
+        "authorization_revision": 47,
+        "issued_at": "2026-08-09T10:00:00Z",
+        "expires_at": "2026-08-09T10:15:00Z",
+        "issuer_key_id": "ranking-cursor-2026-08",
+        "signature": "eeee1111ffff2222aaaa3333bbbb4444cccc5555dddd6666eeee7777ffff8888"
+      },
+      "presentation": {
+        "presented_at": "2026-08-09T10:05:00Z",
+        "presenting_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "aa11bb22-cc33-4d44-8e55-ff6677889900"
+        },
+        "active_generation": 12,
+        "active_snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "current_authorization_revision": 48,
+        "trusted_issuer_key_ids": ["ranking-cursor-2026-08"]
+      },
+      "expected": {
+        "outcome": "refuse",
+        "refusal": "authorization-revision-moved",
+        "reason_code": "PAGINATION_CURSOR_INVALID"
+      },
+      "note": "A block established between the first page and the second moves the revision. Honouring the cursor would serve the rest of a page under an authorization decision that has since changed, which is exactly the replay SR-015 names. The reader is refused and re-pages from the start under current authorization."
+    },
+    {
+      "case_id": "RC-008",
+      "title": "a cursor the server did not issue",
+      "cursor": {
+        "schema_version": 1,
+        "cursor_id": "99999999-9999-4999-8999-999999999999",
+        "ranking_view_id": "32fad8d636d053303ce2c145a99bd4fa80db5ea01796ece1f0c10fec058f76f3",
+        "generation": 12,
+        "snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "position_after": 50,
+        "bound_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "bb22cc33-dd44-4e55-8f66-001122334455"
+        },
+        "authorization_revision": 47,
+        "issued_at": "2026-08-09T10:00:00Z",
+        "expires_at": "2026-08-09T10:15:00Z",
+        "issuer_key_id": "forged-key-2026-08",
+        "signature": "ffff1111aaaa2222bbbb3333cccc4444dddd5555eeee6666ffff7777aaaa8888"
+      },
+      "presentation": {
+        "presented_at": "2026-08-09T10:05:00Z",
+        "presenting_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "bb22cc33-dd44-4e55-8f66-001122334455"
+        },
+        "active_generation": 12,
+        "active_snapshot_id": "22222222-2222-4222-8222-222222222222",
+        "current_authorization_revision": 47,
+        "trusted_issuer_key_ids": ["ranking-cursor-2026-08"]
+      },
+      "expected": {
+        "outcome": "refuse",
+        "refusal": "unknown-issuer",
+        "reason_code": "PAGINATION_CURSOR_INVALID"
+      },
+      "note": "The forger names themselves as the bound viewer, so every later check passes. The issuer check is first for that reason: a cursor the server did not mint carries no field worth comparing."
+    },
+    {
+      "case_id": "RC-009",
+      "title": "a presentation that breaks two rules is refused by the first in the declared order",
+      "cursor": {
+        "schema_version": 1,
+        "cursor_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "ranking_view_id": "32fad8d636d053303ce2c145a99bd4fa80db5ea01796ece1f0c10fec058f76f3",
+        "generation": 11,
+        "snapshot_id": "66666666-6666-4666-8666-666666666666",
+        "position_after": 50,
+        "bound_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "aa11bb22-cc33-4d44-8e55-ff6677889900"
+        },
+        "authorization_revision": 47,
+        "issued_at": "2026-08-09T10:00:00Z",
+        "expires_at": "2026-08-09T10:15:00Z",
+        "issuer_key_id": "ranking-cursor-2026-08",
+        "signature": "1111aaaa2222bbbb3333cccc4444dddd5555eeee6666ffff7777aaaa8888bbbb"
+      },
+      "presentation": {
+        "presented_at": "2026-08-09T10:05:00Z",
+        "presenting_viewer": {
+          "principal_kind": "ranked-identity",
+          "ranked_identity_id": "bb22cc33-dd44-4e55-8f66-001122334455"
+        },
+        "active_generation": 12,
+        "active_snapshot_id": "44444444-4444-4444-8444-444444444444",
+        "current_authorization_revision": 47,
+        "trusted_issuer_key_ids": ["ranking-cursor-2026-08"]
+      },
+      "expected": {
+        "outcome": "refuse",
+        "refusal": "viewer-mismatch",
+        "reason_code": "VIEWER_NOT_AUTHORIZED"
+      },
+      "note": "Both the viewer and the generation are wrong. The order is fixed so that the refusal a prober receives does not vary with which check happened to run first, which would otherwise tell them which of the two facts they got right."
+    }
+  ]
+}

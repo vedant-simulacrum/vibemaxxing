@@ -21,7 +21,10 @@ This directory owns planning-grade source interfaces. These files are normative 
 - `platform-profile-registry-v1.schema.json` — Exact Platform Profile Registry v1 schema
 - `policy-defaults-v1.json` — Default configurable policies and change rules
 - `pricing-interpretation.schema.json` — Server PricingInterpretation v1 schema
-- `ranking-view-v1.schema.json` — Immutable ranking view identity v1 schema
+- `ranking-correction-vectors-v1.schema.json` — Period rebuild and correction-equivalence vectors v1 schema
+- `ranking-cursor-v1.schema.json` — Viewer-bound leaderboard cursor v1 schema
+- `ranking-cursor-vectors-v1.schema.json` — Leaderboard cursor presentation vectors v1 schema
+- `ranking-view-v1.schema.json` — Ranking view v1: one ranking definition bound to one audience
 - `reason-codes-v1.json` — Reason code registry with outcomes and severity
 - `release-set-v1.schema.json` — VibeMaxxing signed release set v1 schema
 - `social-integrity-events-v1.proto` — Social integrity events protocol v1 service

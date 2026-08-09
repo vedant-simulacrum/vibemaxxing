@@ -1,87 +1,261 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.vibemaxxing.dev/ranking-view-v1.schema.json",
-  "title": "Immutable ranking view identity v1",
+  "title": "Ranking view v1: one ranking definition bound to one audience",
+  "description": "A ranking view is a pair, not a record. `definition` is the stable ranking: the metric and its version, the period, the filters, the tie rule, the display order and the digests of every input that decides an ordering. `audience` is who may read that ordering: the scope, the board, the viewer, the authorization inputs that must be evaluated and the revision they were evaluated at. The two were one flat object until PF-021, and the fusion had a consequence rather than an aesthetic: `ranking_view_id` was a digest over both halves with no name for either, so nothing could say that a global and a friends view of the same period are the same ranking read by two audiences, and nothing could refuse a view whose identifier omitted the audience. `ranking_definition_id` names the first half, `audience_id` names the second, and `ranking_view_id` is the digest over exactly those two identifiers. Two audiences over one definition therefore share a `ranking_definition_id`, differ in `ranking_view_id`, and cannot collapse into one sealed generation. `scripts/repository/validate_planning_artifacts.py#validate_ranking_view_separation` recomputes all three digests and holds the property partition in both directions, so a field added to either half without being declared fails. `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md` owns the API and data model; `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md` owns the access paths.",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "ranking_view_id",
-    "scope",
-    "period_id",
-    "rules_digest",
-    "pricing_dataset_digest",
-    "evidence_policy_digest",
-    "projection_generation",
-    "source_checkpoint_digest",
+    "definition",
+    "audience",
     "created_at"
   ],
   "properties": {
+    "schema_version": { "const": 1 },
     "ranking_view_id": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
+      "description": "SHA-256 over the RFC 8949 core deterministic CBOR encoding of {\"audience_id\": …, \"ranking_definition_id\": …}. It is a function of both halves and of nothing else, so an identifier that omits the audience is arithmetically detectable rather than a matter of trust.",
+      "$ref": "#/$defs/digest"
     },
-    "scope": {
-      "enum": [
-        "global",
-        "friends",
-        "rivals",
-        "board"
-      ]
-    },
-    "period_id": {
-      "type": "string",
-      "format": "uuid"
-    },
-    "board_id": {
-      "type": "string",
-      "format": "uuid"
-    },
-    "rules_digest": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
-    },
-    "pricing_dataset_digest": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
-    },
-    "evidence_policy_digest": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
-    },
-    "projection_generation": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "source_checkpoint_digest": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
-    },
-    "created_at": {
-      "type": "string",
-      "format": "date-time"
-    }
+    "definition": { "$ref": "#/$defs/ranking_definition" },
+    "audience": { "$ref": "#/$defs/audience" },
+    "created_at": { "type": "string", "format": "date-time" }
   },
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "scope": {
-            "const": "board"
-          }
-        }
-      },
-      "then": {
-        "required": [
-          "board_id"
-        ]
-      },
-      "else": {
-        "not": {
-          "required": [
-            "board_id"
-          ]
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "ranking_definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What is ranked and in what order. It names no viewer, no board and no cohort: an audience field appearing here would make two audiences share one identity, which is the defect this split exists to make impossible.",
+      "required": [
+        "ranking_definition_id",
+        "metric",
+        "metric_version",
+        "period_id",
+        "filters",
+        "tie_policy",
+        "display_order",
+        "rules_digest",
+        "pricing_dataset_digest",
+        "evidence_policy_digest",
+        "weight_table_digest",
+        "source_checkpoint_digest"
+      ],
+      "properties": {
+        "ranking_definition_id": {
+          "description": "SHA-256 over the deterministic CBOR encoding of this object with this field omitted.",
+          "$ref": "#/$defs/digest"
+        },
+        "metric": {
+          "description": "Credited Token Burn is the only quantity a public ordering is computed on. Token Burn is the raw metric of record and is accepted, immutable and unnormalized, but D-144 keeps it off every surface that also publishes the credited figure, because publishing both recovers the confidence weight by division and, since the evidence class is public, recovers the sanction D-084 keeps private. A metric enum admitting the raw figure would make that leak expressible.",
+          "const": "credited-token-burn"
+        },
+        "metric_version": {
+          "description": "ADR-020 forbids a hidden normalization multiplier changing competitive totals. A new metric is a new version and a new definition digest; it never rewrites Token Burn.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "period_id": { "type": "string", "format": "uuid" },
+        "filters": { "$ref": "#/$defs/filters" },
+        "tie_policy": {
+          "description": "D-018: equal credited figures share a rank and the following ranks have gaps. That is SQL rank() rather than dense_rank() and it is a product decision.",
+          "const": "shared-rank-with-gaps"
+        },
+        "display_order": {
+          "description": "The stable secondary ordering. It orders the rendered page and orders no rank; an overtake requires a strictly greater credited figure rather than movement within a tie.",
+          "const": "credited-token-burn-desc,first-reached-at-asc,erasure-domain-id-asc"
+        },
+        "rules_digest": { "$ref": "#/$defs/digest" },
+        "pricing_dataset_digest": { "$ref": "#/$defs/digest" },
+        "evidence_policy_digest": { "$ref": "#/$defs/digest" },
+        "weight_table_digest": {
+          "description": "The ADR-020 confidence weight table. It is named here as well as inside rules_digest so that a recalibration is visible in the definition rather than only inside an opaque hash.",
+          "$ref": "#/$defs/digest"
+        },
+        "source_checkpoint_digest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "filters": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The five filter dimensions ACCOUNTING_AND_TIME_CONTRACT.md requires every leaderboard to support. Each is stated as a mode rather than as a list, because a list read as a filter is satisfied by emptiness: an empty array means both `no restriction` and `restrict to nothing`, and a filter that silently loses its values would look unrestricted rather than broken.",
+      "required": [
+        "evidence_class",
+        "source",
+        "agent",
+        "provider",
+        "model_alias",
+        "execution_locality"
+      ],
+      "properties": {
+        "evidence_class": { "$ref": "#/$defs/evidence_class_filter" },
+        "source": { "$ref": "#/$defs/identifier_filter" },
+        "agent": { "$ref": "#/$defs/identifier_filter" },
+        "provider": { "$ref": "#/$defs/identifier_filter" },
+        "model_alias": { "$ref": "#/$defs/identifier_filter" },
+        "execution_locality": {
+          "description": "Local-model and delayed offline usage count competitively only under one active exact certified source/accounting tuple; this dimension is what lets a board be read with or without them.",
+          "enum": ["any", "hosted-only", "local-only"]
         }
       }
+    },
+    "identifier_filter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["unrestricted", "restricted-to"] },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "mode": { "const": "restricted-to" } },
+            "required": ["mode"]
+          },
+          "then": { "required": ["values"] },
+          "else": { "not": { "required": ["values"] } }
+        }
+      ]
+    },
+    "evidence_class_filter": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "`imported` is not an admissible value. Historical imports never enter active competition, so no ranking definition can be written that admits them, and `ranking_entries.evidence_class` carries the same two-value CHECK.",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["unrestricted", "restricted-to"] },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["hardened", "standard"] }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "mode": { "const": "restricted-to" } },
+            "required": ["mode"]
+          },
+          "then": { "required": ["values"] },
+          "else": { "not": { "required": ["values"] } }
+        }
+      ]
+    },
+    "audience": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Who may read the ordering, and under which authorization inputs. Only the global scope is universally public; every other scope is viewer-relative and carries the viewer and the revision its authorization was evaluated at, so that a page is served against current authorization rather than against the authorization that held when the generation was sealed.",
+      "required": [
+        "audience_id",
+        "scope",
+        "default_visibility",
+        "authorization_inputs",
+        "authorization_revision"
+      ],
+      "properties": {
+        "audience_id": {
+          "description": "SHA-256 over the deterministic CBOR encoding of this object with this field omitted.",
+          "$ref": "#/$defs/digest"
+        },
+        "scope": { "enum": ["global", "friends", "rivals", "board"] },
+        "board_id": { "type": "string", "format": "uuid" },
+        "viewer_ranked_identity_id": {
+          "description": "The viewer the page is authorized for. Absent on the global scope, which has no viewer at all: an unauthenticated reader cannot be blocked, and a directional-block input that cannot be evaluated must not be declared.",
+          "type": "string",
+          "format": "uuid"
+        },
+        "default_visibility": {
+          "description": "A named enum rather than a boolean, because the digest preimage encodes no boolean and a two-valued field written as a name stays legible inside it.",
+          "enum": ["universally-public", "viewer-authorized"]
+        },
+        "authorization_inputs": {
+          "description": "Input identifiers from packages/schemas/projection-authorization-v1.json. Every one listed must be evaluable by the reader this audience describes.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "directional-block",
+              "subject-visibility",
+              "friendship-edge",
+              "rival-edge",
+              "board-membership",
+              "board-container-state",
+              "presence-visibility",
+              "account-lifecycle",
+              "ranked-identity-state"
+            ]
+          }
+        },
+        "authorization_revision": {
+          "description": "The revision the inputs above were evaluated at. It belongs to the audience and never to the generation: that separation is what lets a block change what a viewer sees without changing what was sealed.",
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "scope": { "const": "board" } },
+            "required": ["scope"]
+          },
+          "then": { "required": ["board_id"] },
+          "else": { "not": { "required": ["board_id"] } }
+        },
+        {
+          "if": {
+            "properties": { "scope": { "const": "global" } },
+            "required": ["scope"]
+          },
+          "then": {
+            "properties": {
+              "default_visibility": { "const": "universally-public" },
+              "authorization_inputs": {
+                "items": {
+                  "enum": ["account-lifecycle", "ranked-identity-state"]
+                }
+              }
+            },
+            "not": { "required": ["viewer_ranked_identity_id"] }
+          },
+          "else": {
+            "properties": {
+              "default_visibility": { "const": "viewer-authorized" },
+              "authorization_inputs": {
+                "allOf": [
+                  { "contains": { "const": "directional-block" } },
+                  { "contains": { "const": "subject-visibility" } },
+                  { "contains": { "const": "account-lifecycle" } }
+                ]
+              }
+            },
+            "required": ["viewer_ranked_identity_id"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "scope": { "const": "board" } },
+            "required": ["scope"]
+          },
+          "then": {
+            "properties": {
+              "authorization_inputs": {
+                "allOf": [
+                  { "contains": { "const": "board-membership" } },
+                  { "contains": { "const": "board-container-state" } }
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
-  ]
+  }
 }

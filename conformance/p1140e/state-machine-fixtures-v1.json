@@ -132,6 +132,22 @@
       }
     },
     {
+      "machine_id": "period",
+      "positive": {
+        "case_id": "period-valid-transition",
+        "from": "frozen",
+        "transition_id": "period-close",
+        "expected_to": "closed",
+        "expected": "commit-once-and-audit"
+      },
+      "negative": {
+        "case_id": "period-invalid-transition",
+        "from": "open",
+        "transition_id": "period-close",
+        "expected": "reject-without-mutation"
+      }
+    },
+    {
       "machine_id": "model-alias-resolution",
       "positive": {
         "case_id": "model-alias-resolution-valid-transition",
