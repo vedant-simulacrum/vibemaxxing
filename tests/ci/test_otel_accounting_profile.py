@@ -197,13 +197,59 @@ class OtelAccountingProfileTests(unittest.TestCase):
             self._run(mutate)
 
     def test_a_declared_certification_gap_that_closed_fails(self) -> None:
-        """A declaration may not outlive the hole it declares."""
+        """A declaration may not outlive the hole it declares.
+
+        The hole closed under `PF-016`: `normalized-event.schema.json` now admits a
+        null bundle digest, so the contradiction this entry described no longer exists
+        and re-declaring it is refused. The direction is unchanged — a declaration and
+        its subject live and die together — and the test asserts it from the side that
+        can now happen, since the profile no longer carries the entry.
+        """
+
+        def mutate(path, record):
+            if path.name == PROFILE:
+                record["known_contradictions"].append(
+                    {
+                        "contradiction_id": "otel-certification-bundle-absent",
+                        "field": "certification",
+                        "this_profile": "cannot be written",
+                        "other_authority": (
+                            "packages/schemas/normalized-event.schema.json"
+                        ),
+                        "other_value": "requires a digest with no null admitted",
+                        "effect": "stale: the schema admits the null",
+                        "owner": "PF-016",
+                    }
+                )
+            return record
+
+        with self.assertRaises(self.validator.ValidationFailure):
+            self._run(mutate)
+
+    def test_a_binding_that_acquires_a_bundle_still_may_not_declare_the_gap(
+        self,
+    ) -> None:
+        """The other half, kept exercised: a real digest plus a declaration fails."""
 
         def mutate(path, record):
             if path.name == BINDINGS:
                 binding = self._binding(record)
                 binding["certification"]["tuple"]["bundle_sha256"] = "a" * 64
                 binding["content_sha256"] = self.validator.record_digest(binding)
+            if path.name == PROFILE:
+                record["known_contradictions"].append(
+                    {
+                        "contradiction_id": "otel-certification-bundle-absent",
+                        "field": "certification",
+                        "this_profile": "cannot be written",
+                        "other_authority": (
+                            "packages/schemas/normalized-event.schema.json"
+                        ),
+                        "other_value": "requires a digest with no null admitted",
+                        "effect": "stale: the binding now carries one",
+                        "owner": "PF-016",
+                    }
+                )
             return record
 
         with self.assertRaises(self.validator.ValidationFailure):

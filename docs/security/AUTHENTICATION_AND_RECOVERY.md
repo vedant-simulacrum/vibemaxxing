@@ -155,9 +155,16 @@ Preferred recovery order:
 2. Optional enrolled passkey or hardware key.
 3. Single-use recovery codes with hashed server-side verifiers.
 4. Existing trusted session with risk controls.
-5. Human appeal with cooling-off and limited restoration powers.
 
 Recovery must never silently transfer competitive identity based only on mutable profile information or support discretion.
+
+### The set is finite and exhausting it is permanent
+
+There is no fifth step. This list previously ended with "human appeal with cooling-off and limited restoration powers", and D-561 removed it: exhausting every enrolled device and every recovery code permanently ends the ranked identity, with no appeal transition and no support path that can restore it. The `recovery-case` machine below carries no transition that reaches an applied recovery from a `verified_factor_class` of `none`, which is that decision expressed as a reachability property rather than as guidance.
+
+The reason is stated rather than implied. An appeal path that cannot be staffed by a solo operator is a promise the product would break under its first real load, and a wall stated in advance is kinder than a queue that never drains. It reopens if a funded support function exists to adjudicate recovery appeals.
+
+Because it is unappealable it has to be disclosed before it can be triggered, not after. The enrolment surface renders the warning on the same view that issues the recovery codes — not in a help page, not on a later settings screen — so nobody can lose the set without having been told what losing it costs.
 
 Required controls:
 

@@ -89,6 +89,38 @@
       "negative": true,
       "state": "active",
       "note": "The recorded run of github.com/hdevalence/ed25519consensus v0.2.0 against the divergence corpus, with go crypto/ed25519 and OpenSSL as contrast. It is an oracle result and not a verifier test: it says what the correct answer is, and no implementation of ours has been asked the question."
+    },
+    {
+      "case_id": "VP-005",
+      "title": "Accept every pre-fork claim and resolve an unforked lineage without quarantining anything",
+      "fixtures": [
+        {
+          "path": "conformance/vibeproof/v1/fork-and-rotation-vectors.json",
+          "sha256": "562512914b7c8eca04e480e8ed5f7346bcdab51962c5130de5af0767c091a18b"
+        }
+      ],
+      "expect": "accept",
+      "expect_reason_code": null,
+      "authority_ref": "docs/architecture/VIBEPROOF_V1_PROTOCOL.md#claim-and-checkpoint-continuity",
+      "negative": false,
+      "state": "active",
+      "note": "The positive half. `validate_lineage_fork_and_rotation` in scripts/repository/validate_planning_artifacts.py resolves five lineages: a control that accepts four submissions, a refusal lineage that opens no case, and three forks whose claims at or below the fork generation stay accepted. Without the control and the refusal lineage a resolver that answered `quarantined` to every input would satisfy the negative case below, which is the failure mode a fork corpus invites."
+    },
+    {
+      "case_id": "VP-006",
+      "title": "Quarantine every post-fork branch and refuse a device-key transition missing either authorization",
+      "fixtures": [
+        {
+          "path": "conformance/vibeproof/v1/fork-and-rotation-vectors.json",
+          "sha256": "562512914b7c8eca04e480e8ed5f7346bcdab51962c5130de5af0767c091a18b"
+        }
+      ],
+      "expect": "reject",
+      "expect_reason_code": "CLAIM_CHAIN_FORK",
+      "authority_ref": "docs/architecture/VIBEPROOF_V1_PROTOCOL.md#rotation-recovery-and-gaps",
+      "negative": true,
+      "state": "active",
+      "note": "The negative half, spanning two vocabularies. Three of the four D-072 detection bases are exercised at claim level and the fourth by the checkpoint vectors; every branch of every fork is quarantined including the one that arrived first, which is D-072 rather than bookkeeping. The rotation vectors remove the outgoing key signature, the incoming key signature and the account authentication one at a time and each removal must be refused with DEVICE_KEY_CONTINUITY_BROKEN, so the rule cannot be satisfied by any single one of the three. expect_reason_code names the fork class only; the corpus also resolves CLAIM_SEQUENCE_UNEXPECTED, CLAIM_GAP_DECLARATION_REQUIRED and DEVICE_KEY_CONTINUITY_BROKEN against packages/schemas/reason-codes-v1.json."
     }
   ]
 }

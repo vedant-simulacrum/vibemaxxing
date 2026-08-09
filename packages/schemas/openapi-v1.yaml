@@ -3654,6 +3654,7 @@ components:
           description: 'The rule set the dimensions were read under, which is what an appeal argues against. `anomaly_disposition` is withheld: its `under-review` and `shadow-only` values are the statement that an integrity case is open, and D-381 keeps that from the participant.'
           required:
             - certification_bundle_sha256
+            - certification_state
             - deterministic_rule_bundle_id
             - accounting_profile_id
             - observer_equivalence_rule_id
@@ -3663,6 +3664,18 @@ components:
                 - string
                 - 'null'
               pattern: ^[0-9a-f]{64}$
+            certification_state:
+              description: 'The lifecycle state of the tuple this claim was appraised under, from the `source-certification` machine. The digest above says which certification was read; this says whether it was still active when it was read, and a claim capped at private analytics because its tuple was suspended or expired is entitled to know that rather than to infer it. `uncertified` covers a capture bound to no certification at all.'
+              enum:
+                - uncertified
+                - candidate
+                - testing
+                - active
+                - degraded
+                - suspended
+                - expired
+                - superseded
+                - retired
             deterministic_rule_bundle_id:
               type: string
               maxLength: 128

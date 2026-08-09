@@ -647,7 +647,7 @@
       "implementation_owner": "PF-010, S-013 and P-007",
       "machine_or_state_ownership": "lineage fork case, post-fork quarantine and new lineage generation",
       "platform_scope": "Server, Native",
-      "required_executable_evidence": "a branching fork fixture quarantines every post-fork branch while pre-fork claims stay accepted"
+      "required_executable_evidence": "conformance/vibeproof/v1/fork-and-rotation-vectors.json quarantines every post-fork branch, including the one that arrived first, while every claim at or below the fork generation stays accepted"
     },
     {
       "id": "D-073",
@@ -1794,7 +1794,7 @@
       "implementation_owner": "PF-010, persisted by S-008",
       "machine_or_state_ownership": "`lineage_fork_cases` and `lineage_fork_branches`, `unresolved` non-terminal, quarantined claims held",
       "platform_scope": "Server",
-      "required_executable_evidence": "Constraint tests that a resumed generation is strictly greater than the fork generation and that two survivors in one case are unwritable, over the fork and rotation vectors PF-010 authors"
+      "required_executable_evidence": "Constraint tests that a resumed generation is strictly greater than the fork generation and that two survivors in one case are unwritable, over conformance/vibeproof/v1/fork-and-rotation-vectors.json"
     },
     {
       "id": "D-384",
@@ -2232,7 +2232,7 @@
       "implementation_owner": "S-008, S-009 and S-013",
       "machine_or_state_ownership": "device_sequences keyed on lineage_id with one counter per lineage",
       "platform_scope": "Server",
-      "required_executable_evidence": "A cloned device store enrolling as a second row contends for the lineage sequence and trips the D-072 fork quarantine"
+      "required_executable_evidence": "A cloned device store enrolling as a second row contends for the lineage sequence and trips the D-072 fork quarantine, which conformance/vibeproof/v1/fork-and-rotation-vectors.json resolves as LN-DUPLICATE-SEQUENCE"
     },
     {
       "id": "D-593",

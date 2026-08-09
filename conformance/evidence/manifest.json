@@ -106,7 +106,7 @@
       "fixtures": [
         {
           "path": "conformance/evidence/appraisal-result.valid-standard.json",
-          "sha256": "8781d4a033ad90265711dbd38c2c79be0764047bacee814fdb0c840319d5fbb7"
+          "sha256": "4a485ddbf1ab3f6868901a91c85a73ad0dd14b38b96b2418c339b2d7dbc35e2d"
         }
       ],
       "expect": "accept",
@@ -121,7 +121,7 @@
       "fixtures": [
         {
           "path": "conformance/evidence/appraisal-result.valid-superseded.json",
-          "sha256": "a188a75ae74d455161eece168b100a333526fc147283547252620ada19cba348"
+          "sha256": "3638498eb2a813182306cbf06961c7f85e9eb38c0d1dbf7a49989d8251fd0699"
         }
       ],
       "expect": "accept",
@@ -136,7 +136,7 @@
       "fixtures": [
         {
           "path": "conformance/evidence/appraisal-result.invalid-client-selected-state.json",
-          "sha256": "41ad6bfa86ae55072cfa3b4a25905b0e60b41ea2f8cbeb9d1cc40c91657146b8"
+          "sha256": "f5dc9c8eb6deb8b8737ae472eed8c2b8cc1a2dbb629bbbe589eafbba63b8deec"
         }
       ],
       "expect": "reject",
@@ -152,7 +152,7 @@
       "fixtures": [
         {
           "path": "conformance/evidence/appraisal-result.invalid-e1r-hardened.json",
-          "sha256": "8430c13931f073d9621d75923c284a223de378e79c7f54e56505c35a35f25167"
+          "sha256": "06f2651f30e205033ef962410a79291b2f584eaba78cacfb62a797d4616d0e57"
         }
       ],
       "expect": "reject",
@@ -167,7 +167,7 @@
       "fixtures": [
         {
           "path": "conformance/evidence/appraisal-result.invalid-imported-competitive.json",
-          "sha256": "574009692f84651c51589ec99d6909842d036c0c694358be6d9b9fc242bb8659"
+          "sha256": "2c3dfc90a90fd9543061c5d8fcba44f73b01281e4a46cb4e373a735c2981a8e4"
         }
       ],
       "expect": "reject",

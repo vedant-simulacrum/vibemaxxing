@@ -76,6 +76,7 @@
       }
     },
     "certification": {
+      "description": "Which certified tuple this capture was taken under, or the statement that there is none. bundle_sha256 was a required 64-hex string with no null admitted, and every producer binding in this repository carries null, so no NormalizedAccountingEvent could be constructed from any OTLP capture this repository can actually take and the only fixture that filled the field used sixty-four f characters. Four other artifacts had already made the same field nullable for the same reason - evidence-bundle-v1.cddl calls it 'nil while uncertified', and producer-accounting-binding-v1.schema.json, appraisal-result-v1.schema.json and openapi-v1.yaml all admit null - so this schema was the one out of step. Admitting null is not a certification: it is the honest representation of a capture taken under no certified tuple, and the allOf below pins such an event to private-analytics so that the representation cannot be mistaken for a permission.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -85,8 +86,16 @@
       ],
       "properties": {
         "bundle_sha256": {
-          "type": "string",
-          "pattern": "^[a-f0-9]{64}$"
+          "description": "The digest of the certification result bundle binding this exact tuple, or null when no certification binds it. Null is required rather than optional, so an uncertified capture is a statement the producer had to make and never an omission a reader has to interpret.",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "platform_profile_id": {
           "type": "string",
@@ -402,5 +411,41 @@
     "network_eligible": {
       "const": false
     }
-  }
+  },
+  "allOf": [
+    {
+      "title": "An uncertified capture is private analytics",
+      "description": "AGENTS.md states it as a binding rule: generic ACP, OpenTelemetry, proxy, wrapper and unknown-version integrations remain private analytics until an exact tuple is certified. Making bundle_sha256 nullable without this clause would have turned a representation gap into a permission - every capture in this repository would become expressible and none of them would be marked as what it is. The disposition is pinned in the schema rather than left to the collector because a collector that forgets is indistinguishable from one that decided.",
+      "if": {
+        "type": "object",
+        "required": [
+          "certification"
+        ],
+        "properties": {
+          "certification": {
+            "type": "object",
+            "required": [
+              "bundle_sha256"
+            ],
+            "properties": {
+              "bundle_sha256": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "rule_result": {
+            "properties": {
+              "disposition": {
+                "const": "private-analytics"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

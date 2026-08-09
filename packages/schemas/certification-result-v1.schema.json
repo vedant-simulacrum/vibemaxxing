@@ -117,6 +117,7 @@
         "case_count",
         "negative_case_count",
         "failed_case_count",
+        "cases",
         "result_digest",
         "cose_sign1_b64",
         "signing_key_id",
@@ -141,7 +142,9 @@
         },
         "failed_case_count": { "type": "integer", "minimum": 0 },
         "cases": {
+          "description": "Every case the run executed, one entry each. Required, and required to be non-empty, because the three counts above are self-reported: a run could declare case_count 500 and failed_case_count 0 while listing nothing, and the way to make a failing suite report a pass would be to delete the failing entry. validate_certification_contracts derives all three counts from this array and refuses a result whose declared counts differ, so removing a case now changes the counts it was removed to protect.",
           "type": "array",
+          "minItems": 1,
           "items": { "$ref": "#/$defs/case_outcome" }
         },
         "result_digest": { "$ref": "#/$defs/digest" },
@@ -171,12 +174,16 @@
     "case_outcome": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["case_id", "polarity", "outcome"],
+      "required": ["case_id", "case_sha256", "polarity", "outcome"],
       "properties": {
         "case_id": {
           "description": "Permanent and never reused, under D-242.",
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "case_sha256": {
+          "description": "The digest of the case as it was executed: its identifier, its fixture bytes and its declared expectation. The suite manifest digest binds the set of cases; this binds each one individually, and the two answer different questions. A suite whose manifest digest is unchanged can still have had a case's fixture rewritten under it, and a result that recorded only the manifest digest would report a pass against cases that are no longer the ones it ran. An identifier alone is a name, and D-058 makes trust digest-addressed for exactly this reason.",
+          "$ref": "#/$defs/digest"
         },
         "polarity": { "enum": ["positive", "negative"] },
         "outcome": { "enum": ["passed", "failed", "skipped"] },
