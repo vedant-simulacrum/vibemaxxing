@@ -421,17 +421,37 @@ create table seasons (
   check (appeal_window_ends_at <= archive_at)
 );
 
+-- A period has a lifecycle and did not have one. `seasons` carried five
+-- timestamps in a checked order and `periods` carried none of it, so "period
+-- results remain provisional through the lateness window, then finalize" was a
+-- sentence in the time contract with nothing to record which side of it a period
+-- was on, and a correction applied to a closed period was indistinguishable from
+-- a claim landing in an open one.
+--
+-- open      admits claims and rebuilds freely.
+-- frozen    admits no further claim however late its interval; the final
+--           generation has not sealed.
+-- closed    the final generation is sealed and is the standing.
+-- corrected an appeal or a verified server correction has superseded that
+--           standing with a later generation. The closed one is not edited.
+-- archived  the appeal window has passed; nothing supersedes it again.
+--
+-- The lifetime period never leaves `open`: it is unbounded, so it has no end to
+-- freeze at, and a lifetime row in any other state would be a period whose
+-- boundary the calendar says does not exist.
 create table periods (
   period_id uuid primary key,
   period_type text not null check (period_type in ('daily','weekly','monthly','seasonal','yearly','lifetime')),
   season_id uuid references seasons(season_id),
   starts_at timestamptz,
   ends_at timestamptz,
+  state text not null check (state in ('open','frozen','closed','corrected','archived')),
   rules_version text not null,
   check ((period_type = 'lifetime') = (starts_at is null)),
   check ((starts_at is null) = (ends_at is null)),
   check (starts_at is null or starts_at < ends_at),
   check ((period_type = 'seasonal') = (season_id is not null)),
+  check (period_type <> 'lifetime' or state = 'open'),
   unique nulls not distinct (period_type, starts_at)
 );
 
@@ -482,12 +502,36 @@ create table score_snapshots (
   -- this contract, because that table is declared after this one.
 );
 
+-- One correction's effect on one participant in one period of one view.
+--
+-- The table held `(correction_id, ranking_view_id, token_burn_total_delta)` and
+-- nothing else, so it named no subject and no period: every row said that some
+-- total somewhere moved by some amount. `ranking_corrections_correction_idx`
+-- was documented as serving "applying or reversing one correction across views",
+-- and a rebuild from these rows could not reproduce any participant's figure
+-- because no row said whose figure it was. `erasure_domain_id` and `period_id`
+-- are the discriminators the key omitted, and `direction` with an unsigned
+-- `magnitude` is D-263's form: additions and retractions are summed separately
+-- and checked, rather than a signed column that can be made to cancel itself.
+--
+-- `erasure_domain_id` carries no foreign key on purpose. The disposition
+-- registry classes this table `retain-unlinked`: the row outlives the domain it
+-- described, unlinked, so a correction stays auditable after an erasure without
+-- the erasure having to rewrite it.
 create table ranking_corrections (
   ranking_correction_id uuid primary key,
   -- Deliberately not a foreign key: claim_corrections is deleted by erasure; the correction is retained pseudonymously.
   correction_id uuid not null,
+  -- The foreign key to ranking_views is added after that table is declared,
+  -- because this one is declared first and PostgreSQL executes the file in order.
   ranking_view_id text not null,
-  token_burn_total_delta bigint not null
+  period_id uuid not null references periods(period_id),
+  erasure_domain_id uuid not null,
+  direction text not null check (direction in ('addition','retraction')),
+  magnitude bigint not null check (magnitude >= 0),
+  applied_generation bigint not null check (applied_generation >= 0),
+  created_at timestamptz not null,
+  unique (correction_id, ranking_view_id, period_id, erasure_domain_id, direction)
 );
 
 create table pricing_datasets (
@@ -988,18 +1032,47 @@ create table checkpoint_receipts (
   unique (lineage_id, last_sequence)
 );
 
-create table ranking_views (
-  ranking_view_id text primary key check (ranking_view_id ~ '^[0-9a-f]{64}$'),
+-- The stable half of a ranking view: what is ranked and in what order. It names
+-- no viewer, no cohort and no board, which is what lets one definition serve
+-- many audiences without either of them being able to read the other's page.
+-- `filters_digest` covers the five filter dimensions of
+-- `packages/schemas/ranking-view-v1.schema.json`; each of those is stated there
+-- as a mode rather than as a list, because a list read as a filter is satisfied
+-- by emptiness and a filter that lost its values would look unrestricted.
+create table ranking_definitions (
+  ranking_definition_id text primary key check (ranking_definition_id ~ '^[0-9a-f]{64}$'),
+  metric text not null check (metric = 'credited-token-burn'),
+  metric_version integer not null check (metric_version >= 1),
   period_id uuid not null references periods(period_id),
-  scope text not null check (scope in ('global','friends','rivals','board')),
-  board_id uuid references boards(board_id),
+  filters_digest bytea not null check (octet_length(filters_digest) = 32),
+  tie_policy text not null check (tie_policy = 'shared-rank-with-gaps'),
+  display_order text not null check (display_order = 'credited-token-burn-desc,first-reached-at-asc,erasure-domain-id-asc'),
   rules_digest bytea not null check (octet_length(rules_digest) = 32),
   pricing_dataset_digest bytea not null check (octet_length(pricing_dataset_digest) = 32),
   evidence_policy_digest bytea not null check (octet_length(evidence_policy_digest) = 32),
+  weight_table_digest bytea not null check (octet_length(weight_table_digest) = 32),
   source_checkpoint_digest bytea not null check (octet_length(source_checkpoint_digest) = 32),
-  projection_generation bigint not null check (projection_generation >= 0),
+  created_at timestamptz not null
+);
+
+-- The audience half, and the pair. One row is one definition read by one
+-- audience. `default_visibility` is not free: the second check makes
+-- `universally-public` reachable only from the global scope, so AGENTS.md's rule
+-- that only the global leaderboard is universally public by default is enforced
+-- where the row is written rather than only where a page is rendered. Until
+-- PF-021 the rule existed at the read site alone, and the write site admitted a
+-- friends view that called itself public.
+create table ranking_views (
+  ranking_view_id text primary key check (ranking_view_id ~ '^[0-9a-f]{64}$'),
+  ranking_definition_id text not null references ranking_definitions(ranking_definition_id),
+  audience_id text not null check (audience_id ~ '^[0-9a-f]{64}$'),
+  scope text not null check (scope in ('global','friends','rivals','board')),
+  board_id uuid references boards(board_id),
+  default_visibility text not null check (default_visibility in ('universally-public','viewer-authorized')),
   created_at timestamptz not null,
-  check ((scope = 'board') = (board_id is not null))
+  unique (ranking_definition_id, audience_id),
+  check ((scope = 'board') = (board_id is not null)),
+  check ((scope = 'global') = (default_visibility = 'universally-public'))
 );
 
 -- A generation is sealed exactly once. `content_hash` covers the sealed entry
@@ -1038,6 +1111,22 @@ alter table score_snapshots
   add constraint score_snapshots_generation_fk
   foreign key (ranking_view_id, generation)
   references ranking_projection_generations (ranking_view_id, generation);
+
+-- `period_scores.generation` records which generation produced the live figures
+-- in the row. It was a bare bigint pointing at nothing, so a projection could
+-- name a generation that was never built and a reader comparing the live figure
+-- against the sealed one had no way to tell which sealed one to compare against.
+alter table period_scores
+  add constraint period_scores_generation_fk
+  foreign key (ranking_view_id, generation)
+  references ranking_projection_generations (ranking_view_id, generation);
+
+-- `ranking_corrections` is declared before `ranking_views`, so its view reference
+-- is added here rather than inline.
+alter table ranking_corrections
+  add constraint ranking_corrections_view_fk
+  foreign key (ranking_view_id)
+  references ranking_views (ranking_view_id);
 
 create table model_alias_facts (
   model_alias_id text not null,
@@ -1687,8 +1776,63 @@ create table score_contributions (
   superseded_by_contribution_id uuid references score_contributions(contribution_id),
   created_at timestamptz not null,
   unique (period_id, claim_id, origin),
-  check (superseded_by_contribution_id <> contribution_id)
+  check (superseded_by_contribution_id <> contribution_id),
+  -- D-263 composes a period total as the checked sum of additions minus the
+  -- checked sum of retractions. That decomposition is only available if the two
+  -- are distinguishable, and a signed column alone does not distinguish them:
+  -- an addition of -5 and a retraction of -5 are the same row. The direction is
+  -- the origin and the sign follows from it, in both directions.
+  check ((origin = 'retraction') = (token_burn_delta < 0))
 );
+
+-- `score_contributions` is the append-only ledger the period figures are folded
+-- from, and until PF-023 nothing stopped an update to it. A correction that
+-- edits the contribution it corrects destroys the property the whole design
+-- rests on: the accepted claim is immutable, and a correction appends an
+-- inverse and a replacement rather than rewriting arithmetic that has already
+-- been published.
+--
+-- Two columns are deliberately outside the refusal. `claim_id` is cleared by
+-- `on delete set null` when an erasure deletes the claim -- which PostgreSQL
+-- performs as an UPDATE on this row, so a blanket update trigger would make the
+-- erasure path fail rather than the rewrite path. `superseded_by_contribution_id`
+-- may be set once, from null, because that is the forward link a superseding
+-- contribution installs; it may not then be changed or cleared, because
+-- re-pointing it rewrites which row is current without appending anything.
+-- The message carries no format placeholder on purpose. This file is executed as
+-- one multi-statement string by the planning DDL check, and a percent sign in it
+-- is one client library away from being read as a parameter marker; the detail
+-- string concatenates instead and says the same thing.
+create function score_contributions_refuse_rewrite() returns trigger
+  language plpgsql as $refuse$
+begin
+  raise exception 'score_contributions is append-only'
+    using errcode = 'restrict_violation',
+          detail = tg_op || ' refused on contribution ' || old.contribution_id::text;
+end;
+$refuse$;
+
+create trigger score_contributions_no_delete
+  before delete on score_contributions
+  for each row execute function score_contributions_refuse_rewrite();
+
+create trigger score_contributions_no_rewrite
+  before update on score_contributions
+  for each row
+  when (
+    old.contribution_id is distinct from new.contribution_id
+    or old.period_id is distinct from new.period_id
+    or old.erasure_domain_id is distinct from new.erasure_domain_id
+    or old.origin is distinct from new.origin
+    or old.token_burn_delta is distinct from new.token_burn_delta
+    or old.source_revision is distinct from new.source_revision
+    or old.created_at is distinct from new.created_at
+    or (
+      old.superseded_by_contribution_id is not null
+      and old.superseded_by_contribution_id is distinct from new.superseded_by_contribution_id
+    )
+  )
+  execute function score_contributions_refuse_rewrite();
 
 -- Movement, overtake and streak events. The unique constraint is the duplicate
 -- suppression rule the product specification requires, expressed as a
@@ -2474,7 +2618,11 @@ create index minute_scores_account_idx on minute_scores (account_id, minute_star
 create index period_scores_period_idx on period_scores (period_id);
 create index period_scores_account_idx on period_scores (account_id);
 create index ranking_corrections_correction_idx on ranking_corrections (correction_id);
-create index ranking_views_period_idx on ranking_views (period_id);
+create index ranking_corrections_view_idx
+  on ranking_corrections (ranking_view_id, period_id, erasure_domain_id);
+create index ranking_corrections_period_idx on ranking_corrections (period_id);
+create index ranking_definitions_period_idx on ranking_definitions (period_id);
+create index ranking_views_definition_idx on ranking_views (ranking_definition_id);
 create index ranking_views_board_idx on ranking_views (board_id);
 create index periods_season_idx on periods (season_id);
 create index ranking_entries_domain_idx on ranking_entries (erasure_domain_id);
@@ -2491,6 +2639,21 @@ create index ranking_movement_events_prior_idx on ranking_movement_events (ranki
 create index ranking_movement_events_current_idx on ranking_movement_events (ranking_view_id, current_generation);
 create index ranking_projection_generations_supersede_idx
   on ranking_projection_generations (ranking_view_id, superseded_by_generation);
+
+-- Exactly one active generation per view. The ranking-projection machine calls
+-- its promotion transition `atomic-promote` and the storage contract calls a
+-- generation the current standing; without this index both were words. Two
+-- workers could each promote and leave two rows in `active`, after which "the
+-- current standing" is whichever one a reader's plan happened to find, and the
+-- two readers who found different ones both saw a real row. Partial, because
+-- `building`, `validating`, `superseded` and `failed` are all many-per-view.
+create unique index ranking_projection_generations_active_idx
+  on ranking_projection_generations (ranking_view_id)
+  where state = 'active';
+
+-- Referencing side of the composite key period_scores pins its figures to.
+create index period_scores_generation_idx
+  on period_scores (ranking_view_id, generation);
 
 -- Foreign-key referencing side: social and boards.
 create index friend_requests_requester_idx on friend_requests (requester_account_id);

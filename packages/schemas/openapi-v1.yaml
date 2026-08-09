@@ -152,6 +152,16 @@ x-public-operations:
   #   auth-bootstrap  — establishes the very session a viewer check would need.
   #   global-board    — the one universally public view AGENTS.md names.
   #   reference-data  — carries no participant, so no viewer is relevant to it.
+  #
+  # `global-board` was held by `getLeaderboard`, whose path was
+  # `/leaderboards/{scope}/{period}` and whose `Scope` enum admitted `global`,
+  # `friends`, `rivals` and `board`. The reason named one of those four values and
+  # the declaration covered all of them, so `GET /leaderboards/friends/weekly`
+  # answered an unauthenticated caller with a viewer-relative standing, and
+  # `GET /leaderboards/board/weekly` named no board at all. PF-052 recorded that
+  # this operation would lose its `security: []`, landed without doing it, and left
+  # the note in place. The global board now has its own path and holds the reason
+  # alone; the cohort and board paths require a session.
   startGitHubAuth: auth-bootstrap
   completeGitHubAuth: auth-bootstrap
   startXAuth: auth-bootstrap
@@ -159,7 +169,7 @@ x-public-operations:
   startDeviceAuth: auth-bootstrap
   pollDeviceAuth: auth-bootstrap
   exchangeDeviceAuth: auth-bootstrap
-  getLeaderboard: global-board
+  getGlobalLeaderboard: global-board
   listPricingDatasets: reference-data
   getCompatibility: reference-data
 
@@ -1186,9 +1196,10 @@ paths:
           $ref: '#/components/responses/Problem'
       parameters:
         - $ref: '#/components/parameters/Id'
-  /leaderboards/{scope}/{period}:
+  /leaderboards/global/{period}:
     get:
-      operationId: getLeaderboard
+      operationId: getGlobalLeaderboard
+      description: 'The one universally public view AGENTS.md names. It is a separate path from the viewer-relative scopes rather than one value of a scope enum, because the reason recorded in x-public-operations is `global-board` and a reason that covers one of four values of a parameter is not a reason. Until PF-021 this operation was `GET /leaderboards/{scope}/{period}` with `security: []` and a Scope enum admitting global, friends, rivals and board, so an unauthenticated caller reached a friends or private-board standing by naming it in the path.'
       x-authorization: public
       x-recent-auth: not-required
       x-idempotency: not-applicable
@@ -1202,6 +1213,39 @@ paths:
                 $ref: '#/components/schemas/LeaderboardPage'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Period'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/RankingView'
+  /leaderboards/{scope}/{period}:
+    get:
+      operationId: getLeaderboard
+      description: The viewer-relative cohort boards. Scope admits friends and rivals only; global has its own public path and a board board has its own path, because a board scope with no board identifier in the request cannot name which board it is.
+      x-authorization: authenticated-account
+      x-recent-auth: not-required
+      x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: LeaderboardPage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
@@ -1212,6 +1256,42 @@ paths:
           $ref: '#/components/responses/Problem'
       parameters:
         - $ref: '#/components/parameters/Scope'
+        - $ref: '#/components/parameters/Period'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/RankingView'
+  /boards/{id}/leaderboard/{period}:
+    get:
+      operationId: getBoardLeaderboard
+      description: One board's standing. The board identifier is a required path segment, so the request carries the discriminator the audience half of ranking-view-v1.schema.json requires; the previous scope=board form named no board at all.
+      x-authorization: authenticated-account
+      x-recent-auth: not-required
+      x-idempotency: not-applicable
+      security:
+        - sessionCookie: []
+        - bearerAuth: []
+          deviceProof: []
+      responses:
+        '200':
+          description: LeaderboardPage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        default:
+          $ref: '#/components/responses/Problem'
+      parameters:
+        - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/Period'
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -2582,12 +2662,11 @@ components:
       name: scope
       in: path
       required: true
+      description: 'The viewer-relative cohort scopes only. `global` is absent because it has its own unauthenticated path, and `board` is absent because a board standing needs the board identifier that /boards/{id}/leaderboard/{period} carries. The audience enum in packages/schemas/ranking-view-v1.schema.json still holds all four, because a stored audience is not a request.'
       schema:
         enum:
-          - global
           - friends
           - rivals
-          - board
     Period:
       name: period
       in: path
@@ -2607,7 +2686,7 @@ components:
       schema:
         type: string
         maxLength: 2048
-      description: Opaque forward cursor returned as the cursor field of the previous page. A client never constructs one and never parses one; the server rejects a cursor it did not issue, a cursor issued against a different snapshot_id, and a cursor issued to a different principal.
+      description: 'Opaque forward cursor returned as the cursor field of the previous page. A client never constructs one and never parses one. Its record shape is packages/schemas/ranking-cursor-v1.schema.json and the five refusals are evaluated in the fixed order that file declares: a cursor the server did not issue, an expired one, one issued to a different principal, one anchored in a generation that is no longer active, and one whose authorization revision the viewer has since moved past. Each is a case in conformance/planning/ranking-cursor-vectors-v1.json. Until PF-022 this sentence named three refusals and no field in the repository held anything either of them could compare.'
     Limit:
       name: limit
       in: query
@@ -3839,8 +3918,7 @@ components:
           enum:
             - hardened
             - standard
-            - imported
-          description: The awarded public evidence state from packages/schemas/evidence-profile-policy-v1.json. The server verifier assigns it; a client field requesting one is ignored under the policy's client-requested-public-state rule. Under ADR-020 the class is a weight on Credited Token Burn rather than a badge, and under D-100 no provider offers an individual-account attestation path, so the class assesses the quality of a self-report and is not a confirmation from any provider.
+          description: 'The awarded public evidence state from packages/schemas/evidence-profile-policy-v1.json. The server verifier assigns it; a client field requesting one is ignored under the policy''s client-requested-public-state rule. Under ADR-020 the class is a weight on Credited Token Burn rather than a badge, and under D-100 no provider offers an individual-account attestation path, so the class assesses the quality of a self-report and is not a confirmation from any provider. `imported` is absent on a ranking entry and only on a ranking entry: historical imports never enter active competition, so an imported record produces no entry. `ranking_entries.evidence_class` and ranking-generation-v1.schema.json both refused it already, which left this schema as the one artifact in the repository saying an import could be ranked. A profile still carries it, because a participant whose only records are imports has an evidence class and no standing.'
         credited_token_burn:
           type: integer
           minimum: 0
@@ -3874,6 +3952,10 @@ components:
         ranking_view_id:
           type: string
           pattern: ^[0-9a-f]{64}$
+        generation:
+          type: integer
+          minimum: 0
+          description: 'The sealed generation this entry belongs to. Every entry key in planning-schema.sql includes it — `ranking_entries` is keyed `(ranking_view_id, generation, position)` and unique on `(ranking_view_id, generation, erasure_domain_id)` — and the API projection of an entry did not carry it, so a client holding a position could not say which generation the position indexed and two generations of one view rendered as one series.'
         snapshot_id:
           type: string
           format: uuid
@@ -3886,6 +3968,8 @@ components:
       required:
         - items
         - cursor
+        - ranking_view_id
+        - generation
         - snapshot_id
         - revision
       properties:
@@ -3899,6 +3983,14 @@ components:
             - string
             - 'null'
           maxLength: 2048
+          description: 'The opaque forward cursor for the next page, or null on the last page. Its record shape is packages/schemas/ranking-cursor-v1.schema.json: it binds the viewer it was issued to, the generation it anchors in, the authorization revision that held at issue and an expiry, and conformance/planning/ranking-cursor-vectors-v1.json states each way a presentation of it is refused. A client never constructs one and never parses one.'
+        ranking_view_id:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          description: The definition-and-audience pair this page was rendered for. A page that names only a snapshot cannot be checked against the audience the caller was authorized for.
+        generation:
+          type: integer
+          minimum: 0
         snapshot_id:
           type: string
           format: uuid

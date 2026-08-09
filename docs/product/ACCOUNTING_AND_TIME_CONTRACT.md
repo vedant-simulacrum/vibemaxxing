@@ -78,6 +78,22 @@ Canonical event time is server-receipt time plus bounded source time metadata. T
 
 Local-time views may be offered as private analytics but do not change global competitive periods.
 
+### The period lifecycle
+
+A period is `open`, `frozen`, `closed`, `corrected` or `archived`. `packages/schemas/state-machine-registry-v1.json` owns the machine and `periods.state` carries it.
+
+| State | What it means |
+|---|---|
+| `open` | Claims are admitted and generations are rebuilt freely. |
+| `frozen` | No further claim enters the period however late its interval. The final generation has not sealed. |
+| `closed` | The final generation is sealed and is the standing. |
+| `corrected` | An appeal decision or a verified server correction has superseded that standing with a later generation. The closed one is not edited. |
+| `archived` | The appeal window has passed. Nothing supersedes it again. |
+
+Three properties are enforced rather than described. A period reaches `archived` only through `closed`, so a period cannot be archived out of the lateness window it was still admitting claims in. The transition into `corrected` is a moderator act under recent authentication and never a worker's, because a scheduled job that can supersede a sealed standing is a scheduled job that can change a published result without anyone deciding to. And the `lifetime` period never leaves `open`: it is unbounded, so it has no end to freeze at, and `periods` refuses a lifetime row in any other state.
+
+Until this section existed, `seasons` carried five timestamps in a checked order and `periods` carried none of it, so "period results remain provisional through the lateness window, then finalize" had nothing recording which side of that boundary a period was on.
+
 ### Late and offline events
 
 - Claims bind a bounded event interval and uncertainty, monotonic clock domain/generation/duration, challenge, previous checkpoint, and server receipt time.
@@ -132,6 +148,10 @@ All integer additions use checked arithmetic. Negative, overflowed, internally i
 Each accepted event has exactly one `packages/schemas/source-receipt-v1.schema.json` receipt, which is device-local, records every observation that saw the execution and which single one counted, and asserts no provider attestation under D-100. `packages/schemas/evidence-bundle-v1.cddl` binds the signed claim bytes, that receipt, the profile and arithmetic digests, the provenance chain, the privacy decision and the equivalence record into one at-rest record that never crosses the device boundary.
 
 Corrections do not rewrite accepted totals. Under D-263 they are append-only contributions with a direction and an unsigned magnitude, composed as the checked sum of additions minus the checked sum of retractions, rejecting rather than clamping when retractions exceed what they correct.
+
+Append-only is a constraint here and not a convention. `score_contributions` carries a `before delete` trigger and a `before update` trigger that refuse any change to the period, the participant, the origin, the delta, the source revision or the creation instant, and refuse a `superseded_by_contribution_id` that is re-pointed once set. `claim_id` is deliberately outside the refusal: an erasure clears it through `on delete set null`, which PostgreSQL performs as an update on the row, so a blanket refusal would break the erasure path rather than the rewrite path. `check ((origin = 'retraction') = (token_burn_delta < 0))` makes the direction recoverable from the row, because a signed column alone does not distinguish an addition of −5 from a retraction of 5.
+
+`ranking_corrections` records the same corrections per view, and a rebuild folds both and requires them to agree. `conformance/planning/ranking-correction-vectors-v1.json` states six cases and `scripts/repository/validate_planning_artifacts.py` recomputes every one rather than reading the answer back. `minute_scores` and `period_scores` are not append-only and are not claimed to be: an Article 17 erasure deletes both and the retention window discards `minute_scores` by dropping whole partitions. They are derived projections of the ledger, and a rebuild reads the ledger.
 
 ## Required tests
 

@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 191 |
-| `in-progress` | 7 |
-| `landed` | 56 |
+| `not-started` | 189 |
+| `in-progress` | 6 |
+| `landed` | 59 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 241 assertions across 56 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 263 assertions across 59 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 8.
+Startable now — not done, and every dependency done: 7.
 
-`PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030`, `OS-001`, `OS-003`, `OS-009`.
+`PF-025`, `PF-026`, `PF-028`, `PF-030`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,14 +90,13 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 5 | `PF-021`, `PF-025`, `PF-026`, `PF-028`, `PF-030` |
-| 2 | 4 | `PF-022`, `PF-027`, `PF-031`, `PF-032` |
-| 3 | 1 | `PF-023` |
-| 4 | 1 | `PF-029` |
-| 5 | 1 | `PF-033` |
-| 6 | 1 | `PF-034` |
-| 7 | 1 | `PF-035` |
-| 8 | 1 | `PF-036` |
+| 1 | 4 | `PF-025`, `PF-026`, `PF-028`, `PF-030` |
+| 2 | 3 | `PF-027`, `PF-031`, `PF-032` |
+| 3 | 1 | `PF-029` |
+| 4 | 1 | `PF-033` |
+| 5 | 1 | `PF-034` |
+| 6 | 1 | `PF-035` |
+| 7 | 1 | `PF-036` |
 
 Statuses additionally checkable against artifact presence: 196 of 260. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -598,27 +597,51 @@ Two further stale facts fell out of reading the same paths: `SERVER_API_DATA_AND
 This is SR-012's last unit. **No finding was touched.** `conformance/p1140f/semantic-findings-v1.json` is unmodified by this work, and it is not this unit's to modify: closure evidence cites the merge sha of the pull request that lands it, which cannot be known from inside that pull request.
 
 ### PF-021 — Ranking definition and audience authorization
-Files: `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
-Acceptance: `ranking-view-v1.schema.json` separates the ranking definition from the audience; every operation carrying `security: []` is declared in `openapi-v1.yaml#x-public-operations` with one of the three admissible reasons, exactly one of which is `global-board`; `getPublicProfile` requires a session and returns 401 without one; `python3 -m unittest tests.ci.test_public_operations` exits 0 with a case per way the declaration can rot.
+Files: `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/planning-schema.sql`, `packages/schemas/examples/ranking-view.*.json`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_ranking_view_separation.py`, `tests/ci/test_public_operations.py`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
+Acceptance: `ranking-view-v1.schema.json` states a `definition` and an `audience` whose property sets are disjoint and are held in `validate_planning_artifacts.py` in both directions; `ranking_definition_id`, `audience_id` and `ranking_view_id` all recompute from the record's own canonical encoding, and the three declared audience examples share one `ranking_definition_id` and produce three distinct `ranking_view_id` values; `planning-schema.sql` splits `ranking_definitions` from `ranking_views` and carries `check ((scope = 'global') = (default_visibility = 'universally-public'))`, so the only-global-is-public rule is enforced where the row is written; every operation carrying `security: []` is declared in `openapi-v1.yaml#x-public-operations` with one of the three admissible reasons, exactly one of which is `global-board`, and the operation holding that reason takes no `scope` parameter; `getPublicProfile` requires a session and returns 401 without one; `python3 -m unittest tests.ci.test_public_operations tests.ci.test_ranking_view_separation` exits 0 with a case per way the declaration and the split can rot.
 Depends: PF-004
 Repair: P-1140F-4
 Serves: SR-010, SR-015
 Est: 12-16
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_ranking_view_separation
+Evidence: unittest tests.ci.test_public_operations
+Evidence: contains 1 packages/schemas/planning-schema.sql :: create table ranking_definitions
+Evidence: contains 1 packages/schemas/planning-schema.sql :: check ((scope = 'global') = (default_visibility = 'universally-public'))
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: getGlobalLeaderboard: global-board
+Evidence: absent packages/schemas/openapi-v1.yaml :: getLeaderboard: global-board
+Evidence: exists packages/schemas/examples/ranking-view.valid-friends-audience-over-the-same-definition.json
 
 - stable ranking definition separate from viewer/board audience;
 - metric/version, period, evidence/source/agent/provider/model filters, tie and projection policy;
 - viewer, friend/rival cohort, block/privacy, board membership/visibility revisions;
 - only global public by default.
 
+**The acceptance was rewritten.** The original clause was `ranking-view-v1.schema.json` separates the ranking definition from the audience, with nothing saying what separated means. Renaming two fields satisfies it, and so does adding a comment. The clause now names the arithmetic: three identifiers that recompute, a property partition held in both directions, and the property the split exists for — one definition, three audiences, three view identifiers — stated so that it fails if the audience stops reaching the identifier.
+
+**The audience half was recorded as done and was not.** `getLeaderboard` held the `global-board` reason, which the declaration block defines as "the one universally public view AGENTS.md names". Its path was `/leaderboards/{scope}/{period}` and `Scope` admitted `global`, `friends`, `rivals` and `board`. The reason named one of four values of a path segment and the declaration covered all four, so `GET /leaderboards/friends/weekly` answered an unauthenticated caller with a viewer-relative standing, and `GET /leaderboards/board/weekly` named no board at all — a key with no discriminator. PF-052 landed with a note saying this operation "gains a viewer parameter and loses its unauthenticated `security: []`", and did neither; the note stayed, which is the same justification-outliving-its-hole shape the closed-set-of-reasons rule was written against. The global board now has `/leaderboards/global/{period}` and holds the reason alone, the cohort scopes require a session, and a board standing is addressed by board at `/boards/{id}/leaderboard/{period}`.
+
+**`getPublicProfile` is still repaired.** It requires a session, declares `x-authorization: authenticated-account`, answers 401 and appears in no public declaration; `test_public_operations` asserts all four and the assertions survived this unit unchanged.
+
+**Two further live defects fell out of reading the same paths.** `RankEntry.evidence_class` admitted `imported` while `ranking_entries.evidence_class` and `ranking-generation-v1.schema.json` both refused it and AGENTS.md says historical imports never enter active competition — the public leaderboard schema was the only artifact in the repository saying an import could be ranked. And the five filter dimensions the accounting contract requires every leaderboard to support were nowhere in the view identity; they are now modes rather than lists, because a list read as a filter is satisfied by emptiness and a filter that lost its values would look unrestricted rather than broken.
+
+This unit serves SR-010 and SR-015. It advances SR-015 no further than PF-021's earlier half did: that finding's closure is one enumerated boundary matrix plus a current-authorization check at every boundary it names, and **PF-033 is the unit that owes it**. Nothing here should be read as closing SR-015.
+
 ### PF-022 — Ranking generations, entries, snapshots and cursors
-Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
-Acceptance: `ranking_projection_generations` carries exactly one active pointer enforced by a partial unique index; every entry key in `score_snapshots` includes the generation; a cursor fixture records the viewer, the authorization revision and the expiry, and a cursor replayed by another viewer is rejected.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/ranking-cursor-v1.schema.json`, `packages/schemas/ranking-cursor-vectors-v1.schema.json`, `conformance/planning/ranking-cursor-vectors-v1.json`, `packages/schemas/disclosure-projection-v1.json`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_ranking_cursor.py`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`
+Acceptance: `ranking_projection_generations` carries exactly one active pointer enforced by `ranking_projection_generations_active_idx`, unique and partial on `state = 'active'`; every entry key in `ranking_entries` includes the generation — primary key `(ranking_view_id, generation, position)` and unique `(ranking_view_id, generation, erasure_domain_id)` — `score_snapshots` is unique on `(ranking_view_id, generation)`, and `RankEntry` and `LeaderboardPage` both carry the generation they render; `ranking-cursor-v1.schema.json` binds the viewer, the generation, the snapshot, the authorization revision and the expiry, `conformance/planning/ranking-cursor-vectors-v1.json` states nine presentations covering all five refusals and at least one acceptance in a fixed refusal order, and `validate_planning_artifacts.py#evaluate_cursor` reaches every outcome from the inputs rather than reading `expected` back; a cursor replayed by another viewer and a cursor replayed by an anonymous reader are both refused `viewer-mismatch`; `python3 -m unittest tests.ci.test_ranking_cursor` exits 0.
 Depends: PF-021
 Repair: P-1140F-4
 Serves: SR-010
 Est: 12-16
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_ranking_cursor
+Evidence: exists packages/schemas/ranking-cursor-v1.schema.json
+Evidence: exists conformance/planning/ranking-cursor-vectors-v1.json
+Evidence: contains 1 packages/schemas/planning-schema.sql :: create unique index ranking_projection_generations_active_idx
+Evidence: contains 1 packages/schemas/planning-schema.sql :: constraint period_scores_generation_fk
 
 - generation included in entry keys;
 - isolated build/validation/promotion and one active pointer;
@@ -626,20 +649,46 @@ Status: not-started
 - viewer-bound signed cursor with authorization revision and expiry;
 - score-only `rank()` peer groups and separate deterministic display key.
 
+**The acceptance was rewritten in two places.** It required that "every entry key in `score_snapshots` includes the generation". `score_snapshots` holds no entries: it is one row per sealed generation, and the entries are in `ranking_entries`. The clause was satisfied by the table it named before this unit began and said nothing about the table that holds the thing it is about. It now names both, and states what each key is. Second, "a cursor fixture records the viewer, the authorization revision and the expiry" is satisfied by writing three fields into a JSON file that nothing reads. The fixture is now evaluated: a second implementation of the rule reaches every outcome from the inputs, so a case whose recorded answer is wrong fails.
+
+**The one active pointer did not exist.** The `ranking-projection` machine calls its promotion transition `atomic-promote` and the storage contract calls a generation the current standing. Nothing enforced either: `state` was a five-value CHECK with no uniqueness, so two workers could each promote and leave two rows in `active`, after which "the current standing" is whichever one a reader's plan happened to find and both readers who found different ones saw a real row.
+
+**The cursor rules compared fields that did not exist.** The `Cursor` parameter asserted the server "rejects a cursor it did not issue, a cursor issued against a different snapshot_id, and a cursor issued to a different principal". No record in this repository held an issuer, a snapshot or a principal, so the sentence was a promise about an opaque string. The record now holds all five inputs and the refusal order is itself a rule, because a presentation that breaks two of them must be refused by the same one every time or the refusal tells a prober which of the two facts they guessed right.
+
+**Two columns pointed at nothing.** `period_scores.generation` was a bare `bigint` naming a generation that need not exist, and `period_scores.ranking_view_id` had no foreign key at all; the composite key now resolves both. The registry defect underneath was worse: the `ranking-projection` machine named `projection-generations` as its persistence owner — a four-column stub with no `state` column — while its five states live in `ranking_projection_generations`. AGENTS.md's "one persistence owner" was satisfied by a table holding none of the state, and the near-miss name is why nothing noticed. `validate_state_vocabularies.py` now requires a machine to name the table of every SQL column it is bound to, which caught a second instance in `model-alias-resolution`.
+
 ### PF-023 — Periods, seasons, contributions and corrections
-Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
-Acceptance: the `period` machine declares `open`, `frozen`, `closed`, `corrected` and `archived` with all five reachable; `minute_scores` and `period_scores` are append-only by constraint; a rebuild from `ranking_corrections` reproduces the recorded totals in a fixture.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/score-contribution-v1.schema.json`, `packages/schemas/ranking-correction-vectors-v1.schema.json`, `conformance/planning/ranking-correction-vectors-v1.json`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_period_corrections.py`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
+Acceptance: the `period` machine declares `open`, `frozen`, `closed`, `corrected` and `archived` with all five reachable from `open`, `archived` the only terminal state and no transition reaching it from `open`, the transition into `corrected` carried by an actor other than `worker`, and the vocabulary bound to `periods.state` by the state-vocabulary binding table; `score_contributions` is append-only by constraint — a `before delete` trigger and a `before update` trigger refusing every column an append-only rule protects, with `claim_id` outside the refusal because an erasure clears it through `on delete set null`, which PostgreSQL performs as an update — and `check ((origin = 'retraction') = (token_burn_delta < 0))` makes the direction recoverable from the row; `ranking_corrections` keys on `(correction_id, ranking_view_id, period_id, erasure_domain_id, direction)`; `conformance/planning/ranking-correction-vectors-v1.json` states six cases and `validate_planning_artifacts.py#rebuild_period_total` folds the ledger and the correction rows independently and requires the two to agree with each other and with the recorded total, rejecting rather than clamping when retractions exceed what they correct; `python3 -m unittest tests.ci.test_period_corrections` exits 0.
 Depends: PF-022
 Repair: P-1140F-4
 Serves: SR-010
 Est: 12-16
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_period_corrections
+Evidence: exists conformance/planning/ranking-correction-vectors-v1.json
+Evidence: contains 1 packages/schemas/planning-schema.sql :: create trigger score_contributions_no_rewrite
+Evidence: contains 1 packages/schemas/planning-schema.sql :: check ((origin = 'retraction') = (token_burn_delta < 0))
+Evidence: contains 1 packages/schemas/planning-schema.sql :: check (period_type <> 'lifetime' or state = 'open')
+Evidence: absent packages/schemas/planning-schema.sql :: old.claim_id is distinct from new.claim_id
 
 - exact calendar/timezone, open/frozen/closed/corrected/archived states;
 - late-claim and correction windows;
 - immutable contribution ledger;
 - inverse/replacement corrections and rebuild equivalence;
 - movement, overtake, streak and season event/retraction references.
+
+**The acceptance was rewritten, and one third of it was unsatisfiable.** It required `minute_scores` and `period_scores` to be append-only by constraint. Neither can be, and neither should be: the disposition registry gives `period_scores` `erasure_action: delete` because it is a live personal record, and gives `minute_scores` a retention window enforced by dropping whole partitions. An append-only rule on either would make the erasure path and the retention sweep fail rather than make anything immutable. The append-only ledger is `score_contributions`, which the same registry classes `retain-unlinked` and which nothing was protecting; the clause now binds the rule to the table it is true of and says why the other two are derived rather than immutable. The `period` machine clause was also satisfied by declaring five states in a registry and nothing else, so it now names the reachability, the terminal state, the actor and the SQL binding.
+
+**The rebuild clause was unsatisfiable as written.** `ranking_corrections` held `(ranking_correction_id, correction_id, ranking_view_id, token_burn_total_delta)`. It named no participant and no period: every row said that some total somewhere moved by some amount, and no rebuild from it could reproduce anybody's figure. `LEADERBOARD_STORAGE_AND_RANKING.md` documented `ranking_corrections_correction_idx` as serving "applying or reversing one correction across views", which reads as a working access path over a table that could not answer the question. The row now carries `period_id`, `erasure_domain_id`, a `direction` and an unsigned `magnitude` — D-263's shape rather than a signed column, because an addition of −5 and a retraction of 5 are the same row and D-263 composes a period as additions minus retractions.
+
+**`periods` had no lifecycle at all.** `seasons` carried five timestamps in a checked order from `ends_at` through `freeze_at`, `close_at`, `appeal_window_ends_at` and `archive_at`. `periods` carried none of it, so "period results remain provisional through the lateness window, then finalize" had nothing recording which side of that boundary a period was on, and a correction to a closed period was indistinguishable from a claim landing in an open one. Three of the new rules are enforced rather than described: `archived` is unreachable from `open`, the transition into `corrected` is a moderator act under recent authentication rather than a scheduled job's — a scheduled job that can supersede a published standing is one that can change a result without anyone deciding to — and the `lifetime` period never leaves `open`, because it is unbounded and has no end to freeze at.
+
+**`score_contributions` was called immutable and nothing enforced it.** The trigger pair does. `claim_id` is deliberately outside the refusal and the validator fails if it is added, because an erasure clears that column through `on delete set null` and PostgreSQL performs that as an UPDATE on the row: a blanket refusal breaks the erasure path rather than the rewrite path, which is the opposite of what the rule is for.
+
+**Docker is unavailable here, so no DDL in this unit has executed.** The trigger, the function and the new constraints are declared in dependency order and CI is their first execution. That is stated rather than glossed: a planning validator reading this DDL as text is not a PostgreSQL instance accepting it.
 
 ### PF-024 — Social relationship authority
 Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
@@ -1113,7 +1162,7 @@ Status: landed
 Evidence: exists packages/schemas/ranking-generation-v1.schema.json
 Evidence: contains 1 packages/schemas/planning-schema.sql :: ranking_entries
 
-Inventory `:88`. Three fields dangle in the API today. This is also where `getLeaderboard` gains a viewer parameter and loses its unauthenticated `security: []` while the `Scope` enum at `:1775` still admits `friends|rivals|board`.
+Inventory `:88`. Three fields dangled in the API when this unit was written. The note also said this was where `getLeaderboard` would gain a viewer parameter and lose its unauthenticated `security: []`; the unit landed without doing either, and the note outlived the hole it described for six units. `PF-021` did it: the global board has its own path and holds the `global-board` reason alone, the `Scope` enum admits `friends` and `rivals` only, and a board standing is addressed at `/boards/{id}/leaderboard/{period}`.
 
 ### PF-053 — Decide provider-attested evidence for organizations
 Files: `docs/decisions/ADR-016-PROVIDER_ATTESTED_ORG_EVIDENCE.md` (new), `docs/security/EVIDENCE_AND_ATTESTATION_PROFILES.md`, `docs/planning/DECISION_REGISTER.md`
@@ -2273,8 +2322,8 @@ Status: not-started
 `minute_scores` had no owning unit before this one.
 
 ### R-003 Ranking definitions and audience instances
-Files: `apps/api/internal/ranking/views.go` (new), `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/planning-schema.sql`
-Acceptance: a `ranking_views` row names a metric version, a period and its evidence, source, agent, provider and model filters, and a column assertion fails if it carries any viewer or audience field — audience belongs to the request, not the definition.
+Files: `apps/api/internal/ranking/views.go` (new), `packages/schemas/ranking-view-v1.schema.json`, `packages/schemas/planning-schema.sql` (`ranking_definitions`, `ranking_views`)
+Acceptance: a `ranking_definitions` row names a metric version, a period and its evidence, source, agent, provider and model filters, and a column assertion fails if it carries any viewer or audience field — audience belongs to `ranking_views`, and the viewer to the request. `PF-021` split the two tables; this unit is the Go half.
 Depends: O-009, R-001
 Est: 10-14
 Status: not-started
@@ -2288,7 +2337,7 @@ Status: not-started
 
 `ranking_entries` is the generation-keyed entry table.
 
-`projection_generations` is the generation record the entry keys reference.
+`ranking_projection_generations` is the generation record the entry keys reference. This line named `projection_generations` — a four-column stub with no `state` column and no relation to `ranking_entries` — until `PF-022`. The `ranking-projection` machine named the same stub as its persistence owner, and a near-miss table name satisfied every check in this repository.
 
 ### R-005 Generation validation and atomic promotion
 Files: `apps/api/internal/ranking/promote.go` (new), `apps/api/internal/ranking/promote_test.go` (new)

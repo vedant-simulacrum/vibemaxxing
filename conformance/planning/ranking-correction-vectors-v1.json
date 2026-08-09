@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "registry_version": "2026-08-09",
+  "cases": [
+    {
+      "case_id": "PR-001",
+      "title": "an uncorrected period folds to the sum of its accepted claims",
+      "period_id": "0f9a2c31-4d5e-4a6b-8c7d-1e2f3a4b5c6d",
+      "ranking_view_id": "005ef3ffa5fe48f3530d2d05dd5e6bf5aaf914dde20099d612032a9f44d94f94",
+      "erasure_domain_id": "aa11bb22-cc33-4d44-8e55-ff6677889900",
+      "contributions": [
+        { "contribution_id": "11111111-1111-4111-8111-111111111101", "origin": "claim", "token_burn_delta": 120000, "superseded": false },
+        { "contribution_id": "11111111-1111-4111-8111-111111111102", "origin": "claim", "token_burn_delta": 85000, "superseded": false }
+      ],
+      "corrections": [],
+      "expected": { "outcome": "rebuild", "token_burn_total": 205000, "reason_code": null }
+    },
+    {
+      "case_id": "PR-002",
+      "title": "a downward correction appends an inverse and a replacement",
+      "period_id": "0f9a2c31-4d5e-4a6b-8c7d-1e2f3a4b5c6d",
+      "ranking_view_id": "005ef3ffa5fe48f3530d2d05dd5e6bf5aaf914dde20099d612032a9f44d94f94",
+      "erasure_domain_id": "aa11bb22-cc33-4d44-8e55-ff6677889900",
+      "contributions": [
+        { "contribution_id": "22222222-2222-4222-8222-222222222201", "origin": "claim", "token_burn_delta": 120000, "superseded": false },
+        { "contribution_id": "22222222-2222-4222-8222-222222222202", "origin": "retraction", "token_burn_delta": -20000, "superseded": false },
+        { "contribution_id": "22222222-2222-4222-8222-222222222203", "origin": "correction", "token_burn_delta": 5000, "superseded": false }
+      ],
+      "corrections": [
+        { "correction_id": "cc000000-0000-4000-8000-000000000001", "direction": "retraction", "magnitude": 20000, "applied_generation": 13 },
+        { "correction_id": "cc000000-0000-4000-8000-000000000001", "direction": "addition", "magnitude": 5000, "applied_generation": 13 }
+      ],
+      "expected": { "outcome": "rebuild", "token_burn_total": 105000, "reason_code": null },
+      "note": "The accepted claim contributing 120000 is untouched. The correction is two appended rows and the period total moves by their net."
+    },
+    {
+      "case_id": "PR-003",
+      "title": "a superseded contribution stays in the ledger and stops counting",
+      "period_id": "0f9a2c31-4d5e-4a6b-8c7d-1e2f3a4b5c6d",
+      "ranking_view_id": "005ef3ffa5fe48f3530d2d05dd5e6bf5aaf914dde20099d612032a9f44d94f94",
+      "erasure_domain_id": "bb22cc33-dd44-4e55-8f66-001122334455",
+      "contributions": [
+        { "contribution_id": "33333333-3333-4333-8333-333333333301", "origin": "claim", "token_burn_delta": 90000, "superseded": true },
+        { "contribution_id": "33333333-3333-4333-8333-333333333302", "origin": "claim", "token_burn_delta": 70000, "superseded": false }
+      ],
+      "corrections": [],
+      "expected": { "outcome": "rebuild", "token_burn_total": 70000, "reason_code": null },
+      "note": "A rebuild that dropped the superseded row from storage would produce the same total and lose the explanation of why the figure changed."
+    },
+    {
+      "case_id": "PR-004",
+      "title": "a consolidation carries claim-level deltas rather than a summed total",
+      "period_id": "0f9a2c31-4d5e-4a6b-8c7d-1e2f3a4b5c6d",
+      "ranking_view_id": "005ef3ffa5fe48f3530d2d05dd5e6bf5aaf914dde20099d612032a9f44d94f94",
+      "erasure_domain_id": "cc33dd44-ee55-4f66-8077-112233445566",
+      "contributions": [
+        { "contribution_id": "44444444-4444-4444-8444-444444444401", "origin": "claim", "token_burn_delta": 40000, "superseded": false },
+        { "contribution_id": "44444444-4444-4444-8444-444444444402", "origin": "consolidation", "token_burn_delta": 15000, "superseded": false },
+        { "contribution_id": "44444444-4444-4444-8444-444444444403", "origin": "consolidation", "token_burn_delta": 12000, "superseded": false }
+      ],
+      "corrections": [],
+      "expected": { "outcome": "rebuild", "token_burn_total": 67000, "reason_code": null },
+      "note": "D-070. Two absorbed accounts arrive as two claim-level deltas keeping their original period attribution, never as one summed figure."
+    },
+    {
+      "case_id": "PR-005",
+      "title": "retractions exceeding what they correct reject rather than clamp",
+      "period_id": "0f9a2c31-4d5e-4a6b-8c7d-1e2f3a4b5c6d",
+      "ranking_view_id": "005ef3ffa5fe48f3530d2d05dd5e6bf5aaf914dde20099d612032a9f44d94f94",
+      "erasure_domain_id": "dd44ee55-ff66-4077-8188-223344556677",
+      "contributions": [
+        { "contribution_id": "55555555-5555-4555-8555-555555555501", "origin": "claim", "token_burn_delta": 30000, "superseded": false },
+        { "contribution_id": "55555555-5555-4555-8555-555555555502", "origin": "retraction", "token_burn_delta": -45000, "superseded": false }
+      ],
+      "corrections": [
+        { "correction_id": "cc000000-0000-4000-8000-000000000002", "direction": "retraction", "magnitude": 45000, "applied_generation": 14 }
+      ],
+      "expected": { "outcome": "reject", "token_burn_total": null, "reason_code": "CLAIM_ACCOUNTING_INCONSISTENT" },
+      "note": "Clamping to zero would publish a standing no ledger produces and would hide the fact that the retraction is wrong. D-263 rejects."
+    },
+    {
+      "case_id": "PR-006",
+      "title": "the per-view correction rows disagree with the ledger",
+      "period_id": "0f9a2c31-4d5e-4a6b-8c7d-1e2f3a4b5c6d",
+      "ranking_view_id": "005ef3ffa5fe48f3530d2d05dd5e6bf5aaf914dde20099d612032a9f44d94f94",
+      "erasure_domain_id": "ee55ff66-0077-4188-8299-334455667788",
+      "contributions": [
+        { "contribution_id": "66666666-6666-4666-8666-666666666601", "origin": "claim", "token_burn_delta": 50000, "superseded": false },
+        { "contribution_id": "66666666-6666-4666-8666-666666666602", "origin": "retraction", "token_burn_delta": -10000, "superseded": false }
+      ],
+      "corrections": [
+        { "correction_id": "cc000000-0000-4000-8000-000000000003", "direction": "retraction", "magnitude": 9000, "applied_generation": 15 }
+      ],
+      "expected": { "outcome": "reject", "token_burn_total": null, "reason_code": "CLAIM_ACCOUNTING_INCONSISTENT" },
+      "note": "This is the equivalence the rebuild exists to prove. The ledger says the correction moved the figure by ten thousand and the view rows say nine; one of the two produced the published standing and nothing said which."
+    }
+  ]
+}

@@ -25,6 +25,16 @@ An idempotent worker consumes outbox rows and applies deltas to:
 
 Worker checkpoints and aggregate mutations occur transactionally. Reprocessing the same event produces no additional burn.
 
+## The definition and the audience are two things
+
+A ranking view is a pair. `ranking_definitions` holds what is ranked — the metric and its version, the period, the five filter dimensions, the tie rule, the display order and the digests of every input that decides an ordering. `ranking_views` holds who may read it — the scope, the board, and the visibility default — and points at one definition. `ranking_view_id` is the digest over `ranking_definition_id` and `audience_id` and over nothing else, so two audiences of one ranking share a definition identifier, differ in view identifier, and cannot land in one sealed generation. `packages/schemas/ranking-view-v1.schema.json` is the machine form and `validate_ranking_view_separation` recomputes all three digests.
+
+Two consequences are constraints rather than conventions.
+
+`check ((scope = 'global') = (default_visibility = 'universally-public'))` on `ranking_views` puts AGENTS.md's rule that only the global leaderboard is universally public where the row is written. It had lived only where a page is rendered, and the write path admitted a friends view that called itself public. `GET /leaderboards/{scope}/{period}` was the same defect on the API: it carried `security: []` while its `scope` segment admitted `global`, `friends`, `rivals` and `board`, so an unauthenticated caller reached a cohort or private-board standing by naming it in the path, and the `board` value named no board at all. The global board now has its own unauthenticated path, the cohort scopes require a session, and a board standing is addressed by board.
+
+The viewer is not in either table. A viewer belongs to a request, and the authorization inputs a request is evaluated under are `packages/schemas/projection-authorization-v1.json`, re-read at every display rather than replayed from what was sealed.
+
 ## Ranking semantics
 
 Every ranking query specifies scope, period, metric, deterministic tie rule and stable pagination order.
@@ -65,6 +75,8 @@ Every index in `packages/schemas/planning-schema.sql` is either the referencing 
 | Erasure enumeration across consolidated identities | Both directions of the domain link | `erasure_domain_links` primary key and `erasure_domain_links_absorbed_idx` |
 | Season and period boundary lookup | Window containment | `seasons_window_idx`, `periods_type_window_idx` |
 | Latest sealed generation for a view | Descending scan on the generation | `score_snapshots_view_generation_idx` on `(ranking_view_id, generation desc)`. The `unique (ranking_view_id, generation)` constraint indexes the same columns ascending, and a backward scan of it orders both columns descending, which is not this order |
+| The one active generation of a view | Equality on the view, over live rows only | `ranking_projection_generations_active_idx`, unique and partial on `state = 'active'`. It is the promotion invariant rather than a lookup: the machine calls its transition `atomic-promote` and, until this index existed, two workers could each promote and leave two rows in `active` |
+| Which sealed generation produced a live period figure | The view and the generation the projection names | `period_scores_generation_idx`. The primary key leads with `ranking_view_id` and continues with `period_id`, so it cannot serve this; the column pointed at nothing at all until PF-022 gave it a foreign key |
 | One participant's moderation and appeal history | Account to case, account to appeal | `moderation_cases_account_idx`, `appeals_account_idx`. Neither column is a foreign key: both records survive the account's erasure unlinked |
 | One participant's deletion job | Account to job | `deletion_jobs_account_idx`. Not a foreign key either — the job is the proof the deletion happened and cannot reference what it deleted |
 | Per-device deletion fan-out and acknowledgement | Job to commands is the unique pair; device to commands and device to receipts are the reverse | `local_deletion_commands_device_idx`, `local_deletion_receipts_device_idx` |
@@ -73,6 +85,7 @@ Every index in `packages/schemas/planning-schema.sql` is either the referencing 
 | Session revocation across a token family | Family to its sessions | `web_sessions_family_idx` |
 | Social integrity events attributed to one actor | Actor to event | `social_integrity_events_actor_idx`. The event outlives the actor, so the column carries no foreign key |
 | Applying or reversing one correction across views | Correction to its per-view rows | `ranking_corrections_correction_idx` |
+| Rebuilding one participant's period figure from its corrections | The view, then the period, then the participant | `ranking_corrections_view_idx`. This is the path the rebuild equivalence in `conformance/planning/ranking-correction-vectors-v1.json` reads. It did not exist and could not have: until PF-023 the table named no period and no participant, so the row above was the only path and it answers "which views did correction C touch" rather than "what happened to this person in this period" |
 | The active certification for a tuple shape | Exact tuple, live rows only | `source_certifications_active_idx`, unique and partial on `state = 'active'`, so two rows can never make "the exact certified tuple" ambiguous |
 | The live provider binding for a subject | Provider and subject, live states only | `linked_identities_live_subject_idx`, unique and partial, which is the one-live-binding rule rather than a lookup |
 

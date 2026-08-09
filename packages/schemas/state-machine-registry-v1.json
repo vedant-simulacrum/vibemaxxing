@@ -1027,8 +1027,9 @@
       "machine_id": "ranking-projection",
       "semantic_owner": "ranking",
       "persistence_owner": [
+        "ranking-definitions",
         "ranking-views",
-        "projection-generations",
+        "ranking-projection-generations",
         "period-scores",
         "score-snapshots",
         "ranking-events"
@@ -1115,10 +1116,102 @@
       ]
     },
     {
+      "machine_id": "period",
+      "semantic_owner": "ranking",
+      "persistence_owner": [
+        "periods",
+        "seasons",
+        "ranking-corrections",
+        "score-contributions"
+      ],
+      "aggregate_key": "period-id",
+      "initial_state": "open",
+      "states": [
+        "open",
+        "frozen",
+        "closed",
+        "corrected",
+        "archived"
+      ],
+      "terminal_states": [
+        "archived"
+      ],
+      "privacy_boundary": "public-safe",
+      "revision_model": "append-only",
+      "transaction_boundary": "aggregate-and-outbox",
+      "outbox": "required",
+      "transitions": [
+        {
+          "transition_id": "period-freeze",
+          "from": [
+            "open"
+          ],
+          "action": "freeze-at-lateness-window",
+          "to": "frozen",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "period-freeze.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        },
+        {
+          "transition_id": "period-close",
+          "from": [
+            "frozen"
+          ],
+          "action": "seal-final-generation",
+          "to": "closed",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "period-close.audit",
+          "reversal": "none",
+          "transaction_boundary": "projection-promotion"
+        },
+        {
+          "transition_id": "period-correct",
+          "from": [
+            "closed",
+            "corrected"
+          ],
+          "action": "supersede-with-correction-record",
+          "to": "corrected",
+          "actor": "moderator",
+          "authentication": "moderator-session",
+          "recent_auth": true,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "period-correct.audit",
+          "reversal": "inverse-event",
+          "transaction_boundary": "period-correction"
+        },
+        {
+          "transition_id": "period-archive",
+          "from": [
+            "closed",
+            "corrected"
+          ],
+          "action": "appeal-window-elapsed",
+          "to": "archived",
+          "actor": "worker",
+          "authentication": "workload-identity",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "period-archive.audit",
+          "reversal": "none",
+          "transaction_boundary": "single-aggregate"
+        }
+      ]
+    },
+    {
       "machine_id": "model-alias-resolution",
       "semantic_owner": "pricing",
       "persistence_owner": [
         "model-alias-facts",
+        "pricing-datasets",
+        "cost-interpretations",
         "pricing-interpretations"
       ],
       "aggregate_key": "model-alias-fact-id",

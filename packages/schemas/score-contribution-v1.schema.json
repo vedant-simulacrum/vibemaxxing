@@ -37,7 +37,7 @@
           "enum": ["claim", "correction", "consolidation", "retraction"]
         },
         "token_burn_delta": {
-          "description": "Signed. A correction inserts an inverse delta and a forward delta rather than editing the original, which is what keeps the accepted claim immutable.",
+          "description": "Signed, and the sign is fixed by the origin: `retraction` is negative and nothing else is. A signed column alone does not carry a direction — an addition of -5 and a retraction of 5 are the same row — and D-263 composes a period as the checked sum of additions minus the checked sum of retractions, which needs the two to be distinguishable. planning-schema.sql carries the same rule as a CHECK. A correction inserts an inverse delta and a forward delta rather than editing the original, which is what keeps the accepted claim immutable.",
           "type": "integer"
         },
         "source_revision": { "type": "integer", "minimum": 0 },
@@ -51,6 +51,18 @@
             "required": ["origin"]
           },
           "then": { "not": { "required": ["claim_id"] } }
+        },
+        {
+          "if": {
+            "properties": { "origin": { "const": "retraction" } },
+            "required": ["origin"]
+          },
+          "then": {
+            "properties": { "token_burn_delta": { "type": "integer", "maximum": -1 } }
+          },
+          "else": {
+            "properties": { "token_burn_delta": { "type": "integer", "minimum": 0 } }
+          }
         }
       ]
     }

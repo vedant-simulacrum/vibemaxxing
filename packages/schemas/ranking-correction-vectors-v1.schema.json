@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/ranking-correction-vectors-v1.schema.json",
+  "title": "Period rebuild and correction-equivalence vectors v1",
+  "description": "Each case holds one participant's contribution ledger for one period, the per-view correction rows that record the same corrections, and the total the sealed generation published. scripts/repository/validate_planning_artifacts.py folds the ledger, folds the correction rows independently, and requires the two to agree with each other and with the recorded total. A case whose recorded total disagrees fails, so the fixture cannot confirm itself. D-263 composes a period as the checked sum of additions minus the checked sum of retractions and rejects rather than clamps when the retractions exceed what they correct; that rejection is a case here rather than a sentence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_version", "cases"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "registry_version": { "type": "string", "minLength": 1 },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/case" }
+    }
+  },
+  "$defs": {
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "title",
+        "period_id",
+        "ranking_view_id",
+        "erasure_domain_id",
+        "contributions",
+        "corrections",
+        "expected"
+      ],
+      "properties": {
+        "case_id": { "type": "string", "pattern": "^PR-[0-9]{3}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "period_id": { "type": "string", "format": "uuid" },
+        "ranking_view_id": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "erasure_domain_id": { "type": "string", "format": "uuid" },
+        "contributions": {
+          "description": "Rows of score_contributions for this participant and period, in insert order. Nothing here is ever edited: a correction appends.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/contribution" }
+        },
+        "corrections": {
+          "description": "Rows of ranking_corrections for the same participant, period and view. They are the per-view record of the same corrections the ledger carries, and the rebuild requires the two to agree.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/correction" }
+        },
+        "expected": { "$ref": "#/$defs/expected" },
+        "note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contribution_id", "origin", "token_burn_delta", "superseded"],
+      "properties": {
+        "contribution_id": { "type": "string", "format": "uuid" },
+        "origin": {
+          "enum": ["claim", "correction", "consolidation", "retraction"]
+        },
+        "token_burn_delta": {
+          "description": "Signed, and its sign is fixed by the origin: `retraction` is negative and nothing else is. planning-schema.sql carries the same rule as a CHECK, so a row that disagrees cannot be inserted.",
+          "type": "integer"
+        },
+        "superseded": {
+          "description": "True when superseded_by_contribution_id is set. A superseded row stays in the ledger and stops counting; it is not deleted, because the arithmetic that produced a published standing has to remain readable.",
+          "type": "boolean"
+        }
+      }
+    },
+    "correction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["correction_id", "direction", "magnitude", "applied_generation"],
+      "properties": {
+        "correction_id": { "type": "string", "format": "uuid" },
+        "direction": { "enum": ["addition", "retraction"] },
+        "magnitude": { "type": "integer", "minimum": 0 },
+        "applied_generation": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "token_burn_total", "reason_code"],
+      "properties": {
+        "outcome": { "enum": ["rebuild", "reject"] },
+        "token_burn_total": {
+          "description": "The total the sealed generation published, or null when the rebuild rejects.",
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "reason_code": {
+          "description": "Resolves in packages/schemas/reason-codes-v1.json. Null exactly when the outcome is rebuild.",
+          "type": ["string", "null"],
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "outcome": { "const": "rebuild" } },
+            "required": ["outcome"]
+          },
+          "then": {
+            "properties": {
+              "token_burn_total": { "type": "integer" },
+              "reason_code": { "type": "null" }
+            }
+          },
+          "else": {
+            "properties": {
+              "token_burn_total": { "type": "null" },
+              "reason_code": { "type": "string" }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

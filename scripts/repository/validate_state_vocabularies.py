@@ -140,6 +140,14 @@ BINDINGS: tuple[Binding, ...] = (
         sql=("ranking_projection_generations.state",),
     ),
     Binding(
+        aggregate="period",
+        machine="period",
+        states=("open", "frozen", "closed", "corrected", "archived"),
+        sql=("periods.state",),
+        internal_states=("corrected",),
+        note="A client reads a standing, never the period's lifecycle.",
+    ),
+    Binding(
         aggregate="model-alias-resolution",
         machine="model-alias-resolution",
         states=("active", "superseded", "revoked"),
@@ -782,6 +790,13 @@ RECORDED_ABSENCES: dict[tuple[str, str], str] = {
         "api",
     ): "Replay is observed through the replayed response, never as a state value.",
     (
+        "period",
+        "api",
+    ): (
+        "A client reads a period's standing, never its lifecycle; the finalization "
+        "boundary is server-side and no operation exposes it."
+    ),
+    (
         "ranking-projection",
         "api",
     ): "Generation build state is operational; a client sees a sealed generation or none.",
@@ -1200,6 +1215,34 @@ def validate(report: Report) -> None:
                     if device_local
                     else "planning-schema.sql does not define"
                 ),
+            )
+
+    # 0a-bis. The table that holds the state must be one the machine owns.
+    #
+    # Rule 0a proves every named owner exists. It does not prove the machine names
+    # the table its states are actually stored in, and two machines did not.
+    # `ranking-projection` named `projection-generations` — a four-column stub with
+    # no state column at all — while its states live in
+    # `ranking_projection_generations`, whose CHECK carries exactly the five the
+    # registry declares. The near-miss name is why nothing noticed: rule 0a resolved
+    # it to a real table and stopped. `model-alias-resolution` named neither
+    # `pricing_datasets` nor `cost_interpretations`, the two tables whose CHECK it
+    # governs. In both cases AGENTS.md's "one persistence owner" was satisfied by a
+    # table that holds none of the state.
+    for binding in BINDINGS:
+        if not binding.machine:
+            continue
+        owners = {
+            owner.replace("-", "_")
+            for owner in machines[binding.machine]["persistence_owner"]
+        }
+        for column in binding.sql:
+            table = column.split(".", 1)[0]
+            report.check(
+                table in owners,
+                f"{binding.machine} is bound to {column} and does not name "
+                f"{table!r} as a persistence owner; the state is stored in a table "
+                "the machine does not claim",
             )
 
     # 0b. State-graph integrity, for every machine rather than every bound one.

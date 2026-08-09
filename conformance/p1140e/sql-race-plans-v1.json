@@ -878,9 +878,12 @@
           "key": "correction_id = C",
           "presence": "present",
           "columns": {
-            "token_burn_total_delta": "the inverse of the effect's delta"
+            "direction": "retraction",
+            "magnitude": "the unsigned size of the effect's delta",
+            "period_id": "the period the effect landed in",
+            "erasure_domain_id": "the participant the effect was applied to"
           },
-          "note": "The reversal is an appended inverse row, so a rebuild reproduces the same total from the ledger rather than from a mutated figure."
+          "note": "The reversal is an appended inverse row, so a rebuild reproduces the same total from the ledger rather than from a mutated figure. This row named only token_burn_total_delta until PF-023, which is a residual saying that some total somewhere moved: without the period and the participant no rebuild can attribute it, and D-263 needs the direction separate from the magnitude."
         },
         {
           "table": "moderation_effects",

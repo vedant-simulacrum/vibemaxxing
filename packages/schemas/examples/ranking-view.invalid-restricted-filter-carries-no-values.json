@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "ranking_view_id": "005ef3ffa5fe48f3530d2d05dd5e6bf5aaf914dde20099d612032a9f44d94f94",
+  "definition": {
+    "ranking_definition_id": "1f8914661c81211a4a2f2e13063d6a7d99d5d6e46e3cd3c7ce9a4ce5846b04a3",
+    "metric": "credited-token-burn",
+    "metric_version": 1,
+    "period_id": "0f9a2c31-4d5e-4a6b-8c7d-1e2f3a4b5c6d",
+    "filters": {
+      "evidence_class": {
+        "mode": "unrestricted"
+      },
+      "source": {
+        "mode": "unrestricted"
+      },
+      "agent": {
+        "mode": "unrestricted"
+      },
+      "provider": {
+        "mode": "restricted-to",
+        "values": []
+      },
+      "model_alias": {
+        "mode": "unrestricted"
+      },
+      "execution_locality": "any"
+    },
+    "tie_policy": "shared-rank-with-gaps",
+    "display_order": "credited-token-burn-desc,first-reached-at-asc,erasure-domain-id-asc",
+    "rules_digest": "72badc431a9456ba6517b75de274294a6b45884f483dc42e9d6d2b491826def6",
+    "pricing_dataset_digest": "4afed1bbd3e2be8a6cb272d21d0a01037adfa09f98a38841ecb19c42cb4dc5b7",
+    "evidence_policy_digest": "2274eebc6316ab99b587d3fc04c49f03eb125ef1cce7db7d824c5f181ad2d004",
+    "weight_table_digest": "f2af09ee5e02b66153e9cc859b95ff8ab1dbb1fb4b9c929e36e382cb97d15c29",
+    "source_checkpoint_digest": "90375e8a99803f860e15972c71e327293989e537fe6bae1318633fbaf022582d"
+  },
+  "audience": {
+    "audience_id": "1e6054461a826b1df19c651d69f7e3b94301444126f4b1b23157947a2bcffb2e",
+    "scope": "global",
+    "default_visibility": "universally-public",
+    "authorization_inputs": [
+      "account-lifecycle",
+      "ranked-identity-state"
+    ],
+    "authorization_revision": 0
+  },
+  "created_at": "2026-08-09T00:00:00Z"
+}
