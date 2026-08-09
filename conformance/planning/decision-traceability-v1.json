@@ -2363,6 +2363,15 @@
       "id": "D-610",
       "implementation_bearing": false,
       "reason": "records a governed-asset review the owner must perform, not product behaviour"
+    },
+    {
+      "id": "D-611",
+      "implementation_bearing": true,
+      "normative_owner": "VibeProof v1 protocol; D-192",
+      "implementation_owner": "P epic; the D-012 bakeoff under ADR-023",
+      "machine_or_state_ownership": "Ed25519 verifier selection; no state vocabulary",
+      "platform_scope": "Server, Native",
+      "required_executable_evidence": "The Ed25519 divergence corpus verifies under the selected verifier and its ZIP-215 verdicts match the recorded oracle run"
     }
   ]
 }
