@@ -48,25 +48,25 @@
     {
       "id": "P-1140F-2",
       "title": "identity, OAuth, lineage, replay, and recovery",
-      "status": "blocked-planning",
+      "status": "in-progress-planning",
       "body": "Dependencies: P-1140F-1.\n\nScope:\n\n- one account-bound OAuth transaction authority;\n- linked-identity, provider-loss, compromise, and recovery lifecycle;\n- duplicate-account consolidation and canonical ranked identity;\n- lineage-scoped continuity;\n- canonical challenge, checkpoint, rotation, fork, appeal, and reversal semantics."
     },
     {
       "id": "P-1140F-3",
       "title": "local trust boundary, adapters, source evidence, and accounting inputs",
-      "status": "blocked-planning",
+      "status": "in-progress-planning",
       "body": "Dependencies: P-1140F-2.\n\nScope:\n\n- process trust domains, role-bound IPC, process generations, local persistence, and platform supervision;\n- atomic compatibility tuples and signed certification lifecycle;\n- source receipts, evidence bundles and immutable verifier appraisals under SR-017;\n- deterministic observation-to-profile selection;\n- nested/multi-observer deduplication and checked arithmetic;\n- ACP/OTel/proxy/wrapper paths remain private until exact certification."
     },
     {
       "id": "P-1140F-4",
       "title": "server product state and privacy projection",
-      "status": "blocked-planning",
+      "status": "in-progress-planning",
       "body": "Dependencies: P-1140F-2 and P-1140F-3.\n\nScope:\n\n- exact idempotent replay and ambiguous-commit recovery;\n- ranking authorization, immutable generations, periods, ties, contributions, appraisals, and corrections;\n- friendship, directional blocks, rivals, boards, roles, ownership, presence, and notifications;\n- export, deletion, retention, legal hold, per-device completion, and backup tombstones;\n- current authorization for historical snapshots, cursors, grants, and delivery."
     },
     {
       "id": "P-1140F-5",
       "title": "release trust and exact-head semantic closure",
-      "status": "blocked-planning",
+      "status": "in-progress-planning",
       "body": "Dependencies: P-1140F-1 through P-1140F-4.\n\nScope:\n\n- TUF-backed release authorization;\n- component, compatibility, provenance, native-signing, update-class, migration, health, and rollback contracts;\n- aligned API, SQL, state, event, policy, reason, and fixture vocabularies;\n- planning-safe validation;\n- one new exact review head with zero active semantic P0/P1 findings."
     }
   ]
