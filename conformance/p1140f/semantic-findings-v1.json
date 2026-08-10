@@ -59,7 +59,7 @@
     {
       "finding_id": "SR-007",
       "severity": "P1",
-      "state": "repaired-pending-review",
+      "state": "repair-in-progress",
       "title": "Device lineage, challenge, replay, checkpoint, and recovery",
       "repair_task": "P-1140F-2",
       "finding_class": "contradiction",

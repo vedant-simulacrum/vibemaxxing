@@ -48,7 +48,7 @@ make plan            # regenerate the deterministic work-unit issue plan
 1. [`docs/project/PROJECT.md`](docs/project/PROJECT.md) — what the product is, and the architecture that follows from it
 2. [`docs/project/STATUS.md`](docs/project/STATUS.md) — current phase, what is implemented, what is not
 3. [`docs/project/DOCUMENTATION.md`](docs/project/DOCUMENTATION.md) — the single map of which document owns which decision
-4. [`docs/planning/DECISION_REGISTER.md`](docs/planning/DECISION_REGISTER.md) — every decision D-001..D-109 and its status
+4. [`docs/planning/DECISION_REGISTER.md`](docs/planning/DECISION_REGISTER.md) — every decision from D-001 onward and its status
 5. [`docs/planning/TASK_CATALOG.md`](docs/planning/TASK_CATALOG.md) — gates, programs, and what blocks what
 
 For the current blocking work, `conformance/p1140f/semantic-findings-v1.json` is the machine-readable truth; prose summarizes it and may not redefine it.
