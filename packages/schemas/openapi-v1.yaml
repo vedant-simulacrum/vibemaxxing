@@ -173,6 +173,94 @@ x-public-operations:
   listPricingDatasets: reference-data
   getCompatibility: reference-data
 
+x-response-cache-policy:
+  # The cache arm of D-386. `evaluation.cache_policy` in
+  # packages/schemas/projection-authorization-v1.json forbids storing an
+  # authorization result, and docs/privacy/PRIVACY_CONTRACT.md adds that a projection
+  # may be cached only when it is identical for every viewer. Until PF-033 the
+  # document expressed neither: not one response declared a cache directive, so a
+  # proxy, a CDN or a browser back-forward cache was free to store
+  # `GET /profiles/{handle}` and hand it to a second viewer, which is the SR-015
+  # defect with the staleness measured in hours rather than statements.
+  #
+  # Two values, and the split is derived rather than listed twice:
+  #   public-shared — exactly the operations x-public-operations gives the
+  #                   `global-board` or `reference-data` reason. Both carry a
+  #                   response identical for every reader, which is the only
+  #                   condition under which the privacy contract permits a cache.
+  #   no-store      — everything else, including every `auth-bootstrap` operation:
+  #                   those are public because they establish a session, not because
+  #                   their bodies are, and they carry authorization codes and
+  #                   session handles.
+  #
+  # scripts/repository/validate_planning_artifacts.py recomputes this map from
+  # x-public-operations and asserts equality, so a new operation is `no-store` by
+  # construction and a hand-edit that widens one fails.
+  startGitHubAuth: no-store
+  completeGitHubAuth: no-store
+  startXAuth: no-store
+  completeXAuth: no-store
+  startDeviceAuth: no-store
+  pollDeviceAuth: no-store
+  exchangeDeviceAuth: no-store
+  refreshSession: no-store
+  listSessions: no-store
+  revokeSession: no-store
+  revokeAllSessions: no-store
+  listIdentities: no-store
+  linkIdentity: no-store
+  unlinkIdentity: no-store
+  reportProviderAccess: no-store
+  cancelIdentityUnlink: no-store
+  redeemInvite: no-store
+  listDevices: no-store
+  enrollDevice: no-store
+  rotateDeviceKey: no-store
+  revokeDevice: no-store
+  createClaimChallenge: no-store
+  submitClaimBatch: no-store
+  getClaim: no-store
+  getAppraisal: no-store
+  getGlobalLeaderboard: public-shared
+  getLeaderboard: no-store
+  getBoardLeaderboard: no-store
+  getCurrentRank: no-store
+  getPublicProfile: no-store
+  getMe: no-store
+  updateMe: no-store
+  listFriends: no-store
+  listFriendRequests: no-store
+  createFriendRequest: no-store
+  listBlocks: no-store
+  createBlock: no-store
+  listRivals: no-store
+  createRival: no-store
+  listBoards: no-store
+  createBoard: no-store
+  createBoardInvitation: no-store
+  listOrganizations: no-store
+  createOrganization: no-store
+  listCommunities: no-store
+  createCommunity: no-store
+  getPresence: no-store
+  renewPresence: no-store
+  listNotifications: no-store
+  getNotificationPreferences: no-store
+  updateNotificationPreferences: no-store
+  markNotificationRead: no-store
+  listModerationCases: no-store
+  createModerationCase: no-store
+  listAppeals: no-store
+  createAppeal: no-store
+  requestExport: no-store
+  revokeExportDownloadGrant: no-store
+  requestDeletion: no-store
+  cancelDeletion: no-store
+  getConsolidationPlan: no-store
+  confirmConsolidation: no-store
+  listPricingDatasets: public-shared
+  getCompatibility: public-shared
+
 paths:
   /auth/github/start:
     post:

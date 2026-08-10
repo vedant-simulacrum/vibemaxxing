@@ -4702,6 +4702,610 @@ def validate_ranking_cursor_vectors() -> None:
         raise ValidationFailure("LeaderboardPage may omit the generation it renders")
 
 
+# PF-033. Held here rather than read from the profile, in the same way the cursor
+# refusal reasons are, so that the file cannot introduce its own exemption.
+#
+# The one surface AGENTS.md makes universally public by default. A universally-public
+# surface has no viewer identity and therefore cannot evaluate a viewer-subject-pair
+# input, so widening this set widens what the global board is allowed not to check.
+UNIVERSALLY_PUBLIC_SURFACES = {"global-leaderboard-page"}
+
+# The three surfaces that do not evaluate the deny-hard directional-block input, and
+# the only three that may. Every other surface renders the blocked party's data and
+# has a viewer to evaluate the block against. Adding a fourth requires editing this
+# validator, which is the point: an omission of a deny-hard input is a decision.
+BLOCK_EXEMPT_SURFACES = {
+    "global-leaderboard-page",
+    "block-list",
+    "export-package",
+}
+
+# A property naming an account other than the one the response is about. `account_id`
+# is excluded because it is the subject of whatever shape carries it.
+FOREIGN_ACCOUNT_PROPERTY = re.compile(r"^(?!account_id$)[a-z][a-z0-9_]*_account_id$")
+
+# The reasons in x-public-operations whose responses are identical for every reader.
+# `auth-bootstrap` is deliberately absent: those operations are public because they
+# establish the session a viewer check would need, not because their bodies are, and
+# they carry authorization codes and session handles.
+SHARED_CACHEABLE_PUBLIC_REASONS = {"global-board", "reference-data"}
+
+
+def _schema_references(node: Any, found: set[str]) -> None:
+    """Every `#/components/schemas/X` reachable from one OpenAPI node."""
+    if isinstance(node, dict):
+        reference = node.get("$ref")
+        if isinstance(reference, str) and reference.startswith("#/components/schemas/"):
+            found.add(reference.rsplit("/", 1)[1])
+        for value in node.values():
+            _schema_references(value, found)
+    elif isinstance(node, list):
+        for value in node:
+            _schema_references(value, found)
+
+
+def _api_operations(spec: dict[str, Any]) -> dict[str, tuple[str, dict[str, Any]]]:
+    operations: dict[str, tuple[str, dict[str, Any]]] = {}
+    for item in spec["paths"].values():
+        for method, operation in item.items():
+            if method not in ("get", "post", "put", "delete", "patch"):
+                continue
+            identifier = operation["operationId"]
+            if identifier in operations:
+                raise ValidationFailure(
+                    f"the API declares the operationId {identifier} twice"
+                )
+            operations[identifier] = (method, operation)
+    return operations
+
+
+def _success_schema(identifier: str, operation: dict[str, Any]) -> str:
+    """The component schema of an operation's success response."""
+    names: set[str] = set()
+    for code, response in operation.get("responses", {}).items():
+        if not (code.isdigit() and code.startswith("2")):
+            continue
+        _schema_references(response, names)
+    if len(names) != 1:
+        raise ValidationFailure(
+            f"{identifier} does not have exactly one success response schema: "
+            f"{sorted(names)}; a boundary cannot name the shape it gates"
+        )
+    return names.pop()
+
+
+def _projected_closure(
+    root: str, schemas: dict[str, Any], audiences: dict[str, str]
+) -> set[str]:
+    """The schemas one response reaches, stopping at a shape written for `self`.
+
+    A shape the disclosure projection classifies `self` is the participant's own
+    record, so what it embeds is their own: `SelfRankEntry` carries the caller's
+    `RankEntry` and descending into it would report the caller as a third party. The
+    shape's own properties are still read by the caller, because a `self` shape can
+    still name somebody else — `Notification.actor_account_id` is exactly that, and it
+    is the delivery case SR-015 names most directly.
+    """
+    seen = {root}
+    stack = [root]
+    while stack:
+        current = stack.pop()
+        if audiences.get(current) == "self":
+            continue
+        found: set[str] = set()
+        _schema_references(schemas.get(current, {}), found)
+        for name in found - seen:
+            seen.add(name)
+            stack.append(name)
+    return seen
+
+
+def computed_boundary_subject(
+    identifier: str,
+    method: str,
+    operation: dict[str, Any],
+    schemas: dict[str, Any],
+    audiences: dict[str, str],
+) -> str:
+    """Decide whose data a response carries, from the document rather than from a list.
+
+    Two rules, in order. A property naming an account other than the response's own
+    subject is a third party wherever it appears, including on a shape written only
+    for the participant themself. Otherwise a read that renders a shape the disclosure
+    projection writes for a wider audience than `self` is rendering somebody else; a
+    write receipt is not, because it describes the row the caller just wrote.
+
+    Ordering matters and is not cosmetic. `markNotificationRead` is a write returning a
+    single object and would be first-party under the second rule alone, while the
+    object it returns names the actor whose block state is the thing that has to be
+    rechecked before it is handed over again.
+    """
+    root = _success_schema(identifier, operation)
+    closure = _projected_closure(root, schemas, audiences)
+    for name in sorted(closure):
+        for prop in schemas.get(name, {}).get("properties") or {}:
+            if FOREIGN_ACCOUNT_PROPERTY.match(prop):
+                return "third-party"
+    if method == "get" and any(
+        audiences.get(name) in ("public", "authorized-viewer") for name in closure
+    ):
+        return "third-party"
+    return "first-party"
+
+
+def evaluate_invalidation(
+    trigger: dict[str, Any], profile: dict[str, Any]
+) -> dict[str, list[str]]:
+    """Compute one trigger's blast radius. A second implementation of the rule.
+
+    The vector file records what it expects; this reaches every field of it from the
+    profile and never reads `expected`. A surface is affected when the trigger moves an
+    input it evaluates. A derived artifact is invalidated when it binds an affected
+    surface and is not authorization-independent — the sealed generation is the only
+    artifact that is, because it holds no authorization and no handle, so a block
+    changes what renders from it and not what it contains.
+    """
+    surfaces = {item["surface_id"]: item for item in profile["surfaces"]}
+    artifacts = {item["artifact_id"]: item for item in profile["derived_artifacts"]}
+    changed = set(trigger["changes_inputs"])
+    affected = {
+        surface
+        for surface, item in surfaces.items()
+        if changed & set(item["authorization_inputs"])
+    }
+    invalidated = {
+        name
+        for name, item in artifacts.items()
+        if not item["authorization_independent"]
+        and set(item["binds_surfaces"]) & affected
+    }
+    return {
+        "changed_inputs": sorted(changed),
+        "affected_surfaces": sorted(affected),
+        "unaffected_surfaces": sorted(set(surfaces) - affected),
+        "invalidated_artifacts": sorted(invalidated),
+        "retained_artifacts": sorted(set(artifacts) - invalidated),
+    }
+
+
+def validate_authorization_boundaries() -> None:
+    """Prove the current-authorization rule is total over the API it governs.
+
+    SR-015's restatement asks for one enumerated boundary matrix plus a
+    current-authorization check at every boundary it names. The profile named nine
+    inputs and nine surfaces and never resolved either against the document that
+    declares the boundaries, so three things were true at once and none was findable:
+    `board-member-list` was a rule about a surface no operation renders, `listBlocks`
+    rendered a third party's account identifier with no surface at all, and one
+    `leaderboard-page` claimed nine read-time inputs on behalf of `getGlobalLeaderboard`,
+    which carries `security: []` and has no viewer to evaluate four of them against.
+
+    Seven checks, and the first is the one that keeps the rest honest: the boundary set
+    is compared for equality against the operation identifiers in the document, so an
+    operation added later has no boundary and fails rather than escaping. `subject` is
+    computed from the document in both directions, so a boundary can neither declare
+    itself out of a gate nor into one it does not need. Every surface partitions all
+    nine inputs into the ones it evaluates and the ones it omits with a reason, so an
+    input cannot be dropped by silence. The viewer-visible field matrix is recomputed
+    from the document joined with the disclosure projection and asserted identical row
+    for row, which is what makes a field added to a projected shape appear in the
+    matrix or fail. And every trigger in the profile is evaluated against the
+    invalidation corpus rather than read back from it.
+    """
+    profile_schema = validate_schema_file(
+        SCHEMAS / "projection-authorization-v1.schema.json"
+    )
+    profile = load_json(SCHEMAS / "projection-authorization-v1.json")
+    validate_instance(profile_schema, profile, "viewer authorization profile")
+
+    spec = load_yaml(SCHEMAS / "openapi-v1.yaml")
+    schemas = spec["components"]["schemas"]
+    operations = _api_operations(spec)
+    disclosure = load_json(SCHEMAS / "disclosure-projection-v1.json")["projections"]
+    audiences = {item["api_schema"]: item["audience"] for item in disclosure}
+
+    inputs = {item["input_id"]: item for item in profile["inputs"]}
+    surfaces = {item["surface_id"]: item for item in profile["surfaces"]}
+
+    # 1. Every surface answers for every input, once, either by evaluating it or by
+    #    saying why not. An input a surface does not mention and an input nobody
+    #    considered are the same file.
+    for surface_id, surface in sorted(surfaces.items()):
+        evaluated = list(surface["authorization_inputs"])
+        omitted = [item["input_id"] for item in surface["omitted_inputs"]]
+        assert_unique(evaluated + omitted, f"{surface_id} input assignments")
+        covered = set(evaluated) | set(omitted)
+        if covered != set(inputs):
+            raise ValidationFailure(
+                f"surface {surface_id} does not partition the authorization inputs: "
+                f"unanswered={sorted(set(inputs) - covered)} "
+                f"unknown={sorted(covered - set(inputs))}"
+            )
+
+    # 2. Every surface a derived artifact binds is a surface this profile declares.
+    #    Checked before any policy question, because a policy answered about a name
+    #    nothing resolves is answered about nothing.
+    for artifact in profile["derived_artifacts"]:
+        unknown_surfaces = sorted(set(artifact["binds_surfaces"]) - set(surfaces))
+        if unknown_surfaces:
+            raise ValidationFailure(
+                f"derived artifact {artifact['artifact_id']} binds undeclared "
+                f"surfaces: {unknown_surfaces}"
+            )
+
+    # 3. A universally-public surface has no viewer, so every viewer-subject-pair
+    #    input it named would be a rule that can never fire.
+    declared_public_surfaces = {
+        surface_id
+        for surface_id, surface in surfaces.items()
+        if surface["universally_public"]
+    }
+    if declared_public_surfaces != UNIVERSALLY_PUBLIC_SURFACES:
+        raise ValidationFailure(
+            "the universally-public surface set differs from the one AGENTS.md "
+            f"allows: only-in-file={sorted(declared_public_surfaces - UNIVERSALLY_PUBLIC_SURFACES)} "
+            f"only-in-validator={sorted(UNIVERSALLY_PUBLIC_SURFACES - declared_public_surfaces)}"
+        )
+    for surface_id in sorted(declared_public_surfaces):
+        unevaluable = sorted(
+            name
+            for name in surfaces[surface_id]["authorization_inputs"]
+            if inputs[name]["anonymous_resolution"] != "unchanged"
+        )
+        if unevaluable:
+            raise ValidationFailure(
+                f"universally-public surface {surface_id} claims to evaluate "
+                f"{unevaluable}, which an anonymous reader has no identity to evaluate"
+            )
+
+    # 3. Omitting a deny-hard input is a decision, so the set that does is held here.
+    block_exempt = {
+        surface_id
+        for surface_id, surface in surfaces.items()
+        if "directional-block" not in surface["authorization_inputs"]
+    }
+    if block_exempt != BLOCK_EXEMPT_SURFACES:
+        raise ValidationFailure(
+            "the surfaces that do not evaluate directional-block differ from the "
+            f"declared set: only-in-file={sorted(block_exempt - BLOCK_EXEMPT_SURFACES)} "
+            f"only-in-validator={sorted(BLOCK_EXEMPT_SURFACES - block_exempt)}"
+        )
+    for surface_id in sorted(surfaces):
+        if "account-lifecycle" not in surfaces[surface_id]["authorization_inputs"]:
+            raise ValidationFailure(
+                f"surface {surface_id} does not evaluate account-lifecycle; a deleted "
+                "or deletion-pending account is not a readable subject on any surface"
+            )
+
+    # 4. The boundary set is the document's operation set. This is what a hand-list
+    #    cannot give: an operation added later has no boundary and fails here.
+    boundaries = {item["operation_id"]: item for item in profile["boundaries"]}
+    assert_unique(
+        [item["operation_id"] for item in profile["boundaries"]], "boundary operations"
+    )
+    uncovered = sorted(set(operations) - set(boundaries))
+    if uncovered:
+        raise ValidationFailure(
+            f"the boundary matrix does not cover the API operations {uncovered}; a "
+            "surface with no boundary publishes without a rule"
+        )
+    unknown = sorted(set(boundaries) - set(operations))
+    if unknown:
+        raise ValidationFailure(
+            f"the boundary matrix names operations the API does not declare: {unknown}"
+        )
+
+    rendered_surfaces: set[str] = set()
+    for identifier, (method, operation) in sorted(operations.items()):
+        boundary = boundaries[identifier]
+        expected_schema = _success_schema(identifier, operation)
+        if boundary["response_schema"] != expected_schema:
+            raise ValidationFailure(
+                f"boundary {identifier} names the response schema "
+                f"{boundary['response_schema']} and the API returns {expected_schema}"
+            )
+        computed = computed_boundary_subject(
+            identifier, method, operation, schemas, audiences
+        )
+        if computed != boundary["subject"]:
+            raise ValidationFailure(
+                f"boundary {identifier} declares subject {boundary['subject']} and the "
+                f"document computes {computed} from {expected_schema}"
+            )
+        if computed == "third-party":
+            surface_id = boundary["surface_id"]
+            if surface_id not in surfaces:
+                raise ValidationFailure(
+                    f"boundary {identifier} names an undeclared surface: {surface_id}"
+                )
+            rendered_surfaces.add(surface_id)
+
+    # 5. A surface nothing reaches is a rule about nothing. `board-member-list` sat in
+    #    this list while no operation rendered it and `listBlocks` had no surface.
+    bound_by_artifact = {
+        surface
+        for artifact in profile["derived_artifacts"]
+        for surface in artifact["binds_surfaces"]
+    }
+    unreachable = sorted(set(surfaces) - rendered_surfaces - bound_by_artifact)
+    if unreachable:
+        raise ValidationFailure(
+            f"surfaces reached by no boundary and no derived artifact: {unreachable}; "
+            "a surface no operation renders is a rule about nothing"
+        )
+
+    # 6. A shape naming somebody else that the disclosure projection never classified
+    #    is a viewer-visible field with no audience and no gate.
+    reachable: set[str] = set()
+    for identifier, (_, operation) in operations.items():
+        reachable |= _projected_closure(
+            _success_schema(identifier, operation), schemas, audiences
+        )
+    for name in sorted(reachable - set(audiences)):
+        foreign = sorted(
+            prop
+            for prop in (schemas.get(name, {}).get("properties") or {})
+            if FOREIGN_ACCOUNT_PROPERTY.match(prop)
+        )
+        if foreign:
+            raise ValidationFailure(
+                f"{name} names another account through {foreign} and the disclosure "
+                "projection does not classify it, so the field reaches a viewer with "
+                "no audience and no authorization revision"
+            )
+
+    _validate_response_cache_policy(spec, operations)
+    _validate_viewer_visible_matrix(profile, operations, boundaries, schemas, audiences)
+    _validate_invalidation_corpus(profile)
+
+
+def _validate_response_cache_policy(
+    spec: dict[str, Any], operations: dict[str, tuple[str, dict[str, Any]]]
+) -> None:
+    """Prove the cache arm of the rule is stated and is derived, not listed twice.
+
+    The evaluation forbids caching an authorization result and the privacy contract
+    permits caching a projection only when it is identical for every viewer. The
+    document expressed neither: no response carried a cache directive at all, so a
+    proxy or a CDN could store a viewer-relative profile and hand it to a second
+    viewer. The policy is recomputed from `x-public-operations` so that a new
+    operation is `no-store` by construction.
+    """
+    declared = spec.get("x-response-cache-policy")
+    if not isinstance(declared, dict):
+        raise ValidationFailure(
+            "the API declares no x-response-cache-policy, so every viewer-relative "
+            "response is storable by any shared cache"
+        )
+    public = spec["x-public-operations"]
+    computed = {
+        identifier: (
+            "public-shared"
+            if public.get(identifier) in SHARED_CACHEABLE_PUBLIC_REASONS
+            else "no-store"
+        )
+        for identifier in operations
+    }
+    if set(declared) != set(computed):
+        raise ValidationFailure(
+            "x-response-cache-policy does not cover exactly the declared operations: "
+            f"uncovered={sorted(set(computed) - set(declared))} "
+            f"unknown={sorted(set(declared) - set(computed))}"
+        )
+    disagreeing = sorted(
+        identifier
+        for identifier in computed
+        if declared[identifier] != computed[identifier]
+    )
+    if disagreeing:
+        raise ValidationFailure(
+            "x-response-cache-policy disagrees with the reason x-public-operations "
+            f"gives for {disagreeing}; the two are one decision"
+        )
+    if not any(value == "public-shared" for value in computed.values()):
+        raise ValidationFailure(
+            "no operation is shared-cacheable, so the policy is satisfied by refusing "
+            "everything and says nothing about the split it exists to make"
+        )
+
+
+def _validate_viewer_visible_matrix(
+    profile: dict[str, Any],
+    operations: dict[str, tuple[str, dict[str, Any]]],
+    boundaries: dict[str, dict[str, Any]],
+    schemas: dict[str, Any],
+    audiences: dict[str, str],
+) -> None:
+    """Recompute every viewer-visible field and its gate, and assert the file matches.
+
+    A field is viewer-visible when it reaches an account other than the one it is
+    about: every field of a shape the disclosure projection writes for a wider audience
+    than the subject, and any property naming another account wherever it appears. The
+    gate is the set of revision columns the surface rechecks. Keying on the surface
+    rather than on the schema alone is deliberate — `RankEntry` is rendered by two
+    surfaces with two different gates, and a matrix that unioned them would hide that
+    the universally-public one evaluates four inputs rather than nine.
+    """
+    projections = {
+        item["api_schema"]: item
+        for item in load_json(SCHEMAS / "disclosure-projection-v1.json")["projections"]
+    }
+    revisions = {
+        item["input_id"]: item["revision_source"] for item in profile["inputs"]
+    }
+    surfaces = {item["surface_id"]: item for item in profile["surfaces"]}
+
+    per_surface: dict[str, set[tuple[str, str]]] = {}
+    for identifier, (_, operation) in operations.items():
+        boundary = boundaries[identifier]
+        if boundary["subject"] != "third-party":
+            continue
+        surface_id = boundary["surface_id"]
+        closure = _projected_closure(
+            _success_schema(identifier, operation), schemas, audiences
+        )
+        found = per_surface.setdefault(surface_id, set())
+        for name in closure:
+            if audiences.get(name) in ("public", "authorized-viewer"):
+                for field in projections[name]["fields"]:
+                    found.add((name, field["name"]))
+            for prop in schemas.get(name, {}).get("properties") or {}:
+                if FOREIGN_ACCOUNT_PROPERTY.match(prop):
+                    found.add((name, prop))
+
+    computed: list[dict[str, Any]] = []
+    for surface_id, fields in per_surface.items():
+        gate = sorted(
+            {revisions[name] for name in surfaces[surface_id]["authorization_inputs"]}
+        )
+        for api_schema, field in fields:
+            computed.append(
+                {
+                    "surface_id": surface_id,
+                    "api_schema": api_schema,
+                    "field": field,
+                    "gated_by": gate,
+                }
+            )
+    computed.sort(key=lambda row: (row["surface_id"], row["api_schema"], row["field"]))
+
+    recorded = profile["viewer_visible_fields"]
+    assert_unique(
+        [(row["surface_id"], row["api_schema"], row["field"]) for row in recorded],
+        "viewer-visible field rows",
+    )
+    recorded_keys = {
+        (row["surface_id"], row["api_schema"], row["field"]) for row in recorded
+    }
+    computed_keys = {
+        (row["surface_id"], row["api_schema"], row["field"]) for row in computed
+    }
+    missing = sorted(computed_keys - recorded_keys)
+    if missing:
+        raise ValidationFailure(
+            f"the viewer-visible field matrix omits {missing}; a field the document "
+            "publishes to a viewer with no row here carries no authorization revision"
+        )
+    extra = sorted(recorded_keys - computed_keys)
+    if extra:
+        raise ValidationFailure(
+            f"the viewer-visible field matrix names rows the document does not "
+            f"publish: {extra}"
+        )
+    if recorded != computed:
+        by_key = {
+            (row["surface_id"], row["api_schema"], row["field"]): row["gated_by"]
+            for row in computed
+        }
+        for row in recorded:
+            key = (row["surface_id"], row["api_schema"], row["field"])
+            if row["gated_by"] != by_key[key]:
+                raise ValidationFailure(
+                    f"the viewer-visible field matrix gates {'.'.join(key[1:])} on "
+                    f"{surfaces[key[0]]['surface_id']} with {row['gated_by']} and the "
+                    f"surface rechecks {by_key[key]}"
+                )
+        raise ValidationFailure(
+            "the viewer-visible field matrix is not in the computed order, so two "
+            "readers comparing it against the document would diff differently"
+        )
+
+
+def _validate_invalidation_corpus(profile: dict[str, Any]) -> None:
+    """Evaluate every trigger against the corpus rather than reading it back."""
+    vectors_schema = validate_schema_file(
+        SCHEMAS / "authorization-invalidation-vectors-v1.schema.json"
+    )
+    vectors = load_json(
+        CONFORMANCE / "planning" / "authorization-invalidation-vectors-v1.json"
+    )
+    validate_instance(vectors_schema, vectors, "authorization invalidation vectors")
+
+    triggers = {item["trigger_id"]: item for item in profile["invalidation_triggers"]}
+    artifacts = {item["artifact_id"]: item for item in profile["derived_artifacts"]}
+    inputs = {item["input_id"] for item in profile["inputs"]}
+
+    # An input no trigger moves is an input nothing ever rechecks against.
+    moved = {name for item in triggers.values() for name in item["changes_inputs"]}
+    unmoved = sorted(inputs - moved)
+    if unmoved:
+        raise ValidationFailure(
+            f"no trigger moves the authorization inputs {unmoved}; an input nothing "
+            "changes is an input no recheck can ever detect"
+        )
+    kinds = {artifact["kind"] for artifact in profile["derived_artifacts"]}
+    if kinds != {"cursor", "grant", "cache"}:
+        raise ValidationFailure(
+            "the derived artifact set does not name a cursor, a grant and a cache: "
+            f"{sorted(kinds)}; the acceptance names all three and an absent kind is "
+            "satisfied by having none"
+        )
+
+    assert_unique(
+        [case["case_id"] for case in vectors["cases"]], "invalidation case IDs"
+    )
+    exercised: set[str] = set()
+    invalidated_anywhere: set[str] = set()
+    retained_anywhere: set[str] = set()
+    for case in vectors["cases"]:
+        label = case["case_id"]
+        if case["trigger"] not in triggers:
+            raise ValidationFailure(
+                f"{label} names the trigger {case['trigger']}, which the profile does "
+                "not declare"
+            )
+        computed = evaluate_invalidation(triggers[case["trigger"]], profile)
+        expected = case["expected"]
+        for key in sorted(computed):
+            if sorted(expected[key]) != computed[key]:
+                raise ValidationFailure(
+                    f"{label} records {key} as {sorted(expected[key])} and the rule "
+                    f"computes {computed[key]}"
+                )
+        exercised.add(case["trigger"])
+        invalidated_anywhere |= set(computed["invalidated_artifacts"])
+        retained_anywhere |= set(computed["retained_artifacts"])
+
+    unexercised = sorted(set(triggers) - exercised)
+    if unexercised:
+        raise ValidationFailure(
+            f"no case exercises the triggers {unexercised}; a trigger with no case is "
+            "a rule nothing has ever reached"
+        )
+    perishable = {
+        name
+        for name, artifact in artifacts.items()
+        if not artifact["authorization_independent"]
+    }
+    # An artifact of one of the three kinds that no trigger destroys carries an
+    # authorization decision for as long as it exists. This is stated per kind rather
+    # than per artifact on purpose: "every perishable artifact is invalidated by some
+    # trigger" is already implied by two checks above — every surface evaluates
+    # account-lifecycle, and account-lifecycle has a trigger — so writing it again
+    # would add a branch nothing can reach, which is the shape of defect this file
+    # exists to refuse. Per kind it is reachable, because an artifact declared
+    # authorization-independent leaves its whole kind unexercised.
+    for kind in ("cursor", "grant", "cache"):
+        if not any(artifacts[name]["kind"] == kind for name in invalidated_anywhere):
+            raise ValidationFailure(
+                f"no case invalidates an artifact of kind {kind}; the corpus proves "
+                "the rule reaches two of the three things that outlive a decision"
+            )
+    # A corpus in which every trigger destroys everything discriminates nothing.
+    if not (perishable & retained_anywhere):
+        raise ValidationFailure(
+            "every case invalidates every perishable artifact, so the corpus cannot "
+            "tell a trigger's blast radius from the whole set"
+        )
+    independent = sorted(set(artifacts) - perishable)
+    if not independent:
+        raise ValidationFailure(
+            "no derived artifact is authorization-independent, so the corpus never "
+            "states that a sealed generation survives a block, which is the "
+            "immutable-history half of the finding"
+        )
+
+
 CORRECTION_REJECTION_REASON = "CLAIM_ACCOUNTING_INCONSISTENT"
 
 
@@ -8111,6 +8715,10 @@ def main() -> int:
         (
             "viewer-bound leaderboard cursor vectors",
             validate_ranking_cursor_vectors,
+        ),
+        (
+            "current-authorization boundary matrix and invalidation",
+            validate_authorization_boundaries,
         ),
         (
             "period lifecycle and correction rebuild vectors",

@@ -2,10 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.vibemaxxing.dev/projection-authorization-v1.schema.json",
   "title": "Current viewer authorization revision profile v1",
-  "description": "The rule that decides, at the moment of display or delivery, whether one viewer may see one projection of one subject. docs/privacy/PRIVACY_CONTRACT.md is the normative owner. SR-015 records that the repository stated the requirement — display and delivery always recheck current blocks, privacy and membership — without naming what is rechecked, against which revision, or what happens when a check is racing a change. This file names all three. It has no persistence owner and deliberately no cached decision: a stored authorization result is the defect SR-015 describes, so the only durable state is the revision of each input aggregate, each of which already has its own owner.",
+  "description": "The rule that decides, at the moment of display or delivery, whether one viewer may see one projection of one subject. docs/privacy/PRIVACY_CONTRACT.md is the normative owner. SR-015 records that the repository stated the requirement — display and delivery always recheck current blocks, privacy and membership — without naming what is rechecked, against which revision, or what happens when a check is racing a change. This file names all three. It has no persistence owner and deliberately no cached decision: a stored authorization result is the defect SR-015 describes, so the only durable state is the revision of each input aggregate, each of which already has its own owner.\n\nPF-033 added the four halves the rule was missing. `boundaries` is the enumerated boundary matrix SR-015's restatement requires, keyed on the operation identifiers of packages/schemas/openapi-v1.yaml so that the set is derived from the document rather than listed here: an operation added to the API with no boundary fails, which is what stops a new surface publishing without a rule. `viewer_visible_fields` is the per-field half, derived from the same document joined with disclosure-projection-v1.json and asserted identical, so a field added to a projected shape appears in the matrix or the validator fails. `derived_artifacts` names the cursors, grants and caches that outlive one decision, which is where a stale authorization actually survives. `invalidation_triggers` says which of them each change destroys, and conformance/planning/authorization-invalidation-vectors-v1.json evaluates it rather than recording it.\n\nThis file is not a disclosure record. disclosure-projection-v1.json owns which audience each field is written for; this file owns which current authorization revision gates it. Merging them would put one question under two owners; duplicating either would put two answers under one.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "profile_id", "inputs", "surfaces", "evaluation"],
+  "required": [
+    "schema_version",
+    "profile_id",
+    "inputs",
+    "surfaces",
+    "boundaries",
+    "derived_artifacts",
+    "invalidation_triggers",
+    "viewer_visible_fields",
+    "evaluation"
+  ],
   "properties": {
     "schema_version": { "const": 1 },
     "profile_id": { "const": "current-viewer-authorization-v1" },
@@ -16,32 +26,187 @@
       "items": { "$ref": "#/$defs/input" }
     },
     "surfaces": {
-      "description": "Every surface that must evaluate the profile. A surface absent from this list is a surface that publishes without checking, which is how a block becomes advisory.",
+      "description": "Every surface that must evaluate the profile. A surface absent from this list is a surface that publishes without checking, which is how a block becomes advisory. Each surface partitions the whole input set into the inputs it evaluates and the inputs it omits with a stated reason, because an input a surface simply does not mention is indistinguishable from one nobody considered.",
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/$defs/surface" }
     },
+    "boundaries": {
+      "description": "One row per API operation. The set is checked for equality against the operation identifiers in openapi-v1.yaml, so it cannot be a hand-list that a later operation escapes.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/boundary" }
+    },
+    "derived_artifacts": {
+      "description": "Everything that carries an authorization decision beyond the statement that made it. The evaluation forbids caching the decision; these are the records that pin one anyway — a cursor pins the revision it was issued under, a download grant pins the authorization that issued it, a shared HTTP cache pins the whole response — so each has to say what destroys it.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/derived_artifact" }
+    },
+    "invalidation_triggers": {
+      "description": "The changes that move an input revision. Each names the inputs it moves; which artifacts that destroys is computed from the surfaces those inputs gate, never listed here, so a trigger cannot understate its own blast radius.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/invalidation_trigger" }
+    },
+    "viewer_visible_fields": {
+      "description": "The derived per-field matrix: one row for each (surface, schema, field) that reaches an account other than the one it is about. Recomputed by scripts/repository/validate_planning_artifacts.py from openapi-v1.yaml, disclosure-projection-v1.json and the boundaries above, and asserted identical row for row. It is committed rather than only computed so that a reader can see the gate on a field and so that a change to any of the three inputs shows up as a diff here.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/viewer_visible_field" }
+    },
     "evaluation": { "$ref": "#/$defs/evaluation" }
   },
   "$defs": {
+    "input_id": {
+      "enum": [
+        "directional-block",
+        "friendship-edge",
+        "rival-edge",
+        "board-membership",
+        "board-container-state",
+        "subject-visibility",
+        "presence-visibility",
+        "account-lifecycle",
+        "ranked-identity-state"
+      ]
+    },
+    "surface_id": {
+      "description": "`board-member-list` was removed by PF-033. No operation in openapi-v1.yaml lists board members, so it was a rule about a surface the API does not have, and while it sat here `listBlocks` — which does render a third party's identifier — had no surface at all. `global-leaderboard-page` is the split PF-033 made: getGlobalLeaderboard carries security: [] and the other two leaderboard operations do not, so one surface was claiming to evaluate nine inputs on behalf of an operation that has no viewer to evaluate four of them against.",
+      "enum": [
+        "global-leaderboard-page",
+        "leaderboard-page",
+        "public-profile",
+        "presence-projection",
+        "notification-delivery",
+        "notification-render",
+        "friend-list",
+        "rival-list",
+        "block-list",
+        "export-package"
+      ]
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation_id", "response_schema", "subject"],
+      "properties": {
+        "operation_id": {
+          "description": "An operationId in openapi-v1.yaml. Every operation has exactly one row and no row names an operation the document does not declare.",
+          "type": "string",
+          "pattern": "^[a-zA-Z][A-Za-z0-9]*$"
+        },
+        "response_schema": {
+          "description": "The component schema of the operation's success response, checked against the document.",
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]*$"
+        },
+        "subject": {
+          "description": "Whose data the response carries. `third-party` is computed from the document — a schema the disclosure projection writes for a wider audience than the subject, or a property naming an account other than the response's own — and compared against what is declared here, in both directions. A boundary cannot declare itself first-party out of a gate, and cannot declare itself third-party into one it does not need.",
+          "enum": ["first-party", "third-party"]
+        },
+        "surface_id": {
+          "description": "Required on a third-party boundary and forbidden on a first-party one.",
+          "$ref": "#/$defs/surface_id"
+        },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "subject": { "const": "third-party" } },
+            "required": ["subject"]
+          },
+          "then": { "required": ["surface_id"] },
+          "else": { "not": { "required": ["surface_id"] } }
+        }
+      ]
+    },
+    "derived_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "kind",
+        "artifact",
+        "binds_surfaces",
+        "authorization_independent",
+        "invalidation"
+      ],
+      "properties": {
+        "artifact_id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "kind": {
+          "description": "The three kinds a stale authorization survives in. A cursor is a signed record a client holds; a grant is a server row that admits a later download; a cache is a copy of a response held by anything that is not the server.",
+          "enum": ["cursor", "grant", "cache"]
+        },
+        "artifact": {
+          "description": "The repository path or SQL table that owns it.",
+          "type": "string",
+          "minLength": 1
+        },
+        "binds_surfaces": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/surface_id" }
+        },
+        "authorization_independent": {
+          "description": "True only for a projection identical for every viewer. A sealed ranking generation is the one such projection: an authorization change does not invalidate it, because it holds no authorization and no handle. What changes is what renders from it, which is why it is recorded here rather than left out — an artifact nothing invalidates is a claim, and an unstated one is indistinguishable from an oversight.",
+          "type": "boolean"
+        },
+        "invalidation": {
+          "description": "What destroying it means, in terms of the record that holds it.",
+          "type": "string",
+          "minLength": 20
+        },
+        "note": { "type": "string" }
+      }
+    },
+    "invalidation_trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trigger_id", "changes_inputs", "note"],
+      "properties": {
+        "trigger_id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "changes_inputs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/input_id" }
+        },
+        "note": { "type": "string", "minLength": 20 }
+      }
+    },
+    "viewer_visible_field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["surface_id", "api_schema", "field", "gated_by"],
+      "properties": {
+        "surface_id": { "$ref": "#/$defs/surface_id" },
+        "api_schema": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$" },
+        "field": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "gated_by": {
+          "description": "The revision columns the surface rechecks before this field is emitted, sorted. This is the authorization revision the acceptance asks each viewer-visible field to carry.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_.]*$" }
+        }
+      }
+    },
     "input": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["input_id", "persistence_owner", "revision_source", "effect"],
+      "required": [
+        "input_id",
+        "persistence_owner",
+        "revision_source",
+        "effect",
+        "subject_scope",
+        "anonymous_resolution"
+      ],
       "properties": {
-        "input_id": {
-          "enum": [
-            "directional-block",
-            "friendship-edge",
-            "rival-edge",
-            "board-membership",
-            "board-container-state",
-            "subject-visibility",
-            "presence-visibility",
-            "account-lifecycle",
-            "ranked-identity-state"
-          ]
-        },
+        "input_id": { "$ref": "#/$defs/input_id" },
         "persistence_owner": {
           "description": "A table in packages/schemas/planning-schema.sql.",
           "type": "string",
@@ -56,26 +221,53 @@
           "description": "deny-hard is absolute and no other input can restore it. deny-unless-authorized is the default for a private subject. widen only ever adds visibility to a subject who has not denied it.",
           "enum": ["deny-hard", "deny-unless-authorized", "widen"]
         },
+        "subject_scope": {
+          "description": "Whether the input's answer is a property of the subject alone or of the viewer-subject pair. The distinction is what decides whether a surface with no viewer can evaluate the input at all, and it is the reason the universally-public global board is a separate surface from every other leaderboard rather than the same surface served without a session.",
+          "enum": ["subject-only", "viewer-subject-pair"]
+        },
+        "anonymous_resolution": {
+          "description": "What the input evaluates to when there is no viewer identity. `unchanged` is every subject-only input: the answer does not mention the viewer, so an anonymous reader gets the same one. `admit` and `no-widen` are the viewer-subject-pair inputs collapsing to their no-relationship value, and `admit` on directional-block is the fact that makes a universally-public surface unable to enforce a block: an anonymous reader has no block row, so a blocked participant reading logged out is indistinguishable from a stranger.",
+          "enum": ["unchanged", "admit", "no-widen"]
+        },
         "note": { "type": "string" }
       }
     },
     "surface": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["surface_id", "recheck_point"],
+      "required": [
+        "surface_id",
+        "recheck_point",
+        "universally_public",
+        "authorization_inputs",
+        "omitted_inputs"
+      ],
       "properties": {
-        "surface_id": {
-          "enum": [
-            "leaderboard-page",
-            "public-profile",
-            "presence-projection",
-            "notification-delivery",
-            "notification-render",
-            "board-member-list",
-            "friend-list",
-            "rival-list",
-            "export-package"
-          ]
+        "surface_id": { "$ref": "#/$defs/surface_id" },
+        "universally_public": {
+          "description": "True only for a surface AGENTS.md makes universally public by default, which is the global leaderboard and nothing else. A universally-public surface has no viewer identity, so it may evaluate no viewer-subject-pair input; that is a property the validator checks rather than a claim made here.",
+          "type": "boolean"
+        },
+        "authorization_inputs": {
+          "description": "The inputs this surface evaluates on every render or delivery.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/input_id" }
+        },
+        "omitted_inputs": {
+          "description": "The inputs this surface does not evaluate, each with the reason. Together with authorization_inputs this must partition the whole input set exactly, so an input cannot be dropped by silence and a new input cannot be added to the profile without every surface answering for it.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["input_id", "reason"],
+            "properties": {
+              "input_id": { "$ref": "#/$defs/input_id" },
+              "reason": { "type": "string", "minLength": 20 }
+            }
+          }
         },
         "recheck_point": {
           "description": "read-time is a check performed as the response is built. delivery-time is a check performed as an already-created inbox item is handed to a viewer, which is the one D-084 and the notification contract need: a notification created while a viewer was authorized must not be delivered after they were blocked. snapshot-time is the single exception and applies only to a sealed ranking generation, whose content_hash covers no handle and no authorization state precisely so that a later block changes what renders without changing what was sealed.",

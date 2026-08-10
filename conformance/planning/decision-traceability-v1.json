@@ -2445,6 +2445,42 @@
       "machine_or_state_ownership": "`notification-delivery` categories and `notification_preferences` columns",
       "platform_scope": "Server, Web",
       "required_executable_evidence": "Validator run requiring every event type to name a category with a matching preferences property and SQL column, and security to map to the constrained-true flag"
+    },
+    {
+      "id": "D-621",
+      "implementation_bearing": true,
+      "normative_owner": "docs/privacy/PRIVACY_CONTRACT.md with packages/schemas/projection-authorization-v1.json",
+      "implementation_owner": "PF-033",
+      "machine_or_state_ownership": "no aggregate; the boundary matrix is a rule over packages/schemas/openapi-v1.yaml and has no persistence owner by design",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "Validator run comparing the boundary set for equality against the document's operation identifiers, computing each boundary's subject in both directions, and requiring every surface to partition all nine inputs"
+    },
+    {
+      "id": "D-622",
+      "implementation_bearing": true,
+      "normative_owner": "docs/privacy/PRIVACY_CONTRACT.md with packages/schemas/projection-authorization-v1.json",
+      "implementation_owner": "PF-033",
+      "machine_or_state_ownership": "no aggregate; the surface set is a rule read by the ranking, presence, notification and relationship projections",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "Validator run refusing a universally-public surface that claims a viewer-subject-pair input, refusing a second universally-public surface, and refusing any change to the set of surfaces that omit directional-block"
+    },
+    {
+      "id": "D-623",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/projection-authorization-v1.json with packages/schemas/disclosure-projection-v1.json",
+      "implementation_owner": "PF-033",
+      "machine_or_state_ownership": "no aggregate; the matrix is derived from the API document joined with the disclosure projection",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "Validator run recomputing every viewer-visible field row and its gate and asserting equality, with a case adding a field to a projected shape and failing"
+    },
+    {
+      "id": "D-624",
+      "implementation_bearing": true,
+      "normative_owner": "docs/privacy/PRIVACY_CONTRACT.md with packages/schemas/projection-authorization-v1.json",
+      "implementation_owner": "PF-033",
+      "machine_or_state_ownership": "ranking-cursor record, export_download_grants, and the sealed ranking generation, each already owned elsewhere; this decision owns only what invalidates them",
+      "platform_scope": "Server, Web",
+      "required_executable_evidence": "Validator run evaluating every trigger against conformance/planning/authorization-invalidation-vectors-v1.json rather than reading it back, and recomputing x-response-cache-policy from x-public-operations"
     }
   ]
 }

@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 183 |
+| `not-started` | 182 |
 | `in-progress` | 4 |
-| `landed` | 67 |
+| `landed` | 68 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 327 assertions across 67 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 334 assertions across 68 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 4.
 
-`PF-033`, `OS-001`, `OS-003`, `OS-009`.
+`PF-034`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,12 +90,11 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 1 | `PF-033` |
-| 2 | 1 | `PF-034` |
-| 3 | 1 | `PF-035` |
-| 4 | 1 | `PF-036` |
+| 1 | 1 | `PF-034` |
+| 2 | 1 | `PF-035` |
+| 3 | 1 | `PF-036` |
 
-Statuses additionally checkable against artifact presence: 198 of 260. The other 62 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 197 of 260. The other 63 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -975,17 +974,38 @@ Separately is the load-bearing word and the acceptance did not say what it buys.
 - install, upgrade, reboot, repair, uninstall and orphan cleanup states.
 
 ### PF-033 — Privacy projection and invalidation matrix
-Files: `packages/schemas/privacy-projection-v1.json` (new), `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/DATA_MAP.md`
-Acceptance: every viewer-visible field in the OpenAPI document appears exactly once in the projection file with the authorization revision that gates it; a fixture proves a block, a board removal and a deletion each invalidate the cursors, grants and caches the file names.
+Files: `packages/schemas/projection-authorization-v1.schema.json`, `packages/schemas/projection-authorization-v1.json`, `packages/schemas/authorization-invalidation-vectors-v1.schema.json`, `conformance/planning/authorization-invalidation-vectors-v1.json`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/disclosure-projection-v1.json`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_authorization_boundaries.py`, `docs/privacy/PRIVACY_CONTRACT.md`, `docs/privacy/DATA_MAP.md`, `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`
+Acceptance: `python3 scripts/repository/validate_planning_artifacts.py --allow-no-postgres` exits 0 and `validate_authorization_boundaries` fails when any of these is true — the boundary set differs in either direction from the operation identifiers in `openapi-v1.yaml`; a boundary declares a subject the document does not compute, or omits the surface a third-party subject requires; a surface neither evaluates nor excuses one of the nine authorization inputs; a universally-public surface claims an input an anonymous reader has no identity to evaluate; the set of surfaces omitting `directional-block` differs from the set held in the validator; a surface is reached by no boundary and no derived artifact; a schema reachable from a success response names an account other than its own subject and the disclosure projection does not classify it; the recomputed viewer-visible field matrix differs from `projection-authorization-v1.json#viewer_visible_fields` by a row, by a gate or by order; `openapi-v1.yaml#x-response-cache-policy` differs from the map recomputed from `x-public-operations`; a derived artifact kind of cursor, grant or cache is absent; a trigger has no case or an input has no trigger; or a case records an outcome `evaluate_invalidation` does not compute. `python3 -m unittest tests.ci.test_authorization_boundaries` exits 0 with one case per refusal, a case adding a field to `RankEntry` and failing because it has no gate, and cases proving the sealed generation is retained by every trigger while only the deletion trigger reaches the export download grant.
 Depends: PF-021, PF-024, PF-026, PF-027, PF-028, PF-029
 Repair: P-1140F-4
 Serves: SR-015
 Est: 12-16
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_authorization_boundaries
+Evidence: exists packages/schemas/authorization-invalidation-vectors-v1.schema.json
+Evidence: exists conformance/planning/authorization-invalidation-vectors-v1.json
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: x-response-cache-policy
+Evidence: contains 1 packages/schemas/projection-authorization-v1.json :: "surface_id": "global-leaderboard-page",
+Evidence: absent packages/schemas/projection-authorization-v1.json :: "surface_id": "board-member-list"
 
 - immutable historical facts versus current authorization;
 - block, privacy, board removal, moderation reversal, identity consolidation and deletion invalidation;
 - cursor/grant/cache invalidation and append-only retraction.
+
+**No `privacy-projection-v1.json` was created, and the `Files:` line no longer names one.** Two projection files already existed. `disclosure-projection-v1.json` owns which audience each field is written for; `projection-authorization-v1.json` owns which current authorization revision gates it. A third file holding "every viewer-visible field with its gate" would have re-listed the first file's fields and the second file's revisions, which is two answers to one question in a repository whose central rule is that there is one owner per question. What was actually missing is the *join* — which operation is gated by which inputs — and a join belongs with the rule rather than in a document of its own. So `projection-authorization-v1.json` gained the boundary matrix, the derived-artifact set, the trigger table and the derived per-field matrix, and the one new pair of files is the invalidation corpus and its schema, which is a conformance fixture rather than a second authority.
+
+**The acceptance was rewritten, and both halves needed it.** "Every viewer-visible field appears exactly once in the projection file" is a property of a list, and a list satisfies it by being short: the disclosure projection classified eight schemas out of the fifty-two reachable from a success response, and nothing said the set was the right one. The falsifiable form is that the set is *computed* from the OpenAPI document and compared, which is what the rewritten criterion requires and what the added-field case proves. The second half — "a fixture proves a block, a board removal and a deletion each invalidate the cursors, grants and caches the file names" — was satisfied by a file naming no caches, which is the ninth instance of a criterion phrased so that emptiness passes it. It now requires all three kinds to be present and each to be invalidated by some trigger, requires every trigger to have a case and every input to have a trigger, and requires each case to record what it *retains*, because a corpus in which everything invalidates everything discriminates nothing.
+
+**Three live defects, and the first is the one the finding is named after.** `board-member-list` was a declared authorization surface and no operation in the API lists board members, so it was a rule about a surface the product does not have. While it occupied the list, `listBlocks` — which returns another participant's account identifier on every row — had no surface at all, and `Relationship`, the shape carrying that identifier, was the single schema reachable from a success response that named an account other than its own subject and that the disclosure projection classified nowhere. One dead entry was standing in for a missing one, and neither was findable while the surface list and the operation list were written independently. The boundary matrix resolves them against each other by equality, so both directions now fail.
+
+**One `leaderboard-page` surface was serving an operation with no viewer.** It declared nine read-time inputs on behalf of `getGlobalLeaderboard`, `getLeaderboard` and `getBoardLeaderboard`. The first carries `security: []`, because AGENTS.md makes exactly one view universally public. An anonymous reader has no block row, no friendship, no rivalry and no membership, so four of the nine had nothing to evaluate — and `directional-block`, the deny-hard one, resolves to admit: **a blocked participant reads the global board by logging out.** This is the shape PF-021 repaired on `getPublicProfile`, and the repair here is different because the operation is public by decision rather than by oversight. `global-leaderboard-page` is now its own surface evaluating the four subject-only inputs a reader with no identity can still be denied by, and recording the five it cannot with the reason. The block is not enforced there and the record says so, because suppressing one row from one reader on a public ranking is itself a disclosure — the gap is visible. D-622 records the choice and its reopen condition.
+
+**Nothing in the API declared a cache directive.** The evaluation forbids caching an authorization result and the privacy contract permits caching a projection only when it is identical for every viewer; the document expressed neither, so a proxy, a content delivery network or a browser back-forward cache could store `GET /profiles/{handle}` and hand it to a second viewer. That is the same defect with the staleness measured in hours rather than statements, and it is what made the acceptance's "caches" leg vacuous: there were none to invalidate. `x-response-cache-policy` classifies every operation, `no-store` by construction, `public-shared` only where `x-public-operations` already gives the `global-board` or `reference-data` reason. The split is recomputed from that reason rather than listed twice, so a new operation is `no-store` without anyone deciding, and the `auth-bootstrap` operations stay `no-store` because they are public in order to establish a session and not because their bodies are.
+
+**The sealed generation is recorded as invalidated by nothing.** Leaving it out would have been the same mistake in reverse: an artifact no trigger destroys and that nobody wrote down is indistinguishable from one nobody considered. It is `authorization_independent`, it holds no handle, no viewer and no authorization state, and every case in the corpus retains it. That is the immutable-history half of SR-015 stated as a computed outcome instead of a sentence.
+
+Exit: every operation the API declares has one boundary, every third-party boundary names a surface, every surface answers for all nine inputs, every viewer-visible field carries the revision set that gates it, and every trigger's blast radius is evaluated rather than recorded. Nothing here is implemented; no surface in this repository evaluates the rule, which is why SR-015's closure evidence is a matter for the review that reads this commit and not for this file.
 
 ### PF-034 — Schema/interface inventory repair
 Files: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `scripts/repository/validate_planning_coverage.py`

@@ -239,7 +239,7 @@
     {
       "finding_id": "SR-014",
       "severity": "P1",
-      "state": "open",
+      "state": "repaired-pending-review",
       "title": "Release authorization, compatibility, migration, and rollback",
       "repair_task": "P-1140F-5",
       "finding_class": "contradiction",
@@ -253,7 +253,11 @@
         "packages/schemas/planning-schema.sql#release_sets",
         "packages/schemas/planning-schema.sql#update_installations"
       ],
-      "closure_evidence": [],
+      "closure_evidence": [
+        "PF-030 at ecb67d7d15d917956c48309f8201c52918c52211: the release-set schema requires the eight per-component fields and, more importantly, refuses the case its acceptance could not state: a manifest is itself a target, so a release set whose manifest is signed by the root role or whose manifest target path is a component path authenticates itself. Seven negative examples name one refusal each and each must be exercised.",
+        "PF-031 at ecb67d7d15d917956c48309f8201c52918c52211: an ordered chain and an ordered set are not the same claim, and the acceptance asked only for order — a migration list can be sorted, complete-looking and still skip a version, after which a rollback walks off the end of it. Contiguity is checked and a gap is a named negative example. install-plan-v1.schema.json gained the plan_kind discriminator this exposed: platform_install_plans was keyed on profile and release alone, so install, upgrade, repair, uninstall and orphan cleanup were the same row.",
+        "PF-032 at ecb67d7d15d917956c48309f8201c52918c52211: installability and competitive eligibility are separated in a way that buys something. Two booleans satisfy the word separately; what is enforced now is that the combination which occurs — installable and not competitively eligible, which is what a container and a CI runner are — is representable, and that a profile asserting eligibility with no supervision mechanism to derive it from fails."
+      ],
       "reviewed_commit": null,
       "review_verdict": "pending"
     },
