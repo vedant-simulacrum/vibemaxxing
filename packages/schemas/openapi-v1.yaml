@@ -1035,6 +1035,8 @@ paths:
           $ref: '#/components/responses/UnsupportedMediaType'
         '422':
           $ref: '#/components/responses/UnprocessableContent'
+        '426':
+          $ref: '#/components/responses/UpgradeRequired'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -1081,6 +1083,8 @@ paths:
           $ref: '#/components/responses/UnsupportedMediaType'
         '422':
           $ref: '#/components/responses/UnprocessableContent'
+        '426':
+          $ref: '#/components/responses/UpgradeRequired'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -2061,6 +2065,8 @@ paths:
           $ref: '#/components/responses/UnsupportedMediaType'
         '422':
           $ref: '#/components/responses/UnprocessableContent'
+        '426':
+          $ref: '#/components/responses/UpgradeRequired'
         '429':
           $ref: '#/components/responses/RateLimited'
         default:
@@ -3012,6 +3018,12 @@ components:
             $ref: '#/components/schemas/Problem'
     UnprocessableContent:
       description: The request parsed and was rejected on its meaning rather than its shape
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UpgradeRequired:
+      description: 'The calling client is below the moving version floor for this interface and is refused rather than silently degraded, which is what D-570 chose: a refusal the participant can act on beats a client that appears to work and quietly stops counting. The floor itself is published by getCompatibility, which is public reference data, so a refused client can read what it must reach without a credential it may no longer be able to obtain.'
       content:
         application/json:
           schema:
@@ -5456,6 +5468,8 @@ components:
       additionalProperties: false
       required:
         - items
+        - minimum_supported_release_version
+        - floor_effective_at
         - cursor
         - snapshot_id
         - revision
@@ -5465,6 +5479,14 @@ components:
           maxItems: 200
           items:
             $ref: '#/components/schemas/CompatibilityProfile'
+        minimum_supported_release_version:
+          description: 'The moving version floor D-570 refuses clients below, published here because this is the one public reference-data operation a refused client can still reach. A 426 with CLIENT_VERSION_UNSUPPORTED says the client is below the floor; this says what the floor is. It is a page-level field rather than a per-profile one because the floor is a property of the interface, not of the operating system the client runs on. The persistence owner is planning-schema.sql#update_policies.'
+          type: string
+          pattern: ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$
+        floor_effective_at:
+          description: When this floor takes effect. A floor with no effective instant is one a client cannot tell it has time to meet.
+          type: string
+          format: date-time
         cursor:
           type:
             - string

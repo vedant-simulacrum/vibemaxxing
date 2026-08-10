@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "registry_version": "1.8.0-p1140f",
+  "registry_version": "1.9.0-p1140f",
   "transports": {
     "problem": "Returned to the client as the reason_code of an RFC 9457 Problem body under the declared http_status.",
     "claim-rejection": "Returned inside ClaimBatchResult.rejections against one claim index. The batch operation itself answers 200, so http_status is null.",
@@ -1872,6 +1872,65 @@
       "operation_classes": [],
       "operations": [],
       "introduced_in": "1.7.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "CLIENT_VERSION_UNSUPPORTED",
+      "class": "compatibility",
+      "default_outcome": "rejected_unsupported",
+      "user_safe": true,
+      "subsystem": "api",
+      "retryable": false,
+      "public_message_key": "reason.client_version_unsupported",
+      "internal_visibility": "support-and-security",
+      "severity": "medium",
+      "appealability": "not-eligible",
+      "state_machine": "update-lifecycle",
+      "transport": "problem",
+      "http_status": 426,
+      "operation_classes": [
+        "native-bound"
+      ],
+      "operations": [],
+      "introduced_in": "1.9.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "RELEASE_SET_UNTRUSTED",
+      "class": "release",
+      "default_outcome": "rejected_invalid",
+      "user_safe": false,
+      "subsystem": "device",
+      "retryable": false,
+      "public_message_key": "reason.release_set_untrusted",
+      "internal_visibility": "security-only",
+      "severity": "high",
+      "appealability": "not-eligible",
+      "state_machine": "release-trust",
+      "transport": "local-channel",
+      "http_status": null,
+      "operation_classes": [],
+      "operations": [],
+      "introduced_in": "1.9.0",
+      "deprecated_in": null
+    },
+    {
+      "code": "UPDATE_ROLLBACK_UNAVAILABLE",
+      "class": "release",
+      "default_outcome": "rejected_unsupported",
+      "user_safe": false,
+      "subsystem": "device",
+      "retryable": false,
+      "public_message_key": "reason.update_rollback_unavailable",
+      "internal_visibility": "support-and-security",
+      "severity": "medium",
+      "appealability": "not-eligible",
+      "state_machine": "update-lifecycle",
+      "transport": "local-channel",
+      "http_status": null,
+      "operation_classes": [],
+      "operations": [],
+      "introduced_in": "1.9.0",
       "deprecated_in": null
     }
   ]

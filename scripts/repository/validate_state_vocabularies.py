@@ -385,14 +385,19 @@ BINDINGS: tuple[Binding, ...] = (
             "installing",
             "health-check",
             "rolled-back",
+            "recovery-required",
             "complete",
             "blocked-version",
             "failed",
         ),
-        sql=(
-            "update_policies.state",
-            "update_installations.state",
-        ),
+        # PF-031. `update_policies.state` was a copy of these twelve values on a table
+        # that holds a policy, which has no update lifecycle. It was a
+        # persistence-owner stub: the machine had to name a table, so a table appeared
+        # with the machine's own vocabulary in it, and one aggregate's state then lived
+        # in two places with nothing saying which won. `update_policies` now holds the
+        # compatibility window and no state, and this machine has one persistence
+        # owner.
+        sql=("update_installations.state",),
     ),
     Binding(
         aggregate="release-trust",
@@ -863,10 +868,16 @@ RECORDED_ABSENCES: dict[tuple[str, str], str] = {
         "source-certification",
         "api",
     ): "D-387. Certification is server-assigned; exposing it would let a client select it.",
+    # PF-031. The previous reason read "Local-only; the server is never told what a
+    # device has installed", and `update_installations` is a table in this server
+    # schema keyed on `device_id` and `release_set_id`. The server is told exactly
+    # that, and has to be: D-570 refuses a client below a moving version floor, and a
+    # floor cannot be enforced against a version nobody reports. The absence is real —
+    # no API enum publishes the machine's state — and this is what it is.
     (
         "update-lifecycle",
         "api",
-    ): "Local-only; the server is never told what a device has installed.",
+    ): "The lifecycle state is a device-local fact; the server records the installed release set and publishes no state enum for it.",
     (
         "release-trust",
         "api",
@@ -1674,11 +1685,64 @@ def check_concurrency_model(report: Report) -> None:
             )
 
 
+def check_transition_guards(report: Report) -> None:
+    """A guard is enforced where the state is written, or it is a comment.
+
+    Two transitions can leave one state legitimately and be mutually exclusive on a
+    fact about the row. `update-lifecycle` is the case that forced this: D-074 permits
+    an automatic binary rollback only while the previous release stays read/write
+    compatible with every committed mutation, and the machine had one unguarded
+    rollback edge out of `failed`, so an installation that had applied a forward-only
+    migration and destroyed its own downgrade path could still be recorded as rolled
+    back. Splitting the edge in the registry alone would move the problem rather than
+    fix it, because a transition table is a description and the row is written by SQL.
+
+    So a guard names a column, and that column must appear inside a CHECK constraint on
+    one of the machine's persistence-owner tables. The check is deliberately about the
+    *constraint* and not merely the column: a guard whose column exists and is
+    unconstrained is the same defect as no guard at all, phrased so that a reader
+    believes otherwise.
+    """
+    registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+    bodies = table_bodies(SQL_PATH.read_text(encoding="utf-8"))
+    bodies.update(table_bodies(local_store_text()))
+    for machine in registry["machines"]:
+        identifier = machine["machine_id"]
+        owners = [name.replace("-", "_") for name in machine["persistence_owner"]]
+        checks = " ".join(
+            " ".join(bodies[owner].split()) for owner in owners if owner in bodies
+        )
+        constraints = " ".join(fragment for fragment in checks.split("check (")[1:])
+        for transition in machine["transitions"]:
+            guard = transition.get("guard")
+            if guard is None:
+                continue
+            column = guard[4:] if guard.startswith("not_") else guard
+            if not any(
+                column in " ".join(bodies[owner].split())
+                for owner in owners
+                if owner in bodies
+            ):
+                report.errors.append(
+                    f"{identifier}.{transition['transition_id']} is guarded on "
+                    f"{guard!r} and no persistence owner declares a {column!r} column"
+                )
+                continue
+            if column not in constraints:
+                report.errors.append(
+                    f"{identifier}.{transition['transition_id']} is guarded on "
+                    f"{guard!r}, and no CHECK constraint on {owners} mentions "
+                    f"{column!r}; a guard nothing enforces where the state is written "
+                    "is a comment"
+                )
+
+
 def main() -> int:
     report = Report()
     try:
         validate(report)
         check_concurrency_model(report)
+        check_transition_guards(report)
         check_absence_reasons(report, CONTRACT_PATH.read_text(encoding="utf-8"))
     except Failure as failure:
         print(f"state vocabulary validation: FAIL\n- {failure}", file=sys.stderr)

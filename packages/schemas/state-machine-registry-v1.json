@@ -2980,9 +2980,7 @@
       "machine_id": "update-lifecycle",
       "semantic_owner": "release",
       "persistence_owner": [
-        "update-policies",
-        "update-installations",
-        "release-sets"
+        "update-installations"
       ],
       "aggregate_key": "installation-update-id",
       "initial_state": "current",
@@ -2996,12 +2994,14 @@
         "installing",
         "health-check",
         "rolled-back",
+        "recovery-required",
         "complete",
         "blocked-version",
         "failed"
       ],
       "terminal_states": [
         "rolled-back",
+        "recovery-required",
         "complete",
         "blocked-version"
       ],
@@ -3118,6 +3118,7 @@
         },
         {
           "transition_id": "update-rollback",
+          "guard": "rollback_available",
           "from": [
             "installing",
             "health-check",
@@ -3130,6 +3131,24 @@
           "recent_auth": false,
           "idempotency": "aggregate-action-key",
           "audit_event": "update-rollback.audit",
+          "reversal": "none",
+          "transaction_boundary": "release-set-install"
+        },
+        {
+          "transition_id": "update-recovery-required",
+          "guard": "not_rollback_available",
+          "from": [
+            "installing",
+            "health-check",
+            "failed"
+          ],
+          "action": "forward-only-migration-applied",
+          "to": "recovery-required",
+          "actor": "system",
+          "authentication": "none",
+          "recent_auth": false,
+          "idempotency": "aggregate-action-key",
+          "audit_event": "update-recovery-required.audit",
           "reversal": "none",
           "transaction_boundary": "release-set-install"
         },

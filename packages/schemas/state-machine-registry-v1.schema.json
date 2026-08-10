@@ -113,6 +113,12 @@
                   "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
                   "maxLength": 160
                 },
+                "guard": {
+                  "description": "A precondition that must hold for this transition to be admissible, named as the column that decides it and optionally negated with a `not_` prefix. A guard is not documentation: scripts/repository/validate_state_vocabularies.py requires the named column to appear inside a CHECK constraint of one of this machine's persistence-owner tables, so a guard nothing enforces where the state is written fails. It exists because two transitions out of one state can each be legitimate and mutually exclusive on a fact about the row. Without it the transition table has to merge them, which loses the exclusion, or leave it to the worker, which is where it stops being checkable.",
+                  "type": "string",
+                  "pattern": "^(?:not_)?[a-z][a-z0-9_]*$",
+                  "maxLength": 64
+                },
                 "from": {
                   "type": "array",
                   "minItems": 1,

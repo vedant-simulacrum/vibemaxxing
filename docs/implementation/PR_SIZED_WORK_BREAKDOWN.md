@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 186 |
+| `not-started` | 183 |
 | `in-progress` | 4 |
-| `landed` | 64 |
+| `landed` | 67 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 313 assertions across 64 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 327 assertions across 67 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 5.
+Startable now — not done, and every dependency done: 4.
 
-`PF-030`, `PF-033`, `OS-001`, `OS-003`, `OS-009`.
+`PF-033`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,13 +90,12 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 2 | `PF-030`, `PF-033` |
-| 2 | 2 | `PF-031`, `PF-032` |
-| 3 | 1 | `PF-034` |
-| 4 | 1 | `PF-035` |
-| 5 | 1 | `PF-036` |
+| 1 | 1 | `PF-033` |
+| 2 | 1 | `PF-034` |
+| 3 | 1 | `PF-035` |
+| 4 | 1 | `PF-036` |
 
-Statuses additionally checkable against artifact presence: 196 of 260. The other 64 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 198 of 260. The other 62 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -911,26 +910,45 @@ The second half was `grep -in 'forensic' docs/operations/DATA_LIFECYCLE_AND_RECO
 **Still not implemented.** No deletion plan has been built, no domain has been erased, no hold has been placed, no cancellation has been made, and no restore drill has been run. Every check in this unit compares records to records.
 
 ### PF-030 — Release authorization and component manifest
-Files: `packages/schemas/release-set-v1.schema.json`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`
-Acceptance: the release-set schema requires a TUF role reference, a target path, an architecture, a hash, a provenance reference, a native signature reference, a compatibility tuple and an update class per component, and rejects a manifest that is not itself an authenticated target.
+Files: `packages/schemas/release-set-v1.schema.json`, `packages/schemas/examples/release-set.valid.json` (new), `packages/schemas/examples/release-set.invalid-*.json` (new, seven), `scripts/repository/validate_planning_artifacts.py`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, `docs/operations/OPEN_SOURCE_RELEASE_CHECKLIST.md` (new)
+Acceptance: the release-set schema requires a TUF role reference, a target path, an architecture, a hash, a provenance reference, a native signature reference, a compatibility tuple and an update class per component, and rejects a manifest that is not itself an authenticated target; each refusal is exercised by a named negative example, and `validate_release_set_manifests` refuses a valid example that stops being valid.
 Depends: PF-015
 Repair: P-1140F-5
 Serves: SR-014
 Est: 8-12
-Status: not-started
+Status: landed
+Evidence: exists packages/schemas/examples/release-set.valid.json
+Evidence: exists packages/schemas/examples/release-set.invalid-manifest-signed-by-the-root-role.json
+Evidence: exists packages/schemas/examples/release-set.invalid-target-path-escapes-the-namespace.json
+Evidence: exists packages/schemas/examples/release-set.invalid-two-components-one-target-path.json
+Evidence: contains 1 scripts/repository/validate_planning_artifacts.py :: def validate_release_set_manifests
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: exists docs/operations/OPEN_SOURCE_RELEASE_CHECKLIST.md
+
+The acceptance listed eight required fields and one refusal, and a schema satisfies a list of required fields by declaring them. What it could not state is the refusal that matters: a manifest is itself a target, so a release set whose manifest is signed by the root role, or whose manifest target path is a component path, authenticates itself. Seven negative examples now name one refusal each — the root-role signature, the manifest path colliding with a component, a target path escaping the namespace, two components claiming one target path, a component with no compatibility tuple, an architecture disagreeing with its platform profile, and a deadline preceding publication — and the acceptance requires each to be exercised rather than merely possible.
+
+The open-source release checklist lands with this unit because PF-030 authors the release-set schema its sixth item references. It carries seven items, all unmet, each naming what would satisfy it. The first is not a template row: it is the LGPL attribution finding the D-541 audit produced, where `@img/sharp-libvips-*` binaries are pinned under `LGPL-3.0-or-later` in two lockfiles and `LICENSES.md` already states the NOTICE review has not happened. The seventh records that no signing key or TUF root exists and none may be created during planning, so its absence is recorded rather than discovered later.
 
 - TUF root/delegated roles own authorization;
 - release manifest is an authenticated target;
 - component IDs, target paths, architecture, hashes, provenance, native signing, compatibility and update class.
 
 ### PF-031 — Migration, health and rollback policy
-Files: `packages/schemas/planning-schema.sql`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`
-Acceptance: `update_policies` and `update_installations` express an ordered migration chain and a compatibility window; a fixture records one reversible and one irreversible migration, and the irreversible case has no rollback edge in the `update-lifecycle` machine.
+Files: `packages/schemas/planning-schema.sql`, `packages/schemas/install-plan-v1.schema.json`, `packages/schemas/examples/migration-chain.invalid-chain-with-a-gap.json` (new), `scripts/repository/validate_planning_artifacts.py`, `docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md`, `docs/architecture/NATIVE_RUNTIME_AND_STORAGE_CONTRACT.md`
+Acceptance: `update_policies` and `update_installations` express an ordered migration chain and a compatibility window; the chain is verified to be a chain rather than a set, so a gap between two versions fails; a fixture records one reversible and one irreversible migration, and the irreversible case has no rollback edge in the `update-lifecycle` machine.
 Depends: PF-014, PF-030
 Repair: P-1140F-5
 Serves: SR-014
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: exists packages/schemas/examples/migration-chain.valid.json
+Evidence: exists packages/schemas/examples/migration-chain.invalid-reversible-with-drop.json
+Evidence: exists packages/schemas/examples/migration-chain.invalid-chain-with-a-gap.json
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+
+An ordered chain and an ordered set are not the same claim, and the acceptance asked only for order. A migration list can be sorted, complete-looking and still skip a version, at which point a rollback walks off the end of it. The chain is now verified to be contiguous and a gap between two versions is a named negative example.
+
+`install-plan-v1.schema.json` gained the `plan_kind` discriminator this exposed. `platform_install_plans` was keyed on `(platform_profile_id, release_set_id)` and nothing else, so one profile and one release could hold only one plan — install, upgrade, repair, uninstall and orphan cleanup were the same row. The five kinds are now distinguished, an orphan cleanup carries no release set because there is none to name, a forward plan must verify the release signature at sequence 1, and a removal plan consists only of reversals.
 
 - ordered migration chain and compatibility window;
 - pre/post health checks;
@@ -938,13 +956,18 @@ Status: not-started
 - irreversible migration recovery by roll-forward or verified pre-migration snapshot.
 
 ### PF-032 — Platform supervision and installer truth table
-Files: `packages/schemas/platform-profile-registry-v1.json`, `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `docs/security/PLATFORM_ISOLATION.md`
-Acceptance: `platform-profile-registry-v1.json` validates against its schema with a row for macOS, Windows, Linux, WSL, container and CI, each naming its supervision mechanism, its session and restart limitation, and its competitive eligibility separately from its installability.
+Files: `packages/schemas/platform-profile-registry-v1.json`, `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/state-machine-registry-v1.schema.json`, `scripts/repository/validate_state_vocabularies.py`, `docs/architecture/PLATFORM_KEY_AND_PRIVILEGE_MATRIX.md`, `docs/security/PLATFORM_ISOLATION.md`
+Acceptance: `platform-profile-registry-v1.json` validates against its schema with a row for macOS, Windows, Linux, WSL, container and CI, each naming its supervision mechanism, its session and restart limitation, and its competitive eligibility separately from its installability; a profile that is installable and not competitively eligible is representable, and one asserting eligibility it has no supervision mechanism to support fails.
 Depends: PF-011, PF-030
 Repair: P-1140F-5
 Serves: SR-014
 Est: 10-14
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: validator scripts/repository/validate_p1140e_contracts.py
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+
+Separately is the load-bearing word and the acceptance did not say what it buys. Installability and competitive eligibility being distinct fields is satisfied by declaring two booleans; the property worth having is that the combination which actually occurs — installable, not competitively eligible, which is what a container and a CI runner are — is representable, and that the combination which must not occur cannot be asserted. A profile claiming eligibility with no supervision mechanism to derive it from is now a failure rather than a row.
 
 - exact macOS, Windows, Linux, WSL, container and CI mechanisms;
 - disclose session and restart limitations honestly;
