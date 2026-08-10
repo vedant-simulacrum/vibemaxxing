@@ -1,0 +1,326 @@
+{
+  "schema_version": 1,
+  "profile_id": "authorization-invalidation-vectors-v1",
+  "description": "One case per trigger declared in packages/schemas/projection-authorization-v1.json. Every trigger has a case, because a trigger nothing exercises is a rule nobody has ever reached, and every case records what it retains so that a corpus in which everything invalidates everything is refused.",
+  "cases": [
+    {
+      "case_id": "AI-001",
+      "trigger": "block-established",
+      "note": "The case the finding is named for. A block reaches every live surface that renders the blocked party and reaches none of the three that do not: the universally-public global board has no viewer to evaluate it against, the viewer's own block list must keep showing the people they blocked, and an export has no second party. The cursor dies because it pinned a revision that has moved; the export download grant survives because the block changed nothing about the subject's own data.",
+      "expected": {
+        "changed_inputs": [
+          "directional-block"
+        ],
+        "affected_surfaces": [
+          "friend-list",
+          "leaderboard-page",
+          "notification-delivery",
+          "notification-render",
+          "presence-projection",
+          "public-profile",
+          "rival-list"
+        ],
+        "unaffected_surfaces": [
+          "block-list",
+          "export-package",
+          "global-leaderboard-page"
+        ],
+        "invalidated_artifacts": [
+          "ranking-cursor",
+          "shared-response-cache"
+        ],
+        "retained_artifacts": [
+          "export-download-grant",
+          "sealed-generation-projection"
+        ]
+      }
+    },
+    {
+      "case_id": "AI-002",
+      "trigger": "block-removed",
+      "note": "Unblocking is a change of the same size as blocking. Nothing was destroyed when the block was made, so nothing is restored — but the revision still moves, and a cursor issued while the block held is refused rather than silently widened to the entries it was suppressing.",
+      "expected": {
+        "changed_inputs": [
+          "directional-block"
+        ],
+        "affected_surfaces": [
+          "friend-list",
+          "leaderboard-page",
+          "notification-delivery",
+          "notification-render",
+          "presence-projection",
+          "public-profile",
+          "rival-list"
+        ],
+        "unaffected_surfaces": [
+          "block-list",
+          "export-package",
+          "global-leaderboard-page"
+        ],
+        "invalidated_artifacts": [
+          "ranking-cursor",
+          "shared-response-cache"
+        ],
+        "retained_artifacts": [
+          "export-download-grant",
+          "sealed-generation-projection"
+        ]
+      }
+    },
+    {
+      "case_id": "AI-003",
+      "trigger": "board-membership-removed",
+      "note": "A board removal reaches the two surfaces that read membership and no others. The removed member's board leaderboard cursor stops resolving; their sealed entries in that generation do not move, are not renumbered and are not rewritten, which is the immutable-history half of SR-015 stated as an outcome rather than as a sentence.",
+      "expected": {
+        "changed_inputs": [
+          "board-membership"
+        ],
+        "affected_surfaces": [
+          "leaderboard-page",
+          "presence-projection"
+        ],
+        "unaffected_surfaces": [
+          "block-list",
+          "export-package",
+          "friend-list",
+          "global-leaderboard-page",
+          "notification-delivery",
+          "notification-render",
+          "public-profile",
+          "rival-list"
+        ],
+        "invalidated_artifacts": [
+          "ranking-cursor",
+          "shared-response-cache"
+        ],
+        "retained_artifacts": [
+          "export-download-grant",
+          "sealed-generation-projection"
+        ]
+      }
+    },
+    {
+      "case_id": "AI-004",
+      "trigger": "board-archived",
+      "note": "Archiving is narrower than removal: the container state is subject-only, so it reaches the surfaces that read it without touching the pair-shaped membership decision.",
+      "expected": {
+        "changed_inputs": [
+          "board-container-state"
+        ],
+        "affected_surfaces": [
+          "leaderboard-page",
+          "presence-projection"
+        ],
+        "unaffected_surfaces": [
+          "block-list",
+          "export-package",
+          "friend-list",
+          "global-leaderboard-page",
+          "notification-delivery",
+          "notification-render",
+          "public-profile",
+          "rival-list"
+        ],
+        "invalidated_artifacts": [
+          "ranking-cursor",
+          "shared-response-cache"
+        ],
+        "retained_artifacts": [
+          "export-download-grant",
+          "sealed-generation-projection"
+        ]
+      }
+    },
+    {
+      "case_id": "AI-005",
+      "trigger": "friendship-ended",
+      "note": "An ended friendship and a block are two changes and not one, and this case is what says so — the friend list and the leaderboard lose the widen, and the notification surfaces, which evaluate no widen, are untouched.",
+      "expected": {
+        "changed_inputs": [
+          "friendship-edge"
+        ],
+        "affected_surfaces": [
+          "friend-list",
+          "leaderboard-page",
+          "presence-projection",
+          "public-profile"
+        ],
+        "unaffected_surfaces": [
+          "block-list",
+          "export-package",
+          "global-leaderboard-page",
+          "notification-delivery",
+          "notification-render",
+          "rival-list"
+        ],
+        "invalidated_artifacts": [
+          "ranking-cursor",
+          "shared-response-cache"
+        ],
+        "retained_artifacts": [
+          "export-download-grant",
+          "sealed-generation-projection"
+        ]
+      }
+    },
+    {
+      "case_id": "AI-006",
+      "trigger": "rivalry-ended",
+      "note": "Same shape as an ended friendship, on the input that has no revision column. The trigger fires on a state change it cannot order against a second one, which is a limitation recorded on the input rather than hidden by the corpus.",
+      "expected": {
+        "changed_inputs": [
+          "rival-edge"
+        ],
+        "affected_surfaces": [
+          "leaderboard-page",
+          "presence-projection",
+          "public-profile",
+          "rival-list"
+        ],
+        "unaffected_surfaces": [
+          "block-list",
+          "export-package",
+          "friend-list",
+          "global-leaderboard-page",
+          "notification-delivery",
+          "notification-render"
+        ],
+        "invalidated_artifacts": [
+          "ranking-cursor",
+          "shared-response-cache"
+        ],
+        "retained_artifacts": [
+          "export-download-grant",
+          "sealed-generation-projection"
+        ]
+      }
+    },
+    {
+      "case_id": "AI-007",
+      "trigger": "profile-visibility-narrowed",
+      "note": "Narrowing a profile is retroactive on live surfaces. It reaches the global board too, because subject-visibility is subject-only and an anonymous reader evaluates it unchanged, which is the one deny input a universally-public surface can still run.",
+      "expected": {
+        "changed_inputs": [
+          "subject-visibility"
+        ],
+        "affected_surfaces": [
+          "global-leaderboard-page",
+          "leaderboard-page",
+          "public-profile"
+        ],
+        "unaffected_surfaces": [
+          "block-list",
+          "export-package",
+          "friend-list",
+          "notification-delivery",
+          "notification-render",
+          "presence-projection",
+          "rival-list"
+        ],
+        "invalidated_artifacts": [
+          "ranking-cursor",
+          "shared-response-cache"
+        ],
+        "retained_artifacts": [
+          "export-download-grant",
+          "sealed-generation-projection"
+        ]
+      }
+    },
+    {
+      "case_id": "AI-008",
+      "trigger": "presence-visibility-narrowed",
+      "note": "The lease keeps transitioning and the projection collapses to offline. It reaches the leaderboard pages because availability rides on a rank entry, which is the sibling the presence repair has to reach as well as the presence page.",
+      "expected": {
+        "changed_inputs": [
+          "presence-visibility"
+        ],
+        "affected_surfaces": [
+          "global-leaderboard-page",
+          "leaderboard-page",
+          "presence-projection",
+          "public-profile"
+        ],
+        "unaffected_surfaces": [
+          "block-list",
+          "export-package",
+          "friend-list",
+          "notification-delivery",
+          "notification-render",
+          "rival-list"
+        ],
+        "invalidated_artifacts": [
+          "ranking-cursor",
+          "shared-response-cache"
+        ],
+        "retained_artifacts": [
+          "export-download-grant",
+          "sealed-generation-projection"
+        ]
+      }
+    },
+    {
+      "case_id": "AI-009",
+      "trigger": "account-deletion-requested",
+      "note": "The widest trigger, and the only one that reaches the export download grant. account-lifecycle is deny-hard and subject-only, so every surface evaluates it, including the universally-public board and the participant's own export.",
+      "expected": {
+        "changed_inputs": [
+          "account-lifecycle"
+        ],
+        "affected_surfaces": [
+          "block-list",
+          "export-package",
+          "friend-list",
+          "global-leaderboard-page",
+          "leaderboard-page",
+          "notification-delivery",
+          "notification-render",
+          "presence-projection",
+          "public-profile",
+          "rival-list"
+        ],
+        "unaffected_surfaces": [],
+        "invalidated_artifacts": [
+          "export-download-grant",
+          "ranking-cursor",
+          "shared-response-cache"
+        ],
+        "retained_artifacts": [
+          "sealed-generation-projection"
+        ]
+      }
+    },
+    {
+      "case_id": "AI-010",
+      "trigger": "ranked-identity-retired",
+      "note": "A sanction is silent toward everyone but its subject, so this reaches the projection surfaces that read standing and neither the inbox nor the export.",
+      "expected": {
+        "changed_inputs": [
+          "ranked-identity-state"
+        ],
+        "affected_surfaces": [
+          "global-leaderboard-page",
+          "leaderboard-page",
+          "public-profile"
+        ],
+        "unaffected_surfaces": [
+          "block-list",
+          "export-package",
+          "friend-list",
+          "notification-delivery",
+          "notification-render",
+          "presence-projection",
+          "rival-list"
+        ],
+        "invalidated_artifacts": [
+          "ranking-cursor",
+          "shared-response-cache"
+        ],
+        "retained_artifacts": [
+          "export-download-grant",
+          "sealed-generation-projection"
+        ]
+      }
+    }
+  ]
+}

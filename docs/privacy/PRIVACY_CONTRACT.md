@@ -243,9 +243,35 @@ No authorization result is cached anywhere, including in a request-scoped memo t
 
 A change racing the response fails the request rather than serving the earlier answer: the decision compares the revisions it read against the revisions present when the response is emitted. A participant who pressed block is entitled to assume it took effect, and a retry costs one request. An input that cannot be read is a denial, because an authorization system whose outage widens access has the wrong default.
 
-Nine surfaces evaluate it. Eight recheck at read or delivery time; the export package is the single snapshot-time exception, and it is one because the subject and the viewer are the same person and no third party's authorization can change under it.
+Ten surfaces evaluate it. Nine recheck at read or delivery time; the export package is the single snapshot-time exception, and it is one because the subject and the viewer are the same person and no third party's authorization can change under it.
 
-This names the rule. No surface in this repository evaluates it, so SR-015 is advanced and not closed.
+Each surface partitions all nine inputs into the ones it evaluates and the ones it omits with a stated reason. That is not bookkeeping: an input a surface does not mention and an input nobody considered produce the same file, and adding a tenth input now forces every surface to answer for it.
+
+### Which boundary the rule applies to
+
+Naming the rule was half of it. The other half is knowing where it applies, and until PF-033 the two lists were written independently and never resolved against each other. Three things were true at once and nothing could find any of them.
+
+`board-member-list` was declared a surface. No operation in `packages/schemas/openapi-v1.yaml` lists board members, so it was a rule about a surface the API does not have. While it sat in the list, `listBlocks` — which returns a third party's account identifier on every row — had no surface at all, and `Relationship`, the shape that carries that identifier, was the one schema reachable from a success response that named another account and that `disclosure-projection-v1.json` classified nowhere.
+
+And one `leaderboard-page` surface claimed nine read-time inputs on behalf of three operations, one of which is `getGlobalLeaderboard`. That operation carries `security: []` because AGENTS.md makes exactly one view universally public. An anonymous reader has no block row, no friendship and no membership, so four of the nine inputs had nothing to evaluate — and `directional-block`, the deny-hard one, resolves to admit. **A blocked participant reads the global board by logging out.** That is the same shape as the `getPublicProfile` defect PF-021 repaired, and the repair is not the same, because here the operation is public by decision rather than by oversight: the surface is split, `global-leaderboard-page` evaluates the four subject-only inputs it can, and the five it cannot are recorded with the reason. The alternative — hiding one participant's row from one reader on a public ranking — is itself a disclosure, because the gap is visible.
+
+The boundary matrix is keyed on the operation identifiers of the API document and compared against them for equality, so an operation added later has no boundary and fails rather than escaping. Whether a response carries a third party is computed from the document in both directions: a boundary cannot declare itself out of a gate it needs, nor into one it does not.
+
+### Every viewer-visible field carries its gate
+
+`disclosure-projection-v1.json` owns which audience each field is written for. This rule owns which current authorization revision gates it. They are two files because they answer two questions, and the join between them is derived rather than written: the validator recomputes one row for every `(surface, schema, field)` that reaches an account other than the one it is about, and asserts the matrix in `projection-authorization-v1.json` matches row for row. A field added to a projected shape appears there or the check fails.
+
+The key is the surface and not the schema alone. `RankEntry` is rendered by two surfaces with two different gates, and a matrix that unioned them would hide that one of the two evaluates four inputs rather than nine.
+
+### The three things a decision outlives
+
+The rule forbids caching a decision. Three records pin one anyway, and each says what destroys it. A leaderboard cursor pins the authorization revision it was issued under, and a presentation whose revision has moved is refused rather than served. An export download grant pins the authorization that issued it, and `revoked_at` withdraws the capability while the row survives for the audit trail. A shared HTTP cache pins the whole response — and the API declared no cache directive at all, so a proxy, a CDN or a browser back-forward cache was free to store `GET /profiles/{handle}` and hand it to a second viewer. `x-response-cache-policy` now declares every operation, `no-store` by construction, `public-shared` only for the operations `x-public-operations` already calls universally public or reference data. The split is derived from that reason rather than listed twice.
+
+A fourth record is named because leaving it out would be the same mistake in reverse. A sealed ranking generation is never invalidated by an authorization change. It holds figures and positions and carries no handle, no viewer and no authorization state, so a block changes what renders from it and not what it contains. This is the line the whole finding turns on: an immutable historical fact and a current authorization are two records precisely so that changing the second never has to rewrite the first.
+
+`conformance/planning/authorization-invalidation-vectors-v1.json` states one case per trigger and records what each retains as well as what it destroys, because a corpus in which everything invalidates everything proves nothing. A block reaches seven surfaces and not the global board, the viewer's own block list or the export. A board removal reaches two. Only a deletion request reaches the export download grant, because account lifecycle is the one input every surface evaluates.
+
+This names the rule and makes it total over the API. No surface in this repository evaluates it, so SR-015 is advanced by what a document can carry and closed by what code does.
 
 ## Moderation and support privacy
 

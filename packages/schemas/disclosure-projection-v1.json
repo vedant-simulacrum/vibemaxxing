@@ -154,6 +154,18 @@
       ]
     },
     {
+      "api_schema": "Relationship",
+      "audience": "self",
+      "note": "One edge as the participant who holds it sees it, served by listFriends, listFriendRequests, listBlocks and listRivals. PF-033 added it: it was the only schema reachable from a success response that named an account other than the response's own subject and was classified by nothing, so four operations published a third party's identifier and the record of what leaves whose surface did not mention them. Self rather than authorized-viewer because a relationship is not symmetric as a disclosure: a block is invisible to the blocked party by construction, and a friend list is the viewer's own edge set rather than a property of the peer.",
+      "fields": [
+        { "name": "relationship_id", "audience": "self", "classification": "non-personal", "reason": "Addresses one row in one participant's edge set." },
+        { "name": "kind", "audience": "self", "classification": "server-assigned", "reason": "friend, friend_request, block or rival. The block value is the reason this shape is self: telling a peer which kind names them would disclose the block to the party it exists to hide it from." },
+        { "name": "peer_account_id", "audience": "self", "classification": "observed-personal", "reason": "The other party. It is personal data about a person who is not the reader, which is why the surfaces that carry it recheck directional-block and account-lifecycle at read time, and why block-list is the one surface that deliberately does not recheck the block." },
+        { "name": "state", "audience": "self", "classification": "server-assigned", "reason": "The edge lifecycle. A pending or withdrawn request is visible to the two parties and to nobody else." },
+        { "name": "revision", "audience": "self", "classification": "non-personal", "reason": "A concurrency token for the holder's own conditional updates." }
+      ]
+    },
+    {
       "api_schema": "PresenceLease",
       "audience": "authorized-viewer",
       "note": "The projection, never the lease. `availability` is the three-value collapse the binding table declares; the underlying five-state lease, the device and the generation stay server-side.",

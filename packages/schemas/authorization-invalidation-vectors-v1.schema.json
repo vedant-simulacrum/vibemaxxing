@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vibemaxxing.dev/authorization-invalidation-vectors-v1.schema.json",
+  "title": "Authorization invalidation vectors v1",
+  "description": "One case per change that moves an authorization input, recording which surfaces it reaches and which derived artifacts it destroys. packages/schemas/projection-authorization-v1.json is the rule; this is the corpus it is measured on. scripts/repository/validate_planning_artifacts.py#evaluate_invalidation reaches every field of `expected` from the profile rather than reading it back, so a case whose recorded answer is wrong fails and the corpus cannot confirm itself.\n\nThe distinction the corpus exists to make is the one SR-015 turns on. A block, a board removal and a deletion each change what a live surface may render. None of them changes what a sealed ranking generation contains, and one of them — the deletion — is the only one that reaches an export download grant, because an export's subject and viewer are the same person. A corpus in which every trigger invalidated everything would prove nothing, which is why every case records what it retains as well as what it destroys.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "profile_id", "cases"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "profile_id": { "const": "authorization-invalidation-vectors-v1" },
+    "description": { "type": "string" },
+    "cases": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "$ref": "#/$defs/case" }
+    }
+  },
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "trigger", "note", "expected"],
+      "properties": {
+        "case_id": { "type": "string", "pattern": "^AI-[0-9]{3}$" },
+        "trigger": {
+          "description": "A trigger_id declared in projection-authorization-v1.json#invalidation_triggers.",
+          "$ref": "#/$defs/identifier"
+        },
+        "note": { "type": "string", "minLength": 20 },
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "changed_inputs",
+            "affected_surfaces",
+            "unaffected_surfaces",
+            "invalidated_artifacts",
+            "retained_artifacts"
+          ],
+          "properties": {
+            "changed_inputs": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/identifier" }
+            },
+            "affected_surfaces": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/identifier" }
+            },
+            "unaffected_surfaces": {
+              "description": "Recorded rather than left implicit. A trigger that reached every surface and a trigger nobody worked out the blast radius of produce the same file when only the affected half is written down.",
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/identifier" }
+            },
+            "invalidated_artifacts": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/identifier" }
+            },
+            "retained_artifacts": {
+              "description": "May be empty as a shape. Whether a corpus in which nothing survives any trigger is admissible is decided by the profile-level check in scripts/repository/validate_planning_artifacts.py, which refuses one where no perishable artifact is retained by any case and one where no artifact is authorization-independent. A minItems here would answer that question in the wrong file and would answer it less well: it would be satisfied by one case retaining one thing.",
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/identifier" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

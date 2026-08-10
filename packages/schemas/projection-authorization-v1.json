@@ -7,6 +7,8 @@
       "persistence_owner": "blocks",
       "revision_source": "blocks.established_at",
       "effect": "deny-hard",
+      "subject_scope": "viewer-subject-pair",
+      "anonymous_resolution": "admit",
       "note": "Evaluated in both directions. Blocks are directional as relationships and symmetric as visibility: a one-way hole in a leaderboard is itself a disclosure, because the blocked party sees a gap where a person used to be."
     },
     {
@@ -14,6 +16,8 @@
       "persistence_owner": "profiles",
       "revision_source": "profiles.updated_at",
       "effect": "deny-unless-authorized",
+      "subject_scope": "subject-only",
+      "anonymous_resolution": "unchanged",
       "note": "public, friends and private. Only the global leaderboard is universally public by default; every other view is viewer-relative."
     },
     {
@@ -21,6 +25,8 @@
       "persistence_owner": "friend_edges",
       "revision_source": "friend_edges.established_at",
       "effect": "widen",
+      "subject_scope": "viewer-subject-pair",
+      "anonymous_resolution": "no-widen",
       "note": "Symmetric and independent of the block state, which is why an ended friendship and a block are two changes and not one."
     },
     {
@@ -28,6 +34,8 @@
       "persistence_owner": "rival_edges",
       "revision_source": "rival_edges.state",
       "effect": "widen",
+      "subject_scope": "viewer-subject-pair",
+      "anonymous_resolution": "no-widen",
       "note": "No revision column exists on this table, so the state is the only change signal. It detects a change and cannot order two, and that is a limitation of the input rather than of the rule."
     },
     {
@@ -35,6 +43,8 @@
       "persistence_owner": "board_memberships",
       "revision_source": "board_memberships.revision",
       "effect": "widen",
+      "subject_scope": "viewer-subject-pair",
+      "anonymous_resolution": "no-widen",
       "note": "Only the four active- states widen. invited does not: an unaccepted invitation is not membership, and treating it as one would let an inviter grant themselves a view of the invitee. The revision source was board_memberships.state until PF-025, which detects a change and cannot order two: a promotion followed by a demotion back to the same state left it unchanged, so a recheck comparing it would have accepted a stale authorization. The board-scoped counter boards.membership_revision advances in the same transaction and is what a board-wide check reads."
     },
     {
@@ -42,6 +52,8 @@
       "persistence_owner": "boards",
       "revision_source": "boards.state",
       "effect": "deny-unless-authorized",
+      "subject_scope": "subject-only",
+      "anonymous_resolution": "unchanged",
       "note": "An archived board stops widening. Membership of an archived board is history, not current authorization."
     },
     {
@@ -49,6 +61,8 @@
       "persistence_owner": "profiles",
       "revision_source": "profiles.presence_visibility",
       "effect": "deny-unless-authorized",
+      "subject_scope": "subject-only",
+      "anonymous_resolution": "unchanged",
       "note": "Applies to the presence projection only. A private participant still holds a lease and still transitions; the projection is suppressed rather than the lease. PF-026 moved the owner off presence_leases, where the policy was stored once per device against a projection that answers once per account: two devices could disagree and nothing said which the merge took."
     },
     {
@@ -56,6 +70,8 @@
       "persistence_owner": "accounts",
       "revision_source": "accounts.state",
       "effect": "deny-hard",
+      "subject_scope": "subject-only",
+      "anonymous_resolution": "unchanged",
       "note": "deletion-pending and deleted deny every surface. An account inside its deletion cooling-off window is not a readable subject."
     },
     {
@@ -63,30 +79,1488 @@
       "persistence_owner": "ranked_identities",
       "revision_source": "ranked_identities.revision",
       "effect": "deny-unless-authorized",
+      "subject_scope": "subject-only",
+      "anonymous_resolution": "unchanged",
       "note": "A retired identity is not projected. A restricted one still appears with its credited figure, because D-084 keeps a sanction silent toward the public and hiding the entry would announce it."
     }
   ],
   "surfaces": [
     {
+      "surface_id": "global-leaderboard-page",
+      "recheck_point": "read-time",
+      "universally_public": true,
+      "authorization_inputs": [
+        "subject-visibility",
+        "presence-visibility",
+        "account-lifecycle",
+        "ranked-identity-state"
+      ],
+      "omitted_inputs": [
+        {
+          "input_id": "directional-block",
+          "reason": "There is no viewer. getGlobalLeaderboard carries security: [], so an anonymous reader has no block row in either direction and the input resolves to admit. This is the price of AGENTS.md making one view universally public: a blocked participant reading the global board logged out is indistinguishable from a stranger, and the alternative — a one-way hole in a public ranking — discloses the block to the party who did not make it."
+        },
+        {
+          "input_id": "friendship-edge",
+          "reason": "Viewer-subject-pair. An anonymous reader holds no edge, so the widen can never fire and naming it here would be a rule that never runs."
+        },
+        {
+          "input_id": "rival-edge",
+          "reason": "Viewer-subject-pair. An anonymous reader holds no edge, so the widen can never fire."
+        },
+        {
+          "input_id": "board-membership",
+          "reason": "Viewer-subject-pair, and the global board is not a board: it has no board_id and no membership to read."
+        },
+        {
+          "input_id": "board-container-state",
+          "reason": "The global view has no board container, so there is no archived state to stop widening."
+        }
+      ],
+      "note": "PF-033 split this out of leaderboard-page. One surface was declaring that nine inputs are rechecked at read time on behalf of three operations, one of which has no viewer to recheck four of them against. The split does not weaken the rule; it states which half of it getGlobalLeaderboard can actually run, which is what stops a reader inferring from the surface list that a block is enforced there."
+    },
+    {
       "surface_id": "leaderboard-page",
       "recheck_point": "read-time",
-      "note": "The figures come from a sealed generation and the authorization does not. That separation is what lets a block change what a viewer sees without changing what was sealed."
+      "universally_public": false,
+      "authorization_inputs": [
+        "directional-block",
+        "subject-visibility",
+        "friendship-edge",
+        "rival-edge",
+        "board-membership",
+        "board-container-state",
+        "presence-visibility",
+        "account-lifecycle",
+        "ranked-identity-state"
+      ],
+      "omitted_inputs": [],
+      "note": "The figures come from a sealed generation and the authorization does not. That separation is what lets a block change what a viewer sees without changing what was sealed. Every friend, rival and board view is served here and every input applies to at least one of them."
     },
-    { "surface_id": "public-profile", "recheck_point": "read-time" },
-    { "surface_id": "presence-projection", "recheck_point": "read-time" },
+    {
+      "surface_id": "public-profile",
+      "recheck_point": "read-time",
+      "universally_public": false,
+      "authorization_inputs": [
+        "directional-block",
+        "subject-visibility",
+        "friendship-edge",
+        "rival-edge",
+        "presence-visibility",
+        "account-lifecycle",
+        "ranked-identity-state"
+      ],
+      "omitted_inputs": [
+        {
+          "input_id": "board-membership",
+          "reason": "A board admits people to a ranking, not to each other's profiles. Treating shared membership as a widen would let anyone who can create a board and get an invitation accepted read a profile the subject restricted to friends."
+        },
+        {
+          "input_id": "board-container-state",
+          "reason": "No board is rendered on a profile, so the container state gates nothing here."
+        }
+      ]
+    },
+    {
+      "surface_id": "presence-projection",
+      "recheck_point": "read-time",
+      "universally_public": false,
+      "authorization_inputs": [
+        "directional-block",
+        "friendship-edge",
+        "rival-edge",
+        "board-membership",
+        "board-container-state",
+        "presence-visibility",
+        "account-lifecycle"
+      ],
+      "omitted_inputs": [
+        {
+          "input_id": "subject-visibility",
+          "reason": "profiles.presence_visibility exists as a separate column precisely because the two policies are separate: a public profile with private presence is a state the product supports, and folding one into the other would remove the setting."
+        },
+        {
+          "input_id": "ranked-identity-state",
+          "reason": "Presence is device activity, not standing. A retired or restricted identity that is still signed in is still online to the people it authorized, and suppressing that would announce the sanction D-084 keeps private."
+        }
+      ],
+      "note": "A private participant still holds a lease and still transitions; the projection is suppressed rather than the lease, and the suppressed value is offline, which is the same value an inactive participant reads."
+    },
     {
       "surface_id": "notification-delivery",
       "recheck_point": "delivery-time",
+      "universally_public": false,
+      "authorization_inputs": [
+        "directional-block",
+        "account-lifecycle"
+      ],
+      "omitted_inputs": [
+        {
+          "input_id": "subject-visibility",
+          "reason": "The actor's profile visibility governs their profile, not whether an event they caused reaches the recipient's own inbox."
+        },
+        {
+          "input_id": "friendship-edge",
+          "reason": "A widen adds nothing: the item is already addressed to this recipient by the event that created it."
+        },
+        {
+          "input_id": "rival-edge",
+          "reason": "A widen adds nothing: the item is already addressed to this recipient by the event that created it."
+        },
+        {
+          "input_id": "board-membership",
+          "reason": "A board notification carries a scope_id and no member's data, so membership decides whether the event happened rather than whether it may be delivered."
+        },
+        {
+          "input_id": "board-container-state",
+          "reason": "Archiving a board does not withdraw the inbox history of it. Withdrawal is the append-only retraction route, which sets retracted_at and a reason code rather than suppressing a row."
+        },
+        {
+          "input_id": "presence-visibility",
+          "reason": "No notification carries availability; the shape has no such field."
+        },
+        {
+          "input_id": "ranked-identity-state",
+          "reason": "A sanction is silent toward everyone but its subject under D-084, so it must not change what an unrelated recipient receives."
+        }
+      ],
       "note": "The case SR-015 names most directly. A notification created while the viewer was authorized must not be delivered after they were blocked, so the check happens as the inbox item is handed over and not when it was created."
     },
-    { "surface_id": "notification-render", "recheck_point": "delivery-time" },
-    { "surface_id": "board-member-list", "recheck_point": "read-time" },
-    { "surface_id": "friend-list", "recheck_point": "read-time" },
-    { "surface_id": "rival-list", "recheck_point": "read-time" },
+    {
+      "surface_id": "notification-render",
+      "recheck_point": "delivery-time",
+      "universally_public": false,
+      "authorization_inputs": [
+        "directional-block",
+        "account-lifecycle"
+      ],
+      "omitted_inputs": [
+        {
+          "input_id": "subject-visibility",
+          "reason": "The actor's profile visibility governs their profile, not whether an item already in this recipient's inbox may be rendered."
+        },
+        {
+          "input_id": "friendship-edge",
+          "reason": "A widen adds nothing: the item is already addressed to this recipient."
+        },
+        {
+          "input_id": "rival-edge",
+          "reason": "A widen adds nothing: the item is already addressed to this recipient."
+        },
+        {
+          "input_id": "board-membership",
+          "reason": "A board notification carries a scope_id and no member's data."
+        },
+        {
+          "input_id": "board-container-state",
+          "reason": "Archiving a board does not withdraw the inbox history of it; retraction does, and it is append-only."
+        },
+        {
+          "input_id": "presence-visibility",
+          "reason": "No notification carries availability; the shape has no such field."
+        },
+        {
+          "input_id": "ranked-identity-state",
+          "reason": "A sanction is silent toward everyone but its subject under D-084."
+        }
+      ],
+      "note": "markNotificationRead returns the item it marked. Rendering is a second delivery of the same actor identifier, so it rechecks at the same point rather than trusting that listNotifications already did."
+    },
+    {
+      "surface_id": "friend-list",
+      "recheck_point": "read-time",
+      "universally_public": false,
+      "authorization_inputs": [
+        "directional-block",
+        "friendship-edge",
+        "account-lifecycle"
+      ],
+      "omitted_inputs": [
+        {
+          "input_id": "subject-visibility",
+          "reason": "The row is the viewer's own edge. A peer who narrows their profile has not withdrawn a friendship the viewer is a party to, and hiding the row would leave the viewer unable to end it."
+        },
+        {
+          "input_id": "rival-edge",
+          "reason": "Rivalry is a separate relationship kind and does not widen a friend list; the two are listed by two operations."
+        },
+        {
+          "input_id": "board-membership",
+          "reason": "Shared board membership is not friendship. Widening a friend list by it would publish an edge that does not exist."
+        },
+        {
+          "input_id": "board-container-state",
+          "reason": "No board is rendered here."
+        },
+        {
+          "input_id": "presence-visibility",
+          "reason": "The Relationship shape carries no availability field."
+        },
+        {
+          "input_id": "ranked-identity-state",
+          "reason": "A friendship survives a sanction on either party; removing the row would announce the sanction."
+        }
+      ]
+    },
+    {
+      "surface_id": "rival-list",
+      "recheck_point": "read-time",
+      "universally_public": false,
+      "authorization_inputs": [
+        "directional-block",
+        "rival-edge",
+        "account-lifecycle"
+      ],
+      "omitted_inputs": [
+        {
+          "input_id": "subject-visibility",
+          "reason": "The row is the viewer's own edge, and a peer narrowing their profile has not withdrawn a rivalry the viewer declared."
+        },
+        {
+          "input_id": "friendship-edge",
+          "reason": "Friendship is a separate relationship kind and does not widen a rival list."
+        },
+        {
+          "input_id": "board-membership",
+          "reason": "Shared board membership is not rivalry."
+        },
+        {
+          "input_id": "board-container-state",
+          "reason": "No board is rendered here."
+        },
+        {
+          "input_id": "presence-visibility",
+          "reason": "The Relationship shape carries no availability field."
+        },
+        {
+          "input_id": "ranked-identity-state",
+          "reason": "A rivalry survives a sanction on either party; removing the row would announce the sanction."
+        }
+      ]
+    },
+    {
+      "surface_id": "block-list",
+      "recheck_point": "read-time",
+      "universally_public": false,
+      "authorization_inputs": [
+        "account-lifecycle"
+      ],
+      "omitted_inputs": [
+        {
+          "input_id": "directional-block",
+          "reason": "The only surface where the deny-hard input is deliberately not evaluated, and the reason is the surface itself: these rows are the viewer's own blocks and the blocked party is the subject of every one of them. Denying on the block would hide from a participant exactly the people they asked to be hidden from, which removes the only route to unblocking. The block is enforced on every surface that renders the blocked party's data; this one renders the viewer's own decision."
+        },
+        {
+          "input_id": "friendship-edge",
+          "reason": "Blocks are directional and independent from symmetric friendship state; a friendship neither widens nor narrows the viewer's own block list."
+        },
+        {
+          "input_id": "rival-edge",
+          "reason": "Rivalry neither widens nor narrows the viewer's own block list."
+        },
+        {
+          "input_id": "board-membership",
+          "reason": "Shared board membership does not change who the viewer blocked."
+        },
+        {
+          "input_id": "board-container-state",
+          "reason": "No board is rendered here."
+        },
+        {
+          "input_id": "subject-visibility",
+          "reason": "A blocked party who narrows their profile has not withdrawn the viewer's record of blocking them."
+        },
+        {
+          "input_id": "presence-visibility",
+          "reason": "The Relationship shape carries no availability field."
+        },
+        {
+          "input_id": "ranked-identity-state",
+          "reason": "A sanction on the blocked party does not remove the viewer's block row."
+        }
+      ],
+      "note": "PF-033 added this surface. listBlocks renders a third party's account identifier on four hundred rows and had no surface at all, while board-member-list — which no operation renders — occupied the list in its place."
+    },
     {
       "surface_id": "export-package",
       "recheck_point": "snapshot-time",
-      "note": "The one snapshot-time surface. An export is the participant's own data under Article 15 and Article 20, so the subject and the viewer are the same person and there is no third party whose authorization could change under it."
+      "universally_public": false,
+      "authorization_inputs": [
+        "account-lifecycle"
+      ],
+      "omitted_inputs": [
+        {
+          "input_id": "directional-block",
+          "reason": "The subject and the viewer are the same person, so there is no pair to evaluate and no third party whose block could apply."
+        },
+        {
+          "input_id": "friendship-edge",
+          "reason": "The subject and the viewer are the same person; a widen has nothing to widen."
+        },
+        {
+          "input_id": "rival-edge",
+          "reason": "The subject and the viewer are the same person; a widen has nothing to widen."
+        },
+        {
+          "input_id": "board-membership",
+          "reason": "The subject and the viewer are the same person; a widen has nothing to widen."
+        },
+        {
+          "input_id": "board-container-state",
+          "reason": "An export carries the participant's own membership records, and archiving a board does not remove their copy of them."
+        },
+        {
+          "input_id": "subject-visibility",
+          "reason": "A visibility setting governs what others read, and the reader here is the subject."
+        },
+        {
+          "input_id": "presence-visibility",
+          "reason": "A presence setting governs what others read, and the reader here is the subject."
+        },
+        {
+          "input_id": "ranked-identity-state",
+          "reason": "Article 15 access does not lapse with a sanction; withholding the export would be the sanction acting as a data-protection refusal."
+        }
+      ],
+      "note": "The one snapshot-time surface, and the only one no API response renders: the package is delivered by a download grant rather than a JSON body, which is why it is reachable from derived_artifacts rather than from boundaries. account-lifecycle is not vacuous here — deletion-pending revokes the grant, which is the PF-028 revocation route."
+    }
+  ],
+  "boundaries": [
+    {
+      "operation_id": "cancelDeletion",
+      "response_schema": "DeletionJob",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "cancelIdentityUnlink",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "completeGitHubAuth",
+      "response_schema": "OAuthCompletion",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "completeXAuth",
+      "response_schema": "OAuthCompletion",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "confirmConsolidation",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "createAppeal",
+      "response_schema": "Appeal",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "createBlock",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "createBoard",
+      "response_schema": "Board",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "createBoardInvitation",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "createClaimChallenge",
+      "response_schema": "ClaimChallenge",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "createCommunity",
+      "response_schema": "Community",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "createFriendRequest",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "createModerationCase",
+      "response_schema": "ModerationCase",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "createOrganization",
+      "response_schema": "Organization",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "createRival",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "enrollDevice",
+      "response_schema": "Device",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "exchangeDeviceAuth",
+      "response_schema": "NativeSession",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "getAppraisal",
+      "response_schema": "AppraisalSummary",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "getBoardLeaderboard",
+      "response_schema": "LeaderboardPage",
+      "subject": "third-party",
+      "surface_id": "leaderboard-page"
+    },
+    {
+      "operation_id": "getClaim",
+      "response_schema": "ClaimRecord",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "getCompatibility",
+      "response_schema": "CompatibilityPage",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "getConsolidationPlan",
+      "response_schema": "ConsolidationPlanView",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "getCurrentRank",
+      "response_schema": "SelfRankEntry",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "getGlobalLeaderboard",
+      "response_schema": "LeaderboardPage",
+      "subject": "third-party",
+      "surface_id": "global-leaderboard-page"
+    },
+    {
+      "operation_id": "getLeaderboard",
+      "response_schema": "LeaderboardPage",
+      "subject": "third-party",
+      "surface_id": "leaderboard-page"
+    },
+    {
+      "operation_id": "getMe",
+      "response_schema": "AccountProfile",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "getNotificationPreferences",
+      "response_schema": "NotificationPreferences",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "getPresence",
+      "response_schema": "PresencePage",
+      "subject": "third-party",
+      "surface_id": "presence-projection"
+    },
+    {
+      "operation_id": "getPublicProfile",
+      "response_schema": "PublicProfile",
+      "subject": "third-party",
+      "surface_id": "public-profile"
+    },
+    {
+      "operation_id": "linkIdentity",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "listAppeals",
+      "response_schema": "AppealPage",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "listBlocks",
+      "response_schema": "RelationshipPage",
+      "subject": "third-party",
+      "surface_id": "block-list"
+    },
+    {
+      "operation_id": "listBoards",
+      "response_schema": "BoardPage",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "listCommunities",
+      "response_schema": "CommunityPage",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "listDevices",
+      "response_schema": "DevicePage",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "listFriendRequests",
+      "response_schema": "RelationshipPage",
+      "subject": "third-party",
+      "surface_id": "friend-list"
+    },
+    {
+      "operation_id": "listFriends",
+      "response_schema": "RelationshipPage",
+      "subject": "third-party",
+      "surface_id": "friend-list"
+    },
+    {
+      "operation_id": "listIdentities",
+      "response_schema": "IdentityPage",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "listModerationCases",
+      "response_schema": "ModerationCasePage",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "listNotifications",
+      "response_schema": "NotificationPage",
+      "subject": "third-party",
+      "surface_id": "notification-delivery"
+    },
+    {
+      "operation_id": "listOrganizations",
+      "response_schema": "OrganizationPage",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "listPricingDatasets",
+      "response_schema": "PricingDatasetPage",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "listRivals",
+      "response_schema": "RelationshipPage",
+      "subject": "third-party",
+      "surface_id": "rival-list"
+    },
+    {
+      "operation_id": "listSessions",
+      "response_schema": "SessionPage",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "markNotificationRead",
+      "response_schema": "Notification",
+      "subject": "third-party",
+      "surface_id": "notification-render"
+    },
+    {
+      "operation_id": "pollDeviceAuth",
+      "response_schema": "DeviceAuthorizationStatus",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "redeemInvite",
+      "response_schema": "InviteRedemption",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "refreshSession",
+      "response_schema": "RefreshedSession",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "renewPresence",
+      "response_schema": "PresenceLease",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "reportProviderAccess",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "requestDeletion",
+      "response_schema": "DeletionJob",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "requestExport",
+      "response_schema": "ExportJob",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "revokeAllSessions",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "revokeDevice",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "revokeExportDownloadGrant",
+      "response_schema": "ExportJob",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "revokeSession",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "rotateDeviceKey",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "startDeviceAuth",
+      "response_schema": "DeviceAuthorization",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "startGitHubAuth",
+      "response_schema": "OAuthStart",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "startXAuth",
+      "response_schema": "OAuthStart",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "submitClaimBatch",
+      "response_schema": "ClaimBatchResult",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "unlinkIdentity",
+      "response_schema": "TransitionReceipt",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "updateMe",
+      "response_schema": "AccountProfile",
+      "subject": "first-party"
+    },
+    {
+      "operation_id": "updateNotificationPreferences",
+      "response_schema": "NotificationPreferences",
+      "subject": "first-party"
+    }
+  ],
+  "derived_artifacts": [
+    {
+      "artifact_id": "ranking-cursor",
+      "kind": "cursor",
+      "artifact": "packages/schemas/ranking-cursor-v1.schema.json",
+      "binds_surfaces": [
+        "global-leaderboard-page",
+        "leaderboard-page"
+      ],
+      "authorization_independent": false,
+      "invalidation": "The cursor pins authorization_revision at issue. A presentation whose current revision differs is refused authorization-revision-moved and the client starts the page again. Nothing is deleted: the server stores no cursor, so invalidation is a comparison rather than a write, and that is why the revision has to be inside the signed record.",
+      "note": "conformance/planning/ranking-cursor-vectors-v1.json already exercises the refusal. What was missing is the statement of which changes reach it, which is what the trigger table now computes."
+    },
+    {
+      "artifact_id": "export-download-grant",
+      "kind": "grant",
+      "artifact": "export_download_grants",
+      "binds_surfaces": [
+        "export-package"
+      ],
+      "authorization_independent": false,
+      "invalidation": "revoked_at is set, after which the grant_digest no longer admits a download. The row survives for the audit trail; the capability does not. This is the PF-028 revocation route, and account-lifecycle is the only input that reaches it because the subject and the viewer of an export are the same person.",
+      "note": "A grant is the one derived artifact that is a server row, so it is the one that can be revoked rather than only refused."
+    },
+    {
+      "artifact_id": "shared-response-cache",
+      "kind": "cache",
+      "artifact": "packages/schemas/openapi-v1.yaml#x-response-cache-policy",
+      "binds_surfaces": [
+        "global-leaderboard-page",
+        "leaderboard-page",
+        "public-profile",
+        "presence-projection",
+        "notification-delivery",
+        "notification-render",
+        "friend-list",
+        "rival-list",
+        "block-list"
+      ],
+      "authorization_independent": false,
+      "invalidation": "There is nothing to invalidate, and that is the point: every operation that is not universally public is declared no-store, so no shared cache, proxy or CDN ever holds a response whose authorization could go stale. A cache entry cannot be invalidated by a block it never hears about, so the policy is the invalidation. Before PF-033 the document declared no cache directive at all, which left a viewer-relative profile response storable by any intermediary.",
+      "note": "Only the universally-public reference and global-board operations are shared-cacheable, and that set is derived from x-public-operations rather than listed twice."
+    },
+    {
+      "artifact_id": "sealed-generation-projection",
+      "kind": "cache",
+      "artifact": "ranking_projection_generations",
+      "binds_surfaces": [
+        "global-leaderboard-page",
+        "leaderboard-page"
+      ],
+      "authorization_independent": true,
+      "invalidation": "Never invalidated by an authorization change, and recorded here so that the exemption is stated rather than inferred from an absence. A sealed generation holds figures and positions and carries no handle, no viewer and no authorization state, so a block changes what renders from it and not what it contains. This is the line SR-015 turns on: an immutable historical fact and a current authorization are two records precisely so that changing the second never has to rewrite the first.",
+      "note": "It is also the only projection the evaluation permits caching, because it is identical for every viewer."
+    }
+  ],
+  "invalidation_triggers": [
+    {
+      "trigger_id": "block-established",
+      "changes_inputs": [
+        "directional-block"
+      ],
+      "note": "blocks.established_at advances. Deny-hard, so it reaches every surface that evaluates it, and it reaches the cursor because the cursor pinned a revision that has now moved."
+    },
+    {
+      "trigger_id": "block-removed",
+      "changes_inputs": [
+        "directional-block"
+      ],
+      "note": "Removing a block restores visibility because nothing was destroyed; the revision still moves, so a cursor issued while the block held is still refused rather than silently widened."
+    },
+    {
+      "trigger_id": "board-membership-removed",
+      "changes_inputs": [
+        "board-membership"
+      ],
+      "note": "board_memberships.revision and the board-scoped boards.membership_revision advance in the same transaction. A removed member's board leaderboard cursor stops resolving; their sealed entries do not move."
+    },
+    {
+      "trigger_id": "board-archived",
+      "changes_inputs": [
+        "board-container-state"
+      ],
+      "note": "boards.state leaves active. Membership of an archived board is history rather than current authorization, so the widen stops."
+    },
+    {
+      "trigger_id": "friendship-ended",
+      "changes_inputs": [
+        "friendship-edge"
+      ],
+      "note": "friend_edges.established_at advances. An ended friendship and a block are two changes and not one, which is why they are two triggers."
+    },
+    {
+      "trigger_id": "rivalry-ended",
+      "changes_inputs": [
+        "rival-edge"
+      ],
+      "note": "rival_edges has no revision column, so the state is the change signal; it detects a change and cannot order two, which is a limitation of the input rather than of the trigger."
+    },
+    {
+      "trigger_id": "profile-visibility-narrowed",
+      "changes_inputs": [
+        "subject-visibility"
+      ],
+      "note": "profiles.updated_at advances. Narrowing is retroactive on live surfaces and not on sealed generations."
+    },
+    {
+      "trigger_id": "presence-visibility-narrowed",
+      "changes_inputs": [
+        "presence-visibility"
+      ],
+      "note": "profiles.presence_visibility changes. The lease keeps transitioning; the projection collapses to offline, which is the same value an inactive participant reads."
+    },
+    {
+      "trigger_id": "account-deletion-requested",
+      "changes_inputs": [
+        "account-lifecycle"
+      ],
+      "note": "accounts.state becomes deletion-pending. This is the widest trigger: account-lifecycle is deny-hard and subject-only, so it is the one input every surface evaluates, and therefore the one trigger that reaches the export download grant."
+    },
+    {
+      "trigger_id": "ranked-identity-retired",
+      "changes_inputs": [
+        "ranked-identity-state"
+      ],
+      "note": "ranked_identities.revision advances. A retired identity stops being projected; a restricted one still appears with its credited figure, because hiding the entry would announce a sanction D-084 keeps private."
+    }
+  ],
+  "viewer_visible_fields": [
+    {
+      "surface_id": "block-list",
+      "api_schema": "Relationship",
+      "field": "peer_account_id",
+      "gated_by": [
+        "accounts.state"
+      ]
+    },
+    {
+      "surface_id": "friend-list",
+      "api_schema": "Relationship",
+      "field": "peer_account_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "account_id",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "availability",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "avatar_id",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "credited_token_burn",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "display_name",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "evidence_class",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "generation",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "handle",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "position",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "previous_position",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "rank_movement",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "ranking_view_id",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "revision",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "snapshot_id",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "global-leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "top_model_alias",
+      "gated_by": [
+        "accounts.state",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "account_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "availability",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "avatar_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "credited_token_burn",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "display_name",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "evidence_class",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "generation",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "handle",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "position",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "previous_position",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "rank_movement",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "ranking_view_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "revision",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "snapshot_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "leaderboard-page",
+      "api_schema": "RankEntry",
+      "field": "top_model_alias",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "notification-delivery",
+      "api_schema": "Notification",
+      "field": "actor_account_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at"
+      ]
+    },
+    {
+      "surface_id": "notification-render",
+      "api_schema": "Notification",
+      "field": "actor_account_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at"
+      ]
+    },
+    {
+      "surface_id": "presence-projection",
+      "api_schema": "PresenceLease",
+      "field": "account_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "presence-projection",
+      "api_schema": "PresenceLease",
+      "field": "availability",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "presence-projection",
+      "api_schema": "PresenceLease",
+      "field": "lease_expires_at",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "presence-projection",
+      "api_schema": "PresenceLease",
+      "field": "revision",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "board_memberships.revision",
+        "boards.state",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "account_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "availability",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "avatar_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "board_count",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "created_at",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "credited_token_burn",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "display_name",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "evidence_class",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "friend_count",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "handle",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "ranked_state",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "public-profile",
+      "api_schema": "PublicProfile",
+      "field": "top_model_alias",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "friend_edges.established_at",
+        "profiles.presence_visibility",
+        "profiles.updated_at",
+        "ranked_identities.revision",
+        "rival_edges.state"
+      ]
+    },
+    {
+      "surface_id": "rival-list",
+      "api_schema": "Relationship",
+      "field": "peer_account_id",
+      "gated_by": [
+        "accounts.state",
+        "blocks.established_at",
+        "rival_edges.state"
+      ]
     }
   ],
   "evaluation": {
@@ -94,6 +1568,6 @@
     "cache_policy": "no-authorization-result-cache",
     "race_resolution": "revision-recheck-then-fail-closed",
     "failure_mode": "fail-closed",
-    "note": "Nothing here is implemented. This is the rule an implementation is measured against, and no surface in this repository evaluates it."
+    "note": "Nothing here is implemented. This is the rule an implementation is measured against, and no surface in this repository evaluates it. What PF-033 changed is that the rule is now total over the API: every operation in openapi-v1.yaml has a boundary, every third-party boundary has a surface, every surface answers for all nine inputs, and every viewer-visible field carries the revision set that gates it. An unimplemented rule that is total is checkable against the document it governs; one that is partial is not, because the part it omits and the part nobody thought of look the same."
   }
 }
