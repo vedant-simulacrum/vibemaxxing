@@ -309,7 +309,10 @@
         "evals/suites/suites.yaml#ranking-accounting",
         "packages/schemas/state-machine-registry-v1.json"
       ],
-      "closure_evidence": [],
+      "closure_evidence": [
+        "PF-034 at 9d54b2b1bc515db1ab1ced998256ecafade9e304: the schema and interface inventory was neither computed nor hand-checked: nothing resolved one of its citations in either direction, and a probe file dropped into packages/schemas/ and another into conformance/p1140e/ passed every validator in make validate. Sixty-three shipped files were owned by nothing, including local-trust-domains-v1.json, which declares the eight roles the privacy boundary rests on, and pricing-interpretation.schema.json, which had no row of any kind. Coverage is computed in both directions now, and two self-satisfaction traps found while building it are tests: a citation naming a tree root covered that whole tree, so the sentence stating the rule satisfied it, and a directory citation covered its contents, so the sentence recording that a directory has no manifest covered every file it described as uncovered.",
+        "PF-035 at 9d54b2b1bc515db1ab1ced998256ecafade9e304: the P-1140E validator's six injections are bound to the validators that own each leg. Four of the six are owned elsewhere — reachability and three-way vocabulary agreement by validate_state_vocabularies.py, generation keys, revision sources and recomputed digests by validate_planning_artifacts.py — and forcing them into one validator would put a second owner on each of those vocabularies. The block's claimed coverage was also wrong: the matrix's five owners per decision had no injection at all, so the check resolving them had never been shown to fire. SR-016 is not closed by this: PF-036 remains open because pinning the review target and reaching zero open P1 are owner acts, and this finding is the one about review-record integrity."
+      ],
       "restatement": {
         "restated_at": "2026-08-06",
         "previous_form": "Review, conformance, and launch-evidence integrity, owned by the document that states the finding.",
