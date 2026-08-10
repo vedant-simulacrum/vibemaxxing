@@ -77,7 +77,7 @@ Blocks: all later P-1140F tasks.
 
 #### P-1140F-2 — identity, OAuth, lineage, replay, and recovery
 
-Status: `blocked-planning`
+Status: `in-progress-planning`
 
 Dependencies: P-1140F-1.
 
@@ -91,7 +91,7 @@ Scope:
 
 #### P-1140F-3 — local trust boundary, adapters, source evidence, and accounting inputs
 
-Status: `blocked-planning`
+Status: `in-progress-planning`
 
 Dependencies: P-1140F-2.
 
@@ -106,7 +106,7 @@ Scope:
 
 #### P-1140F-4 — server product state and privacy projection
 
-Status: `blocked-planning`
+Status: `in-progress-planning`
 
 Dependencies: P-1140F-2 and P-1140F-3.
 
@@ -120,7 +120,7 @@ Scope:
 
 #### P-1140F-5 — release trust and exact-head semantic closure
 
-Status: `blocked-planning`
+Status: `in-progress-planning`
 
 Dependencies: P-1140F-1 through P-1140F-4.
 
