@@ -62,7 +62,7 @@ A lineage has separate local and server state:
 - local state: next claim sequence, previous/current local commitment heads and queued claims;
 - server state: expected sequence, accepted local head, last accepted claim digest, prior checkpoint receipt and monotonic receipt sequence.
 
-A challenge binds account pseudonym, lineage, nonce, expected sequence/head/checkpoint, expiry and maximum batch. It proves upload freshness only. Offline events are committed into the local chain before reconnect; a later challenge does not prove they existed earlier. Their eligibility is bounded by the exact P-1140B delayed-sync and continuity policy.
+A challenge binds account pseudonym, lineage, nonce, expected sequence/head/checkpoint, issue and expiry times, maximum batch claims and maximum encoded bytes. Those eleven fields are the whole of it: `challenge-v1`, `claim_challenges` and `ClaimChallenge` carry exactly them, and `scripts/repository/validate_batch_challenge_binding.py` fails when one of the three gains or loses a field alone. This paragraph previously described a tuple the server had no column to verify against, which is the half of SR-007 that PF-009 and PF-010 did not reach. It proves upload freshness only. Offline events are committed into the local chain before reconnect; a later challenge does not prove they existed earlier. Their eligibility is bounded by the exact P-1140B delayed-sync and continuity policy.
 
 A successful atomic batch advances server state from the challenge's expected tuple to the final claim tuple and returns server-signed checkpoint receipt(s). A receipt acknowledges only the bound accepted head. A sequence/head/checkpoint mismatch, fork, rollback or concurrently valid successor quarantines the lineage.
 
@@ -76,10 +76,11 @@ The authenticated request body is binary `application/vibemaxxing-claim-batch+cb
 4. resolves the idempotency key plus exact request SHA-256;
 5. verifies challenge ownership, expiry, expected tuple and single use;
 6. verifies every signature, key status, artifact/profile digest, numeric/time/accounting/privacy invariant and duplicate commitment;
-7. creates all claim facts and appraisals, consumes the challenge, advances checkpoint state, creates receipts/outbox rows and stores exact response bytes;
-8. commits all or none.
+7. verifies each claim's signed batch id, zero-based index and claim count against the batch it arrived in, so a missing index, a duplicate index or a changed order is detected from signed material rather than from the order of the array the submitter wrote;
+8. creates all claim facts and appraisals, consumes the challenge, advances checkpoint state, creates receipts/outbox rows and stores exact response bytes;
+9. commits all or none.
 
-Byte-identical retry under the same principal/route/key returns stored response bytes. Reuse with different bytes, or conflicting claim ID, sequence, challenge, commitment, checkpoint or duplicate domain, is a conflict and never partial success. Per-claim diagnostics explain an atomic result; they do not imply partial commit.
+Byte-identical retry under the same principal/route/key returns stored response bytes. Reuse with different bytes, or conflicting claim ID, sequence, challenge, commitment, checkpoint or duplicate domain, is a conflict and never partial success. Per-claim diagnostics explain an atomic result; they do not imply partial commit — and the result has no encoding for one: `atomic-batch-result-v1` is a choice whose committed arm admits only accepted per-claim results, `ClaimBatchResult` carries the matching `oneOf`, and `claims` and `claim_rejections` reference `claim_batches` at disjoint outcomes.
 
 ## Rotation, recovery and gaps
 
@@ -87,7 +88,7 @@ Routine rotation uses one canonical transition payload signed independently by b
 
 Lost-key recovery cannot forge the old signature. It revokes the old lineage/key path, creates recovery authorization, resets continuity or starts a new lineage, and requires requalification. Restored or cloned successors quarantine until resolved.
 
-A GapDeclaration represents missing locally committed sequence material; it never fabricates counts. It binds before/after sequences and heads, registered cause and local audit commitment. Policy may reject, quarantine or lower continuity. It cannot independently restore Hardened.
+A GapDeclaration represents missing locally committed sequence material; it never fabricates counts. It binds before/after sequences and heads, registered cause and local audit commitment, and is a COSE_Sign1 message under `cose-sign1-gap-v1`: the first post-gap claim signs its digest and the envelope travels in the batch beside the claims. ADR-007 is determinate about the consequence and this document said "policy may reject, quarantine or lower continuity", which is a different rule. The accepted rule governs: an admitted declaration downgrades the lineage to Standard and places it in review, and it cannot independently restore Hardened. A gap wider than the recoverable maximum, a conflicting chain or an unexplained gap is refused rather than downgraded, and requires revocation and re-enrollment.
 
 ## Appraisals and corrections
 

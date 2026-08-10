@@ -15,7 +15,9 @@ defect this repository has hit five times already, in a new place.
 
 This derives step state instead:
 
-- every unit in the repair series carries a `Repair:` naming a step the catalog defines;
+- every unit in PF-001..PF-036 carries a `Repair:` naming a step the catalog defines,
+  and a unit above that range joins the series by declaring one — but may not claim a
+  finding with `Serves:` without it;
 - every step the catalog defines owns at least one unit, so a step cannot quietly empty;
 - every finding's `repair_task` names a step that owns units, so a finding cannot be
   parked against a step with no work in it;
@@ -44,6 +46,10 @@ FINDINGS = ROOT / "conformance" / "p1140f" / "semantic-findings-v1.json"
 # A step claiming any of these while it still owns open work is the failure this exists
 # to catch. `in-progress-planning` and `blocked-planning` claim nothing and are fine.
 COMPLETION_CLAIMS = ("complete", "closed", "done", "resolved")
+
+# The highest unit in the repair series as originally authored. Every unit at or below
+# it must carry `Repair:`; units above it join the series by declaring one. See `main`.
+CORE_SERIES_MAX = 36
 
 UNIT = re.compile(r"###+\s+(PF-\d{3})\b[^\n]*\n(?P<body>.*?)(?=\n###|\Z)", re.S)
 STEP = re.compile(
@@ -124,12 +130,50 @@ def main() -> int:
     require(bool(steps), "TASK_CATALOG.md defines no P-1140F step")
 
     units = {match.group(1): match.group("body") for match in UNIT.finditer(breakdown)}
-    series = {
+
+    # PF-001..PF-036 are the repair series as it was first written, and every one of
+    # them must carry `Repair:`. That requirement is the non-vacuous half: membership of
+    # the core does not depend on the field, so a unit that drops it fails rather than
+    # leaving the series quietly.
+    #
+    # Membership was *only* that range, which assumed the set of repairs was final. All
+    # thirty-six were taken, so a repair discovered later for a finding that is still
+    # open had nowhere to go: PF-037 and above are the general work breakdown, they
+    # carry no `Repair:`, and a unit outside the series may not carry `Serves:` either,
+    # so nothing landing could be recorded against the finding it repaired. SR-007 is
+    # the case — one of its four conflicting artifacts was never touched, and the repair
+    # is PF-070.
+    #
+    # So the series is opened at the top rather than moved: a unit above 36 joins it by
+    # *declaring* a repair task. The declaration is the membership test, which keeps the
+    # thirty-three units that are not repairs out without listing them.
+    core = {
         identifier: body
         for identifier, body in units.items()
-        if int(identifier.split("-")[1]) <= 36
+        if int(identifier.split("-")[1]) <= CORE_SERIES_MAX
     }
-    require(bool(series), "the work breakdown defines no P-1140F repair unit")
+    require(bool(core), "the work breakdown defines no P-1140F repair unit")
+    extended = {
+        identifier: body
+        for identifier, body in units.items()
+        if int(identifier.split("-")[1]) > CORE_SERIES_MAX
+        and field(body, "Repair") is not None
+    }
+    # The one way the opening above could be abused: a unit that claims a finding
+    # without claiming a step. It would sit outside the series, so no rule below would
+    # read it, and `Serves:` would look like a binding while binding nothing.
+    for identifier, body in sorted(units.items()):
+        if int(identifier.split("-")[1]) <= CORE_SERIES_MAX:
+            continue
+        require(
+            field(body, "Serves") is None or field(body, "Repair") is not None,
+            f"{identifier} serves {field(body, 'Serves')!r} and names no repair task. "
+            "A unit outside PF-001..PF-036 joins the repair series by declaring "
+            "`Repair:`; without it the unit is not in the series, nothing checks the "
+            "finding it names, and landing it would record evidence against a step "
+            "that does not own it",
+        )
+    series = {**core, **extended}
 
     owned: dict[str, list[str]] = defaultdict(list)
     for identifier, body in sorted(series.items()):

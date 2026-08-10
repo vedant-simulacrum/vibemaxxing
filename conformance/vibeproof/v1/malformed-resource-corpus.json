@@ -9,7 +9,8 @@
     "signature",
     "resource-limits",
     "transaction",
-    "rotation"
+    "rotation",
+    "cddl-conformance"
   ],
   "outcomes": [
     "reject",
@@ -21,7 +22,12 @@
     "quarantine-lineage"
   ],
   "cddl_rules_pinned": [
+    "atomic-batch-result-v1",
     "batch-context",
+    "challenge-v1",
+    "claim-accepted-result-v1",
+    "claim-refused-result-v1",
+    "claim-result-v1",
     "correction-record-v1",
     "cose-sign1-rotation-v1",
     "dual-authorized-rotation-v1",
@@ -35,19 +41,14 @@
       "reason": "A server appraisal is produced by the verifier, not submitted to it, so no decoder-boundary case exists to write. No encoded instance exists in either corpus."
     },
     {
-      "rule": "challenge-v1",
+      "rule": "cose-sign1-gap-v1",
       "work_unit": "P-007",
-      "reason": "The challenge is server-issued and consumed by the device. No encoded instance exists in either corpus."
+      "reason": "A COSE_Sign1 is a tagged item and the canonical profile decoder refuses every tag by design, so no case in this corpus can decode one; a cddl_hex case for it would be refused at the decoder and would exercise nothing. The two envelopes that exist in bytes are checked structurally by _check_cose_envelope against exact-byte-vectors.json, and a gap envelope joins them when a vector signs one."
     },
     {
-      "rule": "atomic-batch-result-v1",
+      "rule": "protected-headers-gap-v1",
       "work_unit": "P-007",
-      "reason": "The three transaction cases here describe the outcome an atomic batch result would carry, in prose state rather than in bytes. Naming the rule on a case with no encoding would claim coverage the corpus does not have."
-    },
-    {
-      "rule": "claim-result-v1",
-      "work_unit": "P-007",
-      "reason": "Per-claim results are elements of atomic-batch-result-v1 and share its absence."
+      "reason": "The protected headers of a message no vector signs yet. They are reachable from no other rule, so they are named here rather than inferred; pinning them requires the gap vector that cose-sign1-gap-v1 is waiting on."
     }
   ],
   "cases": [
@@ -315,6 +316,66 @@
       "expected": "reject",
       "reason_code": "rotation-transition-mode-unregistered",
       "registry_reason_code": "DEVICE_KEY_CONTINUITY_BROKEN"
+    },
+    {
+      "id": "batch-result-partial-acceptance",
+      "cddl_rule": "atomic-batch-result-v1",
+      "cddl_hex": "a700010150018f6e508f4a7cc09f6c010203040507020003582011111111111111111111111111111111111111111111111111111111111111110482a40050018f6e508f4a7cc09f6c010203040508010002800350018f6e508f4a7cc09f6c010203040509a40050018f6e508f4a7cc09f6c01020304050a010502810303f605800640",
+      "stage": "cddl-conformance",
+      "expected": "reject",
+      "reason_code": "batch-partial-acceptance-not-representable",
+      "registry_reason_code": "BATCH_ATOMIC_REJECT",
+      "note": "A committed batch carrying one accepted and one rejected claim result. ADR-007 prohibits partial acceptance and until PF-070 nothing but prose did: the batch result was one map with a batch outcome and an independent per-claim outcome, tied to each other by nothing. These are the bytes of the instance that was valid."
+    },
+    {
+      "id": "claim-accepted-result-without-appraisal",
+      "cddl_rule": "claim-accepted-result-v1",
+      "cddl_hex": "a40050018f6e508f4a7cc09f6c0102030405080100028003f6",
+      "stage": "cddl-conformance",
+      "expected": "reject",
+      "reason_code": "claim-accepted-without-appraisal",
+      "registry_reason_code": "BATCH_ATOMIC_REJECT",
+      "note": "An accepted claim result whose appraisal reference is nil. VerifierAppraisal is created for every accepted claim in the same transaction that accepts it, so an acceptance with nothing to appeal against is not an acceptance."
+    },
+    {
+      "id": "claim-refused-result-without-reason",
+      "cddl_rule": "claim-refused-result-v1",
+      "cddl_hex": "a40050018f6e508f4a7cc09f6c01020304050a0105028003f6",
+      "stage": "cddl-conformance",
+      "expected": "reject",
+      "reason_code": "claim-refused-without-reason",
+      "registry_reason_code": "BATCH_ATOMIC_REJECT",
+      "note": "A rejection carrying an empty reason list. The label was [* reason-code] on every outcome, so a refusal explaining nothing satisfied the grammar — a check satisfied by emptiness, in the position where the participant's appeal route starts."
+    },
+    {
+      "id": "claim-result-outcome-unregistered",
+      "cddl_rule": "claim-result-v1",
+      "cddl_hex": "a40050018f6e508f4a7cc09f6c01020304050b010802810303f6",
+      "stage": "cddl-conformance",
+      "expected": "reject",
+      "reason_code": "claim-result-outcome-unregistered",
+      "registry_reason_code": "BATCH_ATOMIC_REJECT",
+      "note": "Outcome ordinal 8, one past the eight wire_ordinals.acceptance_outcome values packages/schemas/appraisal-policy-v1.json registers. It matches neither alternative, which is what pins the choice itself rather than one of its arms."
+    },
+    {
+      "id": "challenge-without-expected-tuple",
+      "cddl_rule": "challenge-v1",
+      "cddl_hex": "a900010150018f6e508f4a7cc09f6c01020304050c02582022222222222222222222222222222222222222222222222222222222222222220350018f6e508f4a7cc09f6c01020304050d0458203333333333333333333333333333333333333333333333333333333333333333081b000001989146e800091b0000019891500fc00a1901000b1a00100000",
+      "stage": "cddl-conformance",
+      "expected": "reject",
+      "reason_code": "challenge-expected-tuple-absent",
+      "registry_reason_code": "CLAIM_CHALLENGE_ALREADY_USED",
+      "note": "The exact shape SR-007 named: a challenge with no expected next sequence, no expected local head and no expected checkpoint. It is what claim_challenges stored and what ClaimChallenge published, while VIBEPROOF_V1_PROTOCOL.md said the server verifies that tuple. The grammar now refuses it, so the two artifacts cannot drift back to it without this case failing."
+    },
+    {
+      "id": "challenge-max-batch-claims-above-batch-context",
+      "cddl_rule": "challenge-v1",
+      "cddl_hex": "ac00010150018f6e508f4a7cc09f6c01020304050c02582022222222222222222222222222222222222222222222222222222222222222220350018f6e508f4a7cc09f6c01020304050d045820333333333333333333333333333333333333333333333333333333333333333305182a065820444444444444444444444444444444444444444444444444444444444444444407f6081b000001989146e800091b0000019891500fc00a19012c0b1a00100000",
+      "stage": "cddl-conformance",
+      "expected": "reject",
+      "reason_code": "challenge-max-batch-claims-unencodable",
+      "registry_reason_code": "CLAIM_CHALLENGE_ALREADY_USED",
+      "note": "A challenge authorizing 300 claims. batch-context label 4 admits at most 256, so the label was uint32 against a container bounded at 256 and a challenge could authorize a batch that could not be encoded."
     }
   ]
 }

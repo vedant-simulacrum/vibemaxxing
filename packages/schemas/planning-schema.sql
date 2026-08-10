@@ -271,15 +271,95 @@ create table device_lineages (
   revision bigint not null check (revision >= 0)
 );
 
-create table claim_challenges (
-  challenge_id text primary key,
-  account_id uuid not null references accounts(account_id),
+-- Moved above `claim_challenges` under PF-070, for the reason PF-009 moved
+-- `device_lineages`: `claim_challenges.expected_checkpoint_receipt_id` now names the
+-- receipt a challenge expects the device to be standing on, and PostgreSQL rejects a
+-- reference to a table that does not yet exist. The table itself is unchanged by that
+-- move.
+-- The server's acknowledged head, and the third table SR-007 named as disagreeing
+-- with the lineage-scoped continuity rule. It was keyed on the device row while
+-- `device_sequences.server_checkpoint_head` — the value a receipt is supposed to
+-- advance — is keyed on the lineage, so the head and the receipts that produce it were
+-- scoped differently. A restored or cloned store enrolling as a second device row
+-- acquired its own private receipt chain, and no index in this file objected.
+--
+-- `unique (lineage_id, last_sequence)` is the constraint, and it is the
+-- `checkpoint-mismatch` detection basis expressed as a write refusal: two receipts
+-- acknowledging the same head inside one lineage are two branches, and the second
+-- insert fails rather than quietly creating a fork nobody counted.
+--
+-- Newest wins. When a lineage presents two acknowledged heads the receipt with the
+-- greater `last_sequence` is authoritative and the server never rolls its head
+-- backwards; a device arriving with an older head is behind, not correct, and must
+-- declare a gap or requalify. Ordering by `created_at` instead would let a clone with
+-- a fast clock win, so the ordering is over the sequence the server itself issued.
+-- `docs/security/INTEGRITY_MODEL.md` owns the rule; this table is where it is stored.
+create table checkpoint_receipts (
+  checkpoint_receipt_id uuid primary key,
   lineage_id uuid not null references device_lineages(lineage_id),
   device_id uuid not null references devices(device_id),
-  nonce bytea not null,
+  first_sequence bigint not null check (first_sequence >= 0),
+  last_sequence bigint not null check (last_sequence >= first_sequence),
+  batch_digest bytea not null check (octet_length(batch_digest) = 32),
+  previous_receipt_digest bytea,
+  signed_receipt bytea not null,
+  created_at timestamptz not null,
+  unique (lineage_id, last_sequence)
+);
+
+-- The persistence half of the challenge. `packages/schemas/vibeproof-claim-v1.cddl#challenge-v1`
+-- is the canonical form and this table stores every one of its eleven fields;
+-- `scripts/repository/validate_batch_challenge_binding.py` holds the three-way table
+-- and fails when a field exists in one authority and not the others.
+--
+-- What was wrong, and it was the load-bearing half of SR-007. The CDDL challenge
+-- bound the expected next sequence, the expected local head and the expected
+-- checkpoint. This table stored none of the three, and
+-- `docs/architecture/VIBEPROOF_V1_PROTOCOL.md` says the server "verifies challenge
+-- ownership, expiry, expected tuple and single use" in step 5 of the atomic
+-- transaction. The expected tuple had no row to be verified against, so a
+-- verification the protocol describes could not be performed at all — not
+-- incorrectly performed, not performed. The three columns below are that tuple.
+--
+-- `challenge_id` was `text` while the CDDL binds `uuid7` and the API published a
+-- 64-hex string. Three types for one identifier, and `claims.challenge_id`
+-- referenced the text one, so the width a verifier compared depended on which
+-- document it had read.
+--
+-- `device_id` is audit and is deliberately not part of the bound tuple: it records
+-- which device row asked, and the CDDL challenge carries no device at all. A
+-- challenge is answered by the lineage, so consumption is checked against
+-- `lineage_id` and a re-enrolled device inside one lineage cannot replay a
+-- challenge issued to its predecessor.
+create table claim_challenges (
+  challenge_id uuid primary key,
+  account_id uuid not null references accounts(account_id),
+  account_pseudonym bytea not null check (octet_length(account_pseudonym) = 32),
+  lineage_id uuid not null references device_lineages(lineage_id),
+  device_id uuid not null references devices(device_id),
+  nonce bytea not null check (octet_length(nonce) = 32),
+  expected_next_sequence bigint not null check (expected_next_sequence >= 0),
+  expected_local_commitment_head bytea not null check (octet_length(expected_local_commitment_head) = 32),
+  expected_checkpoint_receipt_id uuid references checkpoint_receipts(checkpoint_receipt_id),
+  issued_at timestamptz not null,
   expires_at timestamptz not null,
+  -- ADR-007 requires both ceilings on the challenge. `batch-context` admits at most
+  -- 256 claims, so a challenge authorizing more authorizes a batch that cannot be
+  -- encoded; the byte ceiling is the `maximum encoded bytes` ADR-007 names and which
+  -- previously existed in no artifact at all.
+  max_batch_claims integer not null check (max_batch_claims between 1 and 256),
+  max_encoded_bytes bigint not null check (max_encoded_bytes > 0),
+  -- ADR-007: "A challenge is consumed only when the full batch commits. A challenge
+  -- cannot authorize multiple batches." One nullable batch reference, unique across
+  -- the table, is that rule as a write refusal rather than as prose: a second batch
+  -- claiming the same challenge cannot be recorded, and a challenge consumed by
+  -- nothing has both columns null.
   consumed_by_batch_id uuid,
-  consumed_at timestamptz
+  consumed_at timestamptz,
+  constraint claim_challenges_expiry_follows_issue check (expires_at > issued_at),
+  constraint claim_challenges_consumption_is_atomic
+    check ((consumed_by_batch_id is null) = (consumed_at is null)),
+  unique (consumed_by_batch_id)
 );
 
 -- Keyed on the lineage, not the device row. AGENTS.md states as a binding rule that
@@ -314,18 +394,62 @@ create table device_sequences (
 -- `device_id` is retained: which device row submitted a claim is what names a branch
 -- when a fork case is opened, and `lineage_fork_branches.device_id` reads it. It is
 -- audit and attribution, and it is no longer a uniqueness discriminator.
+-- The batch itself, which had no table. `claims.batch_id` was a bare `uuid not null`
+-- pointing at nothing, so the question "is partial acceptance prohibited by a
+-- constraint?" answered no at every layer: prose in ADR-007, VIBEPROOF_V1_PROTOCOL.md
+-- and AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md, and nothing in the schemas.
+--
+-- `unique (batch_id, outcome)` exists so the two tables below can reference the pair.
+-- `batch_id` is already the primary key, so the pair is unique for free; declaring it
+-- makes it a legal foreign-key target, which is what turns "no partial acceptance"
+-- into a constraint PostgreSQL enforces rather than a rule a handler is trusted to
+-- apply. `claims` may reference a batch only at an outcome that committed and
+-- `claim_rejections` only at an outcome that did not, so a row admitting a claim from
+-- a refused batch, or refusing one from a committed batch, cannot be written.
+--
+-- The six outcomes are `atomic-batch-result-v1` label 2 in the same order. The API
+-- publishes two states, `accepted` and `rejected`; validate_batch_challenge_binding.py
+-- holds the mapping from these six onto those two and fails if either side changes
+-- without the other.
+create table claim_batches (
+  batch_id uuid primary key,
+  challenge_id uuid not null references claim_challenges(challenge_id),
+  account_id uuid not null references accounts(account_id),
+  lineage_id uuid not null references device_lineages(lineage_id),
+  outcome text not null check (outcome in ('committed','idempotent-replay','conflict','rejected','quarantined','retryable')),
+  claim_count integer not null check (claim_count between 1 and 256),
+  encoded_bytes bigint not null check (encoded_bytes > 0),
+  request_fingerprint bytea not null check (octet_length(request_fingerprint) = 32),
+  received_at timestamptz not null,
+  unique (batch_id, outcome)
+);
+
+-- `batch_id`, `batch_index` and `batch_claim_count` are the columns for
+-- `vibeproof-claim-v1` labels 31, 32 and 33, which the claim now signs. ADR-007
+-- rejects a batch for "missing indices, duplicate indices, changed order", and until
+-- those labels existed the only statement of a claim's position was the order of the
+-- unsigned outer `batch-context` array, which the submitter writes. `unique (batch_id,
+-- batch_index)` refuses a duplicate index; a missing one is `claim_count` disagreeing
+-- with the number of rows; a changed order is an index disagreeing with the signed
+-- payload. All three are now answerable from stored signed material.
 create table claims (
   claim_id uuid primary key,
   batch_id uuid not null,
+  batch_outcome text not null check (batch_outcome in ('committed','idempotent-replay')),
+  batch_index integer not null check (batch_index between 0 and 255),
+  batch_claim_count integer not null check (batch_claim_count between 1 and 256),
   account_id uuid not null references accounts(account_id),
   lineage_id uuid not null references device_lineages(lineage_id),
   device_id uuid not null references devices(device_id),
   device_sequence bigint not null,
-  challenge_id text not null references claim_challenges(challenge_id),
+  challenge_id uuid not null references claim_challenges(challenge_id),
   payload_hash bytea not null,
   accounting_profile_id text not null,
   token_burn_total bigint not null check (token_burn_total >= 0),
   received_at timestamptz not null,
+  constraint claims_index_within_count check (batch_index < batch_claim_count),
+  foreign key (batch_id, batch_outcome) references claim_batches (batch_id, outcome),
+  unique (batch_id, batch_index),
   unique (lineage_id, device_sequence),
   unique (lineage_id, payload_hash)
 );
@@ -336,12 +460,69 @@ create table claim_payloads (
   signature bytea not null
 );
 
+-- The other half of the no-partial-acceptance constraint. A rejection may only name a
+-- batch at an outcome that did not commit, so "batch accepted, claims 3 and 7
+-- rejected" — a valid instance of the published API schema until PF-070 — has no
+-- representation here either. `claim_index` is the signed `batch_index` of the claim
+-- the rejection refers to; the table previously carried no batch reference at all, so
+-- a rejection could not be attributed to a submission.
 create table claim_rejections (
   rejection_id uuid primary key,
+  batch_id uuid not null,
+  batch_outcome text not null check (batch_outcome in ('conflict','rejected','quarantined','retryable')),
+  claim_index integer not null check (claim_index between 0 and 255),
   payload_hash bytea,
   reason_code text not null,
   retryable boolean not null,
-  created_at timestamptz not null
+  created_at timestamptz not null,
+  foreign key (batch_id, batch_outcome) references claim_batches (batch_id, outcome),
+  unique (batch_id, claim_index)
+);
+
+-- D-043 says "bounded signed gap declarations downgrade continuity" and ADR-007 says
+-- "a signed `gap-declaration` included in the first claim after the gap". Before
+-- PF-070 the declaration had a CBOR shape and nothing else: no COSE wrapper, so
+-- nothing could sign it; no slot in a claim or a batch, so nothing could carry it; no
+-- table, so nothing could store it; and no expression of the 10,000-sequence maximum,
+-- so "bounded" was a word in D-043's own text with no enforcement anywhere. Meanwhile
+-- `device_lineages.continuity_state` could already be set to `gap-declared` with no
+-- record of which gap, which is a mutable aggregate with no persistence owner.
+--
+-- The bound lives here because it cannot live in the CDDL: it is a relation between
+-- two labels and CDDL constrains each label independently. `policy-defaults-v1.json`
+-- carries the same number as configuration and
+-- `scripts/repository/validate_batch_challenge_binding.py` fails if this CHECK, that
+-- default and the figure ADR-007 states stop agreeing.
+--
+-- The cause vocabulary is ADR-007's four, in the ordinal order `gap-declaration`
+-- label 7 encodes. That label was `0..5`: two ordinals were representable with no
+-- registered meaning, so a declaration the grammar accepted could name a cause no
+-- policy resolved.
+create table gap_declarations (
+  gap_declaration_id uuid primary key,
+  lineage_id uuid not null references device_lineages(lineage_id),
+  first_post_gap_claim_id uuid not null unique references claims(claim_id),
+  sequence_before_gap bigint not null check (sequence_before_gap >= 0),
+  sequence_after_gap bigint not null check (sequence_after_gap >= 0),
+  local_commitment_head_before bytea not null check (octet_length(local_commitment_head_before) = 32),
+  local_commitment_head_after bytea not null check (octet_length(local_commitment_head_after) = 32),
+  cause text not null check (cause in ('local-corruption','acknowledged-state-loss','interrupted-migration','key-recovery')),
+  local_audit_commitment bytea not null check (octet_length(local_audit_commitment) = 32),
+  -- SHA-256 of the COSE_Sign1 declaration, which is `vibeproof-claim-v1` label 34 on
+  -- the first post-gap claim. Storing the digest beside the bytes is what makes the
+  -- claim's signature cover this row: an envelope substituted in transport no longer
+  -- matches the digest the device signed.
+  declaration_digest bytea not null check (octet_length(declaration_digest) = 32),
+  signed_declaration bytea not null,
+  declared_at timestamptz not null,
+  -- A declaration must skip at least one sequence, or it is not a gap.
+  constraint gap_declarations_skips_at_least_one
+    check (sequence_after_gap > sequence_before_gap + 1),
+  -- ADR-007: "The maximum recoverable gap is 10,000 sequences." The missing count is
+  -- the open interval between the two, so it is after - before - 1.
+  constraint gap_declarations_within_recoverable_bound
+    check (sequence_after_gap - sequence_before_gap - 1 <= 10000),
+  unique (lineage_id, sequence_before_gap)
 );
 
 create table claim_corrections (
@@ -1179,37 +1360,6 @@ create table verifier_appraisals (
   reason_codes text[] not null default '{}',
   policy_digest bytea not null check (octet_length(policy_digest) = 32),
   created_at timestamptz not null
-);
-
--- The server's acknowledged head, and the third table SR-007 named as disagreeing
--- with the lineage-scoped continuity rule. It was keyed on the device row while
--- `device_sequences.server_checkpoint_head` — the value a receipt is supposed to
--- advance — is keyed on the lineage, so the head and the receipts that produce it were
--- scoped differently. A restored or cloned store enrolling as a second device row
--- acquired its own private receipt chain, and no index in this file objected.
---
--- `unique (lineage_id, last_sequence)` is the constraint, and it is the
--- `checkpoint-mismatch` detection basis expressed as a write refusal: two receipts
--- acknowledging the same head inside one lineage are two branches, and the second
--- insert fails rather than quietly creating a fork nobody counted.
---
--- Newest wins. When a lineage presents two acknowledged heads the receipt with the
--- greater `last_sequence` is authoritative and the server never rolls its head
--- backwards; a device arriving with an older head is behind, not correct, and must
--- declare a gap or requalify. Ordering by `created_at` instead would let a clone with
--- a fast clock win, so the ordering is over the sequence the server itself issued.
--- `docs/security/INTEGRITY_MODEL.md` owns the rule; this table is where it is stored.
-create table checkpoint_receipts (
-  checkpoint_receipt_id uuid primary key,
-  lineage_id uuid not null references device_lineages(lineage_id),
-  device_id uuid not null references devices(device_id),
-  first_sequence bigint not null check (first_sequence >= 0),
-  last_sequence bigint not null check (last_sequence >= first_sequence),
-  batch_digest bytea not null check (octet_length(batch_digest) = 32),
-  previous_receipt_digest bytea,
-  signed_receipt bytea not null,
-  created_at timestamptz not null,
-  unique (lineage_id, last_sequence)
 );
 
 -- The stable half of a ranking view: what is ranked and in what order. It names
@@ -3026,8 +3176,20 @@ create index claim_challenges_device_idx on claim_challenges (device_id);
 -- D-592 rekeyed the sequence onto the lineage; the challenge acquired the lineage
 -- reference in the same change and did not acquire its index.
 create index claim_challenges_lineage_idx on claim_challenges (lineage_id);
+-- The expected checkpoint a challenge was issued against. Nullable, because a lineage
+-- that has never been acknowledged has no receipt to expect.
+create index claim_challenges_expected_checkpoint_idx on claim_challenges (expected_checkpoint_receipt_id);
+create index claim_batches_challenge_idx on claim_batches (challenge_id);
+create index claim_batches_account_idx on claim_batches (account_id);
+create index claim_batches_lineage_idx on claim_batches (lineage_id);
 create index claims_device_idx on claims (device_id);
 create index claims_challenge_idx on claims (challenge_id);
+-- The composite foreign key that carries the no-partial-acceptance rule. `unique
+-- (batch_id, batch_index)` leads on `batch_id` and does not cover `(batch_id,
+-- batch_outcome)`, so the constraint would have no index behind it on the referencing
+-- side.
+create index claims_batch_outcome_idx on claims (batch_id, batch_outcome);
+create index claim_rejections_batch_outcome_idx on claim_rejections (batch_id, batch_outcome);
 create index claim_corrections_claim_idx on claim_corrections (claim_id);
 create index claim_corrections_replacement_idx on claim_corrections (replacement_claim_id);
 create index quarantines_account_idx on quarantines (account_id);
