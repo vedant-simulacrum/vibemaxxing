@@ -9,7 +9,7 @@ Owner: this document owns the per-release open-source obligations. `docs/operati
 
 The row cited D-033, which said the repository is private during planning and becomes public before launch. D-540 superseded it: the repository has been public since it was created. A checklist inheriting that citation would have been written as a pre-publication gate, which is the framing D-541 records as the reason the audit was never performed at all.
 
-A checklist whose items are all unchecked is honest. A checklist that omits the item already known to be unmet is not, so the first entry below is the finding the D-541 audit actually produced rather than a template row.
+A checklist that omits the item already known to be unmet is dishonest, so the first entry below began as the finding the D-541 audit actually produced rather than a template row. A checklist that records an item as unmet without reading the artifact is wrong in the other direction, which is what happened to three of these and is noted under the table.
 
 ## The repository is already public
 
@@ -23,13 +23,15 @@ Each item names what would satisfy it, not what it hopes is true. An item is `me
 
 | # | Item | State | What satisfies it |
 |---|---|---|---|
-| 1 | LGPL attribution for the `sharp-libvips` binaries | **unmet** | `@img/sharp-libvips-*` prebuilt binaries are pinned under `LGPL-3.0-or-later` in `apps/web/package-lock.json` and `scripts/brand/package-lock.json`, and `LICENSES.md` states the NOTICE and attribution review they require has not happened. Satisfied by a NOTICE file carrying the required attributions and the written-offer or corresponding-source statement LGPL §4 requires, or by removing the dependency. |
-| 2 | Dependency licence inventory is complete and current | unmet | Every declared dependency in `requirements-planning.txt`, the npm lockfiles, `Cargo.lock` and `go.mod` resolved to a licence, with no unlicensed entry. The D-541 audit found no GPL or AGPL and one LGPL family, which is item 1. |
-| 3 | Security policy | unmet | A `SECURITY.md` naming a reporting channel, a response expectation the owner can actually meet, and the supported-version statement. It must not claim a support window the project does not staff — an unstaffed promise is worse than none. |
-| 4 | Contribution path | unmet | A `CONTRIBUTING.md` stating whether external contributions are accepted at all. "Not currently accepting contributions" is a complete answer and is preferable to silence, which reads as an open door. |
-| 5 | Public documentation entry point | unmet | A reader arriving at the repository can tell what the project is, what state it is in, and that no component is implemented or launch-ready. `README.md` and `AGENTS.md` both exist; this item is whether they say the phase plainly to someone who is not an agent. |
-| 6 | Release-set manifests are authenticated targets | unmet | `packages/schemas/release-set-v1.schema.json` requires a TUF role reference, target path, architecture, hash, provenance reference, native signature reference, compatibility tuple and update class per component, and refuses a manifest signed by the root role or targeting a component path. Satisfied when a real release set is produced under it, which is implementation-session work. |
-| 7 | Signing keys and TUF root | unmet, deliberately | No key, keypair or TUF root exists in this repository and none may be created during planning. This item is listed so its absence is recorded rather than discovered. |
+| 1 | LGPL attribution for the `sharp-libvips` binaries | **met** | `NOTICE` names all fourteen LGPL-licensed packages across both lockfiles, their versions, libvips' source and the licence texts, and records that they are used unmodified and resolved from npm rather than vendored. It states what it does not settle: the Combined Work obligations attach on distribution, and nothing is distributed yet. |
+| 2 | Dependency licence inventory is complete and current | **met** | The D-541 audit resolved every declared dependency across `requirements-planning.txt`, both npm lockfiles, `Cargo.lock` and `go.mod`. No GPL or AGPL; one LGPL family, which is item 1. Recorded in `docs/planning/REPOSITORY_OPERATIONS.md`. |
+| 3 | Security policy | **met** | `SECURITY.md` names GitHub private vulnerability reporting as the channel, commits to acknowledging within 3 business days, assessing within 5 and updating every 7 for active high-severity reports, and carries a supported-versions statement. |
+| 4 | Contribution path | **met** | `CONTRIBUTING.md` states the repository is in planning contract repair with implementation gated behind P-1104, sets pull-request requirements, and requires DCO sign-off with no CLA. |
+| 5 | Public documentation entry point | **met** | `README.md` opens "Status: authorized to build, nothing built", states that the gate was opened with its preconditions unmet, and says there is no daemon, adapter, collector, OAuth, database or API. It is blunt to a human reader, not only to an agent. |
+| 6 | Release-set manifests are authenticated targets | unmet | `packages/schemas/release-set-v1.schema.json` requires the eight per-component fields and refuses a manifest signed by the root role or targeting a component path, with seven negative examples. Satisfied when a real release set is produced under it, which is implementation-session work. |
+| 7 | Signing keys and TUF root | unmet, deliberately | No key, keypair or TUF root exists in this repository and none may be created during planning. Listed so its absence is recorded rather than discovered. |
+
+Five of seven are met. The first version of this table recorded all seven as unmet, and three of those were wrong: `SECURITY.md`, `CONTRIBUTING.md` and `README.md` already existed and already said what their items require. Asserting a gap without reading the artifact is the same error as asserting coverage without reading it, and it is worth recording here because this checklist exists to stop exactly that.
 
 ## What this checklist is not
 

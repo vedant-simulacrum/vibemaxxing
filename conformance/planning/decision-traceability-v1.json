@@ -2481,6 +2481,11 @@
       "machine_or_state_ownership": "ranking-cursor record, export_download_grants, and the sealed ranking generation, each already owned elsewhere; this decision owns only what invalidates them",
       "platform_scope": "Server, Web",
       "required_executable_evidence": "Validator run evaluating every trigger against conformance/planning/authorization-invalidation-vectors-v1.json rather than reading it back, and recomputing x-response-cache-policy from x-public-operations"
+    },
+    {
+      "id": "D-625",
+      "implementation_bearing": false,
+      "reason": "reverses a finding's recorded state; governs the planning record rather than the product"
     }
   ]
 }
