@@ -66,7 +66,7 @@ That rule previously said the reason was "given under Open items", and nothing c
 | `local-auth` | `local-auth` | `local_auth_state.state` | — | — |
 | `local-permission` | `local-permission` | `local_permission_state.state` | — | — |
 | `local-connectivity` | `local-connectivity` | `local_connectivity_state.state` | — | — |
-| `update-lifecycle` | `update-lifecycle` | `update_installations.state`, `update_policies.state` | — | — |
+| `update-lifecycle` | `update-lifecycle` | `update_installations.state` | — | — |
 | `release-trust` | `release-trust` | `release_sets.state` | — | — |
 | `platform-certification` | `platform-certification` | `platform_profiles.validation_state` | `CompatibilityProfile.validation_state` | — |
 | `account-lifecycle` | `account-lifecycle` | `accounts.state` | — | — |
@@ -150,7 +150,7 @@ An absence is not a defect. Not stating one is: an aggregate whose binding was n
 | `rivalry` | `api` | The API exposes the edge, not the machine; the viewer's own side is derived. |
 | `session-member` | `machine` | Member rows of a token family; the family machines own the transitions. |
 | `source-certification` | `api` | D-387. Certification is server-assigned; exposing it would let a client select it. |
-| `update-lifecycle` | `api` | Local-only; the server is never told what a device has installed. |
+| `update-lifecycle` | `api` | The lifecycle state is a device-local fact; the server records the installed release set and publishes no state enum for it. |
 | `web-session-family` | `api` | Families are server-internal; a client sees only its own session member. |
 
 ### Open items

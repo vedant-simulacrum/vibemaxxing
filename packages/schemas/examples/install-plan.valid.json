@@ -3,6 +3,7 @@
   "plan": {
     "platform_install_plan_id": "018f2c60-0000-7000-8000-000000000901",
     "platform_profile_id": "macos-26-arm64-user-launchd",
+    "plan_kind": "install",
     "release_set_id": "018f2c60-0000-7000-8000-000000000902",
     "requires_privileged_consent": false,
     "operations": [

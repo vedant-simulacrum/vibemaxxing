@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "interface": "server-schema",
+  "steps": [
+    {
+      "version": "0001_baseline",
+      "rollback_class": "binary-reversible",
+      "down_sql_present": true,
+      "minimum_binary_version": 1,
+      "irreversible_operations": []
+    },
+    {
+      "version": "0003_ranking_entries",
+      "rollback_class": "forward-only",
+      "down_sql_present": true,
+      "minimum_binary_version": 3,
+      "irreversible_operations": [
+        "narrow-type",
+        "tighten-constraint"
+      ]
+    }
+  ]
+}

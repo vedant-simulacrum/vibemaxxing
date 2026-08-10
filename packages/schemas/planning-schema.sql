@@ -1512,25 +1512,81 @@ create table tuf_roots (
   expires_at timestamptz not null
 );
 
+-- The release set, and the TUF target that authorizes the manifest describing it.
+--
+-- `manifest_tuf_role`, `manifest_target_path` and `manifest_digest` are the three
+-- columns that make the manifest itself an authenticated target rather than an
+-- unauthenticated index over authenticated files. Without them a client that
+-- verified every artifact digest in the set would still have taken the list of
+-- artifacts from whoever served it, which is the whole of the mix-and-match attack
+-- ADR-013 requires clients to defend against. The role check refuses `root`,
+-- `timestamp` and `snapshot` in the same position `release-set-v1.schema.json`
+-- refuses them: root delegates authority and signs no artifact, timestamp asserts
+-- freshness, snapshot asserts which metadata versions belong together, and none of
+-- the three has inspected the thing it would be authorizing.
+--
+-- `mandatory_after` is a signed deadline, so it may not precede publication. The
+-- constraint is on the table rather than in the publisher because a deadline is
+-- read by every client and written once.
 create table release_sets (
   release_set_id uuid primary key,
   version text not null unique,
+  source_commit text not null check (source_commit ~ '^[0-9a-f]{40}$'),
   tuf_root_version bigint not null references tuf_roots(root_version),
   compatibility_registry_digest bytea not null check (octet_length(compatibility_registry_digest) = 32),
+  manifest_tuf_role text not null check (manifest_tuf_role ~ '^targets(/[a-z0-9][a-z0-9.-]*){1,4}$'),
+  manifest_target_path text not null,
+  manifest_digest bytea not null check (octet_length(manifest_digest) = 32),
+  manifest_signature_bundle_digest bytea not null check (octet_length(manifest_signature_bundle_digest) = 32),
+  signing_threshold smallint not null check (signing_threshold between 2 and 10),
   state text not null check (state in ('draft','threshold-signed','published','active','superseded','revoked','expired')),
   published_at timestamptz,
-  mandatory_after timestamptz
+  mandatory_after timestamptz,
+  unique (manifest_target_path),
+  check (mandatory_after is null or (published_at is not null and mandatory_after > published_at))
 );
 
+-- One row per component. Eight facts per component, and each of them is a fact a
+-- client checks rather than a label a publisher chooses.
+--
+-- `tuf_role` and `target_path` are what was missing: a component that carried a hash
+-- and no role was authenticated by whoever served it, and a component that carried no
+-- path was fetched from wherever the client guessed. `unique (release_set_id,
+-- target_path)` is the constraint the JSON Schema cannot express -- two array entries
+-- naming one path are two distinct objects and `uniqueItems` sees nothing wrong with
+-- them -- so it is enforced here, where the row is written, as well as by the computed
+-- check in validate_planning_artifacts.py, which is where the manifest is read.
+--
+-- `architecture` uses exactly the three spellings the platform profile registry
+-- admits. A second spelling for one machine word is how two artifacts describe the
+-- same build and compare unequal.
+--
+-- `signature_bundle_digest` is the platform-native signature -- notarization ticket,
+-- Authenticode signature, repository signature -- and is separate from the TUF
+-- signature over the metadata. TUF says the repository authorized this file; the
+-- native signature is what the operating system checks before it will run it.
+--
+-- `update_class` is per component because one set can carry an emergency fix for one
+-- platform and a routine change for another. Collapsed to the set, either every
+-- platform inherits the strictest deadline or the strictest one inherits the loosest.
 create table release_targets (
   release_set_id uuid not null references release_sets(release_set_id),
+  component_id text not null,
   platform_profile_id text not null references platform_profiles(platform_profile_id),
+  tuf_role text not null check (tuf_role ~ '^targets(/[a-z0-9][a-z0-9.-]*){1,4}$'),
+  target_path text not null,
+  architecture text not null check (architecture in ('arm64','aarch64','x86-64')),
   artifact_kind text not null check (artifact_kind in ('pkg','dmg','msix','msi','deb','rpm','apk','tar-zst','oci','ci-bundle')),
   artifact_digest bytea not null check (octet_length(artifact_digest) = 32),
   sbom_digest bytea not null check (octet_length(sbom_digest) = 32),
   provenance_digest bytea not null check (octet_length(provenance_digest) = 32),
+  signature_bundle_digest bytea not null check (octet_length(signature_bundle_digest) = 32),
+  compatibility_tuple_digest bytea not null check (octet_length(compatibility_tuple_digest) = 32),
+  update_class text not null check (update_class in ('emergency-security-integrity','required-compatibility','routine-product')),
   size_bytes bigint not null check (size_bytes > 0),
-  primary key (release_set_id, platform_profile_id, artifact_kind)
+  primary key (release_set_id, platform_profile_id, artifact_kind),
+  unique (release_set_id, component_id),
+  unique (release_set_id, target_path)
 );
 
 create table platform_certifications (
@@ -1542,15 +1598,59 @@ create table platform_certifications (
   certified_at timestamptz
 );
 
+-- One device's position in the update lifecycle, and the two facts that decide
+-- whether it may go backwards.
+--
+-- `applied_migration_version` binds the installation to a step in the ordered
+-- migration chain, and `rollback_available` records the answer D-074 makes
+-- conditional: automatic binary rollback is permitted only while the previous
+-- release stays read/write compatible with every committed mutation. The updater
+-- must not discover that at run time, so the column is `not null` -- there is no
+-- "unknown" -- and the `rolled-back` state is refused without it. That refusal sits
+-- here, where the state is written, and not only in the code that reads the state
+-- afterwards.
+--
+-- `recovery-required` is the state a forward-only failure lands in. It exists
+-- because the machine previously had one rollback edge out of `failed` and no way to
+-- express that a step whose `rollback_class` is `forward-only` or
+-- `snapshot-required` has no such edge, so an installation that had destroyed its
+-- own downgrade path could still be recorded as rolled back. Recovery from there is
+-- roll-forward or an operator restoring a verified pre-migration snapshot, and
+-- neither is this aggregate going backwards.
+--
+-- `installed_release_version` is what the version floor is evaluated against.
+-- `blocked_reason_code` is the code the refusal carries, present exactly when the
+-- installation is blocked, so a blocked device and the reason it was blocked cannot
+-- disagree.
 create table update_installations (
   update_installation_id uuid primary key,
   device_id uuid not null references devices(device_id),
   release_set_id uuid not null references release_sets(release_set_id),
-  state text not null check (state in ('current','available','deferred','deadline','downloading','staged','installing','health-check','complete','rolled-back','blocked-version','failed')),
+  installed_release_version text not null,
+  state text not null check (state in ('current','available','deferred','deadline','downloading','staged','installing','health-check','complete','rolled-back','recovery-required','blocked-version','failed')),
   previous_release_set_id uuid references release_sets(release_set_id),
+  applied_migration_version text references schema_migrations(version),
+  rollback_available boolean not null,
+  health_check_passed boolean,
+  health_checked_at timestamptz,
+  blocked_reason_code text check (blocked_reason_code = 'CLIENT_VERSION_UNSUPPORTED'),
   revision bigint not null check (revision >= 0),
-  updated_at timestamptz not null
+  updated_at timestamptz not null,
+  -- A rollback is only recordable when one was available.
+  check (state <> 'rolled-back' or rollback_available),
+  -- And `recovery-required` is only recordable when one was not; the two states
+  -- answer the same question and may not both be reachable from one row.
+  check (state <> 'recovery-required' or not rollback_available),
+  -- There is nothing to roll back to without a prior release.
+  check (not rollback_available or previous_release_set_id is not null),
+  -- The health check is bounded and its result is not optional before promotion.
+  check (state <> 'complete' or health_check_passed is true),
+  check ((health_check_passed is null) = (health_checked_at is null)),
+  check ((state = 'blocked-version') = (blocked_reason_code is not null))
 );
+
+create index update_installations_applied_migration_idx
+  on update_installations (applied_migration_version);
 
 -- At most one owner per board. Said precisely, because "exactly one" is what the
 -- board contract requires and this index cannot deliver it: a partial unique index
@@ -1638,11 +1738,43 @@ create table shell_sessions (
   created_at timestamptz not null
 );
 
+-- The compatibility window, per interface and per update class.
+--
+-- This table previously held a copy of the twelve `update-lifecycle` states and
+-- nothing else. It was a persistence-owner stub: the machine had to name a table, so
+-- a table was created with the machine's own vocabulary in it, and the result was two
+-- tables holding one aggregate's state with nothing saying which of the two won. A
+-- policy has no update lifecycle. It is read by the lifecycle, which is why
+-- `update_installations` is now the machine's only persistence owner.
+--
+-- What it holds instead is the thing the machine had no way to read. D-570 refuses a
+-- client below a moving version floor with an upgrade prompt rather than degrading it
+-- silently, and the floor was a sentence in a decision with no column anywhere.
+-- `minimum_supported_release_version` is that floor, `floor_effective_at` is when it
+-- moves, and `refusal_reason_code` pins the refusal to the one code the reason
+-- registry declares for it -- so a floor cannot be enforced with a code that says
+-- something else, and the reason a participant is shown cannot drift from the reason
+-- the server acted on.
+--
+-- `max_deferral_seconds` is bounded below `deadline_seconds` because the operations
+-- contract requires that competitive profiles cannot permanently disable a required
+-- update, and a deferral as long as the deadline is that disabling written as a
+-- number. An emergency security or integrity update admits no deferral at all.
 create table update_policies (
   update_policy_id uuid primary key,
-  state text not null check (state in ('current','available','deferred','deadline','downloading','staged','installing','health-check','rolled-back','complete','blocked-version','failed')),
+  update_class text not null check (update_class in ('emergency-security-integrity','required-compatibility','routine-product')),
+  interface text not null check (interface in (
+    'vibeproof-protocol','http-api','local-ipc','local-storage','server-schema','platform-profile')),
+  minimum_supported_release_version text not null check (minimum_supported_release_version ~ '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'),
+  floor_effective_at timestamptz not null,
+  max_deferral_seconds integer not null check (max_deferral_seconds >= 0),
+  deadline_seconds integer not null check (deadline_seconds > 0),
+  refusal_reason_code text not null check (refusal_reason_code = 'CLIENT_VERSION_UNSUPPORTED'),
   revision integer not null default 1 check (revision > 0),
-  created_at timestamptz not null
+  created_at timestamptz not null,
+  check (max_deferral_seconds < deadline_seconds),
+  check (update_class <> 'emergency-security-integrity' or max_deferral_seconds = 0),
+  unique (update_class, interface, floor_effective_at)
 );
 
 create table board_membership_events (
@@ -2603,23 +2735,50 @@ create table certification_results (
 -- `reversal_operation` is what a rollback runs, which is why an operation with
 -- no reversal has to declare itself irreversible rather than leave the column
 -- empty and let a rollback discover it.
+-- `plan_kind` is the discriminator this key was missing. The unique key was
+-- `(platform_profile_id, release_set_id)`, which admits exactly one plan per profile
+-- and release -- so the install plan and the uninstall plan for one build were the
+-- same row, and a repair plan could not be recorded at all. The launch gates require
+-- installation, update, rollback and uninstall evidence per exact tuple, and four
+-- kinds of evidence cannot be produced from a table that holds one.
+--
+-- `orphan-cleanup` is why `release_set_id` is nullable. An orphan is by definition
+-- what is left when the thing that installed it is gone: a service registration whose
+-- binary was deleted, an IPC endpoint from a build that no longer resolves, a
+-- keystore grant held by a version that was never uninstalled. Requiring the plan to
+-- name a live release set made the one case the plan exists for the one case it could
+-- not express. Every other kind names its release.
 create table platform_install_plans (
   platform_install_plan_id uuid primary key,
   platform_profile_id text not null references platform_profiles(platform_profile_id),
-  release_set_id uuid not null references release_sets(release_set_id),
+  plan_kind text not null check (plan_kind in ('install','upgrade','repair','uninstall','orphan-cleanup')),
+  release_set_id uuid references release_sets(release_set_id),
   requires_privileged_consent boolean not null default false,
   revision integer not null default 1 check (revision > 0),
   created_at timestamptz not null,
-  unique (platform_profile_id, release_set_id)
+  unique (platform_profile_id, plan_kind, release_set_id),
+  check ((release_set_id is null) = (plan_kind = 'orphan-cleanup'))
 );
 
+-- The eighteen operations: ten that change the machine forwards and the eight
+-- reversals, which are operations in their own right once a plan may be an uninstall
+-- or an orphan cleanup. Before `plan_kind` existed, the reversal names could appear
+-- only in `reversal_operation`, so an uninstall sequence had no way to be written
+-- down and the reversal column was doing duty as a plan nobody could order.
+--
+-- `reversal_operation` is populated only on a forward operation. A reversal has no
+-- reversal: undoing an uninstall is an install, which is a different plan, and
+-- pretending otherwise is how a cleanup acquires a rollback that reinstalls the thing
+-- it was cleaning up.
 create table platform_install_operations (
   platform_install_plan_id uuid not null references platform_install_plans(platform_install_plan_id),
   sequence integer not null check (sequence >= 1),
   operation text not null check (operation in (
     'verify-release-signature','place-binary','register-service','set-autostart',
     'grant-keystore-access','create-ipc-endpoint','register-privileged-supervisor',
-    'start-service','verify-health','remove-previous-version')),
+    'start-service','verify-health','remove-previous-version',
+    'unregister-service','clear-autostart','revoke-keystore-access','remove-ipc-endpoint',
+    'remove-privileged-supervisor','stop-service','restore-previous-version','remove-binary')),
   irreversible boolean not null default false,
   reversal_operation text check (reversal_operation in (
     'unregister-service','clear-autostart','revoke-keystore-access','remove-ipc-endpoint',
@@ -2629,7 +2788,12 @@ create table platform_install_operations (
   -- none — because it changes nothing, as a verification does, or because its
   -- effect cannot be undone. A rollback that discovers the answer at run time
   -- is D-074's failure mode rather than its contract.
-  check (irreversible = (reversal_operation is null))
+  check (irreversible = (reversal_operation is null)),
+  -- A reversal is itself irreversible within its plan.
+  check (operation not in (
+    'unregister-service','clear-autostart','revoke-keystore-access','remove-ipc-endpoint',
+    'remove-privileged-supervisor','stop-service','restore-previous-version','remove-binary')
+    or irreversible)
 );
 
 -- ---------------------------------------------------------------------------
@@ -2697,9 +2861,25 @@ create table compatibility_edges (
 -- back is syntactically fine and loses the data that was written into it. The
 -- two columns say different things and conflating them is how a forward-only
 -- migration acquires a rollback plan nobody tested.
+-- `predecessor_version` is what makes this a chain rather than a set.
+-- migration-chain-v1.schema.json has always said that "a chain with a gap is not a
+-- chain", and nothing read that sentence: the steps sat in a JSON array, array order
+-- is a property of the file rather than of the record, and the table held versions
+-- with no edge between them at all. Two migrations could each claim to follow the
+-- baseline, or none could, and the ordered chain the update policy has to walk was a
+-- convention nobody could check.
+--
+-- Three constraints make it linear at write time. The predecessor is a real
+-- migration; it sorts before its successor, so a step cannot follow one that comes
+-- after it; and `unique (interface, predecessor_version)` refuses a fork, because two
+-- steps sharing one predecessor are a branch and not a chain. The partial unique
+-- index below refuses a second root: NULL is distinct from NULL in a unique
+-- constraint, so without it "no predecessor" was the one value any number of rows
+-- could hold.
 create table storage_migrations (
   storage_migration_id uuid primary key,
   version text not null unique references schema_migrations(version),
+  predecessor_version text references schema_migrations(version),
   interface text not null check (interface in ('local-storage','server-schema')),
   rollback_class text not null check (rollback_class in ('binary-reversible','forward-only','snapshot-required')),
   down_sql_present boolean not null,
@@ -2711,8 +2891,21 @@ create table storage_migrations (
   check ((rollback_class = 'snapshot-required') = (pre_migration_snapshot_digest is not null)),
   -- A binary-reversible migration has a down section. The converse does not
   -- hold and is not asserted.
-  check (rollback_class <> 'binary-reversible' or down_sql_present)
+  check (rollback_class <> 'binary-reversible' or down_sql_present),
+  check (predecessor_version is null or predecessor_version < version),
+  unique (interface, predecessor_version)
 );
+
+-- One chain per interface, so exactly one step per interface has no predecessor.
+create unique index storage_migrations_chain_root_idx
+  on storage_migrations (interface)
+  where predecessor_version is null;
+
+-- The chain is walked backwards as often as forwards, and `unique (interface,
+-- predecessor_version)` leads on the interface, so it supports no lookup by
+-- predecessor alone.
+create index storage_migrations_predecessor_idx
+  on storage_migrations (predecessor_version);
 
 -- ---------------------------------------------------------------------------
 -- Presence pulses and lease generations. D-073, D-095.

@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "release_set_id": "0f6f1a0e-6a9c-4a4a-9a2e-0f2d3f9a1b71",
+  "version": "0.1.0",
+  "source_commit": "83fc9201864aa3d5dfc258f181ee356c1c638966",
+  "published_at": "2026-08-09T12:00:00Z",
+  "mandatory_after": "2026-09-08T12:00:00Z",
+  "tuf_root_version": 1,
+  "manifest_target": {
+    "tuf_role": "root",
+    "target_path": "release-sets/0.1.0/release-set.json",
+    "manifest_digest": "05b3abf2579a5eb66403cd78be557fd860633a1fe2103c7642030defe32c657f",
+    "signature_bundle_digest": "92b522f99a1b25e117e1ac46efffeb224902b3c367c82548ac433dccff80a6aa"
+  },
+  "compatibility_registry_digest": "4ee514c0ed3d7e3e660e68c6256219e35b58eb3558b4f34a612725e30544f1ff",
+  "signing_threshold": 2,
+  "targets": [
+    {
+      "component_id": "vibemaxxing-macos-arm64",
+      "platform_profile_id": "macos-26-arm64-user-launchd",
+      "tuf_role": "targets/platform/macos",
+      "target_path": "release-sets/0.1.0/macos/arm64/vibemaxxing.pkg",
+      "architecture": "arm64",
+      "artifact_kind": "pkg",
+      "artifact_digest": "95e89f29ff28f7230fd409d8d84289781df4ff3c1de2b0122346e22c5565cf2d",
+      "size_bytes": 41943040,
+      "sbom_digest": "d4a01cfd5339bfe8339d05312c4ede47d065c25d336659fbfb6cf2abd28f9e70",
+      "provenance_digest": "9b7afbe836e16528a633eacb2406649183a7c6edf351d9da4202892925125ebc",
+      "signature_bundle_digest": "16ad3d8bea4316d3efb215ce3dd992917bd1244894edbdd460108b606ee691cc",
+      "compatibility_tuple_digest": "c2e32a166c7b03390c826dd6d916501d952ba0e793f7e2fe400b8836b89da33c",
+      "update_class": "routine-product"
+    },
+    {
+      "component_id": "vibemaxxing-windows-x86-64",
+      "platform_profile_id": "windows-11-25h2-x86-64-user-service",
+      "tuf_role": "targets/platform/windows",
+      "target_path": "release-sets/0.1.0/windows/x86-64/vibemaxxing.msix",
+      "architecture": "x86-64",
+      "artifact_kind": "msix",
+      "artifact_digest": "eb6ce64f44be65f17de9a77de055915314dde5c99e8ccfa72432e6ac573439d7",
+      "size_bytes": 41943040,
+      "sbom_digest": "838423e75248aa3e2706577c359bf307ef90748c86579deedcbdf0646096fb9a",
+      "provenance_digest": "c7c1e807b998e098c080cedc4fbb0ed783bcdf8d61e13ec2b7353a41019b4674",
+      "signature_bundle_digest": "44ef9a2947f580415697539db56a961bf0e1b63ef16228bf01202e92698d5b8e",
+      "compatibility_tuple_digest": "630fb56004ef5cdc174ded79282b18347eba280269e369adf2cb66f2b9e92c5b",
+      "update_class": "routine-product"
+    },
+    {
+      "component_id": "vibemaxxing-linux-aarch64",
+      "platform_profile_id": "ubuntu-26.04-aarch64-headless",
+      "tuf_role": "targets/platform/linux",
+      "target_path": "release-sets/0.1.0/linux/aarch64/vibemaxxing.deb",
+      "architecture": "aarch64",
+      "artifact_kind": "deb",
+      "artifact_digest": "2c3740903da4ca25ccd491315f80a26a93566794e9704423824daa7b7eb445a5",
+      "size_bytes": 41943040,
+      "sbom_digest": "56d23ff529e35b2658bf1766f4df24de7a1f7d4bd26b9fdb4703a33c3b8337d4",
+      "provenance_digest": "30afded8a87ff9be60e33df763d62dad791551570e9e6140f66735bc375cd92a",
+      "signature_bundle_digest": "8495aba78f1b7044195244a980e87fa7d091a0f20adf3967a2c9a54a86e1fbb9",
+      "compatibility_tuple_digest": "d0eaaa85b0a46c9e755caf830312eccd5d212abbe7ee7613b64551fa74034608",
+      "update_class": "required-compatibility"
+    }
+  ]
+}

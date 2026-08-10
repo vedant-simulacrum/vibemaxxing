@@ -2,19 +2,26 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.vibemaxxing.dev/release-set-v1.schema.json",
   "title": "VibeMaxxing signed release set v1",
+  "description": "One published set of platform artifacts, and the TUF authorization that makes it trustable. docs/operations/OPERATIONS_OPEN_SOURCE_AND_LAUNCH_CONTRACT.md and ADR-013 are the normative owners; packages/schemas/planning-schema.sql#release_sets and #release_targets are the persistence owners. The manifest is itself a TUF target: a release set that is merely a file served beside signed targets is a file an attacker can substitute, so `manifest_target` names the delegated targets role that signs this document, the path it is signed at, and the digest and signature bundle a client checks before reading anything below it. Root, timestamp and snapshot cannot sign it, which the role pattern refuses rather than a reviewer noticing. Each component carries the eight facts an installer needs and a reader can check independently: the delegated role that authorized it, the target path it is fetched from, the architecture it runs on, the artifact digest, the provenance and SBOM digests, the native signature bundle, the compatibility tuple it was certified against, and its update class. A component that carries a hash and no role is authenticated by whoever served it.",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "release_set_id",
     "version",
+    "source_commit",
     "published_at",
     "mandatory_after",
     "tuf_root_version",
+    "manifest_target",
     "targets",
     "compatibility_registry_digest",
     "signing_threshold"
   ],
   "properties": {
+    "schema_version": {
+      "const": 1
+    },
     "release_set_id": {
       "type": "string",
       "format": "uuid"
@@ -23,11 +30,16 @@
       "type": "string",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
     },
+    "source_commit": {
+      "description": "The exact commit every artifact in this set was built from. The operations contract requires container images and platform packages to bind provenance to exact source commits and release-set identity, and a provenance digest alone does not say which source it attests.",
+      "$ref": "#/$defs/digest40"
+    },
     "published_at": {
       "type": "string",
       "format": "date-time"
     },
     "mandatory_after": {
+      "description": "The signed deadline past which a version may lose collection, claim finalization or sync under the declared policy. It must be later than `published_at`; a deadline at or before publication is a release that was already overdue when it appeared, and the two fields cannot be compared by this schema, so scripts/repository/validate_planning_artifacts.py performs that comparison.",
       "type": "string",
       "format": "date-time"
     },
@@ -35,9 +47,34 @@
       "type": "integer",
       "minimum": 1
     },
+    "manifest_target": {
+      "description": "This document, as a target in the TUF repository that authorizes it. Without it the manifest is an unauthenticated index over authenticated files, and mix-and-match is a matter of serving a different index.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tuf_role",
+        "target_path",
+        "manifest_digest",
+        "signature_bundle_digest"
+      ],
+      "properties": {
+        "tuf_role": {
+          "$ref": "#/$defs/delegated_targets_role"
+        },
+        "target_path": {
+          "$ref": "#/$defs/target_path"
+        },
+        "manifest_digest": {
+          "description": "SHA-256 over the canonical serialization of this document with `manifest_target.manifest_digest` and `manifest_target.signature_bundle_digest` omitted.",
+          "$ref": "#/$defs/digest"
+        },
+        "signature_bundle_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
     "compatibility_registry_digest": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
+      "$ref": "#/$defs/digest"
     },
     "signing_threshold": {
       "type": "integer",
@@ -49,58 +86,118 @@
       "minItems": 1,
       "maxItems": 128,
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "platform_profile_id",
-          "artifact_kind",
-          "artifact_digest",
-          "size_bytes",
-          "sbom_digest",
-          "provenance_digest",
-          "signature_bundle_digest"
-        ],
-        "properties": {
-          "platform_profile_id": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128
-          },
-          "artifact_kind": {
-            "enum": [
-              "pkg",
-              "dmg",
-              "msix",
-              "msi",
-              "deb",
-              "rpm",
-              "apk",
-              "tar-zst",
-              "oci",
-              "ci-bundle"
-            ]
-          },
-          "artifact_digest": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
-          },
-          "size_bytes": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 2147483648
-          },
-          "sbom_digest": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
-          },
-          "provenance_digest": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
-          },
-          "signature_bundle_digest": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
-          }
+        "$ref": "#/$defs/component"
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "digest40": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "delegated_targets_role": {
+      "description": "A delegated targets role, always. `root`, `timestamp` and `snapshot` are refused by the pattern: root delegates authority and does not sign artifacts, timestamp says only that metadata is fresh, and snapshot says only which metadata versions belong together. A component whose authorization traces to one of those three has not been authorized by anything that inspected it.",
+      "type": "string",
+      "pattern": "^targets(?:/[a-z0-9][a-z0-9.-]*){1,4}$",
+      "maxLength": 180
+    },
+    "target_path": {
+      "description": "The path the artifact is registered at inside the TUF targets namespace. Relative, no traversal, no leading slash: a target path a client resolves outside the targets root is an arbitrary-write primitive handed to whoever controls the repository.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*(?:/[a-z0-9][a-z0-9._-]*)*$",
+      "maxLength": 512
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component_id",
+        "platform_profile_id",
+        "tuf_role",
+        "target_path",
+        "architecture",
+        "artifact_kind",
+        "artifact_digest",
+        "size_bytes",
+        "sbom_digest",
+        "provenance_digest",
+        "signature_bundle_digest",
+        "compatibility_tuple_digest",
+        "update_class"
+      ],
+      "properties": {
+        "component_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "platform_profile_id": {
+          "description": "A profile_id in packages/schemas/platform-profile-registry-v1.json. The registry is what says whether the profile exists at all, and validate_planning_artifacts.py resolves it.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 180
+        },
+        "tuf_role": {
+          "$ref": "#/$defs/delegated_targets_role"
+        },
+        "target_path": {
+          "$ref": "#/$defs/target_path"
+        },
+        "architecture": {
+          "description": "Exactly the three spellings packages/schemas/platform-profile-registry-v1.schema.json admits, and it must equal the architecture of the profile this component names. A second spelling for one machine word is how two artifacts describe the same build and compare unequal.",
+          "enum": [
+            "arm64",
+            "aarch64",
+            "x86-64"
+          ]
+        },
+        "artifact_kind": {
+          "enum": [
+            "pkg",
+            "dmg",
+            "msix",
+            "msi",
+            "deb",
+            "rpm",
+            "apk",
+            "tar-zst",
+            "oci",
+            "ci-bundle"
+          ]
+        },
+        "artifact_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483648
+        },
+        "sbom_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "provenance_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "signature_bundle_digest": {
+          "description": "The platform-native signature material for this artifact — notarization ticket, Authenticode signature, repository signature — as distinct from the TUF signature over the metadata. TUF says the repository authorized this file; the native signature is what the operating system checks before it will run it, and neither substitutes for the other.",
+          "$ref": "#/$defs/digest"
+        },
+        "compatibility_tuple_digest": {
+          "description": "The packages/schemas/compatibility-tuple-v1.schema.json digest this component was certified against. D-058 makes trust digest-addressed, so a component naming a version string alone would claim a certification that a re-serialised tuple could not be looked up by.",
+          "$ref": "#/$defs/digest"
+        },
+        "update_class": {
+          "description": "The three classes the operations contract declares. The class is per component rather than per set because one set can carry an emergency fix for one platform and a routine change for another, and collapsing them either forces every platform onto the strictest deadline or lets the strictest one inherit the loosest.",
+          "enum": [
+            "emergency-security-integrity",
+            "required-compatibility",
+            "routine-product"
+          ]
         }
       }
     }

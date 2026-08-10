@@ -212,7 +212,7 @@
     {
       "finding_id": "SR-013",
       "severity": "P1",
-      "state": "open",
+      "state": "repaired-pending-review",
       "title": "Export, deletion, retention, and backup tombstones",
       "repair_task": "P-1140F-4",
       "finding_class": "contradiction",
@@ -229,7 +229,10 @@
         "packages/schemas/planning-schema.sql#deletion_jobs",
         "packages/schemas/openapi-v1.yaml#requestExport"
       ],
-      "closure_evidence": [],
+      "closure_evidence": [
+        "PF-028 at 9f5b7e2baf82a5fa085873f294b33ccb065274ba: export authority is bound to a domain vocabulary that did not exist. The acceptance asked for included and excluded domains in a repository where no domain vocabulary existed anywhere, so any implementation satisfying it would have invented a fourth spelling, and it named the wrong table for the revocable grant, which was a stub with neither a grant nor an expiry. Seven data domains are declared once in DATA_MAP.md, carried on all 71 personal rows of the disposition registry and compared three ways; the third comparison found presence_events filed under account and identity while presence_leases sat under social.",
+        "PF-029 at 9f5b7e2baf82a5fa085873f294b33ccb065274ba: deletion_effects.state admitted not-applicable, a member meaning we did not look, so a plan could cover all seven domains by declining to answer for any; consolidation-plan-v1.schema.json refuses that value in that position, so the repair had reached one sibling and not the other. The Article 30 record promised a cancellation nothing could perform: DATA_MAP states the cooling-off window as cancellable and the machine had no cancelled state and no route to one. And the acceptance's own grep for an erasure overclaim passed on a document that had never contained the word, which is an absence satisfied by emptiness inside the criterion written to prevent one."
+      ],
       "reviewed_commit": null,
       "review_verdict": "pending"
     },

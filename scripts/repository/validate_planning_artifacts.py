@@ -118,6 +118,7 @@ EXAMPLE_SCHEMAS: dict[str, str] = {
     "ranked-identity": "ranked-identity-v1.schema.json",
     "ranking-view": "ranking-view-v1.schema.json",
     "recovery-case": "recovery-case-v1.schema.json",
+    "release-set": "release-set-v1.schema.json",
     "source-observation": "source-observation.schema.json",
     "tuf-trust": "tuf-trust-v1.schema.json",
 }
@@ -158,6 +159,33 @@ EXAMPLE_COMPUTED_NEGATIVES: dict[str, str] = {
     # carries the definition-only digest instead: the arithmetic is what refuses it,
     # and `validate_ranking_view_separation` below is what performs the arithmetic.
     "ranking-view.invalid-view-id-omits-the-audience.json": (
+        "scripts/repository/validate_planning_artifacts.py"
+    ),
+    # PF-030. Four release-set rules compare two of the manifest's own fields, or
+    # compare the manifest to the platform registry, and JSON Schema can do neither.
+    # Two components at one target path are two distinct objects, so `uniqueItems`
+    # sees nothing wrong with them and a client fetching that path gets whichever
+    # artifact the repository chose to put there. A manifest that claims a
+    # component's path as its own is signed at a path a component also occupies. A
+    # deadline before publication is two valid timestamps in the wrong order. And an
+    # architecture that disagrees with the profile it names is two valid enum members
+    # that happen to contradict each other.
+    "release-set.invalid-two-components-one-target-path.json": (
+        "scripts/repository/validate_planning_artifacts.py"
+    ),
+    "release-set.invalid-manifest-target-path-is-a-component.json": (
+        "scripts/repository/validate_planning_artifacts.py"
+    ),
+    "release-set.invalid-deadline-precedes-publication.json": (
+        "scripts/repository/validate_planning_artifacts.py"
+    ),
+    "release-set.invalid-architecture-disagrees-with-the-profile.json": (
+        "scripts/repository/validate_planning_artifacts.py"
+    ),
+    # PF-031. Step order is a property of the record, not of the JSON array it
+    # arrived in. `migration-chain-v1.schema.json` has always said "a chain with a
+    # gap is not a chain" and nothing read that sentence; this fixture is the gap.
+    "migration-chain.invalid-chain-with-a-gap.json": (
         "scripts/repository/validate_planning_artifacts.py"
     ),
 }
@@ -906,6 +934,7 @@ MATRIX_STATUS_RESPONSES = {
     410: "Gone",
     415: "UnsupportedMediaType",
     422: "UnprocessableContent",
+    426: "UpgradeRequired",
     429: "RateLimited",
 }
 
@@ -3582,6 +3611,193 @@ def validate_release_compatibility_contracts() -> None:
         if constraint not in body:
             raise ValidationFailure(
                 f"{table} lacks its required invariant: {constraint}"
+            )
+
+
+RELEASE_SET_COMPUTED_NEGATIVES: tuple[str, ...] = (
+    "release-set.invalid-two-components-one-target-path.json",
+    "release-set.invalid-manifest-target-path-is-a-component.json",
+    "release-set.invalid-deadline-precedes-publication.json",
+    "release-set.invalid-architecture-disagrees-with-the-profile.json",
+)
+
+
+def release_set_defect(
+    manifest: dict[str, Any], architectures: dict[str, str]
+) -> str | None:
+    """Return why a release-set manifest is inadmissible, or None.
+
+    Four rules, none of which JSON Schema can express, because each compares two
+    fields the record already carries.
+
+    A target path addresses one artifact. Two components registered at one path are
+    two distinct objects, so `uniqueItems` accepts them, and the client that resolves
+    that path receives whichever of the two the repository happened to write there —
+    which is mix-and-match performed by the manifest rather than against it.
+
+    The manifest is a target itself, and it is not one of the targets it lists. A
+    manifest signed at a component's path is a document and an artifact competing for
+    one name.
+
+    `mandatory_after` is a signed deadline, so it comes after publication. Two valid
+    timestamps in the wrong order are a release that was overdue when it appeared.
+
+    And `architecture` must equal the architecture of the platform profile the
+    component names. Both are valid members of the same three-value enum; the defect
+    is that they disagree, which is how an aarch64 build gets shipped to x86-64
+    machines with every field individually well-formed.
+    """
+    paths = [target["target_path"] for target in manifest["targets"]]
+    duplicated = sorted({path for path in paths if paths.count(path) > 1})
+    if duplicated:
+        return (
+            "two components are registered at one target path, so the path does not "
+            f"address one artifact: {duplicated}"
+        )
+    manifest_path = manifest["manifest_target"]["target_path"]
+    if manifest_path in paths:
+        return (
+            "the manifest is signed at a path one of its own components occupies: "
+            f"{manifest_path}"
+        )
+    if manifest["mandatory_after"] <= manifest["published_at"]:
+        return (
+            "the update deadline is at or before publication: "
+            f"{manifest['mandatory_after']} <= {manifest['published_at']}"
+        )
+    for target in manifest["targets"]:
+        profile = target["platform_profile_id"]
+        if profile not in architectures:
+            return (
+                f"component {target['component_id']} names a platform profile the "
+                f"registry does not declare: {profile}"
+            )
+        if architectures[profile] != target["architecture"]:
+            return (
+                f"component {target['component_id']} declares architecture "
+                f"{target['architecture']} and its profile {profile} is "
+                f"{architectures[profile]}"
+            )
+    return None
+
+
+def migration_chain_defect(chain: dict[str, Any]) -> str | None:
+    """Return why a migration chain is not a chain, or None.
+
+    `migration-chain-v1.schema.json` has stated since it was written that a chain with
+    a gap is not a chain, because D-097 numbers goose migrations sequentially and a
+    missing number is an unapplied migration rather than a numbering style. Nothing
+    read that sentence. The steps sit in a JSON array, and array order is a property
+    of the file rather than of the record, so a chain could arrive out of order, skip
+    a version, or repeat one, and every keyword in the schema would still pass.
+    """
+    versions = [step["version"] for step in chain["steps"]]
+    if len(set(versions)) != len(versions):
+        return f"the chain repeats a version: {versions}"
+    numbers = [int(version.split("_", 1)[0]) for version in versions]
+    if numbers != sorted(numbers):
+        return f"the chain is not ordered: {versions}"
+    expected = list(range(numbers[0], numbers[0] + len(numbers)))
+    if numbers != expected:
+        missing = sorted(set(expected) - set(numbers))
+        return (
+            "the chain skips a migration, so the ordered chain has a version nothing "
+            f"applied: missing={missing} present={versions}"
+        )
+    return None
+
+
+def validate_release_set_manifests() -> None:
+    """Execute the release-set fixtures against the four rules the schema cannot hold.
+
+    PF-030's acceptance asked the schema to reject a manifest that is not itself an
+    authenticated target. Most of that is now a schema constraint — `manifest_target`
+    is required and its role pattern refuses `root`, `timestamp` and `snapshot` — but
+    the half that matters at read time is a comparison between the manifest's own path
+    and the paths it lists, and JSON Schema compares nothing to nothing.
+
+    This proves the records agree. No TUF repository exists, no key has been generated,
+    nothing has been signed, and no client has verified anything.
+    """
+    schema = validate_schema_file(SCHEMAS / "release-set-v1.schema.json")
+    architectures = {
+        profile["profile_id"]: profile["architecture"]
+        for profile in load_json(SCHEMAS / "platform-profile-registry-v1.json")[
+            "profiles"
+        ]
+    }
+
+    valid = load_json(SCHEMAS / "examples" / "release-set.valid.json")
+    validate_instance(schema, valid, "release-set.valid.json")
+    defect = release_set_defect(valid, architectures)
+    if defect is not None:
+        raise ValidationFailure(f"release-set.valid.json is inadmissible: {defect}")
+
+    for name in RELEASE_SET_COMPUTED_NEGATIVES:
+        instance = load_json(SCHEMAS / "examples" / name)
+        if release_set_defect(instance, architectures) is None:
+            raise ValidationFailure(
+                f"{name} is declared a computed negative and nothing refuses it"
+            )
+
+    # The SQL that persists the manifest carries the same rules, because a check the
+    # reader performs and the writer does not is a check an unread row evades.
+    bodies = _planning_table_bodies()
+    for table, constraint in {
+        "release_sets": (
+            "check (mandatory_after is null or (published_at is not null and "
+            "mandatory_after > published_at))"
+        ),
+        "release_targets": "unique (release_set_id, target_path)",
+    }.items():
+        body = " ".join(bodies[table].split())
+        if constraint not in body:
+            raise ValidationFailure(
+                f"{table} lacks its required invariant: {constraint}"
+            )
+
+    # Every field the acceptance names per component is a column, not only a JSON
+    # property. The two halves of the record drifting apart is the finding.
+    target_body = " ".join(bodies["release_targets"].split())
+    for column in (
+        "tuf_role",
+        "target_path",
+        "architecture",
+        "artifact_digest",
+        "provenance_digest",
+        "signature_bundle_digest",
+        "compatibility_tuple_digest",
+        "update_class",
+    ):
+        if column not in target_body:
+            raise ValidationFailure(
+                f"release_targets declares no {column} column, so the manifest and its "
+                "persistence owner do not describe the same component"
+            )
+
+    chain_schema = validate_schema_file(SCHEMAS / "migration-chain-v1.schema.json")
+    chain = load_json(SCHEMAS / "examples" / "migration-chain.valid.json")
+    validate_instance(chain_schema, chain, "migration-chain.valid.json")
+    if migration_chain_defect(chain) is not None:
+        raise ValidationFailure(
+            f"migration-chain.valid.json is not a chain: {migration_chain_defect(chain)}"
+        )
+    gap = load_json(
+        SCHEMAS / "examples" / "migration-chain.invalid-chain-with-a-gap.json"
+    )
+    if migration_chain_defect(gap) is None:
+        raise ValidationFailure(
+            "migration-chain.invalid-chain-with-a-gap.json is declared a computed "
+            "negative and nothing refuses it"
+        )
+
+    classes = set(schema["$defs"]["component"]["properties"]["update_class"]["enum"])
+    policy_body = " ".join(bodies["update_policies"].split())
+    for update_class in sorted(classes):
+        if f"'{update_class}'" not in policy_body:
+            raise ValidationFailure(
+                f"update_policies admits no update class {update_class!r}, so a class "
+                "the manifest can declare has no deadline or deferral bound"
             )
 
 
@@ -7875,6 +8091,10 @@ def main() -> int:
         (
             "TUF trust, compatibility graph and migration chain",
             validate_release_compatibility_contracts,
+        ),
+        (
+            "release-set manifest authorization and migration chain order",
+            validate_release_set_manifests,
         ),
         (
             "notification model and per-device deletion contracts",
