@@ -257,7 +257,7 @@
       "id": "D-043",
       "decision": "Protocol v1 uses one challenge per atomic batch; partial acceptance is prohibited; bounded signed gap declarations downgrade continuity",
       "status": "provisional",
-      "validation_or_reopen": "verified 2026-08-10 and still open on five divergences. The challenge is defined three times over disjoint bound fields, so the expected sequence, head and checkpoint tuple the protocol says the server verifies is persisted nowhere; the claim map carries no batch id, index or count, so the missing, duplicate and reordered index rejections cannot be enforced from signed material; partial acceptance is prohibited in three documents and constrained by nothing, and the batch-result shapes are deliberately unpinned in the malformed corpus; and the bounded signed gap declaration has a CBOR shape but no signed wrapper, no carrier, no table and no enforced bound. Closes when those five agree"
+      "validation_or_reopen": "the five divergences verified open on 2026-08-10 were reconciled by PF-070 and are each now checked rather than asserted: the challenge is one definition across the CDDL, the DDL and the API; the claim signs its batch id, zero-based index and claim count; partial acceptance is unrepresentable in the CDDL, the API schema and the DDL rather than forbidden in prose by three documents; `atomic-batch-result-v1` and `claim-result-v1` are pinned in bytes by the negative corpus instead of deferred with the words \"in prose state rather than in bytes\"; and the gap declaration has a COSE wrapper, a carrier the first post-gap claim signs, a persistence owner and a bound enforced by constraint. A sixth divergence inside the same reopen condition — \"the current batch, checkpoint and sequence contracts conflict\" — is named here rather than left implied: `checkpoint-receipt-v1` and `checkpoint_receipts` have near-disjoint column sets, and `server_receipt_sequence`, which VIBEPROOF_V1_PROTOCOL.md makes part of server state, is defined once in the CDDL and stored nowhere. The row stays provisional on that, not on the five, and promoting it is an owner act"
     },
     {
       "id": "D-044",
@@ -1845,9 +1845,51 @@
     },
     {
       "id": "D-625",
-      "decision": "SR-007 is returned to repair-in-progress because one of its four conflicting artifacts was never touched. `openapi-v1.yaml#ClaimChallenge` is named in the finding and neither PF-009 nor PF-010 addressed it. The challenge is defined three times over disjoint bound fields: the CDDL `challenge-v1` binds the expected next sequence, the expected local head and the expected checkpoint; `claim_challenges` persists none of those three; and the API schema exposes a `batch_commitment` neither of the other two carries. VIBEPROOF_V1_PROTOCOL.md says the server verifies the tuple the challenge binds, so a verification the protocol describes has no persistence to read from. The finding was moved to repaired-pending-review in this session on evidence covering three of its four artifacts, which is the defect this program exists to remove committed by the program itself. A reversal is recorded here rather than as closure evidence, because closure evidence is per-unit provenance and the format check refuses a bare claim — correctly. The repair is a new unit under P-1140F-1 and must not be backfilled into PF-009's or PF-010's evidence",
+      "decision": "SR-007 is returned to repair-in-progress because one of its four conflicting artifacts was never touched. `openapi-v1.yaml#ClaimChallenge` is named in the finding and neither PF-009 nor PF-010 addressed it. The challenge is defined three times over disjoint bound fields: the CDDL `challenge-v1` binds the expected next sequence, the expected local head and the expected checkpoint; `claim_challenges` persists none of those three; and the API schema exposes a `batch_commitment` neither of the other two carries. VIBEPROOF_V1_PROTOCOL.md says the server verifies the tuple the challenge binds, so a verification the protocol describes has no persistence to read from. The finding was moved to repaired-pending-review in this session on evidence covering three of its four artifacts, which is the defect this program exists to remove committed by the program itself. A reversal is recorded here rather than as closure evidence, because closure evidence is per-unit provenance and the format check refuses a bare claim — correctly. The repair is a new unit under P-1140F-2 — the step SR-007 is assigned to, and the only one a unit serving it may sit in — and must not be backfilled into PF-009's or PF-010's evidence. This row said P-1140F-1 when it was written, which named a unit validate_repair_task_binding.py would have refused; PF-070 is the unit and it is in P-1140F-2",
       "status": "accepted",
       "validation_or_reopen": "the challenge binding is reconciled across the CDDL, the DDL and the API so that the tuple the protocol says is verified is persisted, at which point SR-007 may be reassessed"
+    },
+    {
+      "id": "D-626",
+      "decision": "`batch_commitment` is removed from `ClaimChallengeRequest` and `ClaimChallenge` rather than propagated into the CDDL and the DDL. It was required on both and appeared in no other artifact in the repository, so the obvious repair was to add it to the other two. It cannot be added: ADR-007 has every claim in a batch sign the challenge nonce, so the batch bytes depend on the challenge, and a digest of them cannot be supplied when asking for the challenge that binds them. The one-challenge-one-batch rule the field was reaching for is enforced instead by `unique (consumed_by_batch_id)` on `claim_challenges`, which is ADR-007's `a challenge cannot authorize multiple batches` as a write refusal rather than as a client-supplied value. The challenge is server-assigned in full: `ClaimChallengeRequest` now carries only the device row that is asking",
+      "status": "accepted",
+      "validation_or_reopen": "a non-circular definition of a pre-commitment is found — one that covers material no claim signs — and a case is made that it adds something single-use consumption does not"
+    },
+    {
+      "id": "D-627",
+      "decision": "The challenge binds eleven fields and all three authorities carry all eleven. `challenge-v1`, `claim_challenges` and `ClaimChallenge` previously intersected in the nonce and the expiry alone, and `scripts/repository/validate_batch_challenge_binding.py` now holds the table and fails on a field present in one and absent from the others, in either direction. `device_id` is recorded as server-only with a reason rather than dropped: it is which device row asked, and a challenge is answered by the lineage. `challenge_id` is `uuid7` in all three; it was `uuid7`, `text` and a 64-hex string. `max_batch_claims` is bounded at the number of claims `batch-context` admits, and `max_encoded_bytes` is added, because ADR-007 requires both ceilings and the byte one existed nowhere",
+      "status": "accepted",
+      "validation_or_reopen": "a field is identified that one authority must carry and the others must not, in which case it is recorded as server-only with its reason rather than added silently"
+    },
+    {
+      "id": "D-628",
+      "decision": "Partial batch acceptance is refused by encoding rather than by prose. `atomic-batch-result-v1` is a two-way choice whose committed arm admits only accepted per-claim results and whose refused arm admits only refused ones, so a mixed instance satisfies neither; `ClaimBatchResult` carries the matching `oneOf`; and `claim_batches` exists with a `(batch_id, outcome)` key that `claims` and `claim_rejections` reference at disjoint outcome sets, so a partial outcome has no row to be written into. ADR-007, VIBEPROOF_V1_PROTOCOL.md and AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md all forbade it and no schema or constraint did. The six wire batch outcomes map onto the two published API states through a declared table the validator checks in both directions, because that mapping is not the identity and a reader assuming it is would publish four states the schema does not admit",
+      "status": "accepted",
+      "validation_or_reopen": "a protocol-major ADR admits partial acceptance, which ADR-007 already requires for any such change"
+    },
+    {
+      "id": "D-629",
+      "decision": "A gap declaration is signed, carried, stored and bounded. `cose-sign1-gap-v1` with `protected-headers-gap-v1` gives it a signed form and a content type; the first post-gap claim signs its digest at label 34 and the envelope travels in `batch-context` label 5, because the claim map is closed and a COSE envelope is a tagged item the canonical profile decoder refuses; `gap_declarations` is its persistence owner, which `device_lineages.continuity_state` lacked while already admitting `gap-declared`; and the 10,000-sequence maximum is a CHECK constraint plus `max_recoverable_gap_sequences` in policy-defaults-v1.json, because the bound is a relation between two sequence numbers and CDDL constrains each label independently. The cause range is narrowed from 0..5 to 0..3, the four ADR-007 registers; two ordinals were representable with no registered meaning. VIBEPROOF_V1_PROTOCOL.md said policy `may` reject, quarantine or lower continuity where ADR-007 is determinate, and the accepted rule governs",
+      "status": "accepted",
+      "validation_or_reopen": "a recoverable gap wider than the recorded maximum is justified, or a cause outside ADR-007's four is registered"
+    },
+    {
+      "id": "D-630",
+      "decision": "`batch_max_claims` is 256, not 500. The default admitted twice what the grammar could encode: `batch-context` is bounded at 256 claims and the negative corpus refuses 257, so an operator raising the ceiling would have produced rejections no reason code explained. Found while reconciling the challenge rather than reported by anything; no check compared a configurable ceiling to the encodable one, and validate_batch_challenge_binding.py now derives the number from the grammar and fails when the default disagrees. `max` is lowered with `value`, because a ceiling an operator may raise back to 500 is the same defect one edit away",
+      "status": "accepted",
+      "validation_or_reopen": "the batch container bound changes, in which case both move together or the validator fails"
+    },
+    {
+      "id": "D-631",
+      "decision": "The negative corpus gains a third case shape, `cddl_hex`: bytes that decode cleanly under the canonical profile and are refused by the CDDL rule the case names. It had exactly two — bytes the decoder refuses, and prose describing transaction state — and neither can express `these bytes decode perfectly and the grammar forbids them`. The corpus said so itself, deferring `atomic-batch-result-v1` and `claim-result-v1` with the words `in prose state rather than in bytes`, and that absence is why partial acceptance could be forbidden by three documents and admitted by two schemas. A cddl_hex case whose bytes the decoder rejects fails, because it would exercise the decoder while claiming to exercise the grammar",
+      "status": "accepted",
+      "validation_or_reopen": "a rule is identified that cddl_instance cannot check, which fails the case rather than skipping it"
+    },
+    {
+      "id": "D-632",
+      "decision": "The P-1140F repair series is opened at the top rather than fixed at PF-036. All thirty-six were taken, so a repair discovered later for a finding still open had nowhere to go: PF-037 and above carry no `Repair:`, and a unit outside the series may carry no `Serves:` either, so landing it could change no finding's evidence. The bound assumed the set of repairs was final, which SR-007 disproved. PF-001..PF-036 must still each carry `Repair:` — membership of that range does not depend on the field, so dropping it still fails — and a unit above 36 joins the series by declaring one. A unit above 36 carrying `Serves:` without `Repair:` is refused, because it would sit outside the series while appearing to be bound to a finding",
+      "status": "accepted",
+      "validation_or_reopen": "a repair unit is proposed that should not name a step, which the series has no way to express and which would be an argument for a different binding rather than a wider one"
     }
   ]
 }

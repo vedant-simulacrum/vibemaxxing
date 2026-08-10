@@ -53,7 +53,7 @@ Every state-changing endpoint defines idempotency semantics. Client-supplied ide
 
 ### Integrity
 
-`claim_challenges`, `claims`, `claim_payloads`, `claim_rejections`, `device_sequences`, `claim_corrections`, `quarantines`, `evidence_assessments`, `moderation_cases`, `appeals`.
+`claim_challenges`, `claim_batches`, `claims`, `claim_payloads`, `claim_rejections`, `gap_declarations`, `device_sequences`, `claim_corrections`, `quarantines`, `evidence_assessments`, `moderation_cases`, `appeals`.
 
 ### Ranking
 

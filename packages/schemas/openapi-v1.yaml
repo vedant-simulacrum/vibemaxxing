@@ -3754,44 +3754,83 @@ components:
           contentEncoding: base64
           maxLength: 128
     ClaimChallengeRequest:
+      description: >-
+        The device asks for a challenge. It states which device row is asking and
+        nothing else: every field of the challenge is server-assigned, and a client
+        that could propose the expected sequence, head or checkpoint could choose
+        the state its own batch is verified against. `batch_commitment` was
+        required here and is removed under D-626 — it asked the client to
+        pre-commit to a batch digest before the challenge existed, while every
+        claim in that batch signs the challenge nonce, so the digest could not be
+        computed until after the value that was supposed to bind it.
       type: object
       additionalProperties: false
       required:
         - device_id
-        - batch_commitment
       properties:
         device_id:
           type: string
           format: uuid
-        batch_commitment:
-          type: string
-          pattern: ^[0-9a-f]{64}$
     ClaimChallenge:
+      description: >-
+        The JSON projection of `challenge-v1` in
+        `packages/schemas/vibeproof-claim-v1.cddl`, field for field, and the row
+        `claim_challenges` stores. `scripts/repository/validate_batch_challenge_binding.py`
+        holds the three-way table and fails when any one of the three carries a
+        field the other two do not.
       type: object
       additionalProperties: false
       required:
         - challenge_id
-        - device_id
+        - account_pseudonym
+        - lineage_id
         - nonce
-        - batch_commitment
+        - expected_next_sequence
+        - expected_local_commitment_head
+        - expected_checkpoint_receipt_id
+        - issued_at
         - expires_at
+        - max_batch_claims
+        - max_encoded_bytes
       properties:
         challenge_id:
           type: string
+          format: uuid
+        account_pseudonym:
+          type: string
           pattern: ^[0-9a-f]{64}$
-        device_id:
+        lineage_id:
           type: string
           format: uuid
         nonce:
           type: string
           contentEncoding: base64
-          maxLength: 64
-        batch_commitment:
+          minLength: 44
+          maxLength: 44
+        expected_next_sequence:
+          type: integer
+          minimum: 0
+        expected_local_commitment_head:
           type: string
           pattern: ^[0-9a-f]{64}$
+        expected_checkpoint_receipt_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        issued_at:
+          type: string
+          format: date-time
         expires_at:
           type: string
           format: date-time
+        max_batch_claims:
+          type: integer
+          minimum: 1
+          maximum: 256
+        max_encoded_bytes:
+          type: integer
+          minimum: 1
     ClaimRejection:
       type: object
       additionalProperties: false
@@ -3811,8 +3850,37 @@ components:
         retryable:
           type: boolean
     ClaimBatchResult:
+      description: >-
+        ADR-007 prohibits partial batch acceptance and this schema admitted it:
+        `accepted_claim_ids` and `rejections` were both required with nothing
+        constraining either to be empty, so "batch accepted, claims 3 and 7
+        rejected" was a valid instance of the published contract. The `oneOf`
+        below is the prohibition as a schema rather than as prose in three
+        documents: an accepted batch carries no rejections and a rejected batch
+        carries no accepted claims and no receipt. `atomic-batch-result-v1` in
+        `packages/schemas/vibeproof-claim-v1.cddl` carries the same rule on the
+        wire, where the six batch outcomes it encodes map onto these two states.
       type: object
       additionalProperties: false
+      oneOf:
+        - title: accepted
+          properties:
+            state:
+              const: accepted
+            rejections:
+              maxItems: 0
+          required:
+            - state
+        - title: rejected
+          properties:
+            state:
+              const: rejected
+            accepted_claim_ids:
+              maxItems: 0
+            checkpoint_receipt:
+              type: 'null'
+          required:
+            - state
       required:
         - batch_id
         - state

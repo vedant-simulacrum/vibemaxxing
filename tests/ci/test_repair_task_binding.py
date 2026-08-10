@@ -390,5 +390,120 @@ class ClosureEvidenceTests(BindingFixture, unittest.TestCase):
             self.assertEqual(self.run_validator(), 0)
 
 
+class SeriesMembershipTests(BindingFixture, unittest.TestCase):
+    """The series was closed at PF-036, and all thirty-six were taken.
+
+    That bound assumed the set of repairs was final. It was not: SR-007 was recorded as
+    repaired while one of its four named conflicting artifacts had never been touched,
+    and the unit that repairs it is PF-070. Under the old bound that unit could not
+    carry `Repair:` or `Serves:` in any way this validator would read, so landing it
+    would have changed no finding's evidence.
+
+    Opening the top of the range is only safe if the two directions below both hold: a
+    core unit still cannot drop `Repair:`, and an extended unit cannot claim a finding
+    without one.
+    """
+
+    #: An extended unit that is ordinary work: neither field, outside the series.
+    EXTENDED_PLAIN = """
+### PF-070 — an extended unit that is not a repair
+Files: `c.md`
+Acceptance: it works.
+Depends: none
+Est: 4
+Status: not-started
+"""
+
+    #: The same unit as a repair: both fields, inside the series.
+    EXTENDED_REPAIR = """
+### PF-070 — an extended unit that is a repair
+Files: `c.md`
+Acceptance: it works.
+Depends: none
+Repair: P-1140F-2
+Serves: SR-006
+Est: 4
+Status: landed
+Evidence: validator scripts/repository/validate_repair_task_binding.py
+"""
+
+    def test_an_extended_unit_with_neither_field_stays_outside_the_series(self) -> None:
+        """PF-037..PF-069 are exactly this shape and must keep passing."""
+        self.write(CATALOG, BREAKDOWN + self.EXTENDED_PLAIN, FINDINGS)
+
+        self.assertEqual(self.run_validator(), 0)
+
+    def test_an_extended_unit_declaring_a_repair_joins_the_series(self) -> None:
+        self.write(CATALOG, BREAKDOWN + self.EXTENDED_REPAIR, FINDINGS)
+
+        self.assertEqual(self.run_validator(), 0)
+
+    def test_an_extended_unit_in_the_series_is_actually_checked(self) -> None:
+        """Membership has to have consequences, or admitting the unit changes nothing.
+
+        A step may not claim completion while it owns an unlanded unit. PF-070 here is
+        `not-started` and owned by P-1140F-2, so a `complete-planning` claim on that step
+        must name it. If joining the series were cosmetic, the claim would pass.
+        """
+        breakdown = BREAKDOWN + self.EXTENDED_REPAIR.replace(
+            "Status: landed\nEvidence: validator scripts/repository/validate_repair_task_binding.py\n",
+            "Status: not-started\n",
+        )
+        catalog = CATALOG.replace(
+            "Status: `blocked-planning`", "Status: `complete-planning`"
+        )
+
+        self.write(catalog, breakdown, FINDINGS)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("PF-070", str(raised.exception))
+
+    def test_an_extended_unit_serving_a_finding_without_a_repair_fails(self) -> None:
+        """`Serves:` alone would look like a binding while binding nothing."""
+        self.write(
+            CATALOG,
+            BREAKDOWN + self.EXTENDED_REPAIR.replace("Repair: P-1140F-2\n", ""),
+            FINDINGS,
+        )
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("PF-070 serves", str(raised.exception))
+        self.assertIn("names no repair task", str(raised.exception))
+
+    def test_an_extended_unit_in_the_series_must_still_serve_a_finding(self) -> None:
+        self.write(
+            CATALOG,
+            BREAKDOWN + self.EXTENDED_REPAIR.replace("Serves: SR-006\n", ""),
+            FINDINGS,
+        )
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("PF-070 names no finding it serves", str(raised.exception))
+
+    def test_a_core_unit_losing_its_repair_task_still_fails(self) -> None:
+        """The guarantee the opening must not weaken, asserted with the range open.
+
+        Core membership does not depend on the field, so dropping it fails. Had the
+        series been defined as "any unit declaring a repair task", this would pass and
+        the check would be satisfied by the units that happened to carry it.
+        """
+        self.write(
+            CATALOG,
+            (BREAKDOWN + self.EXTENDED_REPAIR).replace("Repair: P-1140F-1\n", ""),
+            FINDINGS,
+        )
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("PF-001 names no repair task", str(raised.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

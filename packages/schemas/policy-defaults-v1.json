@@ -260,9 +260,9 @@
       ]
     },
     "batch_max_claims": {
-      "value": 500,
+      "value": 256,
       "min": 1,
-      "max": 500,
+      "max": 256,
       "owner": "protocol-security",
       "retroactive": false,
       "value_type": "integer",
@@ -1056,6 +1056,23 @@
       "emergency_override": "owner-recorded-checklist",
       "fixture_refs": [
         "docs/security/PRIVATE_BETA_ADMISSION.md"
+      ]
+    },
+    "max_recoverable_gap_sequences": {
+      "value": 10000,
+      "min": 0,
+      "max": 10000,
+      "owner": "protocol-security",
+      "retroactive": false,
+      "value_type": "integer",
+      "unit": "sequences",
+      "effective_at": "2026-08-10T00:00:00Z",
+      "change_scope": "prospective-only",
+      "rebuild_required": false,
+      "notice_required": false,
+      "emergency_override": "signed-two-person-approval",
+      "fixture_refs": [
+        "conformance/p1140e/validation-matrix-v1.json"
       ]
     }
   }

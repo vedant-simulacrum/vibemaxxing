@@ -117,6 +117,13 @@ jobs:
       # step could record complete-planning with six units not-started.
       - name: Validate the P-1140F step, unit and finding binding
         run: python3 scripts/repository/validate_repair_task_binding.py
+      # ADR-007 states its own acceptance test — the CDDL, the OpenAPI, the SQL
+      # DDL, the reason codes and the conformance cases must match it — and nothing
+      # executed it. The challenge was defined three times over disjoint field sets
+      # and partial batch acceptance was forbidden by three documents and admitted
+      # by two schemas, all under a green doctor run.
+      - name: Validate the challenge, batch and gap binding against ADR-007
+        run: python3 scripts/repository/validate_batch_challenge_binding.py
       - name: Validate current launch API, SQL, and repaired authority coverage
         run: python3 scripts/repository/validate_planning_coverage.py
       - name: Validate state vocabularies across API, SQL, and the machine registry

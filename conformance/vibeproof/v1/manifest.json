@@ -32,7 +32,7 @@
       "fixtures": [
         {
           "path": "conformance/vibeproof/v1/exact-byte-vectors.json",
-          "sha256": "3cfa77078a58d42bb71ff8265839f3511568101a6c707333e3c0c18d4feac10f"
+          "sha256": "de33ba7d45f50867fbeefa9e6c09d0b33244ca05b3eb5d8901481ef1b0de50f4"
         }
       ],
       "expect": "accept",
@@ -48,7 +48,7 @@
       "fixtures": [
         {
           "path": "conformance/vibeproof/v1/malformed-resource-corpus.json",
-          "sha256": "a6ef8404599763ed4457d57a4cb42354241e43debeb8f9a6dd1b73efee3d708d"
+          "sha256": "07b3ff506abd3c417d49905e902abeea0277029ea23f3be3bc4787e0ea7746ad"
         }
       ],
       "expect": "reject",
@@ -56,7 +56,7 @@
       "authority_ref": "docs/architecture/VIBEPROOF_V1_PROTOCOL.md#canonical-cbor",
       "negative": true,
       "state": "active",
-      "note": "Twenty-seven cases. Nine state their input as hex and are decoded by scripts/repository/validate_planning_artifacts.py, which requires the canonical profile decoder to refuse each one with the exact decoder_signal the case declares, so a case cannot claim a malformation its bytes do not contain. The other eighteen state a mutation, a generator or a transaction state in prose and are not executable until an implementation reads them. expect_reason_code names the canonical-decode class only; the corpus spans ten registry reason codes in total - CLAIM_INVALID_CANONICAL_ENCODING, CLAIM_INVALID_SIGNATURE, CLAIM_CHAIN_FORK, CLAIM_SEQUENCE_UNEXPECTED, CLAIM_GAP_DECLARATION_REQUIRED, BATCH_ATOMIC_REJECT, REQUEST_MALFORMED, IDEMPOTENCY_KEY_CONFLICT, DEVICE_KEY_CONTINUITY_BROKEN and STATE_TRANSITION_NOT_PERMITTED - each resolving in packages/schemas/reason-codes-v1.json, which this manifest has named as the suite's reason authority since it was written and which none of the original twenty cases resolved against."
+      "note": "Thirty-three cases. Nine state their input as hex and are decoded by scripts/repository/validate_planning_artifacts.py, which requires the canonical profile decoder to refuse each one with the exact decoder_signal the case declares, so a case cannot claim a malformation its bytes do not contain. The other eighteen state a mutation, a generator or a transaction state in prose and are not executable until an implementation reads them. expect_reason_code names the canonical-decode class only; the corpus spans ten registry reason codes in total - CLAIM_INVALID_CANONICAL_ENCODING, CLAIM_INVALID_SIGNATURE, CLAIM_CHAIN_FORK, CLAIM_SEQUENCE_UNEXPECTED, CLAIM_GAP_DECLARATION_REQUIRED, BATCH_ATOMIC_REJECT, REQUEST_MALFORMED, IDEMPOTENCY_KEY_CONFLICT, DEVICE_KEY_CONTINUITY_BROKEN and STATE_TRANSITION_NOT_PERMITTED - each resolving in packages/schemas/reason-codes-v1.json, which this manifest has named as the suite's reason authority since it was written and which none of the original twenty cases resolved against. PF-070 added a third shape: six cddl_hex cases whose bytes decode cleanly under the canonical profile and are refused by the CDDL rule they name. That class did not exist, which is why atomic-batch-result-v1 and claim-result-v1 sat in cddl_rules_unpinned with the words \"in prose state rather than in bytes\", and why partial batch acceptance was prohibited by three documents and admitted by two schemas."
     },
     {
       "case_id": "VP-003",

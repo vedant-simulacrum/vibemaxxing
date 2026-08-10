@@ -68,17 +68,17 @@ Ordering principle: each specification is paired with the artifact or code that 
 
 <!-- generated: work-unit-status -->
 
-Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
+Units: 261. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
 
 | Status | Units |
 |---|---|
 | `not-started` | 181 |
 | `in-progress` | 3 |
-| `landed` | 70 |
+| `landed` | 71 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 360 assertions across 70 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 371 assertions across 71 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 4.
 
@@ -92,7 +92,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 |---|---|---|
 | 1 | 1 | `PF-036` |
 
-Statuses additionally checkable against artifact presence: 197 of 260. The other 63 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 198 of 261. The other 63 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -1696,6 +1696,44 @@ D-180 recorded that the private beta had no admission mechanism at all: codes ne
 This unit is the specification and not the implementation. No code is issued, no redemption runs, no expiry sweeper exists, and the lockout counter is edge-side state that nothing writes. D-280 through D-288 record the substantive choices, and `docs/security/PRIVATE_BETA_ADMISSION.md` states in its own Evidence section which claims are arguments from a constraint rather than measured results.
 
 The unit that follows from this one is the handler: the serializable redemption transaction, the admission middleware that answers `INVITE_REQUIRED` outside the six-operation exempt set, the issuance tool, the expiry sweeper, and the erasure integration that deletes the redemption row and moves the code to `retired` in one transaction. Each is blocked behind P-1104 alongside every other implementation epic.
+
+### PF-070 — Reconcile the challenge and batch binding across the CDDL, the DDL and the API
+Files: `packages/schemas/vibeproof-claim-v1.cddl`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/policy-defaults-v1.json`, `packages/schemas/data-disposition-v1.json`, `docs/decisions/ADR-007-BATCH_CHALLENGE_AND_SEQUENCE_RECOVERY.md`, `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`, `docs/architecture/SERVER_API_DATA_AND_RANKING_CONTRACT.md`, `conformance/vibeproof/v1/malformed-resource-corpus.json`, `conformance/vibeproof/v1/exact-byte-vectors.json`, `conformance/vibeproof/v1/manifest.json`, `conformance/vibeproof/v1/README.md`, `scripts/repository/validate_batch_challenge_binding.py` (new), `scripts/repository/validate_repair_task_binding.py`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/cddl_instance.py`, `tests/ci/test_batch_challenge_binding.py` (new), `tests/ci/test_repair_task_binding.py`
+Acceptance: `challenge-v1`, `claim_challenges` and `ClaimChallenge` carry the same eleven fields with no field in one and not the others, and `python3 scripts/repository/validate_batch_challenge_binding.py` exits non-zero when a field is added to or removed from any one of the three alone; `vibeproof-claim-v1` signs the batch id, zero-based index and claim count, and the exact-byte vectors reproduce byte-identically with them; a committed `atomic-batch-result-v1` carrying one refused per-claim result does not encode, with those exact bytes recorded as a negative corpus case that fails if the grammar readmits them; `gap_declarations` refuses a gap wider than the figure ADR-007 states, read from ADR-007 rather than restated; and `validate_repair_task_binding.py` still fails when any of PF-001..PF-036 drops its `Repair:` and when a unit above 36 carries `Serves:` without one.
+Depends: PF-009, PF-010, PF-054
+Repair: P-1140F-2
+Serves: SR-007
+Est: 12-16
+Status: landed
+Evidence: validator scripts/repository/validate_batch_challenge_binding.py
+Evidence: validator scripts/repository/validate_repair_task_binding.py
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: validator scripts/repository/generate_vibeproof_vectors.py --check
+Evidence: unittest tests.ci.test_batch_challenge_binding
+Evidence: unittest tests.ci.test_repair_task_binding
+Evidence: contains 1 packages/schemas/planning-schema.sql :: create table claim_batches
+Evidence: contains 1 packages/schemas/planning-schema.sql :: create table gap_declarations
+Evidence: contains 1 packages/schemas/planning-schema.sql :: expected_next_sequence bigint not null
+Evidence: contains 1 packages/schemas/vibeproof-claim-v1.cddl :: cose-sign1-gap-v1 = #6.18([
+Evidence: absent packages/schemas/openapi-v1.yaml :: batch_commitment:
+
+D-625 returned SR-007 to `repair-in-progress` because one of its four named conflicting artifacts, `openapi-v1.yaml#ClaimChallenge`, had never been touched. This is that repair, and it is larger than the one artifact, because the artifact was only the visible end of a three-way disagreement.
+
+**The challenge was defined three times over disjoint field sets.** `challenge-v1` bound account pseudonym, lineage, nonce, expected next sequence, expected local head, expected checkpoint, expiry and maximum batch. `claim_challenges` stored the challenge id, the account, the lineage, the device, the nonce, the expiry and its consumption. `ClaimChallenge` published a challenge id, a device, a nonce, a `batch_commitment` and an expiry. The intersection of the three was the nonce and the expiry. `VIBEPROOF_V1_PROTOCOL.md` says step 5 of the atomic transaction "verifies challenge ownership, expiry, expected tuple and single use" — and the expected tuple existed in exactly one of the three, so the verification the protocol describes could not be performed. Not performed incorrectly: not performed. The three now carry the same eleven fields and `validate_batch_challenge_binding.py` holds the table, so a field added to one of them alone fails.
+
+Three smaller disagreements inside that one. `challenge_id` was `uuid7` on the wire, `text` in the DDL and a 64-hex string in the API, so the width a verifier compared depended on which document it read; it is `uuid7`/`uuid`/`format: uuid` now. `max_batch_claims` was `uint32` against a `batch-context` bounded at 256 claims, so a challenge could authorize a batch that could not be encoded. And ADR-007 requires the challenge to carry "maximum claim count, and maximum encoded bytes"; the byte ceiling existed in no artifact at all.
+
+**`batch_commitment` is removed rather than propagated, under D-626.** It was required on both the challenge request and the challenge response and appeared nowhere else in the repository. Propagating it to the CDDL and the DDL would have made three artifacts agree on something uncomputable: every claim in a batch signs the challenge nonce, so the batch bytes depend on the challenge, and a digest of them cannot be supplied when asking for it. One challenge per batch is enforced instead by `unique (consumed_by_batch_id)` on `claim_challenges`, which is ADR-007's "a challenge cannot authorize multiple batches" as a write refusal.
+
+**The batch position is now signed.** ADR-007 says every claim signs "its own batch ID, zero-based index, total count", and rejects a batch for "missing indices, duplicate indices, changed order". The claim map had thirty-one labels and none of them was any of those three, so the only statement of a claim's position was the order of the unsigned outer `batch-context` array — which the submitter writes. The rejection rule could not be applied to a hostile submitter at all. Labels 31, 32 and 33 carry them, the exact-byte vectors were regenerated with them, and `claims` mirrors them with `unique (batch_id, batch_index)`.
+
+**Partial acceptance is now unrepresentable rather than prohibited in prose.** Three documents forbade it — ADR-007, `VIBEPROOF_V1_PROTOCOL.md` and `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` — and nothing at any layer refused it. `ClaimBatchResult` required both `accepted_claim_ids` and `rejections` with no mutual exclusion, so "batch accepted, claims 3 and 7 rejected" was a valid instance of the published contract. `atomic-batch-result-v1` gave the batch an outcome and each claim an independent one and tied them to nothing. `claims.batch_id` was a bare `uuid not null` pointing at no table. All three are closed: the CDDL result is a two-way choice whose committed arm admits only accepted per-claim results, the API schema carries a `oneOf`, and `claim_batches` exists with a `(batch_id, outcome)` key that `claims` and `claim_rejections` reference at disjoint outcome sets, so a partial outcome has no row to be written into.
+
+**The gap declaration was a shape and nothing else.** D-043 says "bounded signed gap declarations" and ADR-007 says "a signed `gap-declaration` included in the first claim after the gap". There was no `cose-sign1-gap-v1`, so nothing could sign it; no slot in the claim or the batch, so nothing could carry it; no table, so nothing could store it, while `device_lineages.continuity_state` could already read `gap-declared` with no record of which gap; and no expression of the 10,000-sequence maximum, so "bounded" was a word with no enforcement. It now has a wrapper and protected headers with their own content type, a digest carried in claim label 34 with the envelope in `batch-context` label 5, a `gap_declarations` table, and the bound as a CHECK — because the bound is a relation between two labels and CDDL constrains each label independently, so it cannot live in the grammar. `gap-declaration` label 7 was `0..5` against four registered causes, so two ordinals were representable and unresolvable.
+
+**Two things found while repairing, not before.** `policy-defaults-v1.json` set `batch_max_claims` to 500 while the grammar admitted 256 and the negative corpus refused 257; the configurable ceiling was twice the encodable one, and an operator raising it would have produced rejections no reason code explained. It is 256. And the negative corpus had no way to state "these bytes decode perfectly and the grammar forbids them" — the corpus said so itself, deferring `atomic-batch-result-v1` and `claim-result-v1` with the words "in prose state rather than in bytes". That absence is why partial acceptance could be forbidden by three documents and admitted by two schemas for as long as it was. A `cddl_hex` case shape now exists, six cases use it, and `challenge-without-expected-tuple` records the exact shape SR-007 named so the artifacts cannot drift back to it silently.
+
+**What this unit does not do.** It does not close SR-007; the finding's state and review verdict are the owner's. It reconciles four of the five divergences D-043 records and the whole of the challenge one; the fifth — `checkpoint-receipt-v1` and `checkpoint_receipts` having near-disjoint column sets, with `server_receipt_sequence` defined once in the CDDL and stored nowhere while `VIBEPROOF_V1_PROTOCOL.md` makes it part of server state — is untouched and stands open. It is a receipt-shape divergence rather than a challenge or batch one, and folding it in here would have made one unit answer for two findings. And nothing here is implementation: no verifier reads the CDDL, no handler applies the constraints, and `validate_batch_challenge_binding.py` proves the artifacts agree, not that the protocol they agree on is correct.
 
 ## Implementation epics — specified, blocked until P-1104
 

@@ -54,7 +54,25 @@ vibeproof-claim-v1 = {
   27: [* reason-code],     ; compact deterministic result codes
   28: registered-id,       ; privacy_policy_id
   29: true,                ; privacy_pass (false claims never serialize)
-  30: digest32 / nil       ; optional local detector result commitment
+  30: digest32 / nil,      ; optional local detector result commitment
+  ; ADR-007: "Every claim in the batch signs the same batch challenge nonce plus
+  ; its own batch ID, zero-based index, total count, sequence, and previous-claim
+  ; hash." Labels 6, 7 and 11 carried the sequence, the previous head and the
+  ; nonce; the batch position was not signed by anything, so ADR-007's rejection
+  ; of "missing indices, duplicate indices, changed order" could only be applied
+  ; to the unsigned outer `batch-context`, which a submitter controls freely. The
+  ; three labels below put the batch position inside the signed payload, which is
+  ; what makes that rejection enforceable rather than asserted.
+  31: uuid7,               ; batch_id, equal to batch-context label 1
+  32: 0..255,              ; batch_index, zero-based position in batch-context label 4
+  33: 1..256,              ; batch_claim_count, equal to the length of that array
+  ; The digest of the COSE_Sign1 gap declaration this claim carries, or nil when
+  ; the sequence is contiguous. ADR-007 requires the declaration to be "included
+  ; in the first claim after the gap"; this map is closed and a COSE envelope is a
+  ; tagged item, so the envelope travels in batch-context label 5 and the claim
+  ; signs its digest. Signing the digest is what binds the declaration to the
+  ; claim: an envelope swapped in transport no longer matches.
+  34: digest32 / nil
 }
 
 verifier-appraisal-v1 = {
@@ -98,18 +116,31 @@ checkpoint-receipt-v1 = {
   11: uuid7                ; server_signing_key_id
 }
 
+; The canonical challenge. `packages/schemas/planning-schema.sql#claim_challenges`
+; persists exactly these eleven fields and `packages/schemas/openapi-v1.yaml#ClaimChallenge`
+; projects exactly these eleven fields into JSON; `scripts/repository/validate_batch_challenge_binding.py`
+; holds the three-way table and fails on any divergence. Before that, the three
+; definitions bound disjoint field sets: labels 5, 6 and 7 existed in no column and
+; no API property, so the "expected tuple" verification that
+; docs/architecture/VIBEPROOF_V1_PROTOCOL.md attributes to the server had nothing
+; to read.
 challenge-v1 = {
-  0: 1,
-  1: uuid7,
+  0: 1,                    ; protocol_major
+  1: uuid7,                ; challenge_id
   2: digest32,             ; account_pseudonym
   3: uuid7,                ; device_lineage_id
-  4: nonce32,
-  5: uint64,               ; expected next sequence
-  6: digest32,             ; expected local head
-  7: uuid7 / nil,          ; expected checkpoint
-  8: epoch-ms,
-  9: epoch-ms,
-  10: uint32               ; max batch claims
+  4: nonce32,              ; nonce
+  5: uint64,               ; expected_next_sequence
+  6: digest32,             ; expected_local_commitment_head
+  7: uuid7 / nil,          ; expected_checkpoint_receipt_id
+  8: epoch-ms,             ; issued_at
+  9: epoch-ms,             ; expires_at
+  ; ADR-007 requires the challenge to carry "maximum claim count, and maximum
+  ; encoded bytes". The count was `uint32`, which admits 4294967295 while
+  ; batch-context label 4 admits 256, so a challenge could authorize a batch no
+  ; batch could encode. The byte ceiling was absent entirely.
+  10: 1..256,              ; max_batch_claims
+  11: uint32               ; max_encoded_bytes
 }
 
 batch-context = {
@@ -117,31 +148,86 @@ batch-context = {
   1: uuid7,                ; batch_id
   2: digest32,             ; idempotency request fingerprint
   3: uuid7,                ; challenge_id
-  4: [1*256 cose-sign1-claim-v1]
+  4: [1*256 cose-sign1-claim-v1],
+  ; One signed gap declaration per claim whose label 34 is non-nil, in the order
+  ; those claims appear. The envelope cannot sit inside the claim itself: the claim
+  ; map is closed and its payload is CBOR the canonical profile decodes, while a
+  ; COSE_Sign1 is a tagged item the profile refuses. The claim signs the digest,
+  ; so carrying the bytes out here does not make them unbound.
+  5: [* cose-sign1-gap-v1]
 }
 
+; Partial acceptance is not encodable, rather than prohibited in prose only.
+; ADR-007 states "Partial batch acceptance is prohibited in protocol v1" and
+; VIBEPROOF_V1_PROTOCOL.md states "never partial success"; the previous single map
+; gave every claim an independent outcome inside a batch with its own outcome and
+; tied the two to nothing, so "batch committed, claims 3 and 7 rejected" was a
+; valid instance. A committed batch now admits only accepted per-claim results and
+; a refused batch admits only refused ones, so the mixed instance satisfies neither
+; alternative. `conformance/vibeproof/v1/malformed-resource-corpus.json` carries the
+; bytes of that mixed instance as a negative case, so the prohibition is exercised
+; rather than declared.
 atomic-batch-result-v1 = {
   0: 1,
-  1: uuid7,
-  2: 0..5,                 ; committed/idempotent/conflict/rejected/quarantined/retryable
+  1: uuid7,                ; batch_id
+  2: 0..1,                 ; committed / idempotent-replay
   3: digest32,             ; exact request fingerprint
-  4: [* claim-result-v1],
+  4: [1*256 claim-accepted-result-v1],
   5: [* cose-sign1-receipt-v1],
   6: bytes .size (0..1048576)
+} / {
+  0: 1,
+  1: uuid7,                ; batch_id
+  2: 2..5,                 ; conflict / rejected / quarantined / retryable
+  3: digest32,             ; exact request fingerprint
+  4: [1*256 claim-refused-result-v1],
+  ; No checkpoint receipt is issued for a batch that did not commit. A receipt
+  ; acknowledges an accepted head, and a refused batch advanced no head.
+  5: [0*0 cose-sign1-receipt-v1],
+  6: bytes .size (0..1048576)
 }
-claim-result-v1 = { 0: uuid7, 1: 0..7, 2: [* reason-code], 3: uuid7 / nil }
 
+; Ordinals are `wire_ordinals.acceptance_outcome` in
+; packages/schemas/appraisal-policy-v1.json: 0 accepted, 1 accepted-with-downgrade,
+; 2 accepted-private-analytics, 3 idempotent-replay, 4 quarantined, 5 rejected,
+; 6 superseded, 7 retracted. The split is at 3/4: 0..3 admit the claim and carry an
+; appraisal, 4..7 do not. A refusal carries at least one reason code, because a
+; refusal with an empty reason list is the shape this repository has been bitten by
+; nine times — a check satisfied by emptiness.
+claim-accepted-result-v1 = { 0: uuid7, 1: 0..3, 2: [* reason-code], 3: uuid7 }
+claim-refused-result-v1 = { 0: uuid7, 1: 4..7, 2: [1* reason-code], 3: nil }
+claim-result-v1 = claim-accepted-result-v1 / claim-refused-result-v1
+
+; ADR-007 identifies the declaration by "the first and last missing sequence"; this
+; map binds the sequences either side of the gap. They are the same statement one
+; apart — first missing is label 3 plus one, last missing is label 4 minus one — and
+; the pair either side is the form that also states which heads the chain jumps
+; between. The relation is recorded here rather than left for a reader to infer,
+; because the two documents naming different fields for one quantity is what an
+; implementer resolves by guessing.
+;
+; The 10,000-sequence maximum ADR-007 states is a relation between labels 3 and 4.
+; CDDL constrains each label independently and has no control for the difference of
+; two, so the bound is not expressible here and is not silently dropped: it is a
+; CHECK constraint on `gap_declarations` in packages/schemas/planning-schema.sql and
+; `continuity.max_recoverable_gap_sequences` in packages/schemas/policy-defaults-v1.json,
+; and validate_batch_challenge_binding.py fails if either stops agreeing with the
+; number ADR-007 states.
 gap-declaration = {
   0: 1,
-  1: uuid7,
-  2: uuid7,                ; lineage
-  3: uint64,               ; sequence before gap
-  4: uint64,               ; sequence after gap
-  5: digest32,             ; head before
-  6: digest32,             ; head after
-  7: 0..5,                 ; registered gap cause
+  1: uuid7,                ; gap_declaration_id
+  2: uuid7,                ; device_lineage_id
+  3: uint64,               ; sequence_before_gap
+  4: uint64,               ; sequence_after_gap
+  5: digest32,             ; local_commitment_head_before
+  6: digest32,             ; local_commitment_head_after
+  ; ADR-007 registers four causes: 0 local-corruption, 1 acknowledged-state-loss,
+  ; 2 interrupted-migration, 3 key-recovery. The range was 0..5, so two ordinals
+  ; were representable with no registered meaning and a declaration carrying one
+  ; would have been accepted by the grammar and unresolvable by the verifier.
+  7: 0..3,                 ; registered gap cause
   8: digest32,             ; local audit commitment
-  9: epoch-ms
+  9: epoch-ms              ; declared_at
 }
 
 key-rotation-transition-v1 = {
@@ -184,6 +270,17 @@ protected-headers-receipt-v1 = {
   4: uuid7,
   1001: 1
 }
+; D-043 and ADR-007 both say "signed gap-declaration". There were exactly three
+; COSE wrappers — claim, receipt, rotation — and none of them was a gap, so the
+; declaration was a bare CBOR map with no signed form, no protected-header rule and
+; therefore no content type. Nothing could sign it, which made "signed" a word in
+; two documents and a capability in none.
+protected-headers-gap-v1 = {
+  1: -19,
+  3: "application/vibemaxxing-gap+cbor",
+  4: uuid7,
+  1001: 1
+}
 
 cose-sign1-claim-v1 = #6.18([
   protected: bytes,
@@ -198,6 +295,12 @@ cose-sign1-receipt-v1 = #6.18([
   signature: signature64
 ])
 cose-sign1-rotation-v1 = #6.18([
+  protected: bytes,
+  unprotected: {},
+  payload: bytes,
+  signature: signature64
+])
+cose-sign1-gap-v1 = #6.18([
   protected: bytes,
   unprotected: {},
   payload: bytes,

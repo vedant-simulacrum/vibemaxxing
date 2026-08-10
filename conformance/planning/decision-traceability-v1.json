@@ -2486,6 +2486,61 @@
       "id": "D-625",
       "implementation_bearing": false,
       "reason": "reverses a finding's recorded state; governs the planning record rather than the product"
+    },
+    {
+      "id": "D-626",
+      "implementation_bearing": true,
+      "normative_owner": "docs/decisions/ADR-007-BATCH_CHALLENGE_AND_SEQUENCE_RECOVERY.md with packages/schemas/openapi-v1.yaml",
+      "implementation_owner": "PF-070 with S-008",
+      "machine_or_state_ownership": "no aggregate; the challenge's single use is a uniqueness constraint on claim_challenges rather than a state",
+      "platform_scope": "Server, Native",
+      "required_executable_evidence": "Validator run refusing a batch_commitment property or column in any schema, and a second batch presented against a consumed challenge failing to insert"
+    },
+    {
+      "id": "D-627",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/vibeproof-claim-v1.cddl#challenge-v1",
+      "implementation_owner": "PF-070 with S-008 and N-004",
+      "machine_or_state_ownership": "claim_challenges as sole persistence owner of the bound tuple; device_id and consumption recorded as server-only with reasons",
+      "platform_scope": "Server, Native",
+      "required_executable_evidence": "Validator run comparing the eleven fields across the CDDL, the DDL and the API, with a case adding a field to one alone and failing"
+    },
+    {
+      "id": "D-628",
+      "implementation_bearing": true,
+      "normative_owner": "docs/decisions/ADR-007-BATCH_CHALLENGE_AND_SEQUENCE_RECOVERY.md",
+      "implementation_owner": "PF-070 with S-008",
+      "machine_or_state_ownership": "claim_batches as the batch's persistence owner, with claims and claim_rejections bound to disjoint outcome sets by composite foreign key",
+      "platform_scope": "Server",
+      "required_executable_evidence": "A committed batch result carrying one refused per-claim result failing to encode, from recorded bytes, and an insert of a claim against a rejected batch refused by PostgreSQL"
+    },
+    {
+      "id": "D-629",
+      "implementation_bearing": true,
+      "normative_owner": "docs/decisions/ADR-007-BATCH_CHALLENGE_AND_SEQUENCE_RECOVERY.md with packages/schemas/vibeproof-claim-v1.cddl",
+      "implementation_owner": "PF-070 with N-004 and S-008",
+      "machine_or_state_ownership": "gap_declarations as sole persistence owner; device_lineages.continuity_state remains the lineage's continuity aggregate",
+      "platform_scope": "Server, Native",
+      "required_executable_evidence": "A gap wider than the recorded maximum refused by the CHECK constraint, and a claim whose signed label 34 does not match the accompanying envelope's digest rejected"
+    },
+    {
+      "id": "D-630",
+      "implementation_bearing": true,
+      "normative_owner": "packages/schemas/policy-defaults-v1.json",
+      "implementation_owner": "PF-070 with S-008",
+      "machine_or_state_ownership": "no aggregate; a configurable ceiling derived from the batch container bound",
+      "platform_scope": "Server",
+      "required_executable_evidence": "Validator run deriving the ceiling from batch-context and failing when the default disagrees, with a 257-claim batch refused before the claim loop"
+    },
+    {
+      "id": "D-631",
+      "implementation_bearing": false,
+      "reason": "adds a case shape to the negative corpus; governs how the planning record states a grammar refusal rather than the product"
+    },
+    {
+      "id": "D-632",
+      "implementation_bearing": false,
+      "reason": "opens the repair-unit series bound; governs the planning record rather than the product"
     }
   ]
 }

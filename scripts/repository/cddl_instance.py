@@ -41,6 +41,12 @@ _RULE_START = re.compile(r"^([a-zA-Z][a-zA-Z0-9_-]*)\s*=", re.M)
 _INTEGER = re.compile(r"-?\d+")
 _RANGE = re.compile(r"(-?\d+)\.\.(-?\d+)")
 _BYTES_SIZE = re.compile(r"bytes\s*\.size\s*(\d+)")
+# `bytes .size (lo..hi)`. `atomic-batch-result-v1` label 6 has carried this form since
+# the rule was written and nothing ever checked an instance of it, so the fixed-width
+# pattern above was enough. It stopped being enough when the batch result acquired
+# byte-level negative cases: a checker that raised `CddlUnsupported` on the stored
+# response bytes would have reported the same green as one that checked them.
+_BYTES_SIZE_RANGE = re.compile(r"bytes\s*\.size\s*\(\s*(\d+)\s*\.\.\s*(\d+)\s*\)")
 _ARRAY_HEAD = re.compile(r"(?:(\d*)\*(\d*)|(\*))\s*(.+)")
 
 
@@ -211,6 +217,17 @@ def check(expression: str, value: Any, bodies: dict[str, str], path: str = "") -
             raise CddlMismatch(f"expected {width} bytes{where}, got {len(value)}")
         return
 
+    range_size_match = _BYTES_SIZE_RANGE.fullmatch(expression)
+    if range_size_match:
+        low, high = int(range_size_match.group(1)), int(range_size_match.group(2))
+        if not isinstance(value, bytes):
+            raise CddlMismatch(
+                f"expected {low}..{high} bytes{where}, got {type(value).__name__}"
+            )
+        if not low <= len(value) <= high:
+            raise CddlMismatch(f"expected {low}..{high} bytes{where}, got {len(value)}")
+        return
+
     if expression.startswith("[") and expression.endswith("]"):
         _check_array(expression, value, bodies, path)
         return
@@ -220,11 +237,14 @@ def check(expression: str, value: Any, bodies: dict[str, str], path: str = "") -
         return
 
     if expression in bodies:
-        body = bodies[expression]
-        if body.startswith("{"):
-            _check_map(map_entries(body), value, bodies, path or expression)
-            return
-        check(body, value, bodies, path or expression)
+        # Deliberately re-entrant rather than dispatching on the body's first
+        # character. A rule whose body is a *choice of maps* — `atomic-batch-result-v1`
+        # is one — starts with `{` and is not a map, and the shortcut that used to be
+        # here read the first alternative as the whole rule. It would have accepted a
+        # refused batch result as a committed one and rejected the shape the rule
+        # exists to admit, which is worse than not checking: it is checking the wrong
+        # thing and reporting a pass. Re-entering splits alternatives first.
+        check(bodies[expression], value, bodies, path or expression)
         return
 
     raise CddlUnsupported(f"unsupported CDDL type expression: {expression!r}")

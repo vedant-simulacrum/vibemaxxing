@@ -260,7 +260,10 @@ class RuleOwnershipTests(unittest.TestCase):
     def test_an_unpinned_rule_that_gained_a_case_fails(self) -> None:
         """A justification that outlives the hole it explained is a stale excuse."""
         corpus = self.read(self.corpus_path)
-        corpus["cases"][-1]["cddl_rule"] = "challenge-v1"
+        # `verifier-appraisal-v1` rather than `challenge-v1`: PF-070 pinned the
+        # challenge with byte-level cases, so it is no longer an unpinned rule and this
+        # test would have been asserting against a hole that had been filled.
+        corpus["cases"][-1]["cddl_rule"] = "verifier-appraisal-v1"
         self.write(self.corpus_path, corpus)
         self.assert_ownership_fails("name rules the corpus does not pin")
 
@@ -277,10 +280,13 @@ class RuleOwnershipTests(unittest.TestCase):
         payload = self.generator.decode_exact(
             bytes.fromhex(vectors["claim"]["canonical_payload_hex"])
         )
-        payload[31] = 0
+        # Label 35 rather than 31: PF-070 gave the claim map labels 31 to 34 for the
+        # signed batch position and the gap-declaration commitment, so 31 is now a
+        # declared label of the correct type and injecting it proved nothing.
+        payload[35] = 0
         vectors["claim"]["canonical_payload_hex"] = self.generator.encode(payload).hex()
         self.write(self.vectors_path, vectors)
-        self.assert_ownership_fails("undeclared=[31]")
+        self.assert_ownership_fails("undeclared=[35]")
 
     def test_a_payload_value_of_the_wrong_width_fails(self) -> None:
         vectors = self.read(self.vectors_path)
@@ -330,7 +336,11 @@ class RuleOwnershipTests(unittest.TestCase):
 
     def test_a_prose_case_may_not_claim_a_decoder_signal(self) -> None:
         corpus = self.read(self.corpus_path)
-        corpus["cases"][-1]["decoder_signal"] = "duplicate-key"
+        # Selected by shape rather than by position. The last case used to be a prose
+        # one; PF-070 appended six `cddl_hex` cases, which refuse a decoder signal for a
+        # different and more specific reason, so position stopped naming the shape.
+        prose = next(case for case in corpus["cases"] if "state" in case)
+        prose["decoder_signal"] = "duplicate-key"
         self.write(self.corpus_path, corpus)
         self.assert_corpus_fails("no bytes to decode")
 

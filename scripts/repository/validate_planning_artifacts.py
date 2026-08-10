@@ -1949,6 +1949,56 @@ def validate_vibeproof_rule_ownership() -> None:
         raise ValidationFailure("; ".join(offences))
 
 
+def _check_cddl_negative_case(case: dict, bodies: dict[str, str]) -> None:
+    """A `cddl_hex` case decodes cleanly and is refused by the rule it names.
+
+    The corpus had exactly two ways to state a negative: bytes the canonical profile
+    decoder refuses, and prose describing transaction state. Neither can express "these
+    bytes decode perfectly and the grammar forbids them", which is the entire class of
+    defect `atomic-batch-result-v1` and `claim-result-v1` sat in — the corpus said so
+    itself, deferring both rules with the words "in prose state rather than in bytes".
+    That absence is why partial batch acceptance could be prohibited by three documents
+    and admitted by two schemas for as long as it was.
+
+    Two failure modes are refused here, and the first is the one that matters. Bytes the
+    *decoder* rejects prove nothing about the grammar: the case would pass while the rule
+    it names went unexercised, which is a decoder case wearing a grammar case's label. And
+    bytes the grammar accepts are not a negative case at all.
+    """
+    identifier = case["id"]
+    rule = case.get("cddl_rule")
+    if not rule:
+        raise ValidationFailure(
+            f"{identifier}: a cddl_hex case must name the cddl_rule it violates"
+        )
+    if "decoder_signal" in case:
+        raise ValidationFailure(
+            f"{identifier}: declares a decoder_signal on a grammar case; these bytes are "
+            "required to decode, so no decoder signal can be produced"
+        )
+    try:
+        decoded = vibeproof_vectors.decode_exact(bytes.fromhex(case["cddl_hex"]))
+    except vibeproof_vectors.ProfileViolation as refusal:
+        raise ValidationFailure(
+            f"{identifier}: the canonical profile decoder refused these bytes as "
+            f"{refusal.symbol}, so {rule} is never reached and the case exercises the "
+            "decoder rather than the grammar"
+        ) from refusal
+    try:
+        cddl_instance.check(rule, decoded, bodies)
+    except cddl_instance.CddlMismatch:
+        return
+    except cddl_instance.CddlUnsupported as error:
+        raise ValidationFailure(
+            f"{identifier}: {rule} uses a construct cddl_instance does not implement "
+            f"({error}); the case would report a pass nothing checked"
+        ) from error
+    raise ValidationFailure(
+        f"{identifier}: these bytes satisfy {rule}; a negative grammar case the grammar "
+        "accepts is not one"
+    )
+
+
 def validate_vibeproof_negative_corpus() -> None:
     """The negative corpus states what it tests, and every byte-level case does it.
 
@@ -1981,6 +2031,9 @@ def validate_vibeproof_negative_corpus() -> None:
         )
     valid_codes = {row["code"] for row in load_json(ROOT / authority)["codes"]}
     stages, outcomes = set(corpus["stages"]), set(corpus["outcomes"])
+    cddl_bodies = cddl_instance.rule_bodies(
+        (SCHEMAS / "vibeproof-claim-v1.cddl").read_text(encoding="utf-8")
+    )
 
     seen_signals: set[str] = set()
     reason_codes: list[str] = []
@@ -2000,13 +2053,16 @@ def validate_vibeproof_negative_corpus() -> None:
         reason_codes.append(case["reason_code"])
         shapes = [
             key
-            for key in ("input_hex", "mutation", "generator", "state")
+            for key in ("input_hex", "cddl_hex", "mutation", "generator", "state")
             if key in case
         ]
         if len(shapes) != 1:
             raise ValidationFailure(
                 f"{identifier}: a case states its input exactly one way, not {shapes}"
             )
+        if shapes[0] == "cddl_hex":
+            _check_cddl_negative_case(case, cddl_bodies)
+            continue
         if shapes[0] != "input_hex":
             if "decoder_signal" in case:
                 raise ValidationFailure(

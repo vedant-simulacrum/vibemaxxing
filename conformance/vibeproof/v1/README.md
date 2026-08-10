@@ -65,7 +65,7 @@ forgery were the same row until `PF-010`.
 
 ## Which file owns which CDDL rule
 
-`packages/schemas/vibeproof-claim-v1.cddl` declares twenty-six rules. Each is owned by
+`packages/schemas/vibeproof-claim-v1.cddl` declares thirty rules. Each is owned by
 exactly one of the two vector files, declared in that file rather than inferred, and
 `validate_vibeproof_rule_ownership` in `scripts/repository/validate_planning_artifacts.py`
 fails when the three sets do not partition the grammar exactly.
@@ -73,8 +73,8 @@ fails when the three sets do not partition the grammar exactly.
 | Owner | Rules | What the claim means |
 | --- | --- | --- |
 | `exact-byte-vectors.json` `cddl_rules_pinned` | 16 | The reference closure of the six messages the vectors encode. The validator recomputes that closure from the grammar and requires the declared list to equal it, so the list cannot be padded or left behind |
-| `malformed-resource-corpus.json` `cddl_rules_pinned` | 6 | `batch-context`, `gap-declaration`, `key-rotation-transition-v1`, `dual-authorized-rotation-v1`, `cose-sign1-rotation-v1`, `correction-record-v1`. Each is named by at least one negative case and every case's rule is one of these |
-| `malformed-resource-corpus.json` `cddl_rules_unpinned` | 4 | `verifier-appraisal-v1`, `challenge-v1`, `atomic-batch-result-v1`, `claim-result-v1`. No vector encodes them; each entry carries a reason and the work unit that will |
+| `malformed-resource-corpus.json` `cddl_rules_pinned` | 11 | `atomic-batch-result-v1`, `batch-context`, `challenge-v1`, `claim-accepted-result-v1`, `claim-refused-result-v1`, `claim-result-v1`, `correction-record-v1`, `cose-sign1-rotation-v1`, `dual-authorized-rotation-v1`, `gap-declaration`, `key-rotation-transition-v1`. Each is named by at least one negative case and every case's rule is one of these |
+| `malformed-resource-corpus.json` `cddl_rules_unpinned` | 3 | `verifier-appraisal-v1`, `cose-sign1-gap-v1`, `protected-headers-gap-v1`. No vector encodes them; each entry carries a reason and the work unit that will |
 
 Pinning by the exact-byte vectors is verified rather than asserted. Both payloads and
 both protected-header maps are decoded and checked against their rules: the label set
@@ -82,6 +82,14 @@ must match exactly in both directions, because the grammar's preamble closes its
 and every value must satisfy its declared type. The COSE_Sign1 envelopes are checked
 structurally as tag 18 over four elements holding the fixture's own protected bytes,
 an empty unprotected bucket, the payload and a 64-byte signature.
+
+## The third case shape
+
+A case states its input exactly one way: `input_hex`, `cddl_hex`, `mutation`, `generator` or `state`. `cddl_hex` is PF-070's and it exists because the corpus previously had no way to say *these bytes decode perfectly and the grammar forbids them*. That is not a decoder case — the canonical profile accepts the bytes — and it is not a transaction case either, because nothing about server state is involved.
+
+The consequence of the gap is recorded in the corpus's own words. `atomic-batch-result-v1` and `claim-result-v1` sat in `cddl_rules_unpinned` because "the three transaction cases here describe the outcome an atomic batch result would carry, in prose state rather than in bytes", and partial batch acceptance was accordingly prohibited by ADR-007, `VIBEPROOF_V1_PROTOCOL.md` and `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` and admitted by both the CDDL and the OpenAPI schema for the length of the planning program.
+
+`_check_cddl_negative_case` in `scripts/repository/validate_planning_artifacts.py` requires each such case to decode and then to be refused by the rule it names, and refuses two failure modes explicitly: bytes the decoder rejects, which would exercise the decoder while claiming to exercise the grammar, and bytes the grammar accepts, which is not a negative case at all. `challenge-without-expected-tuple` is the shape SR-007 named — a challenge with no expected sequence, head or checkpoint — recorded in bytes so the three artifacts cannot drift back to it silently.
 
 Before this the repository compared no committed byte to the grammar.
 `validate_cddl_file` proves the CDDL parses and that named rules exist, and says so in
