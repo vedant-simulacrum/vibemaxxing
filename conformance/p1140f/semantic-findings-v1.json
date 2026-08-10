@@ -264,7 +264,7 @@
     {
       "finding_id": "SR-015",
       "severity": "P1",
-      "state": "repair-in-progress",
+      "state": "repaired-pending-review",
       "title": "Current-authorization recheck at every display and delivery boundary",
       "repair_task": "P-1140F-4",
       "finding_class": "cross-cutting-invariant",
@@ -281,7 +281,8 @@
         "packages/schemas/planning-schema.sql#score_snapshots"
       ],
       "closure_evidence": [
-        "PF-021 at 7891df41e9fb4b27c7fae378beea67a9aed7e971: getPublicProfile required no viewer while projection-authorization-v1.json made directional-block deny-hard, so a blocked person could read the profile by logging out. It now requires a session and returns 401 without one. The recheck at every other display and delivery boundary is not done."
+        "PF-021 at 7891df41e9fb4b27c7fae378beea67a9aed7e971: getPublicProfile required no viewer while projection-authorization-v1.json made directional-block deny-hard, so a blocked person could read the profile by logging out. It now requires a session and returns 401 without one. The recheck at every other display and delivery boundary is not done.",
+        "PF-033 at 7c76085bd325db07985fc73e89a46ac5f5d48951: current viewer authorization is joined to the fields it gates, and the join found that a blocked participant reads the global board by logging out. One leaderboard-page surface declared nine read-time inputs on behalf of three operations, one of which carries security: [] by decision, and four of the nine are viewer-subject-pair inputs whose deny-hard directional-block resolves to admit when there is no viewer. The API also declared no cache directive on any response, so a proxy could store a profile and serve it to a second viewer, making current authorization a property of whoever asked first. board-member-list was a rule about a surface no operation renders while listBlocks, which returns a third party's account on every row, had no surface at all. No third projection file was created: the two that exist already own audience and gate, and what was missing was the join."
       ],
       "restatement": {
         "restated_at": "2026-08-06",

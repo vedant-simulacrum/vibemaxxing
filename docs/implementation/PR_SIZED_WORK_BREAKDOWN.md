@@ -72,17 +72,17 @@ Units: 260. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 182 |
-| `in-progress` | 4 |
-| `landed` | 68 |
+| `not-started` | 181 |
+| `in-progress` | 3 |
+| `landed` | 70 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 334 assertions across 68 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 360 assertions across 70 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 4.
 
-`PF-034`, `OS-001`, `OS-003`, `OS-009`.
+`PF-036`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -90,9 +90,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 | Wave | Units | Ready |
 |---|---|---|
-| 1 | 1 | `PF-034` |
-| 2 | 1 | `PF-035` |
-| 3 | 1 | `PF-036` |
+| 1 | 1 | `PF-036` |
 
 Statuses additionally checkable against artifact presence: 197 of 260. The other 63 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -1008,37 +1006,82 @@ Evidence: absent packages/schemas/projection-authorization-v1.json :: "surface_i
 Exit: every operation the API declares has one boundary, every third-party boundary names a surface, every surface answers for all nine inputs, every viewer-visible field carries the revision set that gates it, and every trigger's blast radius is evaluated rather than recorded. Nothing here is implemented; no surface in this repository evaluates the rule, which is why SR-015's closure evidence is a matter for the review that reads this commit and not for this file.
 
 ### PF-034 — Schema/interface inventory repair
-Files: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `scripts/repository/validate_planning_coverage.py`
-Acceptance: `python3 scripts/repository/validate_planning_coverage.py` exits 0 with every file under `packages/schemas/` and `conformance/` present in the inventory and every inventory row resolving to a file; `grep -in 'closed-world\|complete' docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md` returns no maturity claim.
+Files: `docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md`, `scripts/repository/validate_planning_coverage.py`, `tests/ci/test_planning_coverage_inventory.py` (new)
+Acceptance: `python3 scripts/repository/validate_planning_coverage.py` exits 0 with every file Git tracks under `packages/schemas/` and `conformance/` owned by an inventory citation or by a named check that enumerates its directory, and every inventory citation into either tree resolving to a file, a directory or a pattern that matches something; the inventory carries both maturity literals in `INVENTORY_MATURITY_LITERALS` and none of the overclaims in `INVENTORY_FORBIDDEN_CLAIMS` outside that statement; `tests/ci/test_planning_coverage_inventory.py` injects a file with no owner, a citation resolving to nothing, a pattern matching nothing, a tree-root citation, a directory citation, a lost delegate, a removed maturity literal and every forbidden phrase, and each fails.
 Depends: PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033
 Repair: P-1140F-5
 Serves: SR-016
 Est: 12-16
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_coverage.py
+Evidence: unittest tests.ci.test_planning_coverage_inventory
+Evidence: contains 1 scripts/repository/validate_planning_coverage.py :: INVENTORIED_TREES = ("packages/schemas", "conformance")
+Evidence: contains 1 scripts/repository/validate_planning_coverage.py :: def check_inventory_coverage(errors: list[str]) -> None:
+Evidence: contains 1 scripts/repository/validate_planning_coverage.py :: def inventoried_files() -> list[str]:
+Evidence: contains 2 scripts/repository/validate_planning_coverage.py :: "scripts/repository/validate_planning_artifacts.py",
+Evidence: contains 1 docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md :: This inventory records declared ownership.
+Evidence: contains 1 docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md :: packages/schemas/local-trust-domains-v1.json
+Evidence: contains 1 docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md :: packages/schemas/oauth-provider-registry-v1.json
+Evidence: contains 1 docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md :: P-1140F semantic review record
+Evidence: absent docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md :: closed-world
+Evidence: absent docs/planning/SCHEMA_AND_INTERFACE_INVENTORY.md :: proposed provider registry
 
 The prose range `PF-005 through PF-033` is expanded to the full enumeration because `Depends:` admits unit IDs only, and a range cannot be resolved by the cross-reference validator.
 
-- update every interface maturity and owner;
-- remove stale “closed-world/complete” claims;
-- register all new schemas, tables, messages, policies and fixtures;
-- validate cross-file enum and identifier mappings.
+**The acceptance was rewritten, and its second clause was the reason.** `grep -in 'closed-world\|complete'` over the inventory is the shape PF-029 found: a check phrased as an absence, passing because the word had never appeared. Here it is worse than vacuous in both directions at once. `closed-world` occurs zero times in the document, so that half can never fail; `complete` occurs three times and every one of them is the inventory's own completeness *rule* — the thing the file exists to state — so the half that can fire fires on correct text, and the only way to satisfy a reader running the command literally is to delete the rule. The replacement requires the maturity statement in two exact literals and refuses eleven named overclaims, with the scan run over the text with the statement removed so the disclaimer is allowed to name what it disclaims. Both halves are injected: `test_a_missing_maturity_statement_fails` removes each literal, and `test_every_forbidden_claim_fires` adds each phrase and asserts the failure, because a ban list nothing has ever tripped is not a control.
+
+**The coverage was not real, and it was not hand-listed either. Nothing read the inventory at all.** `doctor.py` asserted the file exists. `validate_planning_artifacts.py`'s `validate_inventory_register` asserted its rows are unique and carry a status from the declared vocabulary. Not one line of either tree was resolved against it in either direction, so the first clause of the acceptance described a check no code performed. A probe file dropped into `packages/schemas/` and into `conformance/p1140e/` passed every validator in `make validate`.
+
+Two enumerations were real and are kept rather than duplicated. `validate_schema_example_coverage` reads `packages/schemas/examples/` as a directory, refuses a file whose prefix no schema owns, and executes each `.valid`/`.invalid-` expectation. `validate_conformance_manifests` refuses a suite holding a file no case, authority or tooling entry names, and recomputes every recorded fixture digest. Restating those files row by row here would have been a second owner for one vocabulary, so coverage of those directories is delegated by name and the delegation fails closed: the coverage validator checks that both functions still exist, and `test_a_delegation_whose_delegate_is_gone_fails` proves it.
+
+**Sixty-three shipped files were owned by nothing.** Three conformance directories declare no suite manifest and so fell through every enumeration: `conformance/p1140e/`, `conformance/p1140f/` and `conformance/planning/` — the records this repository keeps about itself, which is the set most likely to be edited to agree with whoever is reading it. They now have three rows of their own. The rest were top-level `packages/schemas/` contracts the table named in prose and never in a path: `local-trust-domains-v1.json`, whose eight roles are what the privacy boundary rests on; `egress-allowlist-v1.json` and `observability-allowlist-v1.yaml`, cited as “egress and observability allowlists”; `platform-profile-registry-v1.json`, cited as “platform-profile registry”; `release-set-v1.schema.json`, cited as “release-set schema”; `social-integrity-events-v1.proto`, cited as “events”; and `pricing-interpretation.schema.json`, which had no row of any kind, so the one figure the product labels estimated and server-interpreted had no declared owner.
+
+**One row was a stale claim rather than a vague one.** `oauth-provider-registry-v1.json` was recorded as a *proposed* provider registry long after it was authored. That is the same drift in the opposite direction, and it is the direction the citation-resolution half now refuses: a row may not name an artifact that is not there, and it may not describe an artifact that is.
+
+**Four counts in the conformance-harness row were each one out of step.** It said fifteen manifests, thirteen of the fifteen with `runner.state: absent`, three suites holding no fixture and four recording a `negative_case_gap`. The tree holds sixteen, fourteen, two and three. The sixteenth suite arrived and the sentence saying how many there were did not move, which is the failure this unit is about stated in miniature.
+
+Two rules keep the check from satisfying itself. A citation naming a tree root grants no coverage, because the sentence explaining that every file must be owned would otherwise own every file. A directory citation grants no coverage either: `conformance/planning/` appears in this repair inside the sentence recording that the directory declares no manifest, and while directory citations counted, that sentence covered every file in the directory it was describing as uncovered. Both are injected as cases.
+
+Exit: the inventory resolves against the two trees it inventories in both directions, a new contract under either tree fails the gate until a row owns it, and the maturity statement is required in literals rather than assumed from the absence of a word.
 
 ### PF-035 — P-1140E validator repair
-Files: `scripts/repository/validate_p1140e_contracts.py`, `conformance/p1140e/validation-matrix-v1.json`, `tests/ci/test_p1140e_contracts.py` (new)
-Acceptance: `python3 scripts/repository/validate_p1140e_contracts.py` exits non-zero on each of six injected defects — missing owner, unreachable lifecycle, SQL/state/API vocabulary mismatch, missing generation key, missing authority revision, and a content digest that does not match — and 0 on the clean tree; the summary line names the check as structural.
+Files: `scripts/repository/validate_p1140e_contracts.py`, `tests/ci/test_p1140e_contracts.py`, `tests/ci/planning_fixtures.py`, `tests/ci/test_state_vocabularies.py`
+Acceptance: the P-1140E structural gate exits non-zero on each of six injected defects and 0 on the clean tree, with each leg injected against the validator that owns it: missing owner and missing fixture path against `scripts/repository/validate_p1140e_contracts.py`; unreachable lifecycle state and SQL/state/API vocabulary mismatch against `scripts/repository/validate_state_vocabularies.py`; missing generation key, missing authority revision and a content digest that does not match against `scripts/repository/validate_planning_artifacts.py`. `python3 -m unittest tests.ci.test_p1140e_contracts` runs all six, and the P-1140E summary line names the check as structural with `claim_scope=structural-consistency-only` and `runtime_evidence=absent`.
 Depends: PF-034
 Repair: P-1140F-5
 Serves: SR-016
 Est: 10-14
-Status: in-progress
+Status: landed
+Evidence: validator scripts/repository/validate_p1140e_contracts.py
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_p1140e_contracts
+Evidence: unittest tests.ci.test_state_vocabularies
+Evidence: contains 1 tests/ci/planning_fixtures.py :: P1140E_REDIRECTED = ("ROOT", "SCHEMAS", "CONF", "TRACE")
+Evidence: contains 1 tests/ci/planning_fixtures.py :: def mirror_repository(sandbox: Path, writable: tuple[str, ...]) -> None:
+Evidence: contains 1 tests/ci/planning_fixtures.py :: class StateVocabularyMixin:
+Evidence: contains 1 tests/ci/test_p1140e_contracts.py :: def test_an_unreachable_lifecycle_state_fails(self) -> None:
+Evidence: contains 1 tests/ci/test_p1140e_contracts.py :: def test_a_sql_state_api_vocabulary_mismatch_fails(self) -> None:
+Evidence: contains 1 tests/ci/test_p1140e_contracts.py :: def test_a_missing_generation_key_fails(self) -> None:
+Evidence: contains 1 tests/ci/test_p1140e_contracts.py :: def test_a_missing_authority_revision_fails(self) -> None:
+Evidence: contains 1 tests/ci/test_p1140e_contracts.py :: def test_a_content_digest_that_does_not_match_fails(self) -> None:
+Evidence: contains 1 tests/ci/test_p1140e_contracts.py :: def test_the_summary_names_the_check_as_structural(self) -> None:
+Evidence: contains 1 scripts/repository/validate_p1140e_contracts.py :: generate_p1140e_coverage.reproducible(),
 
-The test file now exists and the validator gained the reason-authority repair under D-560, so this is started rather than done. Three of the six injected defects the acceptance names are covered — an authority that resolves to nothing, a declared authority no code uses, and one shadowing a registered machine — plus two assertions that the committed state holds the properties those checks enforce. The remaining three are the vocabulary-mismatch, missing-generation-key and content-digest injections, and the clean-tree case passes today. The unit closes when all six fire.
+**The acceptance was rewritten, because as written it could only be satisfied by making four checks worse.** It demanded all six injections from `validate_p1140e_contracts.py`. Four of them are already owned elsewhere and already fire: lifecycle reachability and the three-way SQL/state/API vocabulary agreement by `validate_state_vocabularies.py`, which exists for exactly that; the generation-keyed constraints on `ranking_entries` and `score_snapshots`, the nine viewer-authorization `revision_source` fields and every recomputed fixture digest by `validate_planning_artifacts.py`. Reimplementing them in the P-1140E validator would have put a second owner on each of those vocabularies, which is the defect class this repair sequence has spent thirty units removing, and the two copies would disagree the first time either moved. The acceptance now names the owning validator per leg. `make validate` runs all three, so the gate still fails on any of the six; what changed is which file is allowed to be the authority for each.
+
+**The three named as remaining were not the three that were missing.** The block claimed coverage of "missing owner" by pointing at the reason-authority cases, which are a different rule: an authority that resolves to nothing, a declared authority no code uses, and one shadowing a registered machine are three injections against `reason-codes-v1.json`, and none of them is a decision binding with an owner that is not there. The matrix's five owners per decision — normative, work-unit, schema-or-state, platform-scope and fixture — had no injection at all, so the check that resolves them had never been shown to fire. `MissingOwnerTests` now injects a dangling `normative_owner`, an empty one and a dangling `fixture_path`.
+
+**The suite could not test what it claimed to test, and the reason was one unpatched constant.** It copied `packages/schemas/` to a temporary directory and patched `SCHEMAS`, leaving `CONF` on the real `conformance/p1140e/`. Any case mutating a registry therefore tripped `state fixture set mismatch` or `platform validation plan set mismatch` — a disagreement between the sandbox registry and the committed fixtures — before reaching the check under test, so a case could pass on an error it did not inject. `P1140EValidatorMixin` redirects `ROOT`, `SCHEMAS`, `CONF` and `TRACE` or refuses to run, and it mirrors the repository rather than copying four directories: the matrix resolves owner, work-unit, schema, platform and fixture citations against `ROOT` and those land in four different top-level trees, plus `.github/`, so the writable trees are copied and everything else is symlinked. It also redirects `generate_p1140e_coverage`'s own `ROOT`, `SCHEMAS` and `MATRIX`, because that module is imported by the validator and holds its own constants; leaving them on the real repository would make the reproducibility check compare the committed matrix against the committed registries while every other check read the sandbox. That reproducibility check is preserved and asserted, not undone.
+
+**A shared fixture said it carried no tests and carried twenty-one.** `ValidatorFixture` in `tests/ci/test_state_vocabularies.py` documented itself as "shared setup only. Carries no tests, so inheriting it does not re-run them", which stopped being true the moment the first case was added below the helpers; two classes inherit it, so those twenty-one run three times. Inheriting it here would have added a third copy and made this unit's suite report thirty-nine cases when it holds eighteen — a count that improves when you add nothing. The scaffolding is now `StateVocabularyMixin` in `tests/ci/planning_fixtures.py`, `ValidatorFixture` is a subclass of it whose docstring says what it actually is, and the inflation is recorded rather than repaired, because collapsing it changes the reported total of a suite this change is not otherwise touching.
 
 - verify owner existence and reachable lifecycle;
 - detect SQL/state/API vocabulary mismatch;
 - detect missing generation keys and authority revisions;
 - verify content digests and tuple/certification references;
 - remain structural and never claim runtime proof.
+
+Exit: each of the six defect classes is injected against the validator that owns it and observed to fail, the clean tree passes, and the summary line still says the check is structural and that runtime evidence is absent.
 
 ### PF-036 — P-1140F exact-head review
 Files: `conformance/p1140f/review-target-v1.json`, `conformance/p1140f/semantic-findings-v1.json`, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`
@@ -1048,6 +1091,26 @@ Repair: P-1140F-5
 Serves: SR-016
 Est: 12-16
 Status: not-started
+
+**This unit cannot be landed by an agent, and that is the finding rather than an obstacle.**
+
+Its mechanical half requires `review-target-v1.json` to pin a commit and
+`validate_p1140f_authority.py` to exit 0 with zero open P0 or P1. Both are owner
+acts. Pinning the target is the act of saying which head was reviewed; zero open P1
+requires moving thirteen findings from `repaired-pending-review` to `closed`, and a
+finding closes on a review verdict, not on its units landing. The unit's own
+acceptance already says the review judgement is not mechanizable and must not be
+presented as though the validator produced it — so an agent that pinned the target
+and set the verdict would satisfy the acceptance by doing the one thing it forbids.
+
+The twelve other findings reached `repaired-pending-review` on evidence naming
+commits. SR-016 is the finding about review-record integrity, and an agent writing
+its own review record is the defect it describes.
+
+What is ready for the owner: all 68 other units are landed with executing evidence,
+twelve findings carry commit-pinned closure evidence, `validate_repair_task_binding.py`
+reports n/n for every finding except this one, and `review-target-v1.json` is
+untouched at `state: not-pinned`, `review_verdict: pending`, `reviewed_commit: null`.
 
 - pin exact commit;
 - independent manual review of SR-005 through SR-017;

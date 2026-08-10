@@ -13,6 +13,8 @@ from unittest.mock import patch
 
 import yaml
 
+from tests.ci.planning_fixtures import StateVocabularyMixin
+
 
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATOR = ROOT / "scripts" / "repository" / "validate_state_vocabularies.py"
@@ -37,60 +39,16 @@ def load_validator() -> object:
     return module
 
 
-class ValidatorFixture:
-    """Shared setup only. Carries no tests, so inheriting it does not re-run them."""
+class ValidatorFixture(StateVocabularyMixin):
+    """The sandbox plus the cases every state-vocabulary suite shares.
 
-    def setUp(self) -> None:
-        self.validator = load_validator()
-        self.directory = Path(tempfile.mkdtemp(prefix="state-vocab-"))
-        self.addCleanup(shutil.rmtree, self.directory, True)
-        self.copies = {}
-        for attribute, source in (
-            ("REGISTRY_PATH", REGISTRY),
-            ("SQL_PATH", SQL),
-            ("OPENAPI_PATH", OPENAPI),
-            ("CONTRACT_PATH", CONTRACT),
-        ):
-            target = self.directory / source.name
-            shutil.copyfile(source, target)
-            self.copies[attribute] = target
-
-    def run_validator(self) -> tuple[int, str]:
-        stderr = io.StringIO()
-        stdout = io.StringIO()
-        with contextlib.ExitStack() as stack:
-            for attribute, target in self.copies.items():
-                stack.enter_context(patch.object(self.validator, attribute, target))
-            stack.enter_context(contextlib.redirect_stderr(stderr))
-            stack.enter_context(contextlib.redirect_stdout(stdout))
-            code = self.validator.main()
-        return code, stderr.getvalue() + stdout.getvalue()
-
-    def edit_registry(self, mutate) -> None:
-        path = self.copies["REGISTRY_PATH"]
-        registry = json.loads(path.read_text(encoding="utf-8"))
-        mutate({machine["machine_id"]: machine for machine in registry["machines"]})
-        path.write_text(json.dumps(registry, indent=2) + "\n", encoding="utf-8")
-
-    def edit_openapi(self, mutate) -> None:
-        path = self.copies["OPENAPI_PATH"]
-        spec = yaml.safe_load(path.read_text(encoding="utf-8"))
-        mutate(spec["components"]["schemas"])
-        path.write_text(
-            yaml.safe_dump(spec, sort_keys=False, width=4096), encoding="utf-8"
-        )
-
-    def edit_sql(self, old: str, new: str) -> None:
-        path = self.copies["SQL_PATH"]
-        text = path.read_text(encoding="utf-8")
-        self.assertEqual(text.count(old), 1, old)
-        path.write_text(text.replace(old, new), encoding="utf-8")
-
-    def edit_contract(self, old: str, new: str) -> None:
-        path = self.copies["CONTRACT_PATH"]
-        text = path.read_text(encoding="utf-8")
-        self.assertEqual(text.count(old), 1, old)
-        path.write_text(text.replace(old, new), encoding="utf-8")
+    The docstring here used to say "shared setup only. Carries no tests, so
+    inheriting it does not re-run them", which stopped being true the moment the
+    first case was added below it: two classes inherit this one, so each of the
+    cases under this line runs three times. The scaffolding now lives in
+    `tests/ci/planning_fixtures.py` as `StateVocabularyMixin`, which a suite can
+    reuse without adopting these assertions.
+    """
 
     # -- the repository as committed -------------------------------------------------
 
