@@ -115,20 +115,21 @@
       }
     },
     "modes": {
+      "description": "Exactly the nine observation modes observer-equivalence-v1.json declares, in its precedence order. This enum previously carried `import` and omitted `acp`, which made it a second spelling of the one mode vocabulary - the duplication SR-009 exists to remove, and the one planning-schema.sql's own CHECK comment names. `import` was never an observation mode: a historical import is carried by source_authority `historical-import`, and historical imports never enter active competition.",
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
       "items": {
         "enum": [
           "native-event",
-          "extension-api",
           "official-hook",
+          "extension-api",
+          "local-runtime",
+          "acp",
           "otel",
           "proxy",
           "wrapper",
-          "live-log",
-          "local-runtime",
-          "import"
+          "live-log"
         ]
       }
     },
@@ -195,9 +196,11 @@
       }
     },
     "certification": {
+      "description": "The certification this manifest binds, as a state and a tuple. `state` was absent entirely: the block could name a bundle digest and a tuple and say nothing about whether that certification was active when it was read, while ACCOUNTING_AND_TIME_CONTRACT.md holds the effective ceiling at private-analytics for every state other than active. A manifest that cannot express the state cannot express that rule.",
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "state",
         "bundle_sha256",
         "suite_version",
         "source_version",
@@ -205,8 +208,26 @@
         "mode"
       ],
       "properties": {
+        "state": {
+          "description": "`uncertified` plus the eight states of the `source-certification` machine. The same nine values source-receipt-v1.schema.json and producer-accounting-binding-v1.schema.json carry, and the eight the state-machine registry and source_certifications.state declare. `uncertified` is not a machine state because a manifest bound to no certification has no aggregate.",
+          "enum": [
+            "uncertified",
+            "candidate",
+            "testing",
+            "active",
+            "degraded",
+            "suspended",
+            "expired",
+            "superseded",
+            "retired"
+          ]
+        },
         "bundle_sha256": {
-          "type": "string",
+          "description": "Null exactly while uncertified, which is the case evidence-bundle-v1.cddl already names and which normalized-event.schema.json, producer-accounting-binding-v1.schema.json, appraisal-result-v1.schema.json and openapi-v1.yaml already admit. Requiring a digest here meant no adapter manifest could validate without inventing one, and the committed example duly carried sixty-four `f` characters - the identical placeholder PF-016 deleted from normalized-event.valid.json.",
+          "type": [
+            "string",
+            "null"
+          ],
           "pattern": "^[a-f0-9]{64}$"
         },
         "suite_version": {
@@ -223,11 +244,49 @@
           "maxLength": 128
         },
         "mode": {
-          "type": "string",
-          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
-          "maxLength": 128
+          "description": "One of the nine observation modes, the same set `modes` admits. This carried a bare slug pattern and no enum, so a certified tuple could name a mode observer-equivalence-v1.json assigns no precedence rank and the survivor rule would have had nothing to order it by.",
+          "enum": [
+            "native-event",
+            "official-hook",
+            "extension-api",
+            "local-runtime",
+            "acp",
+            "otel",
+            "proxy",
+            "wrapper",
+            "live-log"
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "description": "A null digest and `uncertified` are the same fact and may not be stated apart. Admitting the null without binding it to the state would convert a representation gap into a permission: a manifest that forgot the digest would be indistinguishable from one that declared itself uncertified.",
+          "if": {
+            "properties": {
+              "state": {
+                "const": "uncertified"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "bundle_sha256": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "bundle_sha256": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
     },
     "capability_ceiling": {
       "type": "object",

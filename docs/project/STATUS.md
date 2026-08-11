@@ -49,7 +49,9 @@ This list is unchanged by the P-1104 decision. The executable prototypes are not
 
 ## Active semantic gate
 
-P-1140F has **13 active P1 clusters**, SR-005 through SR-017. SR-005 is `repair-in-progress`; SR-006 through SR-017 remain `open`.
+P-1140F has **13 active P1 clusters**, SR-005 through SR-017. None is closed. Their individual states live in `conformance/p1140f/semantic-findings-v1.json` and are not restated here: this document previously carried a per-finding breakdown that had been stale for weeks, which is the failure mode the note above describes — a prose summary that independently redefines state drifts silently, because nothing compares it to the registry that owns it.
+
+A finding leaves `repaired-pending-review` only on an owner's review verdict, and two of the thirteen have moved backwards rather than forwards: `validate_finding_artifact_coverage.py` found commits cited as closure evidence that had never opened artifacts their finding named, and SR-009 and SR-017 were returned to `repair-in-progress` under D-633 and D-634 rather than explained away.
 
 The first cluster is protocol authority drift. The Rust/Go 11-field shadow codec, its parallel fixture corpus, and its parity suite are explicitly `exploratory-prototype`. Their evidence ceiling is `cross-language-parity`; they cannot be used for ingestion, ranking, verifier appraisal, normative conformance, support, or launch claims.
 

@@ -68,21 +68,21 @@ Ordering principle: each specification is paired with the artifact or code that 
 
 <!-- generated: work-unit-status -->
 
-Units: 261. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
+Units: 263. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
 
 | Status | Units |
 |---|---|
-| `not-started` | 181 |
+| `not-started` | 182 |
 | `in-progress` | 3 |
-| `landed` | 71 |
+| `landed` | 72 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 371 assertions across 71 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 377 assertions across 72 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 4.
+Startable now — not done, and every dependency done: 5.
 
-`PF-036`, `OS-001`, `OS-003`, `OS-009`.
+`PF-036`, `PF-072`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -92,7 +92,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 |---|---|---|
 | 1 | 1 | `PF-036` |
 
-Statuses additionally checkable against artifact presence: 198 of 261. The other 63 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 198 of 263. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -629,7 +629,7 @@ Files: `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml
 Acceptance: `ranking_projection_generations` carries exactly one active pointer enforced by `ranking_projection_generations_active_idx`, unique and partial on `state = 'active'`; every entry key in `ranking_entries` includes the generation — primary key `(ranking_view_id, generation, position)` and unique `(ranking_view_id, generation, erasure_domain_id)` — `score_snapshots` is unique on `(ranking_view_id, generation)`, and `RankEntry` and `LeaderboardPage` both carry the generation they render; `ranking-cursor-v1.schema.json` binds the viewer, the generation, the snapshot, the authorization revision and the expiry, `conformance/planning/ranking-cursor-vectors-v1.json` states nine presentations covering all five refusals and at least one acceptance in a fixed refusal order, and `validate_planning_artifacts.py#evaluate_cursor` reaches every outcome from the inputs rather than reading `expected` back; a cursor replayed by another viewer and a cursor replayed by an anonymous reader are both refused `viewer-mismatch`; `python3 -m unittest tests.ci.test_ranking_cursor` exits 0.
 Depends: PF-021
 Repair: P-1140F-4
-Serves: SR-010
+Serves: SR-010, SR-015
 Est: 12-16
 Status: landed
 Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
@@ -652,6 +652,8 @@ Evidence: contains 1 packages/schemas/planning-schema.sql :: constraint period_s
 **The cursor rules compared fields that did not exist.** The `Cursor` parameter asserted the server "rejects a cursor it did not issue, a cursor issued against a different snapshot_id, and a cursor issued to a different principal". No record in this repository held an issuer, a snapshot or a principal, so the sentence was a promise about an opaque string. The record now holds all five inputs and the refusal order is itself a rule, because a presentation that breaks two of them must be refused by the same one every time or the refusal tells a prober which of the two facts they guessed right.
 
 **Two columns pointed at nothing.** `period_scores.generation` was a bare `bigint` naming a generation that need not exist, and `period_scores.ranking_view_id` had no foreign key at all; the composite key now resolves both. The registry defect underneath was worse: the `ranking-projection` machine named `projection-generations` as its persistence owner — a four-column stub with no `state` column — while its five states live in `ranking_projection_generations`. AGENTS.md's "one persistence owner" was satisfied by a table holding none of the state, and the near-miss name is why nothing noticed. `validate_state_vocabularies.py` now requires a machine to name the table of every SQL column it is bound to, which caught a second instance in `model-alias-resolution`.
+
+**`Serves:` gained SR-015 after the fact, and the work is unchanged.** This unit was recorded as serving SR-010 alone. SR-015 names `planning-schema.sql#score_snapshots` among its boundaries, and the mechanism that stops a durable handle into a sealed generation from replaying stale authorization is the cursor's `authorization_revision` binding and the `authorization-revision-moved` refusal — both of which are in this unit and in no other. SR-015's evidence therefore rested on two units, neither of which had touched the snapshot limb, while the unit that had was filed against a different finding. Nothing here was re-done: the attribution was wrong and is corrected. The audit that found it is `validate_finding_artifact_coverage.py`, which asks whether the commits a finding cites reached the artifacts it names.
 
 ### PF-023 — Periods, seasons, contributions and corrections
 Files: `packages/schemas/planning-schema.sql`, `packages/schemas/state-machine-registry-v1.json`, `packages/schemas/score-contribution-v1.schema.json`, `packages/schemas/ranking-correction-vectors-v1.schema.json`, `conformance/planning/ranking-correction-vectors-v1.json`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_period_corrections.py`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `docs/product/ACCOUNTING_AND_TIME_CONTRACT.md`
@@ -1103,14 +1105,22 @@ acceptance already says the review judgement is not mechanizable and must not be
 presented as though the validator produced it — so an agent that pinned the target
 and set the verdict would satisfy the acceptance by doing the one thing it forbids.
 
-The twelve other findings reached `repaired-pending-review` on evidence naming
-commits. SR-016 is the finding about review-record integrity, and an agent writing
-its own review record is the defect it describes.
+Ten other findings sit at `repaired-pending-review` on evidence naming commits, and
+two — SR-009 and SR-017 — were returned to `repair-in-progress` under D-633 and
+D-634 when `validate_finding_artifact_coverage.py` found that commits their evidence
+cited had never opened artifacts they named. SR-016 is the finding about
+review-record integrity, and an agent writing its own review record is the defect it
+describes.
 
-What is ready for the owner: all 68 other units are landed with executing evidence,
-twelve findings carry commit-pinned closure evidence, `validate_repair_task_binding.py`
-reports n/n for every finding except this one, and `review-target-v1.json` is
-untouched at `state: not-pinned`, `review_verdict: pending`, `reviewed_commit: null`.
+The count in this paragraph is a restatement of
+`conformance/p1140f/semantic-findings-v1.json`, which owns it. That record is
+authority; if the two disagree this paragraph is the defect.
+
+What is ready for the owner: every other unit except PF-072 is landed with executing
+evidence, ten findings carry commit-pinned closure evidence covering every artifact
+they name, `validate_repair_task_binding.py` reports n/n for every finding except
+this one, and `review-target-v1.json` is untouched at `state: not-pinned`,
+`review_verdict: pending`, `reviewed_commit: null`.
 
 - pin exact commit;
 - independent manual review of SR-005 through SR-017;
@@ -1734,6 +1744,46 @@ Three smaller disagreements inside that one. `challenge_id` was `uuid7` on the w
 **Two things found while repairing, not before.** `policy-defaults-v1.json` set `batch_max_claims` to 500 while the grammar admitted 256 and the negative corpus refused 257; the configurable ceiling was twice the encodable one, and an operator raising it would have produced rejections no reason code explained. It is 256. And the negative corpus had no way to state "these bytes decode perfectly and the grammar forbids them" — the corpus said so itself, deferring `atomic-batch-result-v1` and `claim-result-v1` with the words "in prose state rather than in bytes". That absence is why partial acceptance could be forbidden by three documents and admitted by two schemas for as long as it was. A `cddl_hex` case shape now exists, six cases use it, and `challenge-without-expected-tuple` records the exact shape SR-007 named so the artifacts cannot drift back to it silently.
 
 **What this unit does not do.** It does not close SR-007; the finding's state and review verdict are the owner's. It reconciles four of the five divergences D-043 records and the whole of the challenge one; the fifth — `checkpoint-receipt-v1` and `checkpoint_receipts` having near-disjoint column sets, with `server_receipt_sequence` defined once in the CDDL and stored nowhere while `VIBEPROOF_V1_PROTOCOL.md` makes it part of server state — is untouched and stands open. It is a receipt-shape divergence rather than a challenge or batch one, and folding it in here would have made one unit answer for two findings. And nothing here is implementation: no verifier reads the CDDL, no handler applies the constraints, and `validate_batch_challenge_binding.py` proves the artifacts agree, not that the protocol they agree on is correct.
+
+### PF-071 — Bind the adapter manifest's certification block to the one certification vocabulary
+Files: `packages/schemas/adapter-manifest.schema.json`, `packages/schemas/examples/adapter-manifest.valid.json`
+Acceptance: `adapter-manifest.schema.json#certification` declares a required `state` whose enum is `uncertified` plus the eight states of the `source-certification` machine, the same nine `source-receipt-v1.schema.json` and `producer-accounting-binding-v1.schema.json` carry; `certification.bundle_sha256` admits null and is null exactly when `state` is `uncertified`, enforced in both directions by an `if`/`then`/`else` so that a null digest and an uncertified state cannot be stated apart; `modes` and `certification.mode` both admit exactly the nine observation modes `observer-equivalence-v1.json` declares, so `import` is refused and `acp` is admitted; and `packages/schemas/examples/adapter-manifest.valid.json` carries no invented bundle digest.
+Depends: PF-016, PF-018
+Repair: P-1140F-3
+Serves: SR-009
+Est: 4-6
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: unittest tests.ci.test_finding_artifact_coverage
+Evidence: contains 1 packages/schemas/adapter-manifest.schema.json :: "uncertified",
+Evidence: contains 2 packages/schemas/adapter-manifest.schema.json :: "acp",
+Evidence: absent packages/schemas/adapter-manifest.schema.json :: "import"
+Evidence: absent packages/schemas/examples/adapter-manifest.valid.json :: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+
+**Found by `validate_finding_artifact_coverage.py`, not by reading.** `adapter-manifest.schema.json#certification` is the first of SR-009's three conflicting artifacts and no commit the finding's closure evidence cites had ever opened the file. PF-015 repaired the tuple digest, PF-018 the accounting reconciliation, and PF-016 the certification lifecycle in five other artifacts — `certification-result-v1.schema.json`, `normalized-event.schema.json`, the registry, the DDL and the API — while the manifest that every adapter has to write sat two commits old, both from before P-1140F began. It was green because nothing read it: `validate_planning_artifacts.py` checked the schema for well-formedness and validated its one example, and the vocabulary binder that compares observation modes across six artifacts and certification states across two does not name this file in either map.
+
+**Four live defects, all in one block.** There was no `state` field at all, so a manifest could name a bundle digest and a tuple and say nothing about whether that certification was active when it was read — while `ACCOUNTING_AND_TIME_CONTRACT.md` holds the effective ceiling at `private-analytics` for every state other than `active`, a rule the artifact had no field in which to express. `bundle_sha256` was a required non-nullable 64-hex string, which four other artifacts had already made nullable for the reason `evidence-bundle-v1.cddl` states in words — "nil while uncertified" — and which `ADAPTER_CERTIFICATION_POLICY.md` makes unavoidable here, because every tuple this repository can reach is `candidate` and no result bundle has been signed. So no adapter manifest could validate without inventing a digest, and the committed example duly carried sixty-four `f` characters: the identical placeholder PF-016 deleted from `normalized-event.valid.json` and asserted gone with its own `Evidence: absent` line. The same constant survived one directory away because nothing looked. `certification.mode` carried a bare slug pattern and no enum, so a certified tuple could name a mode `observer-equivalence-v1.json` assigns no precedence rank and the survivor rule would have had nothing to order it by. And `modes` was a second spelling of the mode vocabulary — nine values, but with `import` and without `acp` — which is precisely the duplication `planning-schema.sql`'s own CHECK comment names this finding as existing to remove.
+
+**The null is bound rather than merely admitted.** Making `bundle_sha256` nullable on its own would convert a representation gap into a permission: a manifest that forgot the digest would be indistinguishable from one that declared itself uncertified. The `if`/`then`/`else` makes the two facts one — `uncertified` requires the null and every other state requires the digest — so both directions fail, which is what stops the pair being satisfiable by an implementer picking whichever half is convenient.
+
+**What this unit does not do.** It does not close SR-009; the finding's state and review verdict are the owner's, and D-633 returns it to `repair-in-progress` rather than repairing the record to match the schema. It does not repair `lifecycle`, which is a separate six-value enum in the same file sharing only three values with the `source-certification` machine and bound to no machine at all — that is an adapter-lifecycle divergence rather than a certification-block one, and `UNIVERSAL_AGENT_COMPATIBILITY.md`'s five-stage adapter lifecycle has no registered machine to reconcile it against, so folding it in here would have meant inventing one. It does not add the collector-artifact, accounting-arithmetic or privacy-binding digests `UNIVERSAL_AGENT_COMPATIBILITY.md` names as tuple dimensions, nor the `version_min`/`version_max_exclusive` range `compatibility-tuple-v1.schema.json` requires against this file's single `source_version` string. And nothing here certifies anything: every state this repository can reach is still `candidate` or `uncertified`, and the example says `uncertified` because that is what is true.
+
+### PF-072 — Reconcile the verifier appraisal record across the CDDL, the DDL and the appraisal result
+Files: `packages/schemas/vibeproof-claim-v1.cddl`, `packages/schemas/planning-schema.sql`, `packages/schemas/appraisal-policy-v1.json`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_accounting_evidence_chain.py`
+Acceptance: `verifier-appraisal-v1`, `verifier_appraisals` and `appraisal-result-v1.schema.json` describe one appraisal record, with `validate_evidence_chain` comparing the CDDL's **field set** against the record's rather than only the integer ranges of its ten dimension labels, so a field present in one and absent from another fails in either direction; the CDDL carries `evidence_bundle_sha256`, the supersession pair and the evaluated certification state, and its certification-bundle label admits nil, because `appraisal-result-v1.schema.json` records that a capture bound to no certification is every capture this repository can currently take and the profile must be able to encode one; `verifier_appraisals` holds the claim digest, the evidence digest, the validity interval and the supersession chain, carries a unique index that makes one appraisal current per claim, and admits a null `evidence_profile_id` to match the nullable awarded profile both other authorities declare; the relationship between `verifier_appraisals` and `evidence_assessments` is declared, because both persist the same three assessed states with no record of which wins; and `python3 -m unittest tests.ci.test_accounting_evidence_chain` exits 0 and fails on each of those drifts.
+Depends: PF-017
+Repair: P-1140F-3
+Serves: SR-017
+Est: 12-16
+Status: not-started
+
+**Why this exists.** SR-017 names seven conflicting artifacts and PF-017, its only serving unit, opened one of them. Four of the remaining six needed no change and now record why in the finding's `unmodified_artifacts` — `evidence-profile-policy-v1.json#dimensions` is the sole dimension authority the repair binds others to, `evidence-bundle-v1.cddl` is the referent rather than a party, and the appraisal result and policy schemas are the target the other authorities must converge on. Two hold the contradiction the finding is about, and they are this unit.
+
+**The disagreement, counted.** Seventeen fields exist in the CDDL rule and in no column: the canonical claim digest, the verifier policy id, the verifier implementation digest, the acceptance outcome, all seven dimensions, the ranking eligibility, the anomaly disposition, the evaluated certification bundle, both validity timestamps and the re-evaluation trigger. Three columns exist in the DDL and in neither other authority: `provenance_state`, `continuity_state` and `integrity_state`, which are the SQL's own private vocabulary. Four concepts exist in the appraisal record and in neither the CDDL nor the DDL: the evidence-bundle digest, both halves of the supersession chain, and the certification state. `appraisal-policy-v1.json` already declares twenty of these as `unbound_fields` and three as `dropped_columns`, and `validate_evidence_chain` fails when that declaration goes stale — so the gap is honestly recorded, and recording a gap is not closing it. D-267's reopen trigger is exactly that the SQL half lands.
+
+**Three disagreements nothing currently records.** `evidence_profile_id text not null` contradicts CDDL label 14 `registered-id / nil` and `appraisal-result-v1.schema.json#awarded_profile_id`, which is `oneOf [enum, null]`: a rejected or quarantined claim has no awarded profile and the table cannot store one. That column is not in the declared gap — it sits in `bound_columns`, so it is currently declared reconciled and is not. CDDL label 18 is `digest32` with no `/ nil` while the record admits null for the same fact. And `evidence_assessments` is a second table persisting `provenance_state`, `continuity_state`, `integrity_state` and `reason_codes` for the same aggregate, keyed on `claim_id` with its own non-unique index; `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` and `DATA_MAP.md` both treat the two as one thing, `appraisal-policy-v1.json` names only `verifier_appraisals`, and nothing declares which wins. AGENTS.md requires one persistence owner per mutable aggregate; this aggregate has two.
+
+**Why the validator clause is the load-bearing half of the acceptance.** `appraisal_wire_ranges()` extracts only the ten labels matching an integer-range pattern. Labels 3, 5, 14, 18, 19, 20, 21 and 22 are never parsed, so no check notices that the CDDL lacks the evidence digest, the supersession pair and the certification state entirely. A repair that added those fields without extending the comparator would leave the next drift exactly as invisible as this one was.
 
 ## Implementation epics — specified, blocked until P-1104
 

@@ -117,6 +117,15 @@ jobs:
       # step could record complete-planning with six units not-started.
       - name: Validate the P-1140F step, unit and finding binding
         run: python3 scripts/repository/validate_repair_task_binding.py
+      # The question the binding check never asked: did the commit a finding cites go
+      # anywhere near the artifact the finding is about? SR-007 was recorded repaired
+      # on evidence covering three of its four named artifacts, and an audit found the
+      # same shape in three more findings — twelve artifacts untouched by every commit
+      # their own closure evidence cites. This needs the full history above; at
+      # fetch-depth: 1 every commit is unresolved and it reports `UNCHECKED` rather
+      # than passing.
+      - name: Validate that closure evidence reached the artifacts it claims
+        run: python3 scripts/repository/validate_finding_artifact_coverage.py
       # ADR-007 states its own acceptance test — the CDDL, the OpenAPI, the SQL
       # DDL, the reason codes and the conformance cases must match it — and nothing
       # executed it. The challenge was defined three times over disjoint field sets

@@ -36,6 +36,12 @@
             }
           },
           "closure_evidence": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "unmodified_artifacts": {
+            "description": "Conflicting artifacts that no cited commit modified because they did not need to change - the contradiction they were named for was resolved in the artifact they contradicted. The key must appear in conflicting_artifacts and the value states why. validate_finding_artifact_coverage.py requires every conflicting artifact of a settled finding to be either touched by a cited commit or recorded here, and fails a reason recorded for an artifact a cited commit did modify, so an excuse cannot outlive the condition that justified it.",
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {"type": "string", "minLength": 40}
+          },
           "reviewed_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
           "review_verdict": {"enum": [null, "pending", "pass", "fail"]}
         }
