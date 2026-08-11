@@ -2541,6 +2541,16 @@
       "id": "D-632",
       "implementation_bearing": false,
       "reason": "opens the repair-unit series bound; governs the planning record rather than the product"
+    },
+    {
+      "id": "D-633",
+      "implementation_bearing": false,
+      "reason": "returns a finding to repair-in-progress and specifies a schema repair; governs the planning record rather than the product"
+    },
+    {
+      "id": "D-634",
+      "implementation_bearing": false,
+      "reason": "returns a finding to repair-in-progress and records why four named artifacts needed no change; governs the planning record"
     }
   ]
 }

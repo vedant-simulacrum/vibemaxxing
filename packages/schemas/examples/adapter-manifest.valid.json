@@ -39,7 +39,8 @@
     "cloud-separate-cache-v1"
   ],
   "certification": {
-    "bundle_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "state": "uncertified",
+    "bundle_sha256": null,
     "suite_version": "1.0.0",
     "source_version": "1.0.0",
     "platform_profile_id": "linux-x64-native",
