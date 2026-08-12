@@ -68,17 +68,17 @@ Ordering principle: each specification is paired with the artifact or code that 
 
 <!-- generated: work-unit-status -->
 
-Units: 264. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
+Units: 265. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
 
 | Status | Units |
 |---|---|
 | `not-started` | 181 |
 | `in-progress` | 3 |
-| `landed` | 74 |
+| `landed` | 75 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 396 assertions across 74 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 404 assertions across 75 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 4.
 
@@ -92,7 +92,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 |---|---|---|
 | 1 | 1 | `PF-036` |
 
-Statuses additionally checkable against artifact presence: 199 of 264. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 200 of 265. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -1834,6 +1834,39 @@ Evidence: absent packages/schemas/planning-schema.sql :: unique (lineage_id, las
 **Two things repaired that this unit did not set out to touch.** `data-disposition-v1.json` requires an expiry enforcement owner for any column that expires; the new `expires_at` is recorded as `rejected-at-read`, because it bounds how long the receipt may be presented as a head and not how long the row is kept — deleting the row would break the chain the next receipt links to. And `conformance/vibeproof/v1/manifest.json` carried a stale digest of `fork-and-rotation-vectors.json` once the constraint name in that fixture's note was corrected.
 
 **What this unit does not do.** It does not close SR-007 or promote D-043; the finding's state and the decision's status are the owner's, and this unit cannot cite its own merge commit. It leaves `heads[].last_sequence` and `expected_authoritative_last_sequence` in `fork-and-rotation-vectors.json` alone: those are fixture vocabulary for acknowledged heads rather than column names, and renaming them would ripple through `resolve_checkpoint_heads` for no gain — the decision is recorded in that function's docstring rather than left to be rediscovered. Nothing here is implementation: no server issues a receipt, no client verifies one, and `validate_checkpoint_receipt_binding.py` proves the three artifacts agree about the receipt, not that the protocol they agree on is correct.
+
+### PF-074 — Make the adapter manifest able to express the exact certification tuple
+Files: `packages/schemas/adapter-manifest.schema.json`, `packages/schemas/examples/adapter-manifest.valid.json`, `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, `docs/planning/SR_SEVERITY_REGRADING_PROPOSAL.md`, `scripts/repository/validate_adapter_certification_tuple.py` (new), `tests/ci/test_adapter_certification_tuple.py` (new), `Makefile`, `.github/workflows/planning-checks.yml`
+Acceptance: `adapter-manifest.schema.json#certification` enumerates the exact tuples a certification covers, each carrying every dimension `packages/schemas/compatibility-tuple-v1.schema.json` requires — the `version_min`/`version_max_exclusive` range in place of a single `source_version`, the artifact, accounting, arithmetic and privacy-binding digests, the duplicate domain, a validity interval and a revocation — and `python3 scripts/repository/validate_adapter_certification_tuple.py` exits non-zero when a dimension reaches the manifest, the tuple authority or `source_certifications` and not the other two, in either direction; every dimension deliberately absent from a side records why, so an absence cannot be satisfied by emptiness; the single-valued `source_version`, `platform_profile_id` and `mode` carriers are gone, so a certification covering a product of the manifest's four arrays is unrepresentable rather than discouraged; `check (state = 'active' or effective_ceiling = 'private-analytics')` holds in the manifest as well as the DDL, with the two ceiling vocabularies bound by a declared projection rather than an implicit rename; nothing is certified, the committed example stays `uncertified` with a null bundle digest, a null suite version and an empty tuple list, and no digest is invented anywhere; and `python3 -m unittest tests.ci.test_adapter_certification_tuple` exits 0 and fails on each of those drifts.
+Depends: PF-016, PF-018, PF-071
+Repair: P-1140F-3
+Serves: SR-009
+Est: 12-16
+Status: landed
+Evidence: validator scripts/repository/validate_adapter_certification_tuple.py
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: validator scripts/repository/validate_cross_references.py
+Evidence: unittest tests.ci.test_adapter_certification_tuple
+Evidence: contains 1 packages/schemas/adapter-manifest.schema.json :: "version_max_exclusive"
+Evidence: contains 1 packages/schemas/adapter-manifest.schema.json :: "attribute_allowlist_sha256"
+Evidence: contains 1 packages/schemas/examples/adapter-manifest.valid.json :: "tuples": []
+Evidence: absent packages/schemas/adapter-manifest.schema.json :: "source_version"
+
+**What PF-071 left, said by PF-071.** That unit bound the certification block to the certification *state* vocabulary and wrote down what it had not done: the collector-artifact, accounting-arithmetic and privacy-binding digests `UNIVERSAL_AGENT_COMPATIBILITY.md` names as tuple dimensions, and the `version_min`/`version_max_exclusive` range `compatibility-tuple-v1.schema.json` requires against a single `source_version` string. That paragraph is this unit's specification, and it was accurate. A point version cannot express a certified range, and eleven other dimensions had nowhere to go at all.
+
+**The product was the larger half.** `source_products`, `platforms`, `modes` and `accounting_profile_ids` were manifest-level arrays, and a single `source_version`, `platform_profile_id` and `mode` sat above them, so one certification authorized every combination those arrays multiplied into — untested combinations included, with no validity interval and no revocation. The repair is not a constraint on the product but the removal of anything from which a product could be derived: the single-valued carriers are gone and `certification.tuples` is the sole statement of coverage. The arrays remain as a declaration of reach, and coverage became containment — the validator refuses an enumerated tuple whose product, mode, accounting profile or duplicate domain the manifest does not declare, and whose platform profile the registry does not declare. An unbounded `tuples` array is refused too, because the product could otherwise be restated entry by entry.
+
+**Eighteen dimensions, three ways, and twelve of them bound by one digest.** Six dimensions have a column on `source_certifications`; twelve are covered by `tuple_digest`, which is unique and is taken over the whole record, so a row naming the digest has already named the dimension and a column would be a second place the same fact could be wrong. That is a recorded reason rather than an omission, and the reverse is checked: a dimension recorded as digest-bound that later gains a column fails. Seven certification-record fields bind directly and four columns are server-only with reasons, which accounts for every column of the table rather than for the ones someone remembered.
+
+**The ceiling was a hidden translation.** `ACCOUNTING_AND_TIME_CONTRACT.md` holds the effective ceiling at `private-analytics` for every state other than `active`, and the DDL enforces it; the manifest did not. It does now, and the two vocabularies that had to meet for it to mean anything — `standard-competitive` against `standard`, `hardened-source-bound` against `hardened` — are bound by a declared projection whose domain and range the validator asserts, rather than by a rename a reader had to notice. AGENTS.md forbids exactly this kind of hidden security-critical mapping.
+
+**Three placeholders found in the committed example.** PF-071 removed sixty-four `f` characters from the bundle digest and the same class of defect survived two fields away: `suite_version` read `"1.0.0"` for a suite `ADAPTER_CERTIFICATION_POLICY.md` says has never run, and `platform_profile_id` read `"linux-x64-native"`, which the thirty-four-entry platform profile registry has never declared. Both are gone — the suite version is nullable and bound to `uncertified` beside the bundle digest, and an unregistered profile is now refused in any enumerated tuple. `mode` was also a third spelling of `observation_mode`, which both the tuple schema and the DDL had already settled.
+
+**The null is bound rather than admitted, again.** `bundle_sha256: null`, `suite_version: null` and `tuples: []` are one fact with `uncertified`, enforced in both directions by a single `if`/`then`/`else`. That is what lets an honest manifest satisfy twelve new digest dimensions without inventing one of them: the committed example enumerates zero tuples and never reaches them. Any state other than `uncertified` requires a digest, a suite version and at least one tuple, because an empty list under a named state would be the product returning as an absence.
+
+**A check that cannot fail at this head, recorded rather than deleted.** The containment rule — that an enumerated tuple names only what the manifest declares — has four branches, and all four are exercised by drift tests that inject `candidate` tuples. Against the committed content it is vacuous, because the only committed manifest is `uncertified` and enumerates nothing. The honest fix is a committed manifest that certifies something, and nothing in this repository may certify anything. It is stated here rather than counted as coverage. A negative example fixture was also considered and refused: `EXAMPLE_NEGATIVE_GAPS` names `adapter-manifest` as its only entry, and adding one would have emptied that map and forced the deletion of the test that fails when a declared gap no longer exists — weakening a check to add another.
+
+**What this unit does not do.** It does not close SR-009; the finding's state and review verdict are the owner's, and this unit cannot cite its own merge commit. It does not repair `lifecycle`, still a six-value enum in the same file bound to no registered machine, for the reason PF-071 gave: `UNIVERSAL_AGENT_COMPATIBILITY.md`'s five-stage adapter lifecycle has no machine to reconcile against, and inventing one is not a binding repair. It does not touch the accounting-input and certification-evidence half of SR-009. And it certifies nothing: a schema that can express an exact tuple is not a certified tuple, and every state this repository can reach is still `candidate` or `uncertified`.
 
 ## Implementation epics — specified, blocked until P-1104
 
