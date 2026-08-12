@@ -6,7 +6,7 @@
   "evidence_bundle_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
   "policy": {
     "policy_bundle_id": "appraisal-policy-v1",
-    "content_sha256": "b900c3b148efc9b72b5cf8e165b711edae69734410e6a18f097be826b228e6a3",
+    "content_sha256": "fe3490c0dfb2a73bd6b5da73f2ae572ec232e73c5702c762b0c91cf936820840",
     "implementation_sha256": null
   },
   "authority": "server-verifier",

@@ -706,14 +706,35 @@ SQL_LOCAL_VOCABULARIES: dict[str, tuple[str, ...]] = {
     ),
     "evidence_assessments.continuity_state": ("continuous", "gap-declared", "broken"),
     "evidence_assessments.integrity_state": ("verified", "degraded", "failed"),
-    "verifier_appraisals.provenance_state": (
-        "verified",
-        "partial",
-        "unverified",
-        "rejected",
+    # PF-072 removed `verifier_appraisals.provenance_state`, `.continuity_state` and
+    # `.integrity_state`. They were the SQL's own private vocabulary for the appraisal
+    # aggregate -- three coarse states appearing in neither `verifier-appraisal-v1` nor
+    # `appraisal-result-v1.schema.json`, while the seven dimensions both of those carry had
+    # no column at all. Declaring them here made them legal without making them agree with
+    # anything. The same three columns remain on `evidence_assessments`, which is the older
+    # record that genuinely owns them, and their entries are directly above.
+    #
+    # The certification lifecycle state as it stood when the appraisal was taken. It is not
+    # the `source-certification` aggregate's live state and must not bind to that machine: it
+    # is frozen at appraisal so a capped claim stays explainable after the tuple moves on,
+    # and it carries `uncertified`, which is the state of a capture bound to no certification
+    # and therefore no state of the machine at all.
+    "verifier_appraisals.certification_state": (
+        "uncertified",
+        "candidate",
+        "testing",
+        "active",
+        "degraded",
+        "suspended",
+        "expired",
+        "superseded",
+        "retired",
     ),
-    "verifier_appraisals.continuity_state": ("continuous", "gap-declared", "broken"),
-    "verifier_appraisals.integrity_state": ("verified", "degraded", "failed"),
+    # The consumer-facing label, which follows from the awarded profile and is null when none
+    # was awarded. Three values rather than the four on `evidence_assessments`:
+    # `private-analytics` is a ranking eligibility here, not a public state, and
+    # `ranking_eligibility` is the column that carries it.
+    "verifier_appraisals.public_state": ("hardened", "standard", "imported"),
     "device_lineages.continuity_state": (
         "continuous",
         "gap-declared",

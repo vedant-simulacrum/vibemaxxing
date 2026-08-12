@@ -8316,20 +8316,69 @@ def validate_observer_equivalence() -> None:
         )
 
 
-APPRAISAL_RANGE_RE = re.compile(r"^\s*\d+:\s*0\.\.(\d+),?\s*;\s*([a-z_ ]+?)\s*$")
+APPRAISAL_LABEL_RE = re.compile(r"^\s*(\d+):\s*(.+?)\s*,?\s*(?:;.*)?$")
+APPRAISAL_RANGE_RE = re.compile(r"^0\.\.(\d+)$")
 
 
-def appraisal_wire_ranges() -> dict[str, int]:
-    """Read the integer ceiling the CDDL declares for each appraisal dimension."""
+def appraisal_cddl_labels() -> dict[int, str]:
+    """Read every integer label of `verifier-appraisal-v1` and the type it declares.
+
+    Every label, not only the ten whose type happens to be an integer range. The
+    predecessor of this function matched `0..<n>` alone, so labels 3, 5, 14 and 18 through
+    22 were invisible to every check built on it: the CDDL could lose the claim digest, or
+    disagree with the record about whether a certification bundle may be absent, and the
+    only thing looking would report that ten dimensions were still in range.
+    """
     text = (SCHEMAS / "vibeproof-claim-v1.cddl").read_text(encoding="utf-8")
     start = text.index("verifier-appraisal-v1 = {")
-    body = text[start : text.index("\n}", start)]
-    ranges: dict[str, int] = {}
+    body = text[start + len("verifier-appraisal-v1 = {") : text.index("\n}", start)]
+    labels: dict[int, str] = {}
     for line in body.splitlines():
-        match = APPRAISAL_RANGE_RE.match(line)
-        if match:
-            ranges[match.group(2).replace(" ", "_")] = int(match.group(1))
-    return ranges
+        stripped = line.strip()
+        if not stripped or stripped.startswith(";"):
+            continue
+        match = APPRAISAL_LABEL_RE.match(line)
+        if not match:
+            raise ValidationFailure(
+                f"verifier-appraisal-v1 carries a line no label parser reads: {stripped!r}"
+            )
+        label = int(match.group(1))
+        if label in labels:
+            raise ValidationFailure(
+                f"verifier-appraisal-v1 declares label {label} twice"
+            )
+        labels[label] = match.group(2).strip()
+    return labels
+
+
+def schema_leaf_fields(schema: dict[str, Any], prefix: str = "") -> dict[str, Any]:
+    """Flatten a record schema to leaf field paths.
+
+    A nested object is not a field; its leaves are. Comparing top-level keys alone would
+    have let `validity` and `supersession` agree with the wire by existing, while the
+    timestamps and identifiers inside them agreed with nothing.
+    """
+    leaves: dict[str, Any] = {}
+    for name, node in schema.get("properties", {}).items():
+        path = f"{prefix}{name}"
+        if node.get("type") == "object" and "properties" in node:
+            leaves.update(schema_leaf_fields(node, f"{path}."))
+        else:
+            leaves[path] = node
+    return leaves
+
+
+def schema_admits_null(node: dict[str, Any]) -> bool:
+    """Whether a record field may be absent-as-null, however the schema spells it."""
+    if node.get("type") == "null":
+        return True
+    declared = node.get("type")
+    if isinstance(declared, list) and "null" in declared:
+        return True
+    for arm in node.get("oneOf", []) + node.get("anyOf", []):
+        if schema_admits_null(arm):
+            return True
+    return False
 
 
 def validate_evidence_chain() -> None:
@@ -8370,22 +8419,93 @@ def validate_evidence_chain() -> None:
     }
 
     ordinals = bundle["wire_ordinals"]
-    ranges = appraisal_wire_ranges()
-    missing_ranges = set(ordinals) - set(ranges)
-    if missing_ranges:
+    labels = appraisal_cddl_labels()
+    wire_binding = bundle["appraisal_record"]["wire_binding"]
+    label_fields = {int(key): value for key, value in wire_binding["labels"].items()}
+    record_only = wire_binding["record_only_fields"]
+
+    # 1. The CDDL and the binding declare the same labels. A label added to the grammar
+    #    and to nothing else has no field, and a binding entry for a label the grammar
+    #    dropped describes a wire that does not exist.
+    only_in_cddl = sorted(set(labels) - set(label_fields))
+    only_in_binding = sorted(set(label_fields) - set(labels))
+    if only_in_cddl or only_in_binding:
         raise ValidationFailure(
-            f"the appraisal CDDL declares no range for: {sorted(missing_ranges)}"
+            "verifier-appraisal-v1 and the appraisal policy bundle disagree about which "
+            f"labels exist: only in the CDDL {only_in_cddl}, only in the binding "
+            f"{only_in_binding}"
         )
+
+    # 2. The wire and the record cover the same field set, in both directions. This is the
+    #    check SR-017 is about: three authorities described one aggregate and no comparison
+    #    between any two of them looked at what fields they held.
+    record_fields = schema_leaf_fields(result_schema)
+    wired = set(label_fields.values())
+    if len(wired) != len(label_fields):
+        raise ValidationFailure(
+            "two appraisal labels encode the same record field, so one of them is "
+            "unreachable and which one is not stated"
+        )
+    overlap = sorted(wired & set(record_only))
+    if overlap:
+        raise ValidationFailure(
+            f"{overlap} are declared both on the wire and as record-only fields"
+        )
+    claimed = wired | set(record_only)
+    missing = sorted(set(record_fields) - claimed)
+    invented = sorted(claimed - set(record_fields))
+    if missing or invented:
+        raise ValidationFailure(
+            "the appraisal wire binding and "
+            "packages/schemas/appraisal-result-v1.schema.json describe different records: "
+            f"fields the record declares and the binding does not account for {missing}, "
+            f"fields the binding names and the record does not declare {invented}"
+        )
+
+    # 3. Nullability is part of the field, not a detail beneath it. A record that admits a
+    #    null the grammar cannot encode is a record with an unrepresentable state, and a
+    #    grammar admitting a nil the record forbids is a wire value nothing can accept.
+    for label in sorted(labels):
+        field = label_fields[label]
+        cddl_nil = "nil" in re.split(r"[\s,]+", labels[label])
+        record_nil = schema_admits_null(record_fields[field])
+        if cddl_nil != record_nil:
+            raise ValidationFailure(
+                f"appraisal label {label} and record field {field} disagree about null: "
+                f"the CDDL declares {labels[label]!r} and the record "
+                f"{'admits' if record_nil else 'forbids'} null"
+            )
+
+    # 4. Ordinals are dense from zero and the CDDL range ends exactly where they do.
+    #    `>` rather than `!=` was the original rule, so a four-value vocabulary declared
+    #    `0..4` left one ordinal representable and unresolvable - the same shape PF-070
+    #    found in the gap declaration's cause label, three more times.
+    label_of_leaf = {
+        field.rsplit(".", 1)[-1]: label for label, field in label_fields.items()
+    }
     for name, table in ordinals.items():
+        if name not in label_of_leaf:
+            raise ValidationFailure(
+                f"the appraisal policy bundle carries ordinals for {name}, which no "
+                "label of verifier-appraisal-v1 encodes"
+            )
         values = sorted(table.values())
         if values != list(range(len(values))):
             raise ValidationFailure(
                 f"appraisal wire ordinals for {name} are not dense from zero: {values}"
             )
-        if values[-1] > ranges[name]:
+        label = label_of_leaf[name]
+        declared = APPRAISAL_RANGE_RE.match(labels[label])
+        if not declared:
             raise ValidationFailure(
-                f"appraisal wire ordinal for {name} reaches {values[-1]}, outside the "
-                f"CDDL range 0..{ranges[name]}"
+                f"appraisal label {label} carries the {name} vocabulary and declares "
+                f"{labels[label]!r} rather than an integer range"
+            )
+        if int(declared.group(1)) != values[-1]:
+            raise ValidationFailure(
+                f"appraisal label {label} declares 0..{declared.group(1)} for {name}, "
+                f"whose ordinals end at {values[-1]}; the surplus ordinals are "
+                "representable and resolve to no value"
             )
     for name, vocabulary in expected_vocabularies.items():
         if sorted(ordinals[name]) != sorted(vocabulary):
@@ -8408,13 +8528,14 @@ def validate_evidence_chain() -> None:
             raise ValidationFailure(
                 f"the appraisal result and the policy bundle disagree on {name}"
             )
-    anomaly_enum = result_schema["properties"]["evaluated"]["properties"][
-        "anomaly_disposition"
-    ]["enum"]
-    if sorted(anomaly_enum) != sorted(ordinals["anomaly_disposition"]):
-        raise ValidationFailure(
-            "the appraisal result and the policy bundle disagree on anomaly_disposition"
-        )
+    for name in ("anomaly_disposition", "certification_state"):
+        schema_enum = result_schema["properties"]["evaluated"]["properties"][name][
+            "enum"
+        ]
+        if sorted(schema_enum) != sorted(ordinals[name]):
+            raise ValidationFailure(
+                f"the appraisal result and the policy bundle disagree on {name}"
+            )
 
     awarded = result_schema["properties"]["awarded_profile_id"]["oneOf"][0]["enum"]
     registered_profiles = [
@@ -8434,20 +8555,103 @@ def validate_evidence_chain() -> None:
         )
     block_start = ddl.index(marker)
     block = ddl[block_start : ddl.index("\n);", block_start)]
-    columns = set(re.findall(r"^\s{2}([a-z0-9_]+)\s", block, flags=re.MULTILINE))
-    for column in binding["bound_columns"] + binding["dropped_columns"]:
+    declarations = {
+        match.group(1): match.group(0)
+        for match in re.finditer(
+            r"^  ([a-z0-9_]+) (?!.*^  constraint)[^\n]*$", block, flags=re.MULTILINE
+        )
+        if match.group(1) != "constraint"
+    }
+    columns = set(declarations)
+
+    bindings = binding["column_bindings"]
+    column_only = binding["column_only"]
+
+    # The record and the table hold the same fields, in both directions. `unbound_fields`
+    # and `dropped_columns` remain the way a gap is declared rather than hidden, so the
+    # comparison is against what they claim is bound, and an entry in either that has
+    # stopped being true fails rather than lingering as an excuse.
+    for field in bindings:
+        if field not in record_fields:
+            raise ValidationFailure(
+                f"the appraisal SQL binding stores {field}, which "
+                "packages/schemas/appraisal-result-v1.schema.json does not declare"
+            )
+    for column in list(bindings.values()) + binding["dropped_columns"]:
         if column not in columns:
             raise ValidationFailure(
                 f"the appraisal SQL binding names column {column}, which "
                 f"{binding['table']} does not define"
             )
-    landed = [field for field in binding["unbound_fields"] if field in columns]
+    unpersisted = binding["unpersisted_fields"]
+    for field in list(unpersisted) + list(binding["unbound_fields"]):
+        if field not in record_fields:
+            raise ValidationFailure(
+                f"the appraisal SQL binding excuses {field}, which the appraisal record "
+                "does not declare; the excuse names nothing"
+            )
+    double = sorted((set(unpersisted) | set(binding["unbound_fields"])) & set(bindings))
+    if double:
+        raise ValidationFailure(
+            f"{double} are both stored and excused from storage; a reason recorded for a "
+            "field that has a column has outlived the gap it excused"
+        )
+    unaccounted = sorted(
+        set(record_fields)
+        - set(bindings)
+        - set(binding["unbound_fields"])
+        - set(unpersisted)
+    )
+    if unaccounted:
+        raise ValidationFailure(
+            f"{unaccounted} are declared by the appraisal record and are neither stored "
+            f"on {binding['table']}, listed in unbound_fields, nor given a reason in "
+            "unpersisted_fields; a field the persistence owner silently does not hold is "
+            "the SR-017 defect itself"
+        )
+    stray = sorted(
+        columns
+        - set(bindings.values())
+        - set(binding["dropped_columns"])
+        - set(column_only)
+    )
+    if stray:
+        raise ValidationFailure(
+            f"{stray} are columns of {binding['table']} that no record field binds and "
+            "that column_only does not explain; the table has grown a private vocabulary "
+            "again"
+        )
+    explained_but_bound = sorted(set(column_only) & set(bindings.values()))
+    if explained_but_bound:
+        raise ValidationFailure(
+            f"{explained_but_bound} are recorded as columns no record field names, and a "
+            "record field names them; the reason has outlived the gap it excused"
+        )
+    landed = [field for field in binding["unbound_fields"] if field in bindings]
     if landed:
         raise ValidationFailure(
-            f"{sorted(landed)} now exist as columns on {binding['table']}. The SQL half "
-            f"of {binding['defect_reference']} has moved; move these entries from "
-            "unbound_fields to bound_columns in packages/schemas/appraisal-policy-v1.json"
+            f"{sorted(landed)} are declared unbound and are bound. The SQL half of "
+            f"{binding['defect_reference']} has moved; move these entries into "
+            "column_bindings in packages/schemas/appraisal-policy-v1.json"
         )
+
+    # Nullability again, this time against the DDL. `evidence_profile_id text not null`
+    # contradicted both other authorities for as long as it existed, and sat in the bound
+    # list the whole time: it was declared reconciled because the column had the right
+    # name, which is the only thing anything compared.
+    for field, column in bindings.items():
+        declaration = declarations[column]
+        # A primary key is not null without saying so, and a rule that read the words alone
+        # would report the identifier as the one nullable column on the table.
+        nullable_in_sql = (
+            "not null" not in declaration and "primary key" not in declaration
+        )
+        if nullable_in_sql != schema_admits_null(record_fields[field]):
+            raise ValidationFailure(
+                f"{binding['table']}.{column} and record field {field} disagree about "
+                f"null: the column is {'nullable' if nullable_in_sql else 'not null'} and "
+                f"the record {'admits' if not nullable_in_sql else 'forbids'} null"
+            )
 
     validate_instance(
         receipt_schema,

@@ -2,7 +2,11 @@
   "name": "@vibemaxxing/ui",
   "version": "0.1.0",
   "private": true,
+  "publishConfig": {
+    "types": "dist/components.d.ts"
+  },
   "scripts": {
+    "build:types": "tsc src/components.tsx src/concepts/leaderboard-first.tsx src/concepts/leaderboard-bento.tsx src/concepts/product-storyboards.tsx src/patterns/product-system.tsx src/ui/provider-logo.tsx src/assets.ts src/tokens.ts --declaration --emitDeclarationOnly --outDir dist --rootDir src --jsx react-jsx --module esnext --moduleResolution bundler --target es2022 --strict --skipLibCheck",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
     "storybook:compare": "node scripts/compare-product-storyboards.mjs",

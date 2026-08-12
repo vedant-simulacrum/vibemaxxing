@@ -171,7 +171,8 @@
         "environment_class",
         "freshness_class",
         "ranking_eligibility",
-        "anomaly_disposition"
+        "anomaly_disposition",
+        "certification_state"
       ],
       "properties": {
         "acceptance_outcome": {
@@ -202,6 +203,9 @@
           "$ref": "#/$defs/ordinal_map"
         },
         "anomaly_disposition": {
+          "$ref": "#/$defs/ordinal_map"
+        },
+        "certification_state": {
           "$ref": "#/$defs/ordinal_map"
         }
       }
@@ -258,7 +262,8 @@
         "aggregate",
         "mutability",
         "revision_model",
-        "sql_binding"
+        "sql_binding",
+        "wire_binding"
       ],
       "properties": {
         "aggregate": {
@@ -272,14 +277,16 @@
           "const": "append-only-supersession-chain"
         },
         "sql_binding": {
-          "description": "The persistence owner and the exact distance between the record this bundle governs and the table that stores it. `unbound_fields` are fields the appraisal carries that the table cannot hold; `dropped_columns` are columns the table holds that no other authority names. Both lists are checked against the DDL, so closing the gap requires moving an entry rather than editing prose.",
+          "description": "The persistence owner and the exact distance between the record this bundle governs and the table that stores it. `column_bindings` maps every stored record field to the column that holds it, by full field path, because three of them are stored under a different name and a rule that matched on the leaf segment would have reported those three as missing on both sides at once. `unbound_fields` are record fields no column holds; `dropped_columns` are columns the table holds that no other authority names; `column_only` are columns that are deliberately neither, each carrying the reason it belongs to the table rather than to the record. All four are checked against the DDL in both directions, so closing the gap requires moving an entry rather than editing prose, and opening a new one fails rather than going unrecorded.",
           "type": "object",
           "additionalProperties": false,
           "required": [
             "table",
-            "bound_columns",
+            "column_bindings",
             "unbound_fields",
+            "unpersisted_fields",
             "dropped_columns",
+            "column_only",
             "defect_reference"
           ],
           "properties": {
@@ -287,15 +294,6 @@
               "type": "string",
               "pattern": "^[a-z0-9_]+$",
               "maxLength": 64
-            },
-            "bound_columns": {
-              "type": "array",
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "pattern": "^[a-z0-9_]+$",
-                "maxLength": 64
-              }
             },
             "unbound_fields": {
               "type": "array",
@@ -318,6 +316,73 @@
             "defect_reference": {
               "type": "string",
               "pattern": "^SR-[0-9]{3}$"
+            },
+            "column_bindings": {
+              "description": "Record field path to column name. Every value must be a column the table declares, and every key a field the appraisal record declares.",
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "maxLength": 64
+              },
+              "propertyNames": {
+                "pattern": "^[a-z0-9_]+(?:\\.[a-z0-9_]+)*$"
+              }
+            },
+            "column_only": {
+              "description": "Columns no record field names, each with the reason it is not on the record. An empty reason, or an entry for a column that also appears in column_bindings, fails: the point is that a column cannot enter the table unexplained.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 40
+              },
+              "propertyNames": {
+                "pattern": "^[a-z0-9_]+$"
+              }
+            },
+            "unpersisted_fields": {
+              "description": "Record fields deliberately not stored, each with the reason. Distinct from unbound_fields, which is a gap this repository intends to close: an entry here is a decision that the column would be wrong, and stating the two in one list is how a gap starts reading as a design.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 40
+              },
+              "propertyNames": {
+                "pattern": "^[a-z0-9_]+(?:\\.[a-z0-9_]+)*$"
+              }
+            }
+          }
+        },
+        "wire_binding": {
+          "description": "The CDDL half of the same binding. `labels` maps every integer label of `verifier-appraisal-v1` to the record field it encodes; `record_only_fields` names every record field deliberately absent from the wire, with the reason. Before PF-072 only the ten integer-range labels were parsed by anything, so labels 3, 5, 14 and 18 through 22 could disagree with the record and nothing would look.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "labels",
+            "record_only_fields"
+          ],
+          "properties": {
+            "labels": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+(?:\\.[a-z0-9_]+)*$"
+              },
+              "propertyNames": {
+                "pattern": "^(0|[1-9][0-9]*)$"
+              }
+            },
+            "record_only_fields": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 40
+              },
+              "propertyNames": {
+                "pattern": "^[a-z0-9_]+(?:\\.[a-z0-9_]+)*$"
+              }
             }
           }
         }

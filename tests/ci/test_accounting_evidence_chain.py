@@ -231,5 +231,257 @@ class ObserverEquivalenceRuleTests(unittest.TestCase):
         self.assertEqual(result, {"alpha": "rejected"})
 
 
+class ThreeAuthoritySandboxMixin:
+    """Sandboxes `packages/schemas/` and `conformance/` together.
+
+    `validate_evidence_chain` cross-reads the CDDL grammar, the appraisal result
+    schema and the SQL DDL, which all live under `packages/schemas/`, against
+    fixtures under `conformance/`. A test that moves one of those authorities needs
+    both trees copied and private, or a prior test's mutation could bleed into this
+    one's run of the validator. This is a mixin rather than a shared `TestCase`
+    subclass: the fixtures are reused by composing this class into each concrete
+    `TestCase`, not by one test case inheriting another's setup.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.validator = load_validator()
+        self.directory = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.directory, True)
+        self.schemas = self.directory / "schemas"
+        self.conformance = self.directory / "conformance"
+        shutil.copytree(ROOT / "packages" / "schemas", self.schemas)
+        shutil.copytree(ROOT / "conformance", self.conformance)
+
+    def _expect_failure(self, *fragments: str) -> None:
+        original_schemas = self.validator.SCHEMAS
+        original_conformance = self.validator.CONFORMANCE
+        self.validator.SCHEMAS = self.schemas
+        self.validator.CONFORMANCE = self.conformance
+        try:
+            with self.assertRaises(self.validator.ValidationFailure) as context:
+                self.validator.validate_evidence_chain()
+        finally:
+            self.validator.SCHEMAS = original_schemas
+            self.validator.CONFORMANCE = original_conformance
+        message = str(context.exception)
+        for fragment in fragments:
+            self.assertIn(fragment, message)
+
+    def _mutate_bundle(self, mutate) -> None:
+        """Edit `appraisal-policy-v1.json` and keep its self-digest honest.
+
+        The bundle carries its own `content_sha256`. Leaving it stale would trip
+        `assert_record_digest` before the check a test means to exercise ever runs,
+        so every bundle mutation recomputes it the same way the validator does.
+        """
+        path = self.schemas / "appraisal-policy-v1.json"
+        bundle = json.loads(path.read_text(encoding="utf-8"))
+        mutate(bundle)
+        bundle["content_sha256"] = self.validator.record_digest(bundle)
+        path.write_text(json.dumps(bundle, indent=2), encoding="utf-8")
+
+    def _mutate_result_schema(self, mutate) -> None:
+        path = self.schemas / "appraisal-result-v1.schema.json"
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        mutate(schema)
+        path.write_text(json.dumps(schema, indent=2), encoding="utf-8")
+
+    def _mutate_cddl_block(self, mutate) -> None:
+        """Edit the body of `verifier-appraisal-v1 = { ... }` alone.
+
+        Other CDDL rules in the same file reuse small label numbers, so a mutation
+        has to stay inside this rule's braces rather than doing a whole-file
+        string replace that could land on `checkpoint-receipt-v1` instead.
+        """
+        path = self.schemas / "vibeproof-claim-v1.cddl"
+        text = path.read_text(encoding="utf-8")
+        start = text.index("verifier-appraisal-v1 = {")
+        end = text.index("\n}", start)
+        path.write_text(
+            text[:start] + mutate(text[start:end]) + text[end:], encoding="utf-8"
+        )
+
+    def _mutate_verifier_appraisals_table(self, mutate) -> None:
+        """Edit the body of `create table verifier_appraisals ( ... )` alone.
+
+        `claim_id` and `created_at` are column names several tables in this DDL
+        share, so this scopes to the one table block the same way the validator's
+        own DDL parser does, rather than a whole-file replace that could edit a
+        different table entirely.
+        """
+        path = self.schemas / "planning-schema.sql"
+        text = path.read_text(encoding="utf-8")
+        marker = "create table verifier_appraisals ("
+        start = text.index(marker)
+        end = text.index("\n);", start)
+        path.write_text(
+            text[:start] + mutate(text[start:end]) + text[end:], encoding="utf-8"
+        )
+
+
+class EvidenceChainDriftTests(ThreeAuthoritySandboxMixin, unittest.TestCase):
+    """`validate_evidence_chain` cross-checks four authorities against each other:
+    the CDDL grammar, the appraisal result record schema, the appraisal policy
+    bundle's wire and SQL bindings, and the `verifier_appraisals` DDL. Each test
+    here moves exactly one of those authorities one step away from what the other
+    three say and requires the validator to notice — which is what makes a passing
+    run mean the four descriptions of one appraisal actually agree, rather than
+    each merely being internally well-formed.
+    """
+
+    def test_repository_head_passes(self) -> None:
+        self.validator.validate_evidence_chain()
+
+    def test_a_label_the_cddl_drops_while_the_binding_still_maps_it_is_caught(
+        self,
+    ) -> None:
+        def mutate(block: str) -> str:
+            lines = block.splitlines(keepends=True)
+            kept = [line for line in lines if not line.strip().startswith("5:")]
+            self.assertLess(len(kept), len(lines))
+            return "".join(kept)
+
+        self._mutate_cddl_block(mutate)
+        self._expect_failure("disagree about which labels exist", "only in the binding")
+
+    def test_a_label_the_binding_never_mapped_is_caught_the_other_way(self) -> None:
+        def mutate(block: str) -> str:
+            return block + "\n  30: uint64,             ; unbound label"
+
+        self._mutate_cddl_block(mutate)
+        self._expect_failure("disagree about which labels exist", "only in the CDDL")
+
+    def test_two_binding_labels_naming_the_same_field_are_unreachable(self) -> None:
+        def mutate(bundle: dict) -> None:
+            labels = bundle["appraisal_record"]["wire_binding"]["labels"]
+            labels["5"] = labels["4"]
+
+        self._mutate_bundle(mutate)
+        self._expect_failure("unreachable")
+
+    def test_a_record_field_the_binding_accounts_for_nowhere_is_caught(self) -> None:
+        def mutate(schema: dict) -> None:
+            schema["properties"]["operator_note"] = {"type": "string"}
+
+        self._mutate_result_schema(mutate)
+        self._expect_failure("describe different records", "operator_note")
+
+    def test_a_record_only_field_the_record_never_declared_is_invented(self) -> None:
+        def mutate(bundle: dict) -> None:
+            bundle["appraisal_record"]["wire_binding"]["record_only_fields"][
+                "phantom_field"
+            ] = (
+                "A field named here that appraisal-result-v1.schema.json never "
+                "declared, which is the invented side of the same check."
+            )
+
+        self._mutate_bundle(mutate)
+        self._expect_failure("describe different records", "phantom_field")
+
+    def test_a_nullable_cddl_label_whose_record_field_forbids_null_is_caught(
+        self,
+    ) -> None:
+        def mutate(block: str) -> str:
+            old = "  4: registered-id,        ; verifier_policy_id"
+            new = "  4: registered-id / nil,  ; verifier_policy_id"
+            self.assertIn(old, block)
+            return block.replace(old, new, 1)
+
+        self._mutate_cddl_block(mutate)
+        self._expect_failure("disagree about null", "appraisal label 4")
+
+    def test_a_widened_range_leaves_an_unresolvable_ordinal(self) -> None:
+        """The predecessor check used `>` rather than `!=`, so a range one wider
+        than the vocabulary it encodes passed: the surplus ordinal was
+        representable on the wire and resolved to nothing. Three ranges in the
+        repository really were that slack until this check replaced it.
+        """
+
+        def mutate(block: str) -> str:
+            old = "  8: 0..3,                 ; capture_class"
+            new = "  8: 0..4,                 ; capture_class"
+            self.assertIn(old, block)
+            return block.replace(old, new, 1)
+
+        self._mutate_cddl_block(mutate)
+        self._expect_failure("representable and resolve to no value", "capture_class")
+
+    def test_a_bound_column_the_table_no_longer_defines_is_caught(self) -> None:
+        def mutate(block: str) -> str:
+            old = "  claim_id uuid not null references claims(claim_id),\n"
+            self.assertIn(old, block)
+            return block.replace(old, "", 1)
+
+        self._mutate_verifier_appraisals_table(mutate)
+        self._expect_failure("does not define", "claim_id")
+
+    def test_an_unexplained_new_column_is_a_private_vocabulary(self) -> None:
+        def mutate(block: str) -> str:
+            anchor = "  created_at timestamptz not null,\n"
+            self.assertIn(anchor, block)
+            return block.replace(anchor, anchor + "  spare_column text,\n", 1)
+
+        self._mutate_verifier_appraisals_table(mutate)
+        self._expect_failure("private vocabulary again", "spare_column")
+
+    def test_evidence_profile_id_made_not_null_again_is_caught_against_the_sql(
+        self,
+    ) -> None:
+        """The exact SR-017 defect: `evidence_profile_id text not null` sat in
+        `column_bindings` while the record and the CDDL both said the field may be
+        null, and nothing compared the column's nullability to either.
+        """
+
+        def mutate(block: str) -> str:
+            old = (
+                "  evidence_profile_id text check (evidence_profile_id in "
+                "('hardened-source-bound-v1','standard-competitive-v1','imported-v1')),\n"
+            )
+            new = old.replace("text check", "text not null check", 1)
+            self.assertIn(old, block)
+            return block.replace(old, new, 1)
+
+        self._mutate_verifier_appraisals_table(mutate)
+        self._expect_failure("disagree about null", "evidence_profile_id")
+
+    def test_an_unpersisted_field_that_also_has_a_column_has_outlived_its_excuse(
+        self,
+    ) -> None:
+        def mutate(bundle: dict) -> None:
+            sql_binding = bundle["appraisal_record"]["sql_binding"]
+            self.assertIn("appraisal_id", sql_binding["column_bindings"])
+            sql_binding["unpersisted_fields"]["appraisal_id"] = (
+                "A field that is both stored under column_bindings and excused "
+                "here, which is the reason that outlived its own gap."
+            )
+
+        self._mutate_bundle(mutate)
+        self._expect_failure("outlived the gap it excused", "appraisal_id")
+
+    def test_an_excuse_naming_a_field_the_record_never_declared_names_nothing(
+        self,
+    ) -> None:
+        def mutate(bundle: dict) -> None:
+            bundle["appraisal_record"]["sql_binding"]["unpersisted_fields"][
+                "not_a_real_field"
+            ] = (
+                "A reason recorded for a field appraisal-result-v1.schema.json "
+                "never declared, which names nothing at all."
+            )
+
+        self._mutate_bundle(mutate)
+        self._expect_failure("the excuse names nothing", "not_a_real_field")
+
+    def test_removing_created_at_from_column_only_makes_it_stray(self) -> None:
+        def mutate(bundle: dict) -> None:
+            column_only = bundle["appraisal_record"]["sql_binding"]["column_only"]
+            self.assertIn("created_at", column_only)
+            del column_only["created_at"]
+
+        self._mutate_bundle(mutate)
+        self._expect_failure("private vocabulary again", "created_at")
+
+
 if __name__ == "__main__":
     unittest.main()
