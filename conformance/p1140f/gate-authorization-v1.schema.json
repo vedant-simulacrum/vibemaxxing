@@ -2,22 +2,18 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vibemaxxing.dev/schemas/gate-authorization-v1.schema.json",
   "title": "Repository phase and gate authorization record",
-  "description": "Sole machine-readable owner of repository phase, gate state, and the open-P1 non-regression ceiling. Validators derive gate state from this file; prose documents summarize it and may not independently redefine it.",
+  "description": "Sole machine-readable owner of repository phase, gate state, and the per-severity open-finding non-regression ceilings. Validators derive gate state from this file; prose documents summarize it and may not independently redefine it.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "phase", "recorded_at", "finding_registry", "open_p1_baseline", "registry_summary_documents", "open_p1_claim_patterns", "gates"],
-  "properties": {
-    "schema_version": {"const": 1},
-    "phase": {"enum": ["planning-contract-repair", "implementation"]},
-    "phase_note": {"type": "string", "minLength": 1},
-    "recorded_at": {"type": "string", "format": "date"},
-    "finding_registry": {"type": "string", "minLength": 1},
-    "open_p1_baseline": {
+  "$defs": {
+    "open_baseline": {
+      "description": "One non-regression ceiling for one severity. There is a named property per severity the finding registry can carry, each pinning its own severity constant, so a ceiling cannot be recorded under the wrong name and a regrade cannot move a finding outside every ceiling. Only open_p1_baseline is required, because a severity with no open findings needs no ceiling; validate_p1140f_authority.py fails when a severity that does have open findings has no ceiling here.",
       "type": "object",
       "additionalProperties": false,
       "required": ["severity", "count", "rule", "counted_states", "recorded_at", "reference"],
       "properties": {
-        "severity": {"const": "P1"},
+        "severity": {"enum": ["P0", "P1", "P2"]},
         "count": {"type": "integer", "minimum": 0},
         "rule": {"const": "non-regression"},
         "counted_states": {
@@ -30,6 +26,22 @@
         "reference": {"type": "string", "minLength": 1},
         "note": {"type": "string", "minLength": 1}
       }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": 1},
+    "phase": {"enum": ["planning-contract-repair", "implementation"]},
+    "phase_note": {"type": "string", "minLength": 1},
+    "recorded_at": {"type": "string", "format": "date"},
+    "finding_registry": {"type": "string", "minLength": 1},
+    "open_p0_baseline": {
+      "allOf": [{"$ref": "#/$defs/open_baseline"}, {"properties": {"severity": {"const": "P0"}}}]
+    },
+    "open_p1_baseline": {
+      "allOf": [{"$ref": "#/$defs/open_baseline"}, {"properties": {"severity": {"const": "P1"}}}]
+    },
+    "open_p2_baseline": {
+      "allOf": [{"$ref": "#/$defs/open_baseline"}, {"properties": {"severity": {"const": "P2"}}}]
     },
     "registry_summary_documents": {
       "type": "array",

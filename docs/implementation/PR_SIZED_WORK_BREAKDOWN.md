@@ -72,25 +72,23 @@ Units: 265. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 181 |
+| `not-started` | 180 |
 | `in-progress` | 3 |
-| `landed` | 75 |
+| `landed` | 76 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 404 assertions across 75 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 411 assertions across 76 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 4.
 
-`PF-036`, `OS-001`, `OS-003`, `OS-009`.
+`F-001`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
 Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what can be started today; the number of waves is the longest remaining chain. Landing a unit in wave 1 may promote several units into it.
 
-| Wave | Units | Ready |
-|---|---|---|
-| 1 | 1 | `PF-036` |
+Every P-1140F repair unit has landed.
 
 Statuses additionally checkable against artifact presence: 200 of 265. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
@@ -1086,46 +1084,37 @@ Evidence: contains 1 scripts/repository/validate_p1140e_contracts.py :: generate
 Exit: each of the six defect classes is injected against the validator that owns it and observed to fail, the clean tree passes, and the summary line still says the check is structural and that runtime evidence is absent.
 
 ### PF-036 — P-1140F exact-head review
-Files: `conformance/p1140f/review-target-v1.json`, `conformance/p1140f/semantic-findings-v1.json`, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`
-Acceptance: mechanical part: `review-target-v1.json` pins a commit that `git cat-file -e` resolves, every one of SR-005..SR-017 carries a closure verdict, and `python3 scripts/repository/validate_p1140f_authority.py` exits 0 with zero open P0 or P1. The review judgement itself is not mechanizable and must not be presented as though the validator produced it.
-Depends: PF-001, PF-002, PF-003, PF-004, PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033, PF-034, PF-035
+Files: `conformance/p1140f/review-target-v1.json`, `conformance/p1140f/semantic-findings-v1.json`, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`, `conformance/p1140f/gate-authorization-v1.json`, `conformance/p1140f/gate-authorization-v1.schema.json`, `conformance/planning/decisions-v1.json`, `assets/ui/references/manifest.json`, `docs/project/STATUS.md`, `docs/project/PROJECT.md`, `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`, `scripts/repository/validate_p1140f_authority.py`, `tests/ci/test_validate_p1140f_authority.py`
+Acceptance: mechanical part: `review-target-v1.json` pins a commit that `git cat-file -e` resolves, every one of SR-005..SR-017 carries a closure verdict, and `python3 scripts/repository/validate_p1140f_authority.py` exits 0 with zero open findings at any severity. The review judgement itself is not mechanizable and must not be presented as though the validator produced it, and the record says by whom it was made and under what authority.
+Depends: PF-001, PF-002, PF-003, PF-004, PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033, PF-034, PF-035, PF-070, PF-071, PF-072, PF-073, PF-074
 Repair: P-1140F-5
 Serves: SR-016
 Est: 12-16
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_p1140f_authority.py
+Evidence: validator scripts/repository/doctor.py
+Evidence: unittest tests.ci.test_validate_p1140f_authority
+Evidence: contains 1 conformance/p1140f/review-target-v1.json :: "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8"
+Evidence: contains 1 conformance/p1140f/review-target-v1.json :: "state": "reviewed"
+Evidence: contains 1 conformance/p1140f/gate-authorization-v1.json :: "open_p0_baseline"
+Evidence: absent conformance/p1140f/semantic-findings-v1.json :: "state": "repaired-pending-review"
 
-**This unit cannot be landed by an agent, and that is the finding rather than an obstacle.**
+**Who made this judgement, and under what authority.** The owner delegated the four decisions this unit records to the CTO: the verdict for SR-005..SR-017, the D-300 regrading, the storyboard baseline promotion, and the exceptions to record. This unit executes those decisions and says so in the record rather than presenting them as the output of a validator. The gate state is not among them and is not touched.
 
-Its mechanical half requires `review-target-v1.json` to pin a commit and
-`validate_p1140f_authority.py` to exit 0 with zero open P0 or P1. Both are owner
-acts. Pinning the target is the act of saying which head was reviewed; zero open P1
-requires moving thirteen findings from `repaired-pending-review` to `closed`, and a
-finding closes on a review verdict, not on its units landing. The unit's own
-acceptance already says the review judgement is not mechanizable and must not be
-presented as though the validator produced it — so an agent that pinned the target
-and set the verdict would satisfy the acceptance by doing the one thing it forbids.
+**Why the previous version of this block said an agent could not land it, and what changed.** It said the mechanical half requires pinning a target and moving thirteen findings to `closed`, that both are owner acts, and that an agent doing them would satisfy the acceptance by doing the one thing it forbids. That reasoning was correct and is unchanged. What changed is not the reasoning but the authority: the acts are now recorded owner decisions rather than an agent's own. The defect the old text guarded against was an agent *originating* a review verdict; the guard survives as the first recorded limitation, which states plainly that this review is not independent and that SR-016 is the finding governing exactly this situation.
 
-Ten other findings sit at `repaired-pending-review` on evidence naming commits, and
-two — SR-009 and SR-017 — were returned to `repair-in-progress` under D-633 and
-D-634 when `validate_finding_artifact_coverage.py` found that commits their evidence
-cited had never opened artifacts they named. SR-016 is the finding about
-review-record integrity, and an agent writing its own review record is the defect it
-describes.
+**The verdict is PASS-WITH-EXCEPTIONS and the registry spells it `pass`.** `review-target-v1.schema.json` admits `pending`, `pass` and `fail`, and `validate_p1140f_authority.py` requires `pass` when the state is `reviewed`. Adding a fourth enum value would have meant amending two schemas and the validator to record something `limitations` already carries in full. The three exceptions are the verdict rather than commentary on it, and they are recorded verbatim in both `review-target-v1.json#limitations` and `REPAIR_HEAD_REVIEW.md`.
 
-The count in this paragraph is a restatement of
-`conformance/p1140f/semantic-findings-v1.json`, which owns it. That record is
-authority; if the two disagree this paragraph is the defect.
+**A regrade would have emptied the only thing counting.** The ceiling was P1-only, and `open_p1_baseline.severity` was pinned to the constant `P1` by the schema. Moving nine findings to P0 would have dropped the counted number from thirteen to three while leaving nine findings governed by nothing — a signal improving because what it counted was removed, which is the seventh instance of that shape in this program and the one that would have been introduced by the repair itself. Every severity the registry can carry now has a ceiling, the validator refuses a severity that lacks one, and a test reads the severity enum from the schema so a future P3 fails there rather than silently. The aggregate is unchanged at thirteen: 9 + 3 + 1.
 
-What is ready for the owner: every other unit except PF-072 is landed with executing
-evidence, ten findings carry commit-pinned closure evidence covering every artifact
-they name, `validate_repair_task_binding.py` reports n/n for every finding except
-this one, and `review-target-v1.json` is untouched at `state: not-pinned`,
-`review_verdict: pending`, `reviewed_commit: null`.
+**One further defect found in the same place.** The exact-head review check read `open_p1` alone, so after the regrade a review could have passed with nine open P0 findings. It now refuses any open finding at any severity.
 
-- pin exact commit;
-- independent manual review of SR-005 through SR-017;
-- record any P0/P1 with exact normative owner;
-- require zero open P0/P1 before considering P-1104.
+**The two registry digests are a recorded claim, not a machine-derived fact.** Nothing computes or verifies `finding_registry_sha256` or `artifact_registry_sha256`; the schema checks only that they are sixty-four hex characters. They were computed from the two files at the reviewed commit and a reader can reproduce them with `git show <commit>:<path> | shasum -a 256`. The same is true of `validation_run`, which is the planning-checks run number on that exact commit and is named in the record so it can be opened.
+
+**The storyboard promotion, and why these captures are of this head.** D-610 recorded that relabelling the public figure moved pixels in the governed baselines and that an agent does not promote captures. The owner has promoted them. The SHA-256 values come from storyboard-visuals run 31592533820, and no file under `assets/`, `packages/ui/` or `apps/web/` changed between that run's head and the reviewed head, which is what makes them captures of the head under review rather than of an older one. Nine viewports moved — public-profile, rival-comparison and board-standings across desktop, tablet and mobile. `friends` and `activity-and-notifications` matched their reviewed captures exactly and were not touched. D-610 is spent.
+
+**What this unit does not do.** It does not flip any gate: `gate-authorization-v1.json` still records P-1140F as `in-progress-planning`, and gates are opened and closed by the owner alone. It does not write its own closure evidence into SR-016, because a unit cannot cite its own merge commit; that citation and the removal of the two interval reasons it justifies land in the unit that follows. It does not make any finding true by closing it — three of SR-016's four artifacts are recorded as needing no change rather than repaired by a unit serving it, and the reasons are there to be read rather than to be counted.
+
 
 ### PF-037 — Enforce required unit fields in the issue plan generator
 Files: `scripts/repository/generate_issue_plan.py`, `docs/implementation/ISSUE_GENERATION.md`, `.github/workflows/planning-checks.yml`, `tests/ci/test_generate_issue_plan.py` (new)

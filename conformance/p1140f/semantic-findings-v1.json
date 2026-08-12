@@ -4,8 +4,8 @@
   "findings": [
     {
       "finding_id": "SR-005",
-      "severity": "P1",
-      "state": "repaired-pending-review",
+      "severity": "P0",
+      "state": "closed",
       "title": "Protocol authority and executable drift",
       "repair_task": "P-1140F-1",
       "finding_class": "contradiction",
@@ -26,13 +26,13 @@
         "PF-002 at 2d9935ee7cc5c950b68243a671395776f31e20b8: nothing read a CDDL rule name against a vector file in either direction, so the exact-byte vectors could have encoded a different message entirely and passed. The acceptance was unsatisfiable as written — zero of the 26 rule names appear in either file, because both hold hex. cddl_instance.py now decodes both payloads and header maps, requires each to satisfy its rule with the exact label set, and re-encodes to the committed bytes; the pinned, corpus-pinned and declared-unpinned rule sets must partition the grammar exactly. VIBEPROOF_V1_CANONICAL_PROFILE.md was a second document owning canonical encoding while describing the eleven-field shadow codec, which is this finding in one file.",
         "PF-003 at 2d9935ee7cc5c950b68243a671395776f31e20b8: the evidence-ceiling check did not exist. run_evals.py admitted authority_class and evidence_ceiling to its allowlist with a comment saying they carry no execution semantics, and read neither; one suite of 27 carried them. All 27 now do, the vocabulary is declared once in artifact-authority-v1.json and read rather than copied, and a manifest binding no fixtures caps at none so absence lowers the ceiling instead of escaping the check. What remains for SR-005 is outside this finding: protocol/vibeproof-v1.cddl is unquarantined while four of its consumers are exploratory prototypes, and registering it needs a notice inside protocol/, which this phase may not write."
       ],
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-006",
-      "severity": "P1",
-      "state": "repaired-pending-review",
+      "severity": "P0",
+      "state": "closed",
       "title": "OAuth, linked identity, recovery, and ranked identity",
       "repair_task": "P-1140F-2",
       "finding_class": "contradiction",
@@ -53,13 +53,13 @@
         "PF-007 at cb04718c0e21ab365ea55ebe2e9c9a8763bff8f0: unlinking a provider account was silently permanent product-wide: provider_subject was not null under a total unique (provider, provider_subject), so a retained unlinked row blocked that provider account from ever being linked to any account, and DATA_MAP.md's delete-on-unlink promise could only be honoured by deleting the row the constraint required. Both personal-data fields are now null exactly when the binding has ended.",
         "PF-008 at cb04718c0e21ab365ea55ebe2e9c9a8763bff8f0: consolidation has a path. The account-consolidation machine declares consolidation-confirm with actor user and the API declared no consolidation operation at all, so a case left awaiting-confirmation only by expiring. D-564, that the older ranked identity survives, was recorded in no machine-readable place and is now checkable with a matched negative fixture."
       ],
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-007",
-      "severity": "P1",
-      "state": "repaired-pending-review",
+      "severity": "P0",
+      "state": "closed",
       "title": "Device lineage, challenge, replay, checkpoint, and recovery",
       "repair_task": "P-1140F-2",
       "finding_class": "contradiction",
@@ -79,13 +79,13 @@
         "PF-010 at c7647fe7bb1f171588106de8c14d9f20cdb4be34: lineage scoping was enforced where the sequence counter is read and not where it is written. D-592 rekeyed device_sequences onto the lineage and stopped one table short: claims still carried unique (device_id, device_sequence) and unique (device_id, payload_hash), so two device rows in one lineage could each hold sequence 42 and the same payload. checkpoint_receipts was device-keyed while the head it advances was lineage-keyed, giving a restored store a private receipt chain. device_key_events could not record dual authorization at all — one nullable signature and no account column — so an ordinary rotation and a single-signature forgery were the same row. All three are repaired, with recovered forbidding the outgoing signature so a rotation cannot be admitted by claiming to be a recovery. AUTHENTICATION_AND_RECOVERY.md also ended the recovery order with a human appeal, contradicting D-561's accepted rule that exhaustion is permanent.",
         "PF-070 at 32638ddb6235e2105ca1f38dcef11a803e6e60b7: the fourth conflicting artifact is repaired. openapi-v1.yaml#ClaimChallenge was named by this finding and touched by no unit; the challenge was defined three times over disjoint fields, so the expected sequence, local head and checkpoint tuple the protocol says the server verifies was persisted nowhere and the API carried a batch_commitment neither other authority had. Eleven fields now agree across the CDDL, the DDL and the API, with a validator failing on a field present in one and absent from another in either direction, and four server-only columns each recording why. batch_commitment was removed rather than propagated because every claim signs the challenge nonce, so a digest over the batch cannot be computed before the challenge that binds it exists — it was uncomputable in all three places. What remains is outside this finding: checkpoint-receipt-v1 and checkpoint_receipts have near-disjoint columns and server_receipt_sequence is stored nowhere, which keeps D-043 provisional."
       ],
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-008",
       "severity": "P1",
-      "state": "repaired-pending-review",
+      "state": "closed",
       "title": "Local daemon, shell, IPC, and platform supervision",
       "repair_task": "P-1140F-3",
       "finding_class": "contradiction",
@@ -104,13 +104,13 @@
         "PF-013 at da930f9c961ef9d029b68e9bb1aee3561551af2c: interactive-shell declares only the eight process and connection states. It previously carried fifteen, collapsing collection, sync, auth, permission, update and connectivity into one state variable, so a device with paused collection and an offline network had no representable shell state. Five projections now persist in local-store-v1.sql. Local persistence and migration remain open under PF-014.",
         "PF-014 at da930f9c961ef9d029b68e9bb1aee3561551af2c: the canary fixture now covers log, backup, diagnostic and corruption-report, the four surfaces that carry content by accident rather than by design and the four the acceptance named. Repairing it found four pre-existing negative cases naming a forbidden class in snake_case where the allowlist declares kebab-case, so they resolved to nothing; a fifth naming otel-identity-attributes, which was declared nowhere; and two cases sharing one canary token, which defeats attribution. All four units serving SR-008 have landed."
       ],
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-009",
-      "severity": "P1",
-      "state": "repaired-pending-review",
+      "severity": "P0",
+      "state": "closed",
       "title": "Universal adapter certification and deterministic accounting",
       "repair_task": "P-1140F-3",
       "finding_class": "contradiction",
@@ -129,13 +129,13 @@
         "PF-018 at bc5880ae0b3d775ee9ab45d0d46ff401ac6640be: reconciliation and bounds are specified and exhaustively ordered. The acceptance allowed the author to choose two array orderings, which a first-wins reconciler satisfies on any agreeing pair; every permutation is exhausted now under a declared cap that fails rather than sampling. accounting-profile.schema.json spelled the fourth count authority reconstructed while nine artifacts spelled it exact-reconstruction, so a validator comparing them would have reported a contradiction that does not exist for every reconstruction profile, and did not fire only because the one binding it runs over is provider-reported. Summation across readings and selection-based contradiction resolution are forbidden, bounds reject rather than saturate, and capping is recorded forbidden because Token Burn is unnormalized. Nothing is certified: no vector names a certified tuple.",
         "PF-071 at ea4ceafab557936b21642d362d76f251ef28b8d5: adapter-manifest.schema.json#certification, the artifact neither PF-015 nor PF-018 opened and which no commit had touched since the P-1140B freeze. It was green because nothing read it. The block now declares a required state whose enum is uncertified plus the eight states of the source-certification machine; bundle_sha256 admits null and is null exactly when the state is uncertified, bound in both directions so a forgotten digest and a declared absence of certification cannot be stated apart; modes and certification.mode both admit exactly the nine observation modes observer-equivalence-v1.json declares, so import is refused and acp admitted; and the committed example carries no invented bundle digest. Nothing is certified: every state this repository can reach is candidate or uncertified."
       ],
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-010",
-      "severity": "P1",
-      "state": "repaired-pending-review",
+      "severity": "P0",
+      "state": "closed",
       "title": "Ranking authorization, immutable generations, periods, and corrections",
       "repair_task": "P-1140F-4",
       "finding_class": "contradiction",
@@ -159,13 +159,13 @@
         "PF-022 at 986e90c29eba7733456e48cd95f99d88c3a32d0f: the one active pointer did not exist: state was a five-value CHECK with no uniqueness, so two workers could each promote a generation and leave two rows active. The Cursor parameter asserted the server rejects a cursor it did not issue, one issued against a different snapshot and one issued to a different principal, while no record held an issuer, a snapshot or a principal. The refusal order is now a rule, because a presentation breaking two of them must be refused by the same one every time.",
         "PF-023 at 986e90c29eba7733456e48cd95f99d88c3a32d0f: ranking_corrections named no participant and no period, so every row said some total somewhere moved by some amount and no rebuild could reproduce anybody's figure, while the storage contract documented an index as serving correction application across views. periods had no lifecycle at all against seasons' five checked timestamps, so a correction to a closed period was indistinguishable from a claim landing in an open one. The transition into corrected is now a moderator act under recent authentication rather than a scheduled job's."
       ],
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-011",
       "severity": "P1",
-      "state": "repaired-pending-review",
+      "state": "closed",
       "title": "Social relationships, boards, presence, and notifications",
       "repair_task": "P-1140F-4",
       "finding_class": "contradiction",
@@ -186,13 +186,13 @@
         "PF-026 at e253dfa65b4802bf6fba87ce404ec575cf5232ba: a browser could fabricate presence. renewPresence accepted a session cookie and a body whose only field was availability, against the rule that presence is server-derived from qualifying device activity, and validate_state_vocabularies.py declared that field a projection of the server-derived machine, which is a coarsening running inbound. The generation discard rule was enforced on the read side while the write path carried neither the device nor the generation. idle was unreachable because the lease expired at 90 seconds and idle began at 300; D-385 deferred the rename because a validator required those spellings, and that validator is in this repository.",
         "PF-027 at e253dfa65b4802bf6fba87ce404ec575cf5232ba: notification categories, the inbox and the channel model are bound. Four preference flags governed eight event types with the mapping declared nowhere, so whether a security notification could be muted depended on which mapping a reader assumed; notifications.retraction_reason_code had no CHECK, making one of three registered codes a convention; and notification_preferences had no API operation at all."
       ],
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-012",
       "severity": "P1",
-      "state": "repaired-pending-review",
+      "state": "closed",
       "title": "Idempotency and ambiguous commit recovery",
       "repair_task": "P-1140F-4",
       "finding_class": "contradiction",
@@ -208,13 +208,13 @@
         "PF-019 at bf1a128ace7a3d6e8cccc2585270382da242aaee: idempotency_records keys on exactly the key_scope openapi-v1.yaml#x-idempotency-contract declares, so operation_id is inside the key and one key across two operations can no longer be answered with the other operation's recorded response. replayable-failure and abandoned replace a single failed state, which is the distinction a retry needs.",
         "PF-020 at 868e4f867c65442faf51deb79f3a93738258de66: expiry was implemented as deletion, and a deleted key is a fresh key. idempotency_records had one lifetime column, so the only way to stop replaying past the window the wire contract declares was to delete the row — after which the next request carrying that key executed as a new mutation, which is the exact case the unit's prose said must be refused. retain_until now bounds retention separately from replay. sql-race-plans-v1.json asserted nothing: all fourteen cases carried the same four interleaving steps and one sentence, and the validator checked only ids, table existence and a flag, all of which pass on placeholders. Nineteen cases now name the rows a correct implementation leaves behind, present and absent, with 92 column assertions resolving against the DDL. Three stale justifications claiming this finding stays open for defects PF-019 and PF-049 had already repaired were struck."
       ],
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-013",
-      "severity": "P1",
-      "state": "repaired-pending-review",
+      "severity": "P0",
+      "state": "closed",
       "title": "Export, deletion, retention, and backup tombstones",
       "repair_task": "P-1140F-4",
       "finding_class": "contradiction",
@@ -235,13 +235,13 @@
         "PF-028 at 9f5b7e2baf82a5fa085873f294b33ccb065274ba: export authority is bound to a domain vocabulary that did not exist. The acceptance asked for included and excluded domains in a repository where no domain vocabulary existed anywhere, so any implementation satisfying it would have invented a fourth spelling, and it named the wrong table for the revocable grant, which was a stub with neither a grant nor an expiry. Seven data domains are declared once in DATA_MAP.md, carried on all 71 personal rows of the disposition registry and compared three ways; the third comparison found presence_events filed under account and identity while presence_leases sat under social.",
         "PF-029 at 9f5b7e2baf82a5fa085873f294b33ccb065274ba: deletion_effects.state admitted not-applicable, a member meaning we did not look, so a plan could cover all seven domains by declining to answer for any; consolidation-plan-v1.schema.json refuses that value in that position, so the repair had reached one sibling and not the other. The Article 30 record promised a cancellation nothing could perform: DATA_MAP states the cooling-off window as cancellable and the machine had no cancelled state and no route to one. And the acceptance's own grep for an erasure overclaim passed on a document that had never contained the word, which is an absence satisfied by emptiness inside the criterion written to prevent one."
       ],
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-014",
-      "severity": "P1",
-      "state": "repaired-pending-review",
+      "severity": "P0",
+      "state": "closed",
       "title": "Release authorization, compatibility, migration, and rollback",
       "repair_task": "P-1140F-5",
       "finding_class": "contradiction",
@@ -260,13 +260,13 @@
         "PF-031 at ecb67d7d15d917956c48309f8201c52918c52211: an ordered chain and an ordered set are not the same claim, and the acceptance asked only for order — a migration list can be sorted, complete-looking and still skip a version, after which a rollback walks off the end of it. Contiguity is checked and a gap is a named negative example. install-plan-v1.schema.json gained the plan_kind discriminator this exposed: platform_install_plans was keyed on profile and release alone, so install, upgrade, repair, uninstall and orphan cleanup were the same row.",
         "PF-032 at ecb67d7d15d917956c48309f8201c52918c52211: installability and competitive eligibility are separated in a way that buys something. Two booleans satisfy the word separately; what is enforced now is that the combination which occurs — installable and not competitively eligible, which is what a container and a CI runner are — is representable, and that a profile asserting eligibility with no supervision mechanism to derive it from fails."
       ],
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-015",
-      "severity": "P1",
-      "state": "repaired-pending-review",
+      "severity": "P0",
+      "state": "closed",
       "title": "Current-authorization recheck at every display and delivery boundary",
       "repair_task": "P-1140F-4",
       "finding_class": "cross-cutting-invariant",
@@ -293,13 +293,13 @@
         "previous_form": "Privacy-safe projection and current authorization, stated as a repairable cluster with no artifact set of its own.",
         "rationale": "Independent review found no independent artifact set: the aggregates named in the original wording are already owned by SR-010, SR-011 and SR-013, so the finding could not be closed by repairing anything it exclusively owned. It is restated as the invariant it actually asserts - every display and delivery boundary rechecks current authorization instead of replaying a historical snapshot - and bound to the boundary operations where that recheck is absent today. The artifact set intentionally intersects SR-010, SR-011 and SR-013 at different sites: those findings own their aggregates, this one owns the boundary. Closure is one enumerated boundary matrix plus a current-authorization check at every listed boundary, and is not satisfied by repairing any single aggregate."
       },
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     },
     {
       "finding_id": "SR-016",
-      "severity": "P1",
-      "state": "open",
+      "severity": "P2",
+      "state": "closed",
       "title": "Review-record integrity: reviewed head, evidence class, and named owners",
       "repair_task": "P-1140F-5",
       "finding_class": "record-integrity",
@@ -322,13 +322,19 @@
         "previous_form": "Review, conformance, and launch-evidence integrity, owned by the document that states the finding.",
         "rationale": "The finding was self-owned: its normative owners were the semantic-review document that states it and the schema inventory, so its closure evidence would have been the same prose that defines it and no external record could contradict it. Ownership moves to the two machine records that own reviewed-head and evidence-class facts, and the prose review documents become conflicting artifacts. The disagreement is now machine-checkable: REPAIR_HEAD_REVIEW.md pins e1320a6, the semantic review states base 41ecb77, and review-target-v1.json is not-pinned with a null commit; separately the state-machine registry names persistence owners for 19 of its 26 machines that packages/schemas/planning-schema.sql does not define. Closure is a pinned review-target-v1.json whose commit exists and whose verdict is recorded, prose head claims equal to it, suite names that match what each suite executes, and one resolved persistence owner for every registered machine."
       },
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass",
+      "unmodified_artifacts": {
+        "conformance/p1140f/REPAIR_HEAD_REVIEW.md#e1320a6730a62a7345ad44d149a9344d3d17c1c9": "This file is the review record itself, and the anchor is the head it used to pin. PF-036 rewrites it to pin the repaired head, so the artifact is repaired by the same commit that closes the finding - which is exactly the commit this finding's closure evidence cannot cite, because a unit cannot name its own merge. The citation lands in the unit that follows, and this reason is removed when it does. Recording it as unmodified in the interval is the honest statement: no commit this record cites has opened it yet.",
+        "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md#41ecb77856991ee033afcfe52d24eb42cd6ecb47": "The same interval, for the same reason. This document is one of the three registry summaries the gate record names, and it moved to the post-D-300 severity counts in the commit that closes this finding. No commit named in the closure evidence above has opened it, so it is recorded here rather than counted as covered, and the reason is removed when the following unit cites the commit that did open it.",
+        "evals/suites/suites.yaml#ranking-accounting": "The suite-name limb was resolved where it lived rather than by a unit serving this finding. `evals/suites/suites.yaml` now carries `shadow-codec-parity` with an explicit exploratory ceiling instead of a suite named for a conformance it does not execute, which is the defect this artifact was named for. Attributing that repair here would mean adding `Serves: SR-016` to a unit that did not serve it, which is the invented attribution this program exists to remove.",
+        "packages/schemas/state-machine-registry-v1.json": "Repaired under D-195 by adjacent work, not by a unit serving this finding. Every persistence owner named in the registry now resolves to a table in `packages/schemas/planning-schema.sql`, and a validator fails when one does not, which closes the nineteen-of-twenty-six gap this artifact was cited for. As above, the commits that did it serve other findings and are not retro-attributed here."
+      }
     },
     {
       "finding_id": "SR-017",
-      "severity": "P1",
-      "state": "repaired-pending-review",
+      "severity": "P0",
+      "state": "closed",
       "title": "Source-bound evidence and verifier appraisal authority",
       "repair_task": "P-1140F-3",
       "finding_class": "specification-gap",
@@ -359,8 +365,8 @@
         "previous_form": "Stated as a contradiction whose closure required four unwritten schemas, with an artifact set that named nothing existing.",
         "rationale": "Independent review found that authoring an absent schema is a design task rather than a disagreement between two authorities, so the finding as written could not be falsified. It is split into the two things it actually contains. The contradiction part is live and now cited: one appraisal aggregate is described three ways - vibeproof-claim-v1.cddl verifier-appraisal-v1 carries seven classification dimensions, evidence-profile-policy-v1.json enumerates the same seven dimensions as server-verifier authority, and planning-schema.sql verifier_appraisals persists only provenance, continuity and integrity state with no claim digest, evidence digest, validity interval or supersession. The design part is the four artifacts already recorded planned-missing in SCHEMA_AND_INTERFACE_INVENTORY.md; they move to planned_artifacts, because a path that does not exist cannot be cited as a conflicting artifact. Closure requires both halves: the three existing authorities agree on one appraisal record, and the four planned artifacts exist and bind the exact claim, evidence, policy and result under D-077."
       },
-      "reviewed_commit": null,
-      "review_verdict": "pending"
+      "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+      "review_verdict": "pass"
     }
   ]
 }

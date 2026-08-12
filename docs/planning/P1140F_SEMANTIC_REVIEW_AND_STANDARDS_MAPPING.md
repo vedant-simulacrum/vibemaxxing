@@ -13,13 +13,17 @@ The original four-finding review against `f06f630619427ec7f0576b57c4b3ac914d9a4c
 
 ## Current result
 
-- Semantic P0 open: 0
-- Semantic P1 clusters open: 13
+- Semantic clusters open: 13 (SR-005 through SR-017)
+- Semantic P0 clusters open: 9
+- Semantic P0 clusters open: 0
+- Semantic P1 clusters open: 0
+- Semantic P2 clusters open: 0
+- Semantic P2 clusters open: 1
 - P-1104: authorized-open
 - Product implementation: authorized
 - Product/security/evaluation/release/signing/deployment workflows: remain disabled
 
-P-1104 was opened by owner decision on 2026-08-05, recorded in GitHub issue 44 and in `conformance/p1140f/gate-authorization-v1.json`, while this gate was still open. The 13 P1 clusters above are unchanged by that decision. They remain open, remain tracked in `conformance/p1140f/semantic-findings-v1.json`, and are not waived. Authorization to implement is not a semantic verdict and closes no finding.
+P-1104 was opened by owner decision on 2026-08-05, recorded in GitHub issue 44 and in `conformance/p1140f/gate-authorization-v1.json`, while this gate was still open. The 13 clusters above are unchanged by that decision, and were unchanged by the D-300 regrade that redistributed them across P0, P1 and P2: a severity grades a finding, it does not close one. Each severity carries its own non-regression ceiling in `conformance/p1140f/gate-authorization-v1.json`, and those ceilings sum to the same 13, so no finding was moved out of scope by being regraded. They remain open, remain tracked in `conformance/p1140f/semantic-findings-v1.json`, and are not waived. Authorization to implement is not a semantic verdict and closes no finding.
 
 A green schema check, fixture, symbolic SQL race, or cross-language agreement does not close a finding unless it exercises the exact normative authority and invariant. The same holds for the P-1104 decision: it is an authorization, not evidence.
 

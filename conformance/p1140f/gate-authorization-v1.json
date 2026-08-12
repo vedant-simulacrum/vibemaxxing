@@ -4,14 +4,32 @@
   "phase_note": "Implementation is authorized. Authorization is a decision, not evidence: nothing in this record asserts that any component is implemented, secure, complete, or launch-ready.",
   "recorded_at": "2026-08-05",
   "finding_registry": "conformance/p1140f/semantic-findings-v1.json",
-  "open_p1_baseline": {
-    "severity": "P1",
-    "count": 13,
+  "open_p0_baseline": {
+    "severity": "P0",
+    "count": 9,
     "rule": "non-regression",
     "counted_states": ["open", "repair-in-progress", "repaired-pending-review"],
-    "recorded_at": "2026-08-05",
+    "recorded_at": "2026-08-12",
     "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/44",
-    "note": "Validators fail when the open P1 count exceeds this ceiling and pass when it is at or below it. Closing a finding must never turn validation red. Lowering this ceiling after a finding closes is optional and manual; it is never required to keep validation green."
+    "note": "Nine of the thirteen findings open under this gate carry P0 after the D-300 regrade. This ceiling, open_p1_baseline and open_p2_baseline partition the same thirteen findings by severity: 9 + 3 + 1 = 13, which is the single count of 13 this record carried before 2026-08-12 and is the count open_p1_findings_at_authorization still records for the P-1104 decision. The partition is not a relaxation. No finding left a ceiling, no finding is tracked by nothing, and every severity the finding registry can carry has a ceiling of its own so that a future regrade cannot move a finding out of scope while validation stays green."
+  },
+  "open_p1_baseline": {
+    "severity": "P1",
+    "count": 3,
+    "rule": "non-regression",
+    "counted_states": ["open", "repair-in-progress", "repaired-pending-review"],
+    "recorded_at": "2026-08-12",
+    "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/44",
+    "note": "Three of the thirteen findings open under this gate carry P1 after the D-300 regrade. This count was 13 when it was the repository's only ceiling; it moved to 3 on 2026-08-12 in the same change that added open_p0_baseline and open_p2_baseline to cover the other ten, so the aggregate is unchanged and this is a partition rather than a reduction. Validators fail when a severity's open count exceeds its own ceiling and pass when it is at or below it. Closing a finding must never turn validation red. Lowering a ceiling after a finding closes is optional and manual; it is never required to keep validation green."
+  },
+  "open_p2_baseline": {
+    "severity": "P2",
+    "count": 1,
+    "rule": "non-regression",
+    "counted_states": ["open", "repair-in-progress", "repaired-pending-review"],
+    "recorded_at": "2026-08-12",
+    "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/44",
+    "note": "One of the thirteen findings open under this gate carries P2 after the D-300 regrade. A P2 ceiling exists for the same reason as the P0 one: the finding registry's severity enum is exactly P0, P1 and P2, so declaring all three is what makes a regrade unable to move a finding outside every ceiling. A low severity is still a tracked severity; this ceiling is not permission to leave the finding unrepaired."
   },
   "registry_summary_documents": [
     "docs/project/STATUS.md",
