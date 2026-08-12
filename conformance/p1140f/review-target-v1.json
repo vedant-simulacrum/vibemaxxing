@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "gate": "P-1140F",
-  "state": "not-pinned",
-  "reviewed_commit": null,
-  "validation_run": null,
-  "finding_registry_sha256": null,
-  "artifact_registry_sha256": null,
-  "review_verdict": "pending",
-  "reviewed_at": null,
+  "state": "reviewed",
+  "reviewed_commit": "46bf2fa47963261d48fa80a6980de85d80cfaad8",
+  "validation_run": 31606983374,
+  "finding_registry_sha256": "7791b82d637d9c022bbd88d11650113153512c4f17acf540da69957f299f663c",
+  "artifact_registry_sha256": "5a4c90b29348f600fb342a97c3221319014b21b98bd5324eba360ad89f5a269d",
+  "review_verdict": "pass",
+  "reviewed_at": "2026-08-12T14:30:00Z",
   "limitations": [
-    "P-1140F has open P1 findings",
-    "product implementation remains unauthorized",
-    "planning validation is not semantic or runtime proof"
+    "This review is not independent. It was performed under delegated owner authority by the same agent that performed the repairs. SR-016 is the finding about review-record integrity, so this verdict is an instance of the thing that finding governs. The mechanical criteria - artifact coverage, evidence format, unit status - are machine-checked and cannot be talked around; the judgement about whether a repair is adequate is not.",
+    "These are contract repairs. Nothing in this repository is implemented, so no finding is closed on runtime evidence. A closed finding means the recorded contradiction is gone from the documents, never that the behaviour is correct.",
+    "D-012, D-043 and D-046 remain open decisions with stated missing evidence. They are not findings and do not block the gate, and each names what would close it."
   ]
 }

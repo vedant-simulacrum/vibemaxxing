@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 import yaml
@@ -35,6 +36,11 @@ INVENTORY = ROOT / "docs" / "planning" / "SCHEMA_AND_INTERFACE_INVENTORY.md"
 # A path in inline code on an inventory row. Rows are matched by their
 # `planned-missing` status cell, so this only ever reads paths off a planned row.
 PLANNED_MISSING_RE = re.compile(r"`([A-Za-z0-9_./-]+\.[A-Za-z0-9]+)`")
+
+# A per-severity non-regression ceiling in the gate record. Ceilings are discovered
+# by this shape rather than listed here, so recording one for a new severity is an
+# edit to the record and its schema and never to this file.
+BASELINE_KEY_RE = re.compile(r"^open_p[0-9]+_baseline$")
 
 
 def load_json(path: Path):
@@ -176,46 +182,88 @@ def main() -> int:
     if len(ids) != len(set(ids)):
         raise RuntimeError("duplicate semantic finding ID")
 
+    # The gate record declares one ceiling per severity, under a property named for
+    # that severity. They are read as a set rather than by name so that adding a
+    # severity to the finding registry needs a ceiling in the record and nothing
+    # here. Each ceiling's own `severity` field is what the ceiling is keyed by; the
+    # property name is a label, and the schema pins the two to agree.
+    ceilings = {
+        ceiling["severity"]: ceiling
+        for key, ceiling in authorization.items()
+        if BASELINE_KEY_RE.match(key)
+    }
+    if len(ceilings) != sum(1 for key in authorization if BASELINE_KEY_RE.match(key)):
+        raise RuntimeError(
+            "conformance/p1140f/gate-authorization-v1.json declares two ceilings for "
+            "one severity; a severity with two ceilings is governed by whichever the "
+            "reader picks"
+        )
+
+    # Every ceiling must agree about which states count as open. A ceiling that
+    # counted fewer states than its neighbours would let a finding be open under one
+    # severity and invisible under another, which is the same escape as having no
+    # ceiling at all, reached by editing three words instead of deleting an object.
     baseline = authorization["open_p1_baseline"]
     open_states = set(baseline["counted_states"])
-    open_p1 = sum(
-        row["severity"] == "P1" and row["state"] in open_states for row in finding_rows
+    disagreeing = sorted(
+        severity
+        for severity, ceiling in ceilings.items()
+        if set(ceiling["counted_states"]) != open_states
     )
-    if open_p1 > baseline["count"]:
+    if disagreeing:
         raise RuntimeError(
-            f"active P1 findings regressed: {open_p1} open exceeds the recorded baseline of "
-            f"{baseline['count']} in conformance/p1140f/gate-authorization-v1.json"
+            f"recorded ceilings disagree about which states count as open: {disagreeing} "
+            f"differ from open_p1_baseline.counted_states {sorted(open_states)} in "
+            f"conformance/p1140f/gate-authorization-v1.json. One severity would then be "
+            f"open in a state another severity is not counted in"
         )
+
+    active = Counter(
+        row["severity"] for row in finding_rows if row["state"] in open_states
+    )
+    for severity in sorted(ceilings):
+        if active[severity] > ceilings[severity]["count"]:
+            raise RuntimeError(
+                f"active {severity} findings regressed: {active[severity]} open exceeds "
+                f"the recorded baseline of {ceilings[severity]['count']} in "
+                f"conformance/p1140f/gate-authorization-v1.json"
+            )
 
     # Every severity that actually appears must have a ceiling tracking it.
     #
-    # The recorded baseline covers P1 alone, and its rule fails only when the
-    # count *exceeds* it. So regrading findings to any other severity lowers the
-    # P1 count, keeps validation green, and leaves the regraded findings tracked
-    # by nothing at all — the ceiling would report an improvement while the
-    # findings walked out of scope. This is the same shape as an eval suite
-    # downgraded to not_applicable: a number improved by removing what it counts.
+    # Each ceiling's rule fails only when its count *exceeds* it, so a regrade that
+    # moves findings to a severity with no ceiling lowers the count that was watching
+    # them, keeps validation green, and leaves the regraded findings tracked by
+    # nothing at all — a ceiling reporting an improvement while the findings walked
+    # out of scope. This is the same shape as an eval suite downgraded to
+    # not_applicable: a number improved by removing what it counts.
     #
-    # A severity without a ceiling is therefore an error rather than an absence.
-    # Adding one is an owner action, because ceilings live in the gate record.
-    ceilinged = {baseline["severity"]}
+    # The record now declares a ceiling for every severity the finding registry's
+    # schema admits, so a legal regrade cannot reach this branch. It stays because
+    # what makes the regrade safe is the coverage, not the count: adding a severity
+    # to the registry, or deleting a ceiling from the gate record, reopens exactly
+    # the hole this guard was written for. A severity without a ceiling is therefore
+    # an error rather than an absence, and it is not softened by the ceilings that do
+    # exist. Adding the missing one is an owner action, because ceilings live in the
+    # gate record.
+    ceilinged = set(ceilings)
     ungoverned: dict[str, list[str]] = {}
     for row in finding_rows:
         if row["state"] in open_states and row["severity"] not in ceilinged:
             ungoverned.setdefault(row["severity"], []).append(row["finding_id"])
     if ungoverned:
         detail = "; ".join(
-            f"{severity}: {', '.join(sorted(ids))}"
-            for severity, ids in sorted(ungoverned.items())
+            f"{severity}: {', '.join(sorted(identifiers))}"
+            for severity, identifiers in sorted(ungoverned.items())
         )
         raise RuntimeError(
             f"open findings carry a severity with no recorded ceiling ({detail}). "
-            f"conformance/p1140f/gate-authorization-v1.json records a ceiling for "
-            f"{baseline['severity']} only, so these findings are tracked by nothing. "
-            f"The owner adds the missing ceiling, which also needs "
-            f"gate-authorization-v1.schema.json amended because it pins "
-            f"open_p1_baseline.severity to the constant P1. A validator "
-            f"change would hide these findings instead."
+            f"conformance/p1140f/gate-authorization-v1.json records ceilings for "
+            f"{', '.join(sorted(ceilinged))} only, so these findings are tracked by "
+            f"nothing. The owner adds the missing ceiling as open_<severity>_baseline, "
+            f"which also needs gate-authorization-v1.schema.json amended because it "
+            f"admits one named property per severity and pins each to its own severity "
+            f"constant. A validator change would hide these findings instead."
         )
 
     # A state outside counted_states escapes the ceiling entirely.
@@ -406,15 +454,30 @@ def main() -> int:
             raise RuntimeError(
                 "reviewed P-1140F target lacks immutable passing evidence"
             )
-        if open_p1:
-            raise RuntimeError("P-1140F review cannot pass with active P1 findings")
+        # Every open finding blocks the verdict, not only the P1 ones. Reading this
+        # off the P1 count alone would have let the same regrade that partitioned the
+        # ceiling also empty this check: nine findings moved to P0 and the review
+        # passes with nine open contradictions.
+        if sum(active.values()):
+            detail = ", ".join(
+                f"{severity}={count}" for severity, count in sorted(active.items())
+            )
+            raise RuntimeError(
+                f"P-1140F review cannot pass with active findings ({detail})"
+            )
     elif review["review_verdict"] != "pending":
         raise RuntimeError("unpinned or pending review must have pending verdict")
 
     print("P-1140F authority validation: pass")
     print(
-        f"findings={len(finding_rows)} active_p1={open_p1} baseline_p1={baseline['count']} "
-        f"artifacts={len(artifact_rows)} bundles={len(bundle_rows)} review_state={review['state']} "
+        f"findings={len(finding_rows)} "
+        + " ".join(
+            f"active_{severity.lower()}={active[severity]} "
+            f"baseline_{severity.lower()}={ceilings[severity]['count']}"
+            for severity in sorted(ceilings)
+        )
+        + f" artifacts={len(artifact_rows)} bundles={len(bundle_rows)} "
+        f"review_state={review['state']} "
         + " ".join(f"{gate['gate']}={gate['state']}" for gate in authorization["gates"])
     )
     return 0

@@ -58,7 +58,7 @@ Machine-readable authorities:
 - artifact maturity and evidence ceilings: `conformance/p1140f/artifact-authority-v1.json`;
 - exact-head review state: `conformance/p1140f/review-target-v1.json`.
 
-P-1140F has 13 active P1 clusters, SR-005 through SR-017. Current semantic work is organized into five dependency-ordered tasks.
+P-1140F's 13 clusters, SR-005 through SR-017, are all closed on the reviewed head `46bf2fa47963261d48fa80a6980de85d80cfaad8`: 0 active P0 clusters, 0 active P1 clusters and 0 active P2 clusters. D-300 graded them 9 P0, 3 P1 and 1 P2, and the three severities carry one non-regression ceiling each in `conformance/p1140f/gate-authorization-v1.json` summing to 13, so a reopened finding is governed at whatever severity it carries. Current semantic work is organized into five dependency-ordered tasks.
 
 #### P-1140F-1 — re-establish protocol and repository authority
 

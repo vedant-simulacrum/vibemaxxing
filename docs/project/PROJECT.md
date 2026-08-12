@@ -1,6 +1,6 @@
 # VibeMaxxing Project Authority
 
-Status: specification. P-1104 is `authorized-open` by owner decision of 2026-08-05; P-1140F semantic repair remains open with 13 active P1 clusters. Nothing described in this document exists as a running system. `docs/project/STATUS.md` is the authoritative reality map and the only place that may state what is and is not built.
+Status: specification. P-1104 is `authorized-open` by owner decision of 2026-08-05; P-1140F semantic repair remains open with 13 active clusters, graded under D-300 as nine P0, three P1 and one P2. Nothing described in this document exists as a running system. `docs/project/STATUS.md` is the authoritative reality map and the only place that may state what is and is not built.
 
 This file is the project spine. It states what VibeMaxxing is, how the system works end to end, what each component owns, what the privacy boundary is, and what the design cannot do. Every other document is detail hanging off this narrative. Use `docs/project/DOCUMENTATION.md` to find the single normative owner of any concept; this file does not replace a normative contract and never overrides one on its own subject matter.
 
@@ -321,7 +321,7 @@ ADR-014 and D-069 permit the existing Storybook workflow only as read-only proto
 
 ## Planning and evidence boundary
 
-P-1140A–E are complete within their stated planning scopes. P-1140F remains open: 13 P1 semantic clusters (SR-005 through SR-017) are active, tracked and explicitly not waived. Current schemas and registries are planning inputs and must not be treated as implementation-ready where the audit marks them inconsistent.
+P-1140A–E are complete within their stated planning scopes. P-1140F remains open: 13 semantic clusters (SR-005 through SR-017) are active, tracked and explicitly not waived. D-300 graded them nine P0, three P1 and one P2; `conformance/p1140f/gate-authorization-v1.json` carries a non-regression ceiling for each severity and `docs/project/STATUS.md` owns the live counts. Current schemas and registries are planning inputs and must not be treated as implementation-ready where the audit marks them inconsistent.
 
 P-1104 is `authorized-open` as of 2026-08-05 by owner decision recorded in GitHub issue 44 and in `conformance/p1140f/gate-authorization-v1.json`. It was opened while its own documented preconditions were unmet. Opening it authorizes work; it is not evidence, and it changed nothing about what exists. `docs/project/STATUS.md` and the `conformance/p1140f/` registries own the exact gate, finding and review-target state; prose here summarizes them and may not independently redefine counts or state.
 
