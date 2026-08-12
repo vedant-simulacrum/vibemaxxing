@@ -283,28 +283,104 @@ create table device_lineages (
 -- scoped differently. A restored or cloned store enrolling as a second device row
 -- acquired its own private receipt chain, and no index in this file objected.
 --
--- `unique (lineage_id, last_sequence)` is the constraint, and it is the
--- `checkpoint-mismatch` detection basis expressed as a write refusal: two receipts
+-- `unique (lineage_id, accepted_through_claim_sequence)` is the constraint, and it is
+-- the `checkpoint-mismatch` detection basis expressed as a write refusal: two receipts
 -- acknowledging the same head inside one lineage are two branches, and the second
 -- insert fails rather than quietly creating a fork nobody counted.
 --
 -- Newest wins. When a lineage presents two acknowledged heads the receipt with the
--- greater `last_sequence` is authoritative and the server never rolls its head
--- backwards; a device arriving with an older head is behind, not correct, and must
--- declare a gap or requalify. Ordering by `created_at` instead would let a clone with
--- a fast clock win, so the ordering is over the sequence the server itself issued.
+-- greater `accepted_through_claim_sequence` is authoritative and the server never rolls
+-- its head backwards; a device arriving with an older head is behind, not correct, and
+-- must declare a gap or requalify. Ordering by `created_at` instead would let a clone
+-- with a fast clock win, so the ordering is over the sequence the server itself issued.
 -- `docs/security/INTEGRITY_MODEL.md` owns the rule; this table is where it is stored.
+--
+-- PF-073, and the sixth divergence D-043 records. This table and
+-- `packages/schemas/vibeproof-claim-v1.cddl#checkpoint-receipt-v1` had near-disjoint
+-- column sets: the receipt the server signs binds a pseudonym, an accepted local head,
+-- a last accepted claim digest, a policy id, an issue and expiry time and a signing key
+-- id, and not one of the six had a column. The column named `last_sequence` was the only
+-- concept the two shared, under a name neither the wire nor the protocol document uses.
+-- It is renamed to the label it stores. `server_receipt_sequence` — which
+-- `docs/architecture/VIBEPROOF_V1_PROTOCOL.md` lists in the server-state sentence and
+-- which `checkpoint-receipt-v1` label 7 signs — was stored nowhere and read by nothing,
+-- so the monotonic counter the protocol attributes to the server did not exist in the
+-- only place server state is kept. `scripts/repository/validate_checkpoint_receipt_binding.py`
+-- holds the three-way table over the CDDL, this table and
+-- `packages/schemas/openapi-v1.yaml#CheckpointReceipt`, and fails when a field is
+-- present in one of the three and absent from another, in either direction.
+--
+-- Label 0 of the wire receipt, the protocol major, has no column on purpose: the DDL
+-- expresses its own version by being the shape it is, and is versioned by migration
+-- rather than by a constant repeated in every row.
 create table checkpoint_receipts (
+  -- checkpoint-receipt-v1 label 1: receipt_id.
   checkpoint_receipt_id uuid primary key,
+  -- Label 2. The pseudonym the device signs, and the only account-shaped value that
+  -- crosses the boundary; the server's own `account_id` is deliberately not here,
+  -- because a receipt is answered to a lineage.
+  account_pseudonym bytea not null check (octet_length(account_pseudonym) = 32),
+  -- Label 3: device_lineage_id.
   lineage_id uuid not null references device_lineages(lineage_id),
+  -- Server-only. Which device row presented the batch. The receipt is lineage-scoped on
+  -- the wire because continuity is lineage-scoped under PF-009, and the device is
+  -- operational attribution the participant is not asked to carry.
   device_id uuid not null references devices(device_id),
+  -- Server-only. The batch's lower bound. The receipt acknowledges a head; the server
+  -- records the span that produced it, which is what makes a partially applied batch
+  -- visible as a row rather than as an absence.
   first_sequence bigint not null check (first_sequence >= 0),
-  last_sequence bigint not null check (last_sequence >= first_sequence),
+  -- Label 4. Previously `last_sequence`, a name that appeared in no other authority.
+  accepted_through_claim_sequence bigint not null
+    check (accepted_through_claim_sequence >= 0),
+  -- Label 5. The local commitment head the server has accepted, which
+  -- `device_sequences.server_checkpoint_head` is supposed to be advanced to and which
+  -- this table could not previously supply.
+  accepted_local_commitment_head bytea not null
+    check (octet_length(accepted_local_commitment_head) = 32),
+  -- Label 6. The digest of the last claim admitted, so a receipt names the claim it
+  -- stops at and not only the number of it.
+  last_accepted_claim_sha256 bytea not null
+    check (octet_length(last_accepted_claim_sha256) = 32),
+  -- Label 7, and the field PF-073 exists for: the monotonic receipt counter
+  -- `docs/architecture/VIBEPROOF_V1_PROTOCOL.md` names as server state. It was defined
+  -- once, in the CDDL, and stored nowhere.
+  server_receipt_sequence bigint not null check (server_receipt_sequence >= 0),
+  -- Label 8. Which verifier policy issued this acknowledgement; an appeal that cannot
+  -- name the policy it was decided under cannot be decided again.
+  verifier_policy_id text not null,
+  -- Labels 9 and 10.
+  issued_at timestamptz not null,
+  expires_at timestamptz not null,
+  -- Label 11. Which server signing key to verify `signed_receipt` under, so a rotated
+  -- server key does not invalidate every receipt already issued.
+  server_signing_key_id uuid not null,
+  -- Server-only. The batch this receipt answered.
   batch_digest bytea not null check (octet_length(batch_digest) = 32),
+  -- Server-only. The chain link, kept server-side: the device carries the previous
+  -- receipt id on its claims, and the server keeps the digest it chains over.
   previous_receipt_digest bytea,
+  -- Server-only. The COSE bytes themselves. The wire *is* this, so the column stores the
+  -- artifact rather than a field of it, and every label above is a projection of it that
+  -- SQL can index.
   signed_receipt bytea not null,
+  -- Server-only. When the row was written, which is not `issued_at`: the receipt states
+  -- when the server says it issued, and this states when the transaction landed.
   created_at timestamptz not null,
-  unique (lineage_id, last_sequence)
+  -- The acknowledged head cannot precede the span that produced it.
+  constraint checkpoint_receipts_head_within_span
+    check (accepted_through_claim_sequence >= first_sequence),
+  constraint checkpoint_receipts_expiry_follows_issue check (expires_at > issued_at),
+  -- The `checkpoint-mismatch` basis: two receipts at one head inside one lineage.
+  unique (lineage_id, accepted_through_claim_sequence),
+  -- The monotonic receipt counter the protocol document names as server state, as a
+  -- constraint. This is a DIFFERENT counter from the claim sequence above and the two
+  -- move at different rates: one accepted batch advances
+  -- `accepted_through_claim_sequence` by up to 256 — `batch-context` label 4 admits that
+  -- many claims — and advances `server_receipt_sequence` by exactly one, because one
+  -- committed batch returns one receipt. Reading either as the other is how a receipt
+  -- chain with 4 links and a claim chain with 900 links look like a fork.
+  unique (lineage_id, server_receipt_sequence)
 );
 
 -- The persistence half of the challenge. `packages/schemas/vibeproof-claim-v1.cddl#challenge-v1`
@@ -3263,7 +3339,8 @@ create index device_lineages_account_idx on device_lineages (account_id);
 create index device_key_events_device_idx on device_key_events (device_id, occurred_at desc);
 -- The lineage ordering is the one a rotation audit and a fork case both read.
 create index device_key_events_lineage_idx on device_key_events (lineage_id, occurred_at desc);
-create index checkpoint_receipts_device_idx on checkpoint_receipts (device_id, last_sequence desc);
+create index checkpoint_receipts_device_idx
+  on checkpoint_receipts (device_id, accepted_through_claim_sequence desc);
 
 -- Foreign-key referencing side: claims and verification.
 create index claim_challenges_account_idx on claim_challenges (account_id);

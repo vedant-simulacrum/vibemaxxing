@@ -96,7 +96,7 @@
       "fixtures": [
         {
           "path": "conformance/vibeproof/v1/fork-and-rotation-vectors.json",
-          "sha256": "562512914b7c8eca04e480e8ed5f7346bcdab51962c5130de5af0767c091a18b"
+          "sha256": "1015b45989ad7382555882a3192eeb6837e9e4898d9f744a33a62d1651a31cec"
         }
       ],
       "expect": "accept",
@@ -112,7 +112,7 @@
       "fixtures": [
         {
           "path": "conformance/vibeproof/v1/fork-and-rotation-vectors.json",
-          "sha256": "562512914b7c8eca04e480e8ed5f7346bcdab51962c5130de5af0767c091a18b"
+          "sha256": "1015b45989ad7382555882a3192eeb6837e9e4898d9f744a33a62d1651a31cec"
         }
       ],
       "expect": "reject",

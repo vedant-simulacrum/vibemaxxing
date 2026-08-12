@@ -561,7 +561,7 @@ class LineageScopedUniquenessTests(unittest.TestCase):
         self.assertIn(
             "lineage_id uuid not null references device_lineages(lineage_id)", body
         )
-        self.assertIn("unique (lineage_id, last_sequence)", body)
+        self.assertIn("unique (lineage_id, accepted_through_claim_sequence)", body)
 
     def test_the_lineage_table_precedes_every_new_dependant(self) -> None:
         """PostgreSQL rejects a foreign key to a table declared later in the file.

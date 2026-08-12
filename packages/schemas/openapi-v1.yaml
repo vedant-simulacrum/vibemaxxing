@@ -3849,6 +3849,77 @@ components:
           maxLength: 64
         retryable:
           type: boolean
+    CheckpointReceipt:
+      description: >-
+        The JSON projection of `checkpoint-receipt-v1` in
+        `packages/schemas/vibeproof-claim-v1.cddl`, field for field, and the row
+        `checkpoint_receipts` stores. Label 0 is the protocol major and is
+        published by neither this schema nor the DDL: the API is versioned by
+        path and the DDL by migration.
+        `scripts/repository/validate_checkpoint_receipt_binding.py` holds the
+        three-way table and fails when any one of the three carries a field the
+        other two do not. Before PF-073 this component did not exist and
+        `ClaimBatchResult.checkpoint_receipt` was an opaque base64 blob, so the
+        eleven fields the server signs reached the client with no published
+        meaning and a client could read none of them without a CBOR decoder and
+        a copy of the CDDL. The bytes are still published beside this, as
+        `checkpoint_receipt_cose`: a projection is what a client reads and the
+        envelope is what it verifies, and neither substitutes for the other.
+      type: object
+      additionalProperties: false
+      required:
+        - checkpoint_receipt_id
+        - account_pseudonym
+        - lineage_id
+        - accepted_through_claim_sequence
+        - accepted_local_commitment_head
+        - last_accepted_claim_sha256
+        - server_receipt_sequence
+        - verifier_policy_id
+        - issued_at
+        - expires_at
+        - server_signing_key_id
+      properties:
+        checkpoint_receipt_id:
+          type: string
+          format: uuid
+        account_pseudonym:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        lineage_id:
+          type: string
+          format: uuid
+        accepted_through_claim_sequence:
+          type: integer
+          minimum: 0
+        accepted_local_commitment_head:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        last_accepted_claim_sha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        server_receipt_sequence:
+          description: >-
+            The monotonic receipt counter
+            `docs/architecture/VIBEPROOF_V1_PROTOCOL.md` names as server state.
+            It is not the claim sequence: one accepted batch advances
+            `accepted_through_claim_sequence` by up to 256 and this by exactly
+            one.
+          type: integer
+          minimum: 0
+        verifier_policy_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+        issued_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        server_signing_key_id:
+          type: string
+          format: uuid
     ClaimBatchResult:
       description: >-
         ADR-007 prohibits partial batch acceptance and this schema admitted it:
@@ -3879,6 +3950,8 @@ components:
               maxItems: 0
             checkpoint_receipt:
               type: 'null'
+            checkpoint_receipt_cose:
+              type: 'null'
           required:
             - state
       required:
@@ -3887,6 +3960,7 @@ components:
         - accepted_claim_ids
         - rejections
         - checkpoint_receipt
+        - checkpoint_receipt_cose
       properties:
         batch_id:
           type: string
@@ -3907,6 +3981,20 @@ components:
           items:
             $ref: '#/components/schemas/ClaimRejection'
         checkpoint_receipt:
+          description: >-
+            The receipt as fields. Null on a rejected batch, because a receipt
+            acknowledges an accepted head and a rejected batch advanced none.
+          oneOf:
+            - $ref: '#/components/schemas/CheckpointReceipt'
+            - type: 'null'
+        checkpoint_receipt_cose:
+          description: >-
+            The same receipt as the `cose-sign1-receipt-v1` envelope the server
+            signed. The client needs both: these bytes are what it verifies
+            against `server_signing_key_id`, and `checkpoint_receipt` is what it
+            reads. Publishing only the bytes, which is what this schema did
+            before PF-073, made every field unreadable without a CDDL; publishing
+            only the projection would make the signature unverifiable.
           type:
             - string
             - 'null'

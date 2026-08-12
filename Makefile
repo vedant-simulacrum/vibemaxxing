@@ -31,6 +31,7 @@ validate: $(VENV_PY) ## Run the planning validator suite
 	$(VENV_PY) scripts/repository/validate_repair_task_binding.py
 	$(VENV_PY) scripts/repository/validate_finding_artifact_coverage.py
 	$(VENV_PY) scripts/repository/validate_batch_challenge_binding.py
+	$(VENV_PY) scripts/repository/validate_checkpoint_receipt_binding.py
 	$(VENV_PY) scripts/repository/validate_planning_coverage.py
 	$(VENV_PY) scripts/repository/validate_state_vocabularies.py
 	$(VENV_PY) scripts/repository/validate_oauth_identity_contract.py

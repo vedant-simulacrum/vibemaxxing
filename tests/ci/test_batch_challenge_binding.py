@@ -98,11 +98,20 @@ class ChallengeIsOneDefinitionTests(BindingFixture, unittest.TestCase):
         )
 
     def test_a_column_with_no_recorded_reason_fails(self) -> None:
-        """The check is not satisfiable by addition either."""
+        """The check is not satisfiable by addition either.
+
+        The anchor is a column only `claim_challenges` has. It was
+        `issued_at timestamptz not null`, which stopped discriminating the moment
+        PF-073 gave `checkpoint_receipts` — declared earlier in the file — the same
+        column: `rewrite` replaces the first occurrence, so the injected column landed
+        in a table this validator does not read and the test passed by injecting
+        nothing.
+        """
         self.rewrite(
             "SQL",
-            "  issued_at timestamptz not null,",
-            "  issued_at timestamptz not null,\n  batch_hint bytea,",
+            "  expected_checkpoint_receipt_id uuid references checkpoint_receipts(checkpoint_receipt_id),",
+            "  expected_checkpoint_receipt_id uuid references checkpoint_receipts(checkpoint_receipt_id),\n"
+            "  batch_hint bytea,",
         )
 
         self.assert_fails(

@@ -127,8 +127,20 @@ verifier-appraisal-v1 = {
   29: registered-id        ; observer equivalence rule id
 }
 
+; The canonical acknowledged head. `packages/schemas/planning-schema.sql#checkpoint_receipts`
+; persists exactly labels 1..11 and `packages/schemas/openapi-v1.yaml#CheckpointReceipt`
+; projects exactly labels 1..11 into JSON; label 0 is the protocol major and is stored in
+; neither, because the DDL is versioned by migration and the API by path.
+; `scripts/repository/validate_checkpoint_receipt_binding.py` holds the three-way table
+; and fails on any divergence. Before PF-073 the three definitions were near-disjoint:
+; the table shared one concept with this rule and stored it as `last_sequence`, and
+; label 7 — `server_receipt_sequence`, which docs/architecture/VIBEPROOF_V1_PROTOCOL.md
+; lists as server state — existed in this file alone, stored nowhere and read by
+; nothing. The API had no receipt component at all and published the receipt as an
+; opaque base64 blob, so eleven signed fields reached the client as bytes with no
+; published meaning.
 checkpoint-receipt-v1 = {
-  0: 1,
+  0: 1,                    ; protocol_major
   1: uuid7,                ; receipt_id
   2: digest32,             ; account_pseudonym
   3: uuid7,                ; device_lineage_id

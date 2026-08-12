@@ -145,7 +145,7 @@
         },
         {
           "table": "checkpoint_receipts",
-          "key": "lineage_id = L with the greatest last_sequence",
+          "key": "lineage_id = L with the greatest accepted_through_claim_sequence",
           "presence": "present",
           "columns": {
             "lineage_id": "L",
