@@ -129,7 +129,7 @@
     {
       "checkpoint_case_id": "CP-MISMATCH",
       "title": "Two devices acknowledge the same head",
-      "note": "Newest-wins cannot choose between equals, and two receipts at one head inside one lineage are two branches. unique (lineage_id, last_sequence) on checkpoint_receipts refuses the second write, which is this row expressed as a constraint.",
+      "note": "Newest-wins cannot choose between equals, and two receipts at one head inside one lineage are two branches. unique (lineage_id, accepted_through_claim_sequence) on checkpoint_receipts refuses the second write, which is this row expressed as a constraint.",
       "acknowledged_heads": [
         {"device_ref": "device-a", "last_sequence": 6},
         {"device_ref": "device-i", "last_sequence": 6}

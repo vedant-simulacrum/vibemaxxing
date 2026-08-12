@@ -2283,10 +2283,14 @@ def resolve_lineage(lineage: dict[str, Any]) -> dict[str, Any]:
 def resolve_checkpoint_heads(case: dict[str, Any]) -> dict[str, Any]:
     """Newest wins, and equals do not resolve.
 
-    The ordering is over `last_sequence`, which the server issued, and never over
-    arrival time, which a clone with a fast clock controls. Two devices acknowledging
-    the same head are two branches of one lineage, which is the `checkpoint-mismatch`
-    detection basis, and `unique (lineage_id, last_sequence)` on `checkpoint_receipts`
+    The ordering is over the fixture's `last_sequence`, which is the acknowledged head
+    the server issued and is stored as `checkpoint_receipts.accepted_through_claim_sequence`
+    — PF-073 renamed the column onto the `checkpoint-receipt-v1` label 4 it persists and
+    left the fixture vocabulary alone, because these vectors describe heads rather than
+    rows. Never over arrival time, which a clone with a fast clock controls. Two devices
+    acknowledging the same head are two branches of one lineage, which is the
+    `checkpoint-mismatch` detection basis, and
+    `unique (lineage_id, accepted_through_claim_sequence)` on `checkpoint_receipts`
     refuses the second write.
     """
     heads = case["acknowledged_heads"]

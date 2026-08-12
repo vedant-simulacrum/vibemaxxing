@@ -72,9 +72,9 @@ Continuity is scoped to the lineage, never to a device row. `AGENTS.md` states i
 
 ### Which acknowledged head wins
 
-A lineage may present two acknowledged heads — a restore from a backup and the live device, most often. The newest wins: the receipt with the greater `last_sequence` is authoritative, and the server never moves its head backwards. A device arriving with an older head is behind rather than correct, and rejoins by declaring a gap or requalifying; nothing about arriving late entitles it to roll the lineage back.
+A lineage may present two acknowledged heads — a restore from a backup and the live device, most often. The newest wins: the receipt with the greater `accepted_through_claim_sequence` is authoritative, and the server never moves its head backwards. A device arriving with an older head is behind rather than correct, and rejoins by declaring a gap or requalifying; nothing about arriving late entitles it to roll the lineage back.
 
-The ordering is over the sequence the server itself issued and never over a timestamp, because a clone controls its own clock and would otherwise win by setting it forward. Two receipts acknowledging the *same* head do not resolve at all: that is the `checkpoint-mismatch` detection basis below, and `unique (lineage_id, last_sequence)` on `checkpoint_receipts` refuses the second write rather than storing a fork nobody counted.
+The ordering is over the sequence the server itself issued and never over a timestamp, because a clone controls its own clock and would otherwise win by setting it forward. Two receipts acknowledging the *same* head do not resolve at all: that is the `checkpoint-mismatch` detection basis below, and `unique (lineage_id, accepted_through_claim_sequence)` on `checkpoint_receipts` refuses the second write rather than storing a fork nobody counted.
 
 ### Device-key rotation and lost-key recovery
 
