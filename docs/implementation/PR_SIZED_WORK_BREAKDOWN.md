@@ -72,17 +72,17 @@ Units: 263. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 182 |
+| `not-started` | 181 |
 | `in-progress` | 3 |
-| `landed` | 72 |
+| `landed` | 73 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 377 assertions across 72 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 388 assertions across 73 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 5.
+Startable now — not done, and every dependency done: 4.
 
-`PF-036`, `PF-072`, `OS-001`, `OS-003`, `OS-009`.
+`PF-036`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -1769,13 +1769,36 @@ Evidence: absent packages/schemas/examples/adapter-manifest.valid.json :: ffffff
 **What this unit does not do.** It does not close SR-009; the finding's state and review verdict are the owner's, and D-633 returns it to `repair-in-progress` rather than repairing the record to match the schema. It does not repair `lifecycle`, which is a separate six-value enum in the same file sharing only three values with the `source-certification` machine and bound to no machine at all — that is an adapter-lifecycle divergence rather than a certification-block one, and `UNIVERSAL_AGENT_COMPATIBILITY.md`'s five-stage adapter lifecycle has no registered machine to reconcile it against, so folding it in here would have meant inventing one. It does not add the collector-artifact, accounting-arithmetic or privacy-binding digests `UNIVERSAL_AGENT_COMPATIBILITY.md` names as tuple dimensions, nor the `version_min`/`version_max_exclusive` range `compatibility-tuple-v1.schema.json` requires against this file's single `source_version` string. And nothing here certifies anything: every state this repository can reach is still `candidate` or `uncertified`, and the example says `uncertified` because that is what is true.
 
 ### PF-072 — Reconcile the verifier appraisal record across the CDDL, the DDL and the appraisal result
-Files: `packages/schemas/vibeproof-claim-v1.cddl`, `packages/schemas/planning-schema.sql`, `packages/schemas/appraisal-policy-v1.json`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_accounting_evidence_chain.py`
+Files: `packages/schemas/vibeproof-claim-v1.cddl`, `packages/schemas/planning-schema.sql`, `packages/schemas/appraisal-policy-v1.json`, `packages/schemas/appraisal-policy-v1.schema.json`, `conformance/evidence/appraisal-result.valid-standard.json`, `conformance/evidence/appraisal-result.valid-superseded.json`, `conformance/evidence/appraisal-result.invalid-e1r-hardened.json`, `conformance/evidence/appraisal-result.invalid-imported-competitive.json`, `conformance/evidence/appraisal-result.invalid-client-selected-state.json`, `conformance/evidence/manifest.json`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `scripts/repository/validate_planning_artifacts.py`, `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_accounting_evidence_chain.py`
 Acceptance: `verifier-appraisal-v1`, `verifier_appraisals` and `appraisal-result-v1.schema.json` describe one appraisal record, with `validate_evidence_chain` comparing the CDDL's **field set** against the record's rather than only the integer ranges of its ten dimension labels, so a field present in one and absent from another fails in either direction; the CDDL carries `evidence_bundle_sha256`, the supersession pair and the evaluated certification state, and its certification-bundle label admits nil, because `appraisal-result-v1.schema.json` records that a capture bound to no certification is every capture this repository can currently take and the profile must be able to encode one; `verifier_appraisals` holds the claim digest, the evidence digest, the validity interval and the supersession chain, carries a unique index that makes one appraisal current per claim, and admits a null `evidence_profile_id` to match the nullable awarded profile both other authorities declare; the relationship between `verifier_appraisals` and `evidence_assessments` is declared, because both persist the same three assessed states with no record of which wins; and `python3 -m unittest tests.ci.test_accounting_evidence_chain` exits 0 and fails on each of those drifts.
 Depends: PF-017
 Repair: P-1140F-3
 Serves: SR-017
 Est: 12-16
-Status: not-started
+Status: landed
+Evidence: validator scripts/repository/validate_planning_artifacts.py --allow-no-postgres
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_accounting_evidence_chain
+Evidence: contains 1 packages/schemas/planning-schema.sql :: create unique index verifier_appraisals_current_per_claim_idx
+Evidence: contains 1 packages/schemas/planning-schema.sql :: evidence_profile_id text check (evidence_profile_id in
+Evidence: contains 1 packages/schemas/vibeproof-claim-v1.cddl :: 26: 0..8,                ; certification state
+Evidence: contains 1 packages/schemas/vibeproof-claim-v1.cddl :: 18: digest32 / nil,      ; certification bundle sha256
+Evidence: contains 1 packages/schemas/planning-schema.sql :: provenance_state text not null check
+Evidence: contains 1 packages/schemas/planning-schema.sql :: integrity_state text not null check
+Evidence: contains 1 packages/schemas/planning-schema.sql :: continuity_state text not null check (continuity_state in ('continuous','gap-declared','broken'))
+Evidence: absent packages/schemas/appraisal-policy-v1.json :: source_limb
+
+**The three authorities now hold the same twenty-six fields.** The CDDL gained the four facts the record carried and no label did — the evidence-bundle digest, both halves of the supersession chain, and the certification state as it stood at appraisal — plus the three evaluated bundle identifiers. Label 18 admits nil, because every capture this repository can take is bound to no certification and the previous non-nullable digest made the common case unencodable; label 5 admits nil for the same reason on the verifier implementation, which the policy bundle has recorded as null since it was written. `verifier_appraisals` went from nine columns to thirty-one and now stores the claim digest, the evidence digest, the seven dimensions, the validity interval and the supersession chain. `evidence_profile_id` is nullable, which is what CDDL label 14 and `awarded_profile_id` had always said and what `not null` made unrepresentable: a rejected claim is awarded no profile, so the table could not store the outcome of a rejection.
+
+**The check is the repair.** `appraisal_wire_ranges()` matched `0..<n>` and nothing else, so it parsed ten labels of twenty-three and labels 3, 5, 14 and 18 through 22 were invisible to everything. A field could be added to the record and to no label, or dropped from the CDDL entirely, and the only thing looking would report that ten dimensions were still in range — which is why one aggregate could be described three ways for as long as it was. `appraisal_cddl_labels()` reads every label and its declared type; `appraisal-policy-v1.json` carries `wire_binding.labels` mapping each to a record field and `record_only_fields` naming the six that are deliberately not on the wire with the reason for each; and the comparison fails in both directions on the field set, on nullability per field, and on ordinal density. The same shape runs against the DDL: `column_bindings` maps record field to column by full path, `column_only` explains the one column no field names, and `unbound_fields` and `unpersisted_fields` are separated because a gap this repository intends to close and a decision that the column would be wrong are different claims and one list made them one.
+
+**Three slack ranges, found by tightening the rule rather than by reading.** The old comparison was `>`: an ordinal outside the range failed, and a range wider than the ordinals passed. `capture_class` and `accounting_class` were declared `0..4` against four values and `device_key_class` `0..6` against six, so three labels each carried one integer that encoded successfully and resolved to nothing. This is the shape PF-070 found once in the gap declaration's cause label; here it was three more times in one rule, in the artifact that had gone unparsed. The rule is now equality, and the test that widens `capture_class` back to `0..4` was confirmed against the pre-repair validator: it passed there.
+
+**`bound_columns` was a second spelling and is gone.** It listed column names beside `unbound_fields`' record-field names, and nothing connected the two vocabularies — which is how `evidence_profile_id` sat in `bound_columns`, declared reconciled, while contradicting both other authorities on nullability. A map from field path to column cannot be half-right in that way. The same edit removed `source_limb` from `unbound_fields`: it named no field of the record, no label of the CDDL and no column of the table, so it was an entry excusing the absence of something that does not exist. `dimensions.source_class` already carries the D-078 limbs.
+
+**One aggregate, one owner, stated in the DDL.** `evidence_assessments` persisted the same three assessed states against the same `claim_id`, and `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` and `DATA_MAP.md` both read the two tables as one thing while `appraisal-policy-v1.json` named only `verifier_appraisals`. The three states leave `verifier_appraisals` rather than being redeclared there: they were never a coarser spelling of the seven dimensions to be kept beside them, and a copy in the aggregate's own owner would have made the finding's defect permanent. They remain on `evidence_assessments`, which is the older record, retained because `public_state` has a consumer PF-046 owns and because the erasure and data-disposition contracts name the table. Their `SQL_LOCAL_VOCABULARIES` entries for `verifier_appraisals` were deleted rather than left pointing at columns that no longer exist. The evidence for that departure is `contains 1` rather than `absent`, because the three declarations are still in the file and should be: they are `evidence_assessments`' columns. `absent` would have been false, and "absent from this table" is not something the verb can say — so the assertion is that each appears exactly once, which is true only while one table holds it.
+
+**What this unit does not do.** It does not close SR-017; the finding's state and review verdict are the owner's, and this unit cannot cite its own merge commit as closure evidence. It does not touch `evidence-profile-policy-v1.json`, which is the sole dimension authority the repair binds the others to rather than a party to the disagreement — though note that its `source` list carries `E1` undivided while the record and the wire carry the D-078 limbs, which is a refinement the policy bundle declares and reconciles rather than a divergence. It does not add instance-level CDDL conformance execution, so `evidence-bundle-v1.cddl` and `verifier-appraisal-v1` are still grammars nothing decodes against: `validate_evidence_chain` proves the three authorities agree about the record, not that any implementation produces it. And nothing here is implementation — no verifier evaluates a dimension, no row is written, and a claim's appraisal remains a thing this repository specifies rather than performs.
 
 **Why this exists.** SR-017 names seven conflicting artifacts and PF-017, its only serving unit, opened one of them. Four of the remaining six needed no change and now record why in the finding's `unmodified_artifacts` — `evidence-profile-policy-v1.json#dimensions` is the sole dimension authority the repair binds others to, `evidence-bundle-v1.cddl` is the referent rather than a party, and the appraisal result and policy schemas are the target the other authorities must converge on. Two hold the contradiction the finding is about, and they are this unit.
 

@@ -75,30 +75,56 @@ vibeproof-claim-v1 = {
   34: digest32 / nil
 }
 
+; One appraisal record. The same aggregate is described by
+; packages/schemas/appraisal-result-v1.schema.json, which is its normative shape, and
+; persisted by `verifier_appraisals` in packages/schemas/planning-schema.sql. The three
+; are bound field by field rather than in prose: packages/schemas/appraisal-policy-v1.json
+; carries `appraisal_record.wire_binding`, which maps every label below to the record
+; field it encodes and records, for each record field that is deliberately not on the
+; wire, why it is not. `validate_evidence_chain` compares the three field sets in every
+; direction, so a field added here and nowhere else fails, and so does a field added
+; there and not here. Until PF-072 only the ten integer-range labels were parsed at all,
+; which is why labels 3, 5, 14 and 18..22 could disagree with the record unnoticed.
+;
+; Nullability is a fact about the aggregate rather than a convenience. Label 5 admits nil
+; because no verifier implementation is built, label 14 because a rejected or quarantined
+; claim is awarded no profile, and label 18 because a capture bound to no certification is
+; every capture this repository can currently take.
 verifier-appraisal-v1 = {
   0: 1,
   1: uuid7,                ; appraisal_id
   2: uuid7,                ; claim_id
   3: digest32,             ; canonical_claim_sha256
-  4: registered-id,       ; verifier_policy_id
-  5: digest32,             ; verifier_implementation_sha256
+  4: registered-id,        ; verifier_policy_id
+  5: digest32 / nil,       ; verifier_implementation_sha256
   6: 0..7,                 ; acceptance_outcome
   7: 0..5,                 ; source_class
-  8: 0..4,                 ; capture_class
-  9: 0..4,                 ; accounting_class
-  10: 0..6,                ; device_key_class
+  8: 0..3,                 ; capture_class
+  9: 0..3,                 ; accounting_class
+  10: 0..5,                ; device_key_class
   11: 0..4,                ; continuity_class
   12: 0..4,                ; environment_class
   13: 0..3,                ; freshness_class
-  14: registered-id / nil, ; awarded public profile
+  14: registered-id / nil, ; awarded profile id
   15: 0..5,                ; ranking eligibility
-  16: [* reason-code],
+  16: [* reason-code],     ; reason codes
   17: 0..4,                ; anomaly disposition
-  18: digest32,            ; certification bundle evaluated
-  19: digest32,            ; policy bundle evaluated
-  20: epoch-ms,
-  21: epoch-ms / nil,
-  22: registered-id / nil  ; re-evaluation trigger
+  18: digest32 / nil,      ; certification bundle sha256
+  19: digest32,            ; policy content sha256
+  20: epoch-ms,            ; effective from
+  21: epoch-ms / nil,      ; effective until
+  22: registered-id / nil, ; re evaluation trigger
+  ; The four facts the record carried and no wire label did. An appraisal that cannot
+  ; encode its own evidence bundle, its place in the supersession chain, or the lifecycle
+  ; state of the certification it was appraised under is not the record the schema
+  ; describes; it is a subset of it that happens to validate.
+  23: digest32 / nil,      ; evidence bundle sha256
+  24: uuid7 / nil,         ; supersedes appraisal id
+  25: uuid7 / nil,         ; superseded by appraisal id
+  26: 0..8,                ; certification state
+  27: registered-id,       ; deterministic rule bundle id
+  28: registered-id,       ; accounting profile id
+  29: registered-id        ; observer equivalence rule id
 }
 
 checkpoint-receipt-v1 = {

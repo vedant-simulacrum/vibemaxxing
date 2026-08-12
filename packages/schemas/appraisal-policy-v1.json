@@ -2,7 +2,7 @@
   "schema_version": 1,
   "policy_bundle_id": "appraisal-policy-v1",
   "semantic_version": "1.0.0",
-  "content_sha256": "b900c3b148efc9b72b5cf8e165b711edae69734410e6a18f097be826b228e6a3",
+  "content_sha256": "fe3490c0dfb2a73bd6b5da73f2ae572ec232e73c5702c762b0c91cf936820840",
   "authority": "server-verifier",
   "client_influence": "none",
   "attestation": {
@@ -112,6 +112,17 @@
       "advisory-signal": 2,
       "under-review": 3,
       "shadow-only": 4
+    },
+    "certification_state": {
+      "uncertified": 0,
+      "candidate": 1,
+      "testing": 2,
+      "active": 3,
+      "degraded": 4,
+      "suspended": 5,
+      "expired": 6,
+      "superseded": 7,
+      "retired": 8
     }
   },
   "verifier_implementation_sha256": null,
@@ -126,42 +137,94 @@
     "revision_model": "append-only-supersession-chain",
     "sql_binding": {
       "table": "verifier_appraisals",
-      "bound_columns": [
-        "appraisal_id",
-        "claim_id",
-        "created_at",
-        "evidence_profile_id",
-        "policy_digest",
-        "reason_codes"
-      ],
-      "unbound_fields": [
-        "acceptance_outcome",
-        "accounting_class",
-        "anomaly_disposition",
-        "canonical_claim_sha256",
-        "capture_class",
-        "certification_bundle_sha256",
-        "continuity_class",
-        "device_key_class",
-        "effective_from",
-        "effective_until",
-        "environment_class",
-        "evidence_bundle_sha256",
-        "freshness_class",
-        "ranking_eligibility",
-        "re_evaluation_trigger",
-        "source_class",
-        "source_limb",
-        "superseded_by_appraisal_id",
-        "supersedes_appraisal_id",
-        "verifier_implementation_sha256"
-      ],
-      "dropped_columns": [
-        "continuity_state",
-        "integrity_state",
-        "provenance_state"
-      ],
+      "column_bindings": {
+        "appraisal_id": "appraisal_id",
+        "claim_id": "claim_id",
+        "canonical_claim_sha256": "canonical_claim_sha256",
+        "evidence_bundle_sha256": "evidence_bundle_sha256",
+        "policy.policy_bundle_id": "policy_bundle_id",
+        "policy.content_sha256": "policy_content_sha256",
+        "policy.implementation_sha256": "verifier_implementation_sha256",
+        "acceptance_outcome": "acceptance_outcome",
+        "dimensions.source_class": "source_class",
+        "dimensions.capture_class": "capture_class",
+        "dimensions.accounting_class": "accounting_class",
+        "dimensions.device_key_class": "device_key_class",
+        "dimensions.continuity_class": "continuity_class",
+        "dimensions.environment_class": "environment_class",
+        "dimensions.freshness_class": "freshness_class",
+        "evaluated.certification_bundle_sha256": "certification_bundle_sha256",
+        "evaluated.certification_state": "certification_state",
+        "evaluated.deterministic_rule_bundle_id": "deterministic_rule_bundle_id",
+        "evaluated.accounting_profile_id": "accounting_profile_id",
+        "evaluated.observer_equivalence_rule_id": "observer_equivalence_rule_id",
+        "evaluated.anomaly_disposition": "anomaly_disposition",
+        "awarded_profile_id": "evidence_profile_id",
+        "public_state": "public_state",
+        "ranking_eligibility": "ranking_eligibility",
+        "reason_codes": "reason_codes",
+        "validity.effective_from": "effective_from",
+        "validity.effective_until": "effective_until",
+        "supersession.supersedes_appraisal_id": "supersedes_appraisal_id",
+        "supersession.superseded_by_appraisal_id": "superseded_by_appraisal_id",
+        "supersession.re_evaluation_trigger": "re_evaluation_trigger"
+      },
+      "unbound_fields": [],
+      "unpersisted_fields": {
+        "schema_version": "The version of the record shape, which the table expresses by being the shape it is. A column would let one row claim a schema the surrounding DDL does not implement, and migrations are how this repository changes a table's version.",
+        "authority": "A constant on the record and therefore not a fact about a row. A column holding one value for every row that will ever exist records nothing and invites a row that disagrees.",
+        "client_influence": "A constant reading `none`, for the same reason as the authority above: storing it per row would make it a thing a row could vary.",
+        "attestation.class": "D-100, constant. Stored per row it would imply some appraisal somewhere carries a different attestation class, and none does or can.",
+        "attestation.basis": "D-100, constant. It describes what kind of figure every claim in this system is, which is a property of the contract rather than of a row.",
+        "attestation.assesses": "D-100, constant. The whole appraisal grades a self-report; a column repeating that on every row records the contract, not the appraisal."
+      },
+      "dropped_columns": [],
+      "column_only": {
+        "created_at": "When the row was written, which is not when the appraisal took effect. `effective_from` is the record's own answer to that and can precede or follow the write; keeping both is what stops a backfilled appraisal being read as a late one."
+      },
       "defect_reference": "SR-017"
+    },
+    "wire_binding": {
+      "labels": {
+        "0": "schema_version",
+        "1": "appraisal_id",
+        "2": "claim_id",
+        "3": "canonical_claim_sha256",
+        "4": "policy.policy_bundle_id",
+        "5": "policy.implementation_sha256",
+        "6": "acceptance_outcome",
+        "7": "dimensions.source_class",
+        "8": "dimensions.capture_class",
+        "9": "dimensions.accounting_class",
+        "10": "dimensions.device_key_class",
+        "11": "dimensions.continuity_class",
+        "12": "dimensions.environment_class",
+        "13": "dimensions.freshness_class",
+        "14": "awarded_profile_id",
+        "15": "ranking_eligibility",
+        "16": "reason_codes",
+        "17": "evaluated.anomaly_disposition",
+        "18": "evaluated.certification_bundle_sha256",
+        "19": "policy.content_sha256",
+        "20": "validity.effective_from",
+        "21": "validity.effective_until",
+        "22": "supersession.re_evaluation_trigger",
+        "23": "evidence_bundle_sha256",
+        "24": "supersession.supersedes_appraisal_id",
+        "25": "supersession.superseded_by_appraisal_id",
+        "26": "evaluated.certification_state",
+        "27": "evaluated.deterministic_rule_bundle_id",
+        "28": "evaluated.accounting_profile_id",
+        "29": "evaluated.observer_equivalence_rule_id"
+      },
+      "record_only_fields": {
+        "authority": "A constant: every appraisal is the server verifier's, and a wire field for it would be a field a client could disagree with. D-267 makes the authority a property of the record's definition rather than of the instance.",
+        "client_influence": "A constant reading `none`. Encoding it would create the one thing it denies: a slot on the wire whose value could be anything other than none.",
+        "attestation.class": "D-100. Fixed at `none` because no provider offers an individual-account attestation path, so there is nothing for an instance to vary and a varying wire field would imply there is.",
+        "attestation.basis": "D-100. Fixed at `self-reported-at-source` for the same reason as the class: it states what kind of thing every figure in this system is, not what this one is.",
+        "attestation.assesses": "D-100. Fixed at `self-report-quality`, which is the sentence the whole appraisal exists to qualify: it grades a self-report and never confirms one.",
+        "public_state": "Derived: it follows from `awarded_profile_id`, which label 14 carries. Putting it on the wire would let the two be stated apart, and a public state arriving beside a profile that does not imply it is exactly the client-selected state the record forbids."
+      }
     }
   }
 }

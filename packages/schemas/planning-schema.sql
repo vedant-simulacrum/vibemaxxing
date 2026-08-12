@@ -1350,16 +1350,111 @@ create table device_key_events (
   )
 );
 
+-- The persistence owner of the verifier appraisal aggregate, and the third of the three
+-- authorities that describe it: `verifier-appraisal-v1` in
+-- packages/schemas/vibeproof-claim-v1.cddl is the wire form,
+-- packages/schemas/appraisal-result-v1.schema.json is the normative record, and this table
+-- stores it. Column names are the record's field names on purpose. The previous shape kept
+-- three states -- `provenance_state`, `continuity_state`, `integrity_state` -- that appeared
+-- in neither other authority, and stored none of the claim digest, evidence digest,
+-- validity interval or supersession chain the record requires, so the aggregate's own
+-- persistence disagreed with its definition on twenty of twenty-six fields.
+--
+-- Which table wins, stated because two of them held this aggregate and nothing said which.
+-- `evidence_assessments` persisted the same three assessed states against the same
+-- `claim_id`, with a non-unique index and no supersession, while
+-- `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` and `DATA_MAP.md` read the two as one
+-- thing. This table is the appraisal aggregate's sole owner:
+-- packages/schemas/appraisal-policy-v1.json names it and only it as
+-- `appraisal_record.sql_binding.table`, and the appraisal is what an appeal argues from.
+-- The three assessed states leave this table entirely -- they were never a second spelling
+-- of the seven dimensions, they were a coarser pre-D-267 judgement of the same claim, and
+-- keeping a copy here would have made the finding's own defect permanent. They remain on
+-- `evidence_assessments`, which is that older record and is retained because `public_state`
+-- has a consumer PF-046 owns and because the erasure and data-disposition contracts name
+-- the table by name. One aggregate, one owner; the older record is not a competing copy of
+-- this one and does not decide anything this one decides.
+--
+-- `evidence_profile_id` is nullable, which the previous `not null` made unrepresentable: a
+-- rejected or quarantined claim is awarded no profile, which is what CDDL label 14 and the
+-- record's `awarded_profile_id` have always said. It sat in `bound_columns` and was
+-- therefore declared reconciled while contradicting both.
 create table verifier_appraisals (
   appraisal_id uuid primary key,
   claim_id uuid not null references claims(claim_id),
-  evidence_profile_id text not null,
-  provenance_state text not null check (provenance_state in ('verified','partial','unverified','rejected')),
-  continuity_state text not null check (continuity_state in ('continuous','gap-declared','broken')),
-  integrity_state text not null check (integrity_state in ('verified','degraded','failed')),
+  canonical_claim_sha256 bytea not null check (octet_length(canonical_claim_sha256) = 32),
+  -- Null when the device retained no bundle, which is an input to the capture dimension
+  -- rather than a neutral absence.
+  evidence_bundle_sha256 bytea check (octet_length(evidence_bundle_sha256) = 32),
+  policy_bundle_id text not null,
+  policy_content_sha256 bytea not null check (octet_length(policy_content_sha256) = 32),
+  -- Null while no verifier implementation is built. The policy bundle records the same null.
+  verifier_implementation_sha256 bytea check (octet_length(verifier_implementation_sha256) = 32),
+  acceptance_outcome text not null check (acceptance_outcome in ('accepted','accepted-with-downgrade','accepted-private-analytics','idempotent-replay','quarantined','rejected','superseded','retracted')),
+  -- The seven dimensions of packages/schemas/evidence-profile-policy-v1.json, with the
+  -- source limbs D-078 splits E1 into. Evaluation is dimensional: a stronger value in one
+  -- never compensates for a failed mandatory requirement in another, which is why each is
+  -- stored rather than collapsed into a single assessed state.
+  source_class text not null check (source_class in ('E1-S','E1-R','E2','E3','E4','E5')),
+  capture_class text not null check (capture_class in ('certified-structured','certified-gateway','certified-reconstruction','uncertified')),
+  accounting_class text not null check (accounting_class in ('authoritative-profile','exact-reconstruction','approximate','contradictory')),
+  device_key_class text not null check (device_key_class in ('K1','K2','K3','K4','K5','KU')),
+  continuity_class text not null check (continuity_class in ('C0','C1','C2','C3','C4')),
+  environment_class text not null check (environment_class in ('A0','A1','A2','A3','A4')),
+  freshness_class text not null check (freshness_class in ('anchored','bounded-delayed','unbounded','contradictory')),
+  certification_bundle_sha256 bytea check (octet_length(certification_bundle_sha256) = 32),
+  certification_state text not null check (certification_state in ('uncertified','candidate','testing','active','degraded','suspended','expired','superseded','retired')),
+  deterministic_rule_bundle_id text not null,
+  accounting_profile_id text not null,
+  observer_equivalence_rule_id text not null,
+  anomaly_disposition text not null check (anomaly_disposition in ('not-evaluated','no-signal','advisory-signal','under-review','shadow-only')),
+  evidence_profile_id text check (evidence_profile_id in ('hardened-source-bound-v1','standard-competitive-v1','imported-v1')),
+  public_state text check (public_state in ('hardened','standard','imported')),
+  ranking_eligibility text not null check (ranking_eligibility in ('competitive','competitive-pending-finalization','private-analytics','quarantined','excluded','retracted')),
   reason_codes text[] not null default '{}',
-  policy_digest bytea not null check (octet_length(policy_digest) = 32),
-  created_at timestamptz not null
+  effective_from timestamptz not null,
+  effective_until timestamptz,
+  supersedes_appraisal_id uuid references verifier_appraisals(appraisal_id),
+  superseded_by_appraisal_id uuid references verifier_appraisals(appraisal_id),
+  re_evaluation_trigger text check (re_evaluation_trigger in ('policy-revision','implementation-revision','certification-change','correction-record','appeal-decision','operator-review')),
+  created_at timestamptz not null,
+  -- The public label follows from the awarded profile and is never selected by a client, so
+  -- the two are present or absent together. Stated as an equality rather than as two
+  -- nullable columns, because a row carrying a public state and no profile is exactly the
+  -- shape a client-selected state would take.
+  constraint verifier_appraisals_public_state_follows_profile check (
+    (evidence_profile_id is null) = (public_state is null)
+  ),
+  -- An outcome that awards nothing cannot carry an award.
+  constraint verifier_appraisals_refusal_awards_no_profile check (
+    acceptance_outcome not in ('quarantined','rejected','retracted')
+    or evidence_profile_id is null
+  ),
+  -- The same binding PF-071 put on the adapter manifest, in both directions: an uncertified
+  -- appraisal has no bundle digest and a certified one has exactly one. Without the reverse
+  -- arm a row that forgot the digest would be indistinguishable from one appraised under no
+  -- certification at all.
+  constraint verifier_appraisals_certification_digest_is_bound check (
+    (certification_state = 'uncertified') = (certification_bundle_sha256 is null)
+  ),
+  -- A validity interval that ends before it starts is not an interval.
+  constraint verifier_appraisals_validity_is_ordered check (
+    effective_until is null or effective_until > effective_from
+  ),
+  -- Supersession is a chain, not a self-loop.
+  constraint verifier_appraisals_supersession_is_not_reflexive check (
+    supersedes_appraisal_id is distinct from appraisal_id
+    and superseded_by_appraisal_id is distinct from appraisal_id
+  ),
+  -- A superseded appraisal names what replaced it and a live one does not, so "which
+  -- appraisal is current" is answerable from the row rather than by ordering on a timestamp.
+  constraint verifier_appraisals_supersession_names_its_successor check (
+    (acceptance_outcome = 'superseded') = (superseded_by_appraisal_id is not null)
+  ),
+  -- A re-evaluation trigger explains a supersession and belongs to one.
+  constraint verifier_appraisals_trigger_belongs_to_a_supersession check (
+    re_evaluation_trigger is null or supersedes_appraisal_id is not null
+  )
 );
 
 -- The stable half of a ranking view: what is ranked and in what order. It names
@@ -3197,6 +3292,19 @@ create index quarantines_device_idx on quarantines (device_id);
 create index quarantines_claim_idx on quarantines (claim_id);
 create index evidence_assessments_claim_idx on evidence_assessments (claim_id);
 create index verifier_appraisals_claim_idx on verifier_appraisals (claim_id);
+-- One appraisal is current per claim. Without this a re-evaluation could leave two rows
+-- neither of which names the other as its successor, and "the claim's appraisal" would be
+-- whichever the reader's ordering happened to surface. The partial predicate is what makes
+-- the superseded history unbounded and the current row unique at the same time.
+create unique index verifier_appraisals_current_per_claim_idx
+  on verifier_appraisals (claim_id)
+  where superseded_by_appraisal_id is null;
+-- Both directions of the supersession chain are walked: forward to find what replaced an
+-- appraisal a participant is appealing, backward to rebuild the history that produced the
+-- current one. Total rather than partial, because an unindexed self-referencing foreign key
+-- makes every delete of a superseded row scan the table.
+create index verifier_appraisals_supersedes_idx on verifier_appraisals (supersedes_appraisal_id);
+create index verifier_appraisals_superseded_by_idx on verifier_appraisals (superseded_by_appraisal_id);
 create index cost_interpretations_claim_idx on cost_interpretations (claim_id);
 create index cost_interpretations_dataset_idx on cost_interpretations (pricing_dataset_id);
 
