@@ -139,6 +139,15 @@ jobs:
       # state — was declared in the CDDL and stored in no column.
       - name: Validate the checkpoint receipt across the CDDL, the DDL and the API
         run: python3 scripts/repository/validate_checkpoint_receipt_binding.py
+      # SR-009. The adapter manifest's certification block held one source version,
+      # one platform profile and one mode above four manifest-level arrays, so one
+      # certification authorized every combination those arrays multiplied into; the
+      # tuple authority required a version range the manifest could not express and
+      # six digests it did not carry; and source_certifications stored a validity
+      # interval and a revocation the manifest had no field for. This fails when a
+      # dimension reaches one of the three authorities and not the others.
+      - name: Validate the adapter certification tuple across manifest, tuple and DDL
+        run: python3 scripts/repository/validate_adapter_certification_tuple.py
       - name: Validate current launch API, SQL, and repaired authority coverage
         run: python3 scripts/repository/validate_planning_coverage.py
       - name: Validate state vocabularies across API, SQL, and the machine registry

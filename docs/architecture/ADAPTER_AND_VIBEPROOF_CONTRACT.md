@@ -46,11 +46,14 @@ The event is not directly network serializable. `network_eligible=false` is a sc
 - adapter artifact, manifest payload, source commit, build provenance and SBOM digests;
 - exact source product/version, platform, capture mode and permissions;
 - observed source categories and applicable accounting profiles;
-- certification bundle, suite, source version and platform profile;
+- the certification state, its signed result bundle and the suite version that produced it;
+- every exact certified tuple, enumerated: source product and bounded version range, observation mode, platform profile, accounting profile and arithmetic digests, privacy-binding digests, duplicate domain, validity interval and revocation, each entry addressed by its tuple digest;
 - a capability-derived maximum public profile;
 - duplicate domains, lifecycle and emergency disable state.
 
 The manifest digest covers the canonical manifest payload with the digest field omitted. Marketing or registry presence never raises the exercised ceiling. Unknown source versions, expired certification, artifact mismatch or missing profile fail closed to the highest lower explicitly allowed state.
+
+`source_products`, `platforms`, `modes` and `accounting_profile_ids` declare what the adapter can reach. They are not the coverage of its certification, and nothing multiplies them: a combination that is not an entry in `certification.tuples` is not certified, whatever those arrays contain. `packages/schemas/compatibility-tuple-v1.schema.json` defines the entry, `source_certifications` persists it by digest, and `scripts/repository/validate_adapter_certification_tuple.py` refuses a dimension that reaches one of the three and not the others.
 
 ## Accounting authority
 
