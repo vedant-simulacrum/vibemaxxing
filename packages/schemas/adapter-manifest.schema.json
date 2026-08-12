@@ -196,16 +196,14 @@
       }
     },
     "certification": {
-      "description": "The certification this manifest binds, as a state and a tuple. `state` was absent entirely: the block could name a bundle digest and a tuple and say nothing about whether that certification was active when it was read, while ACCOUNTING_AND_TIME_CONTRACT.md holds the effective ceiling at private-analytics for every state other than active. A manifest that cannot express the state cannot express that rule.",
+      "description": "The certification this manifest binds, as a state and as an enumerated list of exact tuples. `state` was absent entirely: the block could name a bundle digest and a tuple and say nothing about whether that certification was active when it was read, while ACCOUNTING_AND_TIME_CONTRACT.md holds the effective ceiling at private-analytics for every state other than active. A manifest that cannot express the state cannot express that rule. The tuple was the other half. One `certification` object held one `source_version`, one `platform_profile_id` and one `mode`, above four manifest-level arrays - `source_products`, `platforms`, `modes` and `accounting_profile_ids` - so a single certification authorized every combination those arrays could be multiplied into, including combinations nothing had ever exercised. Certify adapter one's loopback OTLP tuple and its session-log tuple was certified with it, at 174 times undercount on input, against a cap D-098 measured and `ADAPTER_ONE_CLAUDE_CODE_OTEL.md` states. Coverage is now the `tuples` list and only the `tuples` list: the arrays declare what the adapter can reach, which is a claim by its author, and a tuple is an identity a signed result attaches to.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "state",
         "bundle_sha256",
         "suite_version",
-        "source_version",
-        "platform_profile_id",
-        "mode"
+        "tuples"
       ],
       "properties": {
         "state": {
@@ -231,36 +229,26 @@
           "pattern": "^[a-f0-9]{64}$"
         },
         "suite_version": {
-          "type": "string",
+          "description": "The conformance suite version that produced the bundle, null exactly while uncertified. It was a required non-nullable string, so the committed example named a suite version for a manifest bound to no certification - a suite that has never run has no version, and `ADAPTER_CERTIFICATION_POLICY.md` states in terms that none has.",
+          "type": [
+            "string",
+            "null"
+          ],
           "maxLength": 40
         },
-        "source_version": {
-          "type": "string",
-          "maxLength": 80
-        },
-        "platform_profile_id": {
-          "type": "string",
-          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
-          "maxLength": 128
-        },
-        "mode": {
-          "description": "One of the nine observation modes, the same set `modes` admits. This carried a bare slug pattern and no enum, so a certified tuple could name a mode observer-equivalence-v1.json assigns no precedence rank and the survivor rule would have had nothing to order it by.",
-          "enum": [
-            "native-event",
-            "official-hook",
-            "extension-api",
-            "local-runtime",
-            "acp",
-            "otel",
-            "proxy",
-            "wrapper",
-            "live-log"
-          ]
+        "tuples": {
+          "description": "Every exact tuple this certification covers, enumerated. The list is the whole of the coverage: a combination of source product, version range, mode, platform profile, accounting profile and privacy binding that is not an entry here is not certified, whatever the manifest's declaration arrays contain. That is what makes the cross product unrepresentable rather than merely discouraged - there is no longer a field from which a combination could be derived. `uniqueItems` refuses the same tuple twice; `scripts/repository/validate_adapter_certification_tuple.py` refuses two entries sharing a tuple digest and refuses an entry whose dimensions the manifest does not declare.",
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/certified_tuple"
+          }
         }
       },
       "allOf": [
         {
-          "description": "A null digest and `uncertified` are the same fact and may not be stated apart. Admitting the null without binding it to the state would convert a representation gap into a permission: a manifest that forgot the digest would be indistinguishable from one that declared itself uncertified.",
+          "description": "A null digest, a null suite version, an empty tuple list and `uncertified` are one fact and may not be stated apart. Admitting any of them on its own would convert a representation gap into a permission: a manifest that forgot the digest would be indistinguishable from one that declared itself uncertified, and a manifest that enumerated no tuple while naming a state would be a certification of nothing in particular - which is the cross product coming back as an empty list rather than as an array product.",
           "if": {
             "properties": {
               "state": {
@@ -275,6 +263,12 @@
             "properties": {
               "bundle_sha256": {
                 "type": "null"
+              },
+              "suite_version": {
+                "type": "null"
+              },
+              "tuples": {
+                "maxItems": 0
               }
             }
           },
@@ -282,6 +276,73 @@
             "properties": {
               "bundle_sha256": {
                 "type": "string"
+              },
+              "suite_version": {
+                "type": "string"
+              },
+              "tuples": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "description": "`source_certifications`: `check (state = 'active' or effective_ceiling = 'private-analytics')`. Only an active certification may exceed private analytics, and a registry that advertised a planned, expired or suspended certification is exactly the overclaim the binding rules forbid. The constraint lived in the DDL alone; the artifact every adapter author writes could not state it.",
+          "if": {
+            "properties": {
+              "state": {
+                "not": {
+                  "const": "active"
+                }
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "tuples": {
+                "items": {
+                  "properties": {
+                    "max_public_profile": {
+                      "const": "private-analytics"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "description": "`source_certifications`: `check ((state = 'active') = (valid_from is not null and revoked_at is null and superseded_by_source_certification_id is null))`. An equivalence, so both directions are enforced: an active certification carries no expired, revoked or superseded tuple, and a tuple that is in force by all three tests may not sit under any other state.",
+          "if": {
+            "properties": {
+              "state": {
+                "const": "active"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "tuples": {
+                "items": {
+                  "$ref": "#/$defs/live_tuple"
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "tuples": {
+                "items": {
+                  "not": {
+                    "$ref": "#/$defs/live_tuple"
+                  }
+                }
               }
             }
           }
@@ -351,6 +412,301 @@
         "null"
       ],
       "format": "date-time"
+    }
+  },
+  "$defs": {
+    "certified_tuple": {
+      "description": "One exact certified tuple, carrying every dimension `packages/schemas/compatibility-tuple-v1.schema.json` declares and nothing that a cross product would have to be taken over. The dimensions are that file's, in its spelling, because a second spelling of one vocabulary is the duplication SR-009 exists to remove; `scripts/repository/validate_adapter_certification_tuple.py` compares the two field for field and refuses a dimension either side gains or loses. The artifact dimension is not repeated here: one manifest describes one adapter build, and `adapter_id` and `artifact_sha256` at the top of this file are that artifact. Everything else varies per tuple and is therefore inside one.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tuple_digest",
+        "source",
+        "observation_mode",
+        "platform_profile_id",
+        "accounting",
+        "privacy_binding",
+        "duplicate_domain",
+        "max_public_profile",
+        "superseded_by_tuple_digest",
+        "validity",
+        "revocation"
+      ],
+      "properties": {
+        "tuple_digest": {
+          "description": "The tuple's identity, SHA-256 over the RFC 8949 core deterministic CBOR encoding of the compatibility-tuple record with this field omitted. It is the key `source_certifications.tuple_digest` stores `unique`, and it is what binds the seven dimensions the certification row has no column for: the DDL does not repeat `artifact_sha256`, the version bounds, the accounting digests, the privacy-binding digests or the duplicate domain, because a row naming this digest has already named them.",
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "source": {
+          "description": "The agent product and the exact version range this tuple covers. A single `source_version` string stood here and could not express a range at all, so a certification of one point release either said nothing about the release next to it or was read as covering everything the manifest's `source_version_range` declared. An open-ended upper bound is refused for the reason `compatibility-tuple-v1.schema.json` gives: it certifies software that does not exist yet.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_product_id",
+            "version_min",
+            "version_max_exclusive"
+          ],
+          "properties": {
+            "source_product_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+              "maxLength": 128
+            },
+            "version_min": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "version_max_exclusive": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "schema_url": {
+              "description": "Null is a fact rather than an omission: the measured producer of adapter one emits neither a schema URL nor a semantic-conventions version, and D-264 records that.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "semantic_conventions_version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "observation_mode": {
+          "description": "One of the nine observation modes, the same set `modes` admits and the same spelling `compatibility-tuple-v1.schema.json` and `source_certifications.observation_mode` use. This was named `mode` and sat outside the tuple, so one certification covered every mode the `modes` array listed - and two modes observing one execution have different precedence and different evidence ceilings, which is exactly what D-098 records for adapter one.",
+          "enum": [
+            "native-event",
+            "official-hook",
+            "extension-api",
+            "local-runtime",
+            "acp",
+            "otel",
+            "proxy",
+            "wrapper",
+            "live-log"
+          ]
+        },
+        "platform_profile_id": {
+          "description": "One `profile_id` from `packages/schemas/platform-profile-registry-v1.json`. Not one of the seven values `platforms` carries: `platforms` is an operating-system family and a profile fixes the key-protection class, the supervision mechanism and the isolation strength that the evidence ceiling depends on.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "accounting": {
+          "description": "Which arithmetic turns this source's numbers into Token Burn, bound by identity and by digest so that editing a profile changes the tuple rather than silently changing what a certified tuple means. The manifest carried only the profile identifiers, as an array, so a certification covered every profile listed and none of them by content.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "accounting_profile_id",
+            "accounting_profile_sha256",
+            "arithmetic_sha256"
+          ],
+          "properties": {
+            "accounting_profile_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+              "maxLength": 128
+            },
+            "accounting_profile_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "arithmetic_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        "privacy_binding": {
+          "description": "What the tuple may observe and what it must remove before anything is queued. It is a dimension rather than a property of the adapter because a certification is a statement about a privacy boundary as much as about an arithmetic: D-099 makes the adapter-one strip a collector obligation performed at the device boundary, and a tuple whose strip list changed is a different tuple. The manifest could not express either digest.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "attribute_allowlist_sha256",
+            "strip_list_sha256"
+          ],
+          "properties": {
+            "attribute_allowlist_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "strip_list_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "rejects_undecodable_datapoint": {
+              "description": "Whether a datapoint from which a forbidden attribute cannot be removed is rejected whole. False is not certifiable: D-099 admits no partial strip.",
+              "type": "boolean"
+            }
+          }
+        },
+        "duplicate_domain": {
+          "description": "The exclusivity unit this tuple observes within. Two tuples sharing a duplicate domain compete for one execution and exactly one counts, so it belongs to the tuple and not to the manifest-wide `duplicate_domains` list, which declares the domains the adapter can reach rather than the domain any one certification observes in.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "maxLength": 128
+        },
+        "max_public_profile": {
+          "description": "The strongest public profile a claim under this tuple may reach, in the vocabulary `capability_ceiling.max_public_profile` already uses. It may never exceed that manifest-wide ceiling, and it is `private-analytics` for every certification state other than `active`, which is the constraint `source_certifications` carries as `check (state = 'active' or effective_ceiling = 'private-analytics')` and which this file had no field in which to state. The projection onto the three values that column admits is declared in `scripts/repository/validate_adapter_certification_tuple.py` rather than left to a reader.",
+          "enum": [
+            "private-analytics",
+            "standard-competitive",
+            "hardened-source-bound"
+          ]
+        },
+        "superseded_by_tuple_digest": {
+          "description": "The tuple that replaced this one, or null. `source_certifications` keeps the superseded row rather than deleting it, because a claim accepted under it stays explainable after the successor lands.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "validity": {
+          "description": "The interval the certification is in force for. The block carried no validity interval at all, so an expired certification and a current one were the same document. Both bounds are present and nullable rather than optional: an absent field cannot be told from a bound nobody set.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "valid_from",
+            "valid_until"
+          ],
+          "properties": {
+            "valid_from": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "valid_until": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            }
+          },
+          "allOf": [
+            {
+              "description": "`source_certifications`: `check (valid_until is null or valid_from is not null)`. An interval that ends and never began is not an interval.",
+              "if": {
+                "properties": {
+                  "valid_from": {
+                    "type": "null"
+                  }
+                },
+                "required": [
+                  "valid_from"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "valid_until": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "revocation": {
+          "description": "Revocation, which the block could not express either. The row is retained and the reason is stable, because a claim accepted under a revoked certification still names its tuple digest and has to stay explainable.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "revoked_at",
+            "revocation_reason_code"
+          ],
+          "properties": {
+            "revoked_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "revocation_reason_code": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+              "maxLength": 128
+            }
+          },
+          "allOf": [
+            {
+              "description": "`source_certifications`: `check ((revoked_at is null) = (revocation_reason_code is null))`. A revocation with no reason is one nobody can appeal, and a reason with no revocation is a sanction with no event.",
+              "if": {
+                "properties": {
+                  "revoked_at": {
+                    "type": "null"
+                  }
+                },
+                "required": [
+                  "revoked_at"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "revocation_reason_code": {
+                    "type": "null"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "revocation_reason_code": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "live_tuple": {
+      "description": "A tuple whose validity has begun, that has not been revoked and that nothing has replaced. `source_certifications` states the same three conditions as an equivalence with `active` rather than an implication, so this shape is required of every tuple while the state is `active` and refused of every tuple while it is not.",
+      "type": "object",
+      "required": [
+        "validity",
+        "revocation",
+        "superseded_by_tuple_digest"
+      ],
+      "properties": {
+        "validity": {
+          "type": "object",
+          "required": [
+            "valid_from"
+          ],
+          "properties": {
+            "valid_from": {
+              "type": "string"
+            }
+          }
+        },
+        "revocation": {
+          "type": "object",
+          "required": [
+            "revoked_at"
+          ],
+          "properties": {
+            "revoked_at": {
+              "type": "null"
+            }
+          }
+        },
+        "superseded_by_tuple_digest": {
+          "type": "null"
+        }
+      }
     }
   }
 }

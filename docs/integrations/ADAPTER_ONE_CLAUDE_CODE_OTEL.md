@@ -220,14 +220,19 @@ The tuple this adapter binds, in the form `packages/schemas/adapter-manifest.sch
 
 | Element | Value |
 |---|---|
+| Collector artifact | The manifest's `adapter_id` and `artifact_sha256`. A rebuilt collector is a different observer under D-058 |
 | Source product | `claude-code` |
-| Source version | One exact version, inside the manifest's declared version range. An unknown version fails closed |
-| Platform profile | One `profile_id` from `packages/schemas/platform-profile-registry-v1.json` per certified platform |
-| Mode | `otel` |
+| Source version range | `version_min` and `version_max_exclusive`, bounded at both ends. A version outside the range fails closed; an open-ended upper bound is refused, because it would certify software that does not exist yet |
+| Platform profile | One `profile_id` from `packages/schemas/platform-profile-registry-v1.json`. One entry per certified platform, never one certification covering several |
+| Observation mode | `otel` |
+| Accounting | The accounting profile identifier with its profile and arithmetic digests, so a profile edit changes the tuple rather than what a certified tuple means |
+| Privacy binding | The attribute-allowlist and strip-list digests of section 4, because D-099 makes the strip a collector obligation and a tuple whose strip list changed is a different tuple |
+| Duplicate domain | The exclusivity unit this tuple observes within |
+| Validity and revocation | The interval the certification is in force for, and `revoked_at` with a stable reason code |
 | Suite version | The conformance suite version that produced the result |
 | Certification bundle | The bundle digest covering the exercised result |
 
-All six bind together. A change to any one is a different tuple and carries no result from the previous one.
+All of them bind together, and the tuple is addressed by the digest over all of them. A change to any one is a different tuple and carries no result from the previous one. The manifest states this as one entry in `certification.tuples`; the entry is the whole of what is certified, and the session-log tuple of section 8 is a separate entry that D-098 holds at private analytics whatever this one reaches.
 
 ### 10.1 This is an exact tuple, not generic OpenTelemetry
 
