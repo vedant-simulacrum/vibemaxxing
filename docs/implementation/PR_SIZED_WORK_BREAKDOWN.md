@@ -78,7 +78,7 @@ Units: 265. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 411 assertions across 76 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 412 assertions across 76 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 4.
 
@@ -1084,7 +1084,7 @@ Evidence: contains 1 scripts/repository/validate_p1140e_contracts.py :: generate
 Exit: each of the six defect classes is injected against the validator that owns it and observed to fail, the clean tree passes, and the summary line still says the check is structural and that runtime evidence is absent.
 
 ### PF-036 — P-1140F exact-head review
-Files: `conformance/p1140f/review-target-v1.json`, `conformance/p1140f/semantic-findings-v1.json`, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`, `conformance/p1140f/gate-authorization-v1.json`, `conformance/p1140f/gate-authorization-v1.schema.json`, `conformance/planning/decisions-v1.json`, `assets/ui/references/manifest.json`, `docs/project/STATUS.md`, `docs/project/PROJECT.md`, `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`, `scripts/repository/validate_p1140f_authority.py`, `tests/ci/test_validate_p1140f_authority.py`
+Files: `conformance/p1140f/review-target-v1.json`, `conformance/p1140f/semantic-findings-v1.json`, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`, `conformance/p1140f/gate-authorization-v1.json`, `conformance/p1140f/gate-authorization-v1.schema.json`, `conformance/planning/decisions-v1.json`, `docs/project/STATUS.md`, `docs/project/PROJECT.md`, `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`, `scripts/repository/validate_p1140f_authority.py`, `tests/ci/test_validate_p1140f_authority.py`
 Acceptance: mechanical part: `review-target-v1.json` pins a commit that `git cat-file -e` resolves, every one of SR-005..SR-017 carries a closure verdict, and `python3 scripts/repository/validate_p1140f_authority.py` exits 0 with zero open findings at any severity. The review judgement itself is not mechanizable and must not be presented as though the validator produced it, and the record says by whom it was made and under what authority.
 Depends: PF-001, PF-002, PF-003, PF-004, PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033, PF-034, PF-035, PF-070, PF-071, PF-072, PF-073, PF-074
 Repair: P-1140F-5
@@ -1111,7 +1111,9 @@ Evidence: absent conformance/p1140f/semantic-findings-v1.json :: "state": "repai
 
 **The two registry digests are a recorded claim, not a machine-derived fact.** Nothing computes or verifies `finding_registry_sha256` or `artifact_registry_sha256`; the schema checks only that they are sixty-four hex characters. They were computed from the two files at the reviewed commit and a reader can reproduce them with `git show <commit>:<path> | shasum -a 256`. The same is true of `validation_run`, which is the planning-checks run number on that exact commit and is named in the record so it can be opened.
 
-**The storyboard promotion, and why these captures are of this head.** D-610 recorded that relabelling the public figure moved pixels in the governed baselines and that an agent does not promote captures. The owner has promoted them. The SHA-256 values come from storyboard-visuals run 31592533820, and no file under `assets/`, `packages/ui/` or `apps/web/` changed between that run's head and the reviewed head, which is what makes them captures of the head under review rather than of an older one. Nine viewports moved — public-profile, rival-comparison and board-standings across desktop, tablet and mobile. `friends` and `activity-and-notifications` matched their reviewed captures exactly and were not touched. D-610 is spent.
+**The storyboard promotion, since retired.** D-636 later deleted `assets/ui/references/` with the rest of the component system, so the manifest this unit wrote to no longer exists and has left this unit's `Files:` line. The promotion still happened and D-610 was spent by it; what follows is the account of it.
+
+**Why these captures were of this head.** D-610 recorded that relabelling the public figure moved pixels in the governed baselines and that an agent does not promote captures. The owner has promoted them. The SHA-256 values come from storyboard-visuals run 31592533820, and no file under `assets/`, `packages/ui/` or `apps/web/` changed between that run's head and the reviewed head, which is what makes them captures of the head under review rather than of an older one. Nine viewports moved — public-profile, rival-comparison and board-standings across desktop, tablet and mobile. `friends` and `activity-and-notifications` matched their reviewed captures exactly and were not touched. D-610 is spent.
 
 **What this unit does not do.** It does not flip any gate: `gate-authorization-v1.json` still records P-1140F as `in-progress-planning`, and gates are opened and closed by the owner alone. It does not write its own closure evidence into SR-016, because a unit cannot cite its own merge commit; that citation and the removal of the two interval reasons it justifies land in the unit that follows. It does not make any finding true by closing it — three of SR-016's four artifacts are recorded as needing no change rather than repaired by a unit serving it, and the reasons are there to be read rather than to be counted.
 
@@ -1303,15 +1305,18 @@ The defect as found: the string did not appear anywhere in the OpenAPI document,
 
 ### PF-047 — Expand profile and rank entry schemas to the rendered product
 Files: `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
-Acceptance: every field rendered by `packages/ui/src/concepts/product-storyboards.tsx` and `packages/ui/src/patterns/product-system.tsx` resolves to an API field; no storyboard depends on a value the API cannot return.
+Acceptance: `PublicProfile` and `RankEntry` in `packages/schemas/openapi-v1.yaml` carry the fields a product surface renders — avatar, evidence class and credited token burn among them — and no operation description asserts verification the product cannot perform.
 Depends: PF-046
 Est: 6-8
 Status: landed
 Evidence: contains 1 packages/schemas/openapi-v1.yaml :: credited_token_burn
-Evidence: absent packages/ui/src/concepts/product-storyboards.tsx :: Verified competitor
-Evidence: absent packages/ui/src/concepts/product-storyboards.tsx :: All sources verified
+Evidence: contains 1 packages/schemas/openapi-v1.yaml :: evidence_class
+Evidence: absent packages/schemas/openapi-v1.yaml :: Verified competitor
+Evidence: absent packages/schemas/openapi-v1.yaml :: All sources verified
 
-**Landed in `963f6f6` under D-227 and D-228.** `RankEntry` lost `score` and gained `credited_token_burn` and the rendered fields, and the four banned claim strings in `packages/ui/src/concepts/product-storyboards.tsx` were replaced rather than softened.
+**Landed in `963f6f6` under D-227 and D-228.** `RankEntry` lost `score` and gained `credited_token_burn` and the rendered fields, and the four banned claim strings in `packages/ui/src/concepts/product-storyboards.tsx` — a file since retired under D-635 — were replaced rather than softened.
+
+The `Acceptance:` and two `Evidence:` lines were repointed because they could not be evaluated as written. Both named `packages/ui` files that D-635 deleted, and an `absent` assertion against a file that does not exist is not a check that passed — the validator reports it as unreadable, which is the correct refusal. The banned claim strings are now asserted absent from the OpenAPI document instead, which is the artifact this unit actually changed and the one a future surface would read them from. What is genuinely lost is the storyboard-to-API resolution the original acceptance required; there are no storyboards to resolve against, and a replacement component system re-establishes that check rather than inheriting a pass.
 
 The defect as found: `PublicProfile` had 4 fields and `RankEntry` had 7, both `additionalProperties: false`, while the finished design system rendered avatars, evidence badges, rank movement, sparklines and board standings that no operation could supply.
 
@@ -1488,14 +1493,16 @@ No document explains how the system works end to end. Understanding it currently
 This is the single highest-value change for anyone, human or agent, encountering the repository for the first time. It does not replace any normative contract; it gives them a spine.
 
 ### PF-059 — Merge duplicated UI and design documentation
-Files: `docs/style-guide/COMPONENT_INVENTORY.md`, `docs/style-guide/COMPONENT_STANDARD.md`, `docs/style-guide/README.md`, `docs/style-guide/UI_ARCHITECTURE.md`, `docs/style-guide/UI_FOUNDATIONS.md`, `docs/style-guide/BRAND.md`, `docs/project/DOCUMENTATION.md`
+Files: `docs/style-guide/COMPONENT_INVENTORY.md`, `docs/style-guide/COMPONENT_STANDARD.md`, `docs/style-guide/README.md`, `docs/style-guide/UI_ARCHITECTURE.md`, `docs/style-guide/UI_FOUNDATIONS.md`, `docs/style-guide/BRAND.md`, `docs/project/DOCUMENTATION.md` — the first five were retired under D-635
 Acceptance: one owner per concept; no two files in `docs/style-guide/` describe the same component surface; `DOCUMENTATION.md` names the surviving owner for each.
 Depends: none
 Est: 6-8
 Status: landed
 Evidence: missing docs/style-guide/COMPONENTS.md
-Evidence: exists docs/style-guide/UI_ARCHITECTURE.md
+Evidence: exists docs/style-guide/BRAND.md
 Evidence: validator scripts/repository/doctor.py
+
+**Most of this unit's subject was deleted under D-635.** Eleven of the fifteen `docs/style-guide/` files removed by that decision are ones this unit merged or renamed, including `UI_ARCHITECTURE.md`, whose existence was the second evidence line here. That line is repointed to `BRAND.md`, which is one of the same seven files this unit touched, is one of the two owners it established, and is retained by D-635 — so the assertion still observes this unit's outcome rather than being weakened to fit. The `Files:` line above keeps all seven paths and marks the five that no longer exist as retired, which is the marker `validate_cross_references.py` defines for a citation that is a historical fact rather than a live pointer; rewriting the line to the surviving subset would misreport what the work was. The component half of the merge is not recoverable as evidence, and a replacement component system establishes its own owner rather than restoring this one.
 
 Three files described components (`COMPONENTS.md`, `COMPONENT_INVENTORY.md`, `COMPONENT_STANDARD.md`) and three described design foundations (`design/design.md`, `design/UI_FOUNDATIONS.md`, `style-guide/README.md`); the first and fourth of those have since been merged into their surviving owners. `docs/architecture/ARCHITECTURE.md` and the former `docs/style-guide/ARCHITECTURE.md` shared a filename while describing unrelated scopes, which made every reference to "ARCHITECTURE.md" ambiguous until the latter was renamed to `docs/style-guide/UI_ARCHITECTURE.md`.
 
@@ -1513,7 +1520,7 @@ Evidence: missing docs/evals
 Evidence: missing docs/design
 Evidence: validator scripts/repository/doctor.py
 
-Eighteen directories hold 82 files, and seven of them hold one to three: `protocol/` (1), `qa/` (1), `evals/` (2), `privacy/` (2), `design/` (3), `engineering/` (3), `project/` (3). Fold `protocol/` into `architecture/`, combine `qa/` and `evals/` into one verification directory, and fold `design/` into `style-guide/`. Keep `privacy/` and `project/` where they are — both are small but load-bearing, and `privacy/` deliberately isolates the invariant everything else serves.
+Eighteen directories hold 82 files, and seven of them hold one to three: `protocol/` (1), `qa/` (1), `evals/` (2), `privacy/` (2), `design/` (3), `engineering/` (3), `project/` (3). Fold `protocol/` into `architecture/`, combine `qa/` and `evals/` into one verification directory, and fold `design/` into `style-guide/` — which D-635 later reduced to brand alone. Keep `privacy/` and `project/` where they are — both are small but load-bearing, and `privacy/` deliberately isolates the invariant everything else serves.
 
 Every move must repair inbound references. `AGENTS.md` and `doctor.py`'s REQUIRED list both name paths.
 
@@ -1789,11 +1796,29 @@ Evidence: absent packages/schemas/appraisal-policy-v1.json :: source_limb
 
 **What this unit does not do.** It does not close SR-017; the finding's state and review verdict are the owner's, and this unit cannot cite its own merge commit as closure evidence. It does not touch `evidence-profile-policy-v1.json`, which is the sole dimension authority the repair binds the others to rather than a party to the disagreement — though note that its `source` list carries `E1` undivided while the record and the wire carry the D-078 limbs, which is a refinement the policy bundle declares and reconciles rather than a divergence. It does not add instance-level CDDL conformance execution, so `evidence-bundle-v1.cddl` and `verifier-appraisal-v1` are still grammars nothing decodes against: `validate_evidence_chain` proves the three authorities agree about the record, not that any implementation produces it. And nothing here is implementation — no verifier evaluates a dimension, no row is written, and a claim's appraisal remains a thing this repository specifies rather than performs.
 
+<<<<<<< HEAD
 **What it looked like before the repair, kept because the shape recurs.** SR-017 named seven conflicting artifacts and PF-017, its only serving unit, opened one of them. Seventeen fields existed in the CDDL rule and in no column: the canonical claim digest, the verifier policy id, the verifier implementation digest, the acceptance outcome, all seven dimensions, the ranking eligibility, the anomaly disposition, the evaluated certification bundle, both validity timestamps and the re-evaluation trigger. Three columns existed in the DDL and in neither other authority. Four concepts existed in the appraisal record and in neither the CDDL nor the DDL: the evidence-bundle digest, both halves of the supersession chain, and the certification state. `appraisal-policy-v1.json` declared twenty of these as `unbound_fields` and three as `dropped_columns`, and `validate_evidence_chain` failed when that declaration went stale - so the gap was honestly recorded, and recording a gap is not closing it. D-267's reopen trigger was exactly that the SQL half lands. It has landed.
+||||||| parent of 23d350f (design-sync work in progress: D-635 component system purge (agent handoff))
+**Why this exists.** SR-017 names seven conflicting artifacts and PF-017, its only serving unit, opened one of them. Four of the remaining six needed no change and now record why in the finding's `unmodified_artifacts` — `evidence-profile-policy-v1.json#dimensions` is the sole dimension authority the repair binds others to, `evidence-bundle-v1.cddl` is the referent rather than a party, and the appraisal result and policy schemas are the target the other authorities must converge on. Two hold the contradiction the finding is about, and they are this unit.
+=======
+**What it looked like before the repair, kept because the shape recurs.** SR-017 named seven conflicting artifacts and PF-017, its only serving unit, opened one of them. Seventeen fields existed in the CDDL rule and in no column: the canonical claim digest, the verifier policy id, the verifier implementation digest, the acceptance outcome, all seven dimensions, the ranking eligibility, the anomaly disposition, the evaluated certification bundle, both validity timestamps and the re-evaluation trigger. Three columns existed in the DDL and in neither other authority. Four concepts existed in the appraisal record and in neither the CDDL nor the DDL: the evidence-bundle digest, both halves of the supersession chain, and the certification state. `appraisal-policy-v1.json` declared twenty of these as `unbound_fields` and three as `dropped_columns`, and `validate_evidence_chain` failed when that declaration went stale — so the gap was honestly recorded, and recording a gap is not closing it. D-267's reopen trigger was exactly that the SQL half lands. It has landed.
+>>>>>>> 23d350f (design-sync work in progress: D-635 component system purge (agent handoff))
 
+<<<<<<< HEAD
 **Three disagreements nothing recorded, all now closed.** `evidence_profile_id text not null` contradicted CDDL label 14 `registered-id / nil` and `appraisal-result-v1.schema.json#awarded_profile_id`: a rejected or quarantined claim has no awarded profile and the table could not store one. That column was not in the declared gap - it sat in `bound_columns`, declared reconciled and not. CDDL label 18 was `digest32` with no `/ nil` while the record admitted null for the same fact. And `evidence_assessments` was a second table persisting the same three states for the same aggregate with nothing declaring which won, against AGENTS.md's rule of one persistence owner per mutable aggregate. The first two are repaired in the artifacts; the third is settled above.
+||||||| parent of 23d350f (design-sync work in progress: D-635 component system purge (agent handoff))
+**The disagreement, counted.** Seventeen fields exist in the CDDL rule and in no column: the canonical claim digest, the verifier policy id, the verifier implementation digest, the acceptance outcome, all seven dimensions, the ranking eligibility, the anomaly disposition, the evaluated certification bundle, both validity timestamps and the re-evaluation trigger. Three columns exist in the DDL and in neither other authority: `provenance_state`, `continuity_state` and `integrity_state`, which are the SQL's own private vocabulary. Four concepts exist in the appraisal record and in neither the CDDL nor the DDL: the evidence-bundle digest, both halves of the supersession chain, and the certification state. `appraisal-policy-v1.json` already declares twenty of these as `unbound_fields` and three as `dropped_columns`, and `validate_evidence_chain` fails when that declaration goes stale — so the gap is honestly recorded, and recording a gap is not closing it. D-267's reopen trigger is exactly that the SQL half lands.
+=======
+**Three disagreements nothing recorded, all now closed.** `evidence_profile_id text not null` contradicted CDDL label 14 `registered-id / nil` and `appraisal-result-v1.schema.json#awarded_profile_id`: a rejected or quarantined claim has no awarded profile and the table could not store one. That column was not in the declared gap — it sat in `bound_columns`, declared reconciled and not. CDDL label 18 was `digest32` with no `/ nil` while the record admitted null for the same fact. And `evidence_assessments` was a second table persisting the same three states for the same aggregate with nothing declaring which won, against AGENTS.md's rule of one persistence owner per mutable aggregate. The first two are repaired in the artifacts; the third is settled above.
+>>>>>>> 23d350f (design-sync work in progress: D-635 component system purge (agent handoff))
 
+<<<<<<< HEAD
 **Why the validator clause was the load-bearing half of the acceptance.** `appraisal_wire_ranges()` extracted only the ten labels matching an integer-range pattern, so labels 3, 5, 14 and 18 through 22 were never parsed and no check noticed that the CDDL lacked the evidence digest, the supersession pair and the certification state entirely. A repair that added those fields without extending the comparator would have left the next drift exactly as invisible as this one was - which is why the comparator, not the fields, is what this unit is really about.
+||||||| parent of 23d350f (design-sync work in progress: D-635 component system purge (agent handoff))
+**Three disagreements nothing currently records.** `evidence_profile_id text not null` contradicts CDDL label 14 `registered-id / nil` and `appraisal-result-v1.schema.json#awarded_profile_id`, which is `oneOf [enum, null]`: a rejected or quarantined claim has no awarded profile and the table cannot store one. That column is not in the declared gap — it sits in `bound_columns`, so it is currently declared reconciled and is not. CDDL label 18 is `digest32` with no `/ nil` while the record admits null for the same fact. And `evidence_assessments` is a second table persisting `provenance_state`, `continuity_state`, `integrity_state` and `reason_codes` for the same aggregate, keyed on `claim_id` with its own non-unique index; `AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md` and `DATA_MAP.md` both treat the two as one thing, `appraisal-policy-v1.json` names only `verifier_appraisals`, and nothing declares which wins. AGENTS.md requires one persistence owner per mutable aggregate; this aggregate has two.
+=======
+**Why the validator clause was the load-bearing half of the acceptance.** `appraisal_wire_ranges()` extracted only the ten labels matching an integer-range pattern, so labels 3, 5, 14 and 18 through 22 were never parsed and no check noticed that the CDDL lacked the evidence digest, the supersession pair and the certification state entirely. A repair that added those fields without extending the comparator would have left the next drift exactly as invisible as this one was — which is why the comparator, not the fields, is what this unit is really about.
+>>>>>>> 23d350f (design-sync work in progress: D-635 component system purge (agent handoff))
 
 ### PF-073 — Reconcile the checkpoint receipt across the CDDL, the DDL and the API
 Files: `packages/schemas/vibeproof-claim-v1.cddl`, `packages/schemas/planning-schema.sql`, `packages/schemas/openapi-v1.yaml`, `packages/schemas/data-disposition-v1.json`, `docs/architecture/VIBEPROOF_V1_PROTOCOL.md`, `docs/security/INTEGRITY_MODEL.md`, `conformance/vibeproof/v1/fork-and-rotation-vectors.json`, `conformance/vibeproof/v1/manifest.json`, `conformance/p1140e/sql-race-plans-v1.json`, `scripts/repository/validate_checkpoint_receipt_binding.py` (new), `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_checkpoint_receipt_binding.py` (new), `tests/ci/test_batch_challenge_binding.py`, `tests/ci/test_fork_and_rotation.py`, `Makefile`, `.github/workflows/planning-checks.yml`
@@ -1823,6 +1848,7 @@ Evidence: absent packages/schemas/planning-schema.sql :: unique (lineage_id, las
 **Two things repaired that this unit did not set out to touch.** `data-disposition-v1.json` requires an expiry enforcement owner for any column that expires; the new `expires_at` is recorded as `rejected-at-read`, because it bounds how long the receipt may be presented as a head and not how long the row is kept — deleting the row would break the chain the next receipt links to. And `conformance/vibeproof/v1/manifest.json` carried a stale digest of `fork-and-rotation-vectors.json` once the constraint name in that fixture's note was corrected.
 
 **What this unit does not do.** It does not close SR-007 or promote D-043; the finding's state and the decision's status are the owner's, and this unit cannot cite its own merge commit. It leaves `heads[].last_sequence` and `expected_authoritative_last_sequence` in `fork-and-rotation-vectors.json` alone: those are fixture vocabulary for acknowledged heads rather than column names, and renaming them would ripple through `resolve_checkpoint_heads` for no gain — the decision is recorded in that function's docstring rather than left to be rediscovered. Nothing here is implementation: no server issues a receipt, no client verifies one, and `validate_checkpoint_receipt_binding.py` proves the three artifacts agree about the receipt, not that the protocol they agree on is correct.
+<<<<<<< HEAD
 
 ### PF-074 — Make the adapter manifest able to express the exact certification tuple
 Files: `packages/schemas/adapter-manifest.schema.json`, `packages/schemas/examples/adapter-manifest.valid.json`, `docs/architecture/ADAPTER_AND_VIBEPROOF_CONTRACT.md`, `docs/integrations/ADAPTER_ONE_CLAUDE_CODE_OTEL.md`, `docs/planning/SR_SEVERITY_REGRADING_PROPOSAL.md`, `scripts/repository/validate_adapter_certification_tuple.py` (new), `tests/ci/test_adapter_certification_tuple.py` (new), `Makefile`, `.github/workflows/planning-checks.yml`
@@ -1856,6 +1882,10 @@ Evidence: absent packages/schemas/adapter-manifest.schema.json :: "source_versio
 **A check that cannot fail at this head, recorded rather than deleted.** The containment rule — that an enumerated tuple names only what the manifest declares — has four branches, and all four are exercised by drift tests that inject `candidate` tuples. Against the committed content it is vacuous, because the only committed manifest is `uncertified` and enumerates nothing. The honest fix is a committed manifest that certifies something, and nothing in this repository may certify anything. It is stated here rather than counted as coverage. A negative example fixture was also considered and refused: `EXAMPLE_NEGATIVE_GAPS` names `adapter-manifest` as its only entry, and adding one would have emptied that map and forced the deletion of the test that fails when a declared gap no longer exists — weakening a check to add another.
 
 **What this unit does not do.** It does not close SR-009; the finding's state and review verdict are the owner's, and this unit cannot cite its own merge commit. It does not repair `lifecycle`, still a six-value enum in the same file bound to no registered machine, for the reason PF-071 gave: `UNIVERSAL_AGENT_COMPATIBILITY.md`'s five-stage adapter lifecycle has no machine to reconcile against, and inventing one is not a binding repair. It does not touch the accounting-input and certification-evidence half of SR-009. And it certifies nothing: a schema that can express an exact tuple is not a certified tuple, and every state this repository can reach is still `candidate` or `uncertified`.
+||||||| parent of 23d350f (design-sync work in progress: D-635 component system purge (agent handoff))
+**Why the validator clause is the load-bearing half of the acceptance.** `appraisal_wire_ranges()` extracts only the ten labels matching an integer-range pattern. Labels 3, 5, 14, 18, 19, 20, 21 and 22 are never parsed, so no check notices that the CDDL lacks the evidence digest, the supersession pair and the certification state entirely. A repair that added those fields without extending the comparator would leave the next drift exactly as invisible as this one was.
+=======
+>>>>>>> 23d350f (design-sync work in progress: D-635 component system purge (agent handoff))
 
 ## Implementation epics — specified, blocked until P-1104
 
@@ -3187,8 +3217,8 @@ Est: 10-14
 Status: not-started
 
 ### W-006 Evidence, source, privacy and outbound disclosure UX
-Files: `apps/web/components/evidence-badge.tsx` (new), `packages/ui/src/patterns/product-system.tsx`, `packages/ui/src/concepts/product-storyboards.tsx`
-Acceptance: the three published `evidence_class` values render with the labels D-143 fixes and an exhaustive switch fails to compile if a fourth appears; `grep -rniE 'verified|attested' apps/web packages/ui` returns nothing, so no surface can present a self-report as a provider confirmation.
+Files: `apps/web/components/evidence-badge.tsx` (new)
+Acceptance: the three published `evidence_class` values render with the labels D-143 fixes and an exhaustive switch fails to compile if a fourth appears; `grep -rniE 'verified|attested' apps/web` returns nothing, so no surface can present a self-report as a provider confirmation.
 Depends: W-001, V-010, R-008
 Est: 10-14
 Status: not-started
@@ -3215,7 +3245,7 @@ Est: 10-14
 Status: not-started
 
 ### W-010 Accessibility, responsive and exceptional-state matrix
-Files: `apps/web/e2e/accessibility.spec.ts` (new), `scripts/ui/check-ui-system.mjs`, `packages/ui/src/concepts/product-state-matrix.stories.tsx`
+Files: `apps/web/e2e/accessibility.spec.ts` (new)
 Acceptance: `npm run test:a11y` exits 0 with zero axe violations at the three recorded breakpoints; a matrix test asserts every screen has a rendered loading, empty, error and unauthorized state and fails on a missing cell.
 Depends: W-002, W-003, W-004, W-005, W-006, W-007, W-008, W-009
 Est: 12-16
@@ -3224,6 +3254,8 @@ Status: not-started
 The prose range `W-002 through W-009` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it, which is what makes the hosted web product gate launch.
 
 The matrix has an authority under D-394: `packages/schemas/ui-state-projection-v1.json` enumerates the eight exceptional states and resolves each to a registered machine, a viewer-authorization input, or nothing at all where it is genuinely client-local. The acceptance names four cells; the record names eight, and `blocked` and `private` are both required to render indistinguishably from a subject that does not exist, which a matrix test can assert and a screenshot cannot.
+
+**D-635 removed the component files W-006 and W-010 named.** W-006 listed two `packages/ui` sources and grepped `packages/ui` alongside `apps/web`; W-010 listed a state-matrix story there and the script that checked the component system. Those paths are struck rather than repointed, because no replacement exists to repoint them at. Both units keep their acceptance criteria, which were written against rendered behaviour and not against a particular component package, and both gain an unstated dependency in the process: neither can be attempted until a replacement component system exists, and no unit in this breakdown creates one. That gap is recorded here rather than closed, because deciding what replaces the deleted system is an owner decision and not a work unit an agent may write.
 
 ## Epic X — Operations, open source and launch evidence
 

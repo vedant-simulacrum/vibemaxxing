@@ -2556,6 +2556,15 @@
       "id": "D-635",
       "implementation_bearing": false,
       "reason": "closes the P-1140F gate at complete-planning on a pinned reviewed head over one criterion knowingly accepted rather than met; governs the planning record and authorizes no behaviour"
+    },
+    {
+      "id": "D-636",
+      "implementation_bearing": true,
+      "normative_owner": "Owner decision; brand keeps docs/style-guide/BRAND.md, components have no owner until a replacement declares one",
+      "implementation_owner": "Component system rebuild (packages/ui successor); brand and assets/ unaffected",
+      "machine_or_state_ownership": "No component package and no component authority; brand identity and the governed visual library retained; apps/web routes retained and non-building",
+      "platform_scope": "Web",
+      "required_executable_evidence": "doctor.py green with the deleted component paths absent from every authority table and cross-reference check, and with BRAND.md, ASSET_SYSTEM.md and assets/ still declared; apps/web build failure attributable only to the removed package"
     }
   ]
 }

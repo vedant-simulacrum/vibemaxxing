@@ -153,6 +153,29 @@ class QuarantineNoticeTests(unittest.TestCase):
 
         self.assertIn("an incompatibility stated nowhere", str(raised.exception))
 
+    def test_a_null_owner_that_the_notice_does_not_state_fails(self) -> None:
+        """D-636 left `apps/web/` with no normative owner, which is a real state.
+
+        The tempting shape is to skip the owner check when the field is null, which
+        would make the artifact with no owner at all the one nothing explains. The
+        notice has to say the absence instead, so this removes the sentence and
+        requires the failure.
+        """
+        readme = self.root / "apps" / "web" / "README.md"
+        readme.write_text(
+            readme.read_text(encoding="utf-8").replace("no normative owner", "one owner"),
+            encoding="utf-8",
+        )
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn("does not say so", str(raised.exception))
+
+    def test_a_null_owner_stated_in_the_notice_passes(self) -> None:
+        """The committed pair: the record gives no owner and the notice says so."""
+        self.assertEqual(self.run_validator(), 0)
+
     def test_emptying_the_record_fails_rather_than_passing_vacuously(self) -> None:
         """Zero quarantined artifacts would otherwise be a green run over nothing.
 

@@ -63,23 +63,20 @@ class VerifyRepositoryTests(unittest.TestCase):
         # the reason the lane could not run.
         self.assertEqual(statuses["node"], "pending")
 
-    def test_workspaces_build_in_dependency_order(self) -> None:
-        """`packages/ui` must precede `apps/web`, and the order is load-bearing.
+    def test_the_only_node_workspace_left_is_the_web_application(self) -> None:
+        """`packages/ui` used to have to precede `apps/web`, and does not exist.
 
-        `apps/web` reaches `packages/ui` through a `file:` link, and npm does
-        not install a link target's own dependencies transitively. Installing
-        `apps/web` first leaves `lucide-react` unresolvable, so an ordering
-        that looks cosmetic decides whether the lane can run at all.
+        `apps/web` reached it through a `file:` link, and npm does not install a link
+        target's own dependencies transitively, so installing `apps/web` first left
+        `lucide-react` unresolvable and the ordering decided whether the lane could run.
+        D-636 deleted the component system, so there is no ordering left to get wrong.
+        This asserts the absence rather than deleting the test, because a `packages/ui`
+        that reappears without a decision reinstating it should fail here.
         """
         ordered = self.verifier.ordered_node_workspaces(ROOT)
 
-        self.assertIn("packages/ui", ordered)
+        self.assertNotIn("packages/ui", ordered)
         self.assertIn("apps/web", ordered)
-        self.assertLess(
-            ordered.index("packages/ui"),
-            ordered.index("apps/web"),
-            "packages/ui must be installed before apps/web",
-        )
 
     def test_every_discovered_workspace_is_ordered_none_dropped(self) -> None:
         """A workspace missing from the rank list is still built, not skipped.

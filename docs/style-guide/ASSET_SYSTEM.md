@@ -67,7 +67,7 @@ This prevents route code from inventing provider symbols, downloading profile im
 ## Reference-image rules
 
 - Store only approved references and reproducible final renders.
-- Pair each mock-up and render in `assets/ui/references/manifest.json`.
+- Pair each mock-up and render in the reference manifest a component system declares. `assets/ui/references/` held that manifest until D-636 deleted it with the component system; no path owns it now, and a replacement declares its own.
 - Keep rejected generations and intermediate captures out of Git history.
 - Never import a UI reference image into product source.
 - Treat the mock-up as the visual target and the Storybook capture as evidence, not as proof of fidelity by itself.

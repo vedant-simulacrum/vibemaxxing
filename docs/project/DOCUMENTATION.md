@@ -73,11 +73,8 @@ The technical-specification completeness authority is `docs/planning/SCHEMA_AND_
 - Future implementation order: `docs/implementation/IMPLEMENTATION_HANDOFF.md`
 - Future PR-sized units: `docs/implementation/PR_SIZED_WORK_BREAKDOWN.md`
 - Future repository layout: `docs/implementation/REPOSITORY_LAYOUT.md`
-- UI system entry point: `docs/style-guide/README.md`
-- Brand identity, palette and voice: `docs/style-guide/BRAND.md`
-- Product UI layout, interaction and screen composition: `docs/style-guide/UI_FOUNDATIONS.md`
-- UI layer model and dependency direction: `docs/style-guide/UI_ARCHITECTURE.md`
-- Component rules: `docs/style-guide/COMPONENT_STANDARD.md`; component registry and usage contracts: `docs/style-guide/COMPONENT_INVENTORY.md`
+- Brand identity, palette, voice and logo: `docs/style-guide/BRAND.md`; the governed visual library and its manifest: `docs/style-guide/ASSET_SYSTEM.md` and `assets/`. Retained under D-635 and unaffected by it.
+- UI system, component rules, layer model and screen composition: **no owner.** `packages/ui` and the component half of `docs/style-guide/` were deleted under D-635 and a replacement has not been designed. Until one exists and is declared here, nothing in this repository is authority for components, tokens or screen composition, and no agent may treat a deleted file recovered from history as one.
 - Acceptance gates, evaluation and benchmark protocol: `docs/verification/`
 
 ## Conflict resolution order
@@ -118,7 +115,7 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 | `implementation/` | Work decomposition | `IMPLEMENTATION_HANDOFF.md`, `PR_SIZED_WORK_BREAKDOWN.md`, `ISSUE_GENERATION.md`, `REPOSITORY_LAYOUT.md` |
 | `engineering/` | Engineering standards and budgets | `ENGINEERING_SYSTEM.md`, `LOCAL_DEVELOPMENT.md`, `PERFORMANCE_BUDGETS.md`, `COLLECTOR_PERFORMANCE_AND_POWER.md` |
 | `verification/` | Acceptance gates, evaluation, benchmark and evidence protocol | `ACCEPTANCE_GATES.md`, `EVAL_SYSTEM.md`, `TEST_STRATEGY.md`, `CONFORMANCE_HARNESS.md`, `BENCHMARK_AND_EVIDENCE_PROTOCOLS.md` |
-| `style-guide/` | UI system and brand, owned by `packages/ui` | `README.md` (entry point), `BRAND.md`, `UI_FOUNDATIONS.md`, `UI_ARCHITECTURE.md`, `COMPONENT_STANDARD.md`, `COMPONENT_INVENTORY.md`, `AI_UI_RULES.md`, `ASSET_SYSTEM.md`, `LEADERBOARD_FIRST_BASELINE.md`, `LEADERBOARD_BENTO_BASELINE.md`, `MIGRATION.md`, `RESEARCH.md`, `references/` (approved captures) |
+| `style-guide/` | Brand only. The component system it also held was deleted under D-635 | `BRAND.md`, `ASSET_SYSTEM.md` |
 | `research/` | Primary evidence, historical | `README.md` (sole entrypoint), `RESEARCH_AUDIT_2026-07{,_WAVE2..5}.md`, `ANTI_CHEAT_SYSTEMS_RESEARCH_2026-07-23.md` |
 | `history/` | **Non-authoritative.** Superseded reports | See `docs/history/README.md` |
 
@@ -149,6 +146,7 @@ Every directory under `docs/`, and every file in it. The **Normative owners** li
 - `protocol/` folded into `architecture/`; `qa/` and `evals/` combined into `verification/`; `design/` folded into `style-guide/`.
 - `style-guide/ARCHITECTURE.md` renamed to `style-guide/UI_ARCHITECTURE.md` so it can no longer be confused with `architecture/ARCHITECTURE.md`.
 - `style-guide/COMPONENTS.md` merged into `COMPONENT_INVENTORY.md`; `design/design.md` merged into `style-guide/UI_FOUNDATIONS.md`.
+- The three `style-guide/` lines above record what happened in 2026-08-06 and are kept as history. Every file they name was deleted under D-635 on 2026-08-12, along with `packages/ui`. `style-guide/` survives holding brand only.
 - `planning/REPOSITORY_ALIGNMENT_2026-07-23.md` and `planning/MACHINE_CONTRACT_REPAIR_SPEC.md` archived to `history/`.
 
 ### Operational surfaces added on 2026-08-06
@@ -167,8 +165,7 @@ Seven documents were added for surfaces an audit found either entirely absent fr
 Known duplication that genuinely remains, recorded rather than silently carried. Each cluster needs a single owner chosen and the rest merged or marked:
 
 - Anti-cheat material spans `research/ANTI_CHEAT_SYSTEMS_RESEARCH_2026-07-23.md`, `planning/ANTI_CHEAT_IMPLEMENTATION_PLAN.md`, `security/ANTI_CHEAT_ATTACK_CATALOG.md`, `security/ANTI_CHEAT_RESEARCH_PROGRAM.md`, and `security/ADVERSARIAL_TABLETOPS.md`.
-- `style-guide/COMPONENT_INVENTORY.md` records an unresolved naming overlap between the proposed generic `Notice`/`Dialog` and the implemented `ProductNotice`/`ProductDialog`. An owner must decide whether these are one concept or two.
-- `style-guide/UI_FOUNDATIONS.md` §17 records the token, radius, type-scale, motion and logo values on which the retired `design.md` disagreed with `BRAND.md`. The approved column governs; the disagreement is kept visible rather than deleted.
+- Two open UI questions were closed as moot by D-635 rather than answered: the `Notice`/`Dialog` versus `ProductNotice`/`ProductDialog` naming overlap, and the token, radius, type-scale, motion and logo values on which the retired `design.md` disagreed with `BRAND.md`. Both lived in files that no longer exist. A replacement UI system decides these from first principles and does not inherit either position.
 
 ## Every document declares an owner
 

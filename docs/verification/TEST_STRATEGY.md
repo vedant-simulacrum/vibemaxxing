@@ -57,7 +57,7 @@ Every choice below is either already pinned in this repository or already named 
 | Validator tests | Python `unittest` | already in use under `tests/` and run by `make test` |
 | Load | k6 | see below |
 
-`packages/ui` currently runs its component test through `esbuild` and `node --test` rather than `vitest`. That is a working arrangement that predates this document; it is not a second decision, and it converges on `vitest` when that package next changes its test setup rather than in a separate migration.
+The component package that ran its test through `esbuild` and `node --test` rather than `vitest` was deleted under D-635. The exception it held is gone with it: `vitest` is the TypeScript unit runner here without a second arrangement beside it, and a replacement component system adopts it rather than inheriting the exception.
 
 **k6 is AGPL-3.0**, which is worth stating explicitly in a repository whose own code is Apache-2.0 under ADR-009. It is acceptable because it is invoked as a separate process from a test script, is never linked into a distributed artifact, and is not distributed by this project. The scripts written for it are project code and are Apache-2.0. If that separation ever stops holding, the alternative is a Go-native generator under a permissive licence and the load scenarios are portable between them, because the scenarios are the specification and the tool is the runner.
 
@@ -70,10 +70,11 @@ Coverage is a floor with a non-regression rule, not a target to be met. The rule
 | `crates/vibeproof-core` and any future protocol crate | 90% line | canonical encoding, signature verification and replay handling are where a gap is a security defect; the code is pure and has no boundary that makes coverage expensive |
 | Go accounting, ranking and verification packages | 85% statement | the same argument, one language over |
 | Go handlers, middleware and repositories | 75% statement | boundary code where the last quarter is error paths that cost more to reach than they return |
-| `packages/ui` | 70% statement | component logic; visual correctness is covered by regression baselines rather than by coverage |
-| `apps/web` route and page code | 60% statement | thin composition over the two above |
+| `apps/web` route and page code | 60% statement | thin composition over the scopes above |
 | `scripts/ci` and `scripts/repository` | 54% line-and-branch | D-460. The planning validators, which are the only code in this repository that executes on every pull request. Line-and-branch because a validator is mostly branches and a line-only number over one flatters it. **This is the first measurement rounded down, not a considered target**, and it is stated with the intent to raise it; see the measured numbers below for why it starts where it does |
 | generated bindings, `main` packages, migrations | excluded | measuring generated code measures the generator |
+
+This table carried a sixth row, a 70% statement floor on `packages/ui`. D-635 deleted that package and the row is removed rather than left pointing at nothing. It was never measured against, so no baseline number is lost with it, and a replacement component system records its own floor here rather than inheriting this one.
 
 The non-regression rule: a pull request may not lower a scope's measured coverage by more than **1.0 percentage point** below its recorded baseline. The one-point band exists so that deleting a well-covered file does not fail an unrelated change; a deliberate reduction is a baseline edit, which leaves a reviewable diff, exactly as the eval status baseline does.
 
@@ -209,7 +210,7 @@ Most of this still does not run, and the parts that do are now measured rather t
 
 **Measured.** `make test` runs 16 Python validator test files. Three surfaces carry a real coverage number, recorded in `scripts/ci/measured-coverage-baseline-v1.json` and re-measured per pull request by the `measured-coverage` job: Rust at 90.97% line, Go at 72.86% statement, Python at 54.86% line-and-branch. The non-regression rule has something to regress against for the first time, and `tests/ci/test_measure_coverage.py` drives each direction of the comparison — worse fails with the fall attributed, the same passes, better passes and is reported, and a missing, malformed or unmeasurable input fails closed — because a gate that cannot be shown to fire is not evidence either.
 
-**Still not measured, and not claimed.** `packages/ui` and `apps/web` build under the node lane and have no coverage number, so their 70% and 60% floors remain thresholds with nothing on the other side of them; that is the same defect this section previously recorded for all five scopes, now reduced to two. Both Go floors have no subject, because `apps/api` holds one `main` package. 24 of 27 eval suites still execute nothing. No mutation pass has run.
+**Still not measured, and not claimed.** `apps/web` builds under the node lane and has no coverage number, so its 60% floor remains a threshold with nothing on the other side of it; that is the same defect this section previously recorded for all five scopes, now reduced to one. It was two until D-635 deleted `packages/ui`, which is a scope disappearing rather than a hole being closed. Both Go floors have no subject, because `apps/api` holds one `main` package. 24 of 27 eval suites still execute nothing. No mutation pass has run.
 
 **No load test has been written or run.** The six scenarios are specified in `evals/load/load-scenarios-v1.json` and validated for internal consistency against the policy defaults, which is a specification being checkable rather than a system being tested. `claim_scope: specification-only` says so in the file itself, and the validator fails if it stops saying so.
 

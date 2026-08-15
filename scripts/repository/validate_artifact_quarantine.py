@@ -147,12 +147,25 @@ def main() -> int:
             f"{where}: quarantined by the record, and {source.name} never calls it a "
             "prototype — the word a reader greps for",
         )
-        require(
-            artifact["normative_owner"] in text,
-            f"{where}: {source.name} does not name its normative owner "
-            f"{artifact['normative_owner']}, so a reader cannot find what it is wrong "
-            "against",
-        )
+        # A null owner is a state the record can reach: D-636 deleted the component
+        # system and declared that components, tokens and screen composition have no
+        # normative owner until a replacement declares one. Skipping the check when the
+        # owner is null would make the strongest quarantine the least explained, so the
+        # notice has to say the absence out loud instead.
+        if artifact["normative_owner"] is None:
+            require(
+                "no normative owner" in text.lower(),
+                f"{where}: the record gives {artifact['path']} no normative owner, and "
+                f"{source.name} does not say so — a reader is left looking for an owner "
+                "that was deleted rather than told none exists",
+            )
+        else:
+            require(
+                artifact["normative_owner"] in text,
+                f"{where}: {source.name} does not name its normative owner "
+                f"{artifact['normative_owner']}, so a reader cannot find what it is wrong "
+                "against",
+            )
 
         # The two lists are the whole content of the quarantine. A notice that omits one
         # understates the fence; there is no reason to state it loosely.

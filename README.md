@@ -22,7 +22,7 @@ What exists today:
 |---|---|
 | Specification | ~34,000 lines — JSON Schema, CDDL, OpenAPI, SQL, protobuf, contracts |
 | Executable code | ~4,400 lines |
-| Running product | **None.** A `GET /healthz`, a fixture-driven Storybook/Next.js prototype, a Rust CBOR codec, and Python planning validators |
+| Running product | **None.** A `GET /healthz`, a Rust CBOR codec, and Python planning validators. The Next.js web app no longer builds: D-635 deleted the component system its routes import |
 
 There is no daemon, adapter, collector, OAuth, database, or API yet, and opening the gate did not change that. `docs/project/STATUS.md` is the authority on what is and is not implemented, and it is deliberately blunt about it.
 
@@ -69,19 +69,21 @@ docs/
   implementation/ the work breakdown — every unit specified, status checked
   engineering/    engineering system, performance and power budgets
   verification/   acceptance gates, evaluation and benchmark protocol
-  style-guide/    brand, UI foundations, component registry and rules
+  style-guide/    brand identity and the governed asset library — brand only
   research/       primary evidence waves — README.md is the only entrypoint
   history/        superseded reports, retained as evidence, NOT authority
 
 packages/schemas/ the real contract surface — OpenAPI, SQL, CDDL, JSON Schema
 conformance/      registries and fixtures; empty certifications are not evidence
 crates/           Rust seeds (protocol core; other crates are placeholders)
-apps/             Go API skeleton, Next.js web prototype
-packages/ui/      design system and storyboards — fixture-driven
+apps/             Go API skeleton, Next.js web prototype (does not build)
+assets/           the governed visual library — brand marks, provider icons
 scripts/          read-only repository and planning validators
 ```
 
 `docs/implementation/REPOSITORY_LAYOUT.md` distinguishes paths that exist from paths that are planned. Check it before assuming a directory is real.
+
+D-635 deleted the component system and its written rules — `packages/ui` and fifteen of the seventeen files in `docs/style-guide/`, 71 files in all — to be rebuilt from first principles. Nothing in this repository is authority for components, tokens or screen composition until a replacement declares one, and no path is reserved for it. Brand identity and the governed asset library are outside that decision and are retained. The `apps/web` routes that imported the deleted package are kept deliberately, and do not build, because they are the only remaining record of which product screens exist. The tag `design-system-pre-purge` preserves every deleted file.
 
 ## Binding rules
 

@@ -38,13 +38,14 @@ The following is the intended tree created incrementally by the PR-sized work br
 /crates/vibemaxxing-cli           installer and control CLI
 /packages/protocol                generated cross-language bindings
 /packages/schemas                 OpenAPI, JSON Schema, Protobuf and CDDL sources
-/packages/ui                      accessible design tokens and components
 /migrations                       executable PostgreSQL migration history
 /conformance                      protocol, accounting, adapter, privacy and attack fixtures
 /benchmarks                       native, server, database and frontend benchmarks
 /infrastructure                   cloud-portable reference deployment
 /artifacts                        generated non-authoritative evidence and metadata
 ```
+
+D-635 deleted the component system and its written rules. `/packages/ui` is named in neither tree above and is not demoted to a future path, because nothing has decided where a replacement would live. A successor reserves its path in this document when it is decided, and not before. Brand and the governed asset library are outside that decision and keep their paths.
 
 ## Creation rules
 

@@ -2,7 +2,9 @@
 
 Status: accepted
 Date: 2026-07-23
-Decision: D-069
+Decision: D-069, D-635
+
+**The subject of this ADR no longer exists.** D-635 deleted `packages/ui` and the component half of `docs/style-guide/`, so there is no Storybook prototype to validate and no locked reference to drift against. The decision below is not reversed and is not rewritten: it classifies what this kind of automation may and may not be taken for, and that classification is what a replacement would be read against. The automation it permits is dormant until a replacement component system exists. Nothing here authorizes rebuilding the workflow ahead of one, and this ADR is superseded rather than reversed when a replacement declares its own normative owner.
 
 ## Context
 
