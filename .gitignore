@@ -19,3 +19,11 @@ apps/api/api
 __pycache__/
 artifacts/evals/
 artifacts/repository/issue-plan.json
+
+.design-sync/
+ds-bundle/
+.ds-sync/
+
+# A bare entry as well as `**/.venv/`: the trailing slash matches directories
+# only, so a stray `.venv` symlink was tracked into a commit once.
+.venv
