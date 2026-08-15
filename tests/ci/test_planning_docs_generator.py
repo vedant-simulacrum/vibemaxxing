@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -197,7 +198,17 @@ class StepStatusShapeTests(PlanningDocsFixtureMixin, unittest.TestCase):
         """
         rendered = dict(self.module.documents())[CATALOG_MD]
 
-        self.assertIn("Status: `in-progress-planning`\n", rendered)
+        # Assert the shape, not a value. This previously pinned the literal
+        # "Status: `in-progress-planning`", which stopped testing anything the moment
+        # every step reached `complete-planning`: a check that passes only while a
+        # particular status happens to exist is satisfied by that status existing
+        # rather than by the shape being right.
+        declared = set(
+            re.findall(r"`([a-z-]+)`", re.search(r"^Statuses: (.+)$", rendered, re.M).group(1))
+        )
+        rendered_statuses = re.findall(r"^Status: `([^`]+)`$", rendered, flags=re.M)
+        self.assertTrue(rendered_statuses, "no Status: line was rendered at all")
+        self.assertLessEqual(set(rendered_statuses), declared)
 
         binding = load_module(BINDING_VALIDATOR, "validate_repair_task_binding")
         steps = {
@@ -205,9 +216,13 @@ class StepStatusShapeTests(PlanningDocsFixtureMixin, unittest.TestCase):
             for match in binding.STEP.finditer(rendered)
         }
         self.assertIn("P-1140F-1", steps)
-        self.assertEqual(
-            binding.field(steps["P-1140F-1"], "Status"), "`in-progress-planning`"
-        )
+        # The validator's own extractor must recover exactly what was rendered,
+        # backticks included, for whatever status the step currently carries. Pinning
+        # one value here made the check expire the day that value stopped appearing.
+        extracted = binding.field(steps["P-1140F-1"], "Status")
+        self.assertRegex(extracted, r"^`[a-z-]+`$")
+        self.assertIn(extracted.strip("`"), declared)
+        self.assertIn(f"Status: {extracted}\n", rendered)
 
 
 class TasksSchemaRejectsNestedHeadingTests(PlanningDocsFixtureMixin, unittest.TestCase):

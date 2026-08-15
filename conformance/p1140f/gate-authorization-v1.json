@@ -8,7 +8,11 @@
     "severity": "P0",
     "count": 9,
     "rule": "non-regression",
-    "counted_states": ["open", "repair-in-progress", "repaired-pending-review"],
+    "counted_states": [
+      "open",
+      "repair-in-progress",
+      "repaired-pending-review"
+    ],
     "recorded_at": "2026-08-12",
     "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/44",
     "note": "Nine of the thirteen findings open under this gate carry P0 after the D-300 regrade. This ceiling, open_p1_baseline and open_p2_baseline partition the same thirteen findings by severity: 9 + 3 + 1 = 13, which is the single count of 13 this record carried before 2026-08-12 and is the count open_p1_findings_at_authorization still records for the P-1104 decision. The partition is not a relaxation. No finding left a ceiling, no finding is tracked by nothing, and every severity the finding registry can carry has a ceiling of its own so that a future regrade cannot move a finding out of scope while validation stays green."
@@ -17,7 +21,11 @@
     "severity": "P1",
     "count": 3,
     "rule": "non-regression",
-    "counted_states": ["open", "repair-in-progress", "repaired-pending-review"],
+    "counted_states": [
+      "open",
+      "repair-in-progress",
+      "repaired-pending-review"
+    ],
     "recorded_at": "2026-08-12",
     "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/44",
     "note": "Three of the thirteen findings open under this gate carry P1 after the D-300 regrade. This count was 13 when it was the repository's only ceiling; it moved to 3 on 2026-08-12 in the same change that added open_p0_baseline and open_p2_baseline to cover the other ten, so the aggregate is unchanged and this is a partition rather than a reduction. Validators fail when a severity's open count exceeds its own ceiling and pass when it is at or below it. Closing a finding must never turn validation red. Lowering a ceiling after a finding closes is optional and manual; it is never required to keep validation green."
@@ -26,7 +34,11 @@
     "severity": "P2",
     "count": 1,
     "rule": "non-regression",
-    "counted_states": ["open", "repair-in-progress", "repaired-pending-review"],
+    "counted_states": [
+      "open",
+      "repair-in-progress",
+      "repaired-pending-review"
+    ],
     "recorded_at": "2026-08-12",
     "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/44",
     "note": "One of the thirteen findings open under this gate carries P2 after the D-300 regrade. A P2 ceiling exists for the same reason as the P0 one: the finding registry's severity enum is exactly P0, P1 and P2, so declaring all three is what makes a regrade unable to move a finding outside every ceiling. A low severity is still a tracked severity; this ceiling is not permission to leave the finding unrepaired."
@@ -48,44 +60,87 @@
       "documents": [
         {
           "path": "docs/planning/P1140E_FINAL_CONTRADICTION_AUDIT_2026-07-24.md",
-          "requires": ["structural P0 open: 0", "structural P1 open: 0", "semantic", "P-1140F"],
+          "requires": [
+            "structural P0 open: 0",
+            "structural P1 open: 0",
+            "semantic",
+            "P-1140F"
+          ],
           "forbids": []
         },
         {
           "path": "AGENTS.md",
-          "requires": ["P-1140E", "complete-planning"],
+          "requires": [
+            "P-1140E",
+            "complete-planning"
+          ],
           "forbids": []
         }
       ]
     },
     {
       "gate": "P-1140F",
-      "state": "in-progress-planning",
-      "authorization": null,
+      "state": "complete-planning",
+      "authorization": {
+        "authorized_by": "vedant-simulacrum",
+        "authorized_at": "2026-08-12",
+        "reference": "https://github.com/vedant-simulacrum/vibemaxxing/issues/44",
+        "reference_kind": "github-issue",
+        "open_p1_findings_at_authorization": 0,
+        "findings_open_at_authorization": [],
+        "opened_with_open_findings": false,
+        "findings_waived": false,
+        "preconditions_met": false,
+        "acknowledgement": "P-1140F was closed at complete-planning by owner decision on reviewed head 46bf2fa47963261d48fa80a6980de85d80cfaad8, with all thirteen semantic findings SR-005 through SR-017 closed and no finding open at any severity. One documented precondition was not met: closure criterion 8 requires the exact repaired head to receive independent manual review, and the review pinned in conformance/p1140f/review-target-v1.json was performed under delegated owner authority by the same agent that performed the repairs. That is limitation 1 of the PASS-WITH-EXCEPTIONS verdict and is the limb of SR-016 that performing the review cannot close. It was knowingly accepted, not satisfied. No finding is waived; all thirteen are closed on recorded evidence and reopen if that evidence is contradicted. Closing this gate means the recorded contradictions are gone from the planning contracts. It is not evidence that any component is implemented, correct, secure, private, certified, or launch-ready, and nothing in this repository is implemented.",
+        "stated_rationale": "The planning track's purpose was to remove contradictions between authorities so that implementation has one contract to build against. That is done and is machine-checked. The remaining criterion asks for a reviewer this program cannot supply from inside itself, and holding the gate open for it would stop the work without producing the reviewer."
+      },
       "documents": [
         {
           "path": "docs/project/STATUS.md",
-          "requires": ["planning contract repair", "P-1140F", "in-progress-planning", "semantic-findings-v1.json"],
+          "requires": [
+            "planning contract repair",
+            "P-1140F",
+            "complete-planning",
+            "semantic-findings-v1.json"
+          ],
           "forbids": []
         },
         {
           "path": "docs/planning/TASK_CATALOG.md",
-          "requires": ["P-1140E", "complete-planning", "P-1140F", "in-progress-planning", "SR-005", "SR-017"],
+          "requires": [
+            "P-1140E",
+            "complete-planning",
+            "P-1140F",
+            "SR-005",
+            "SR-017"
+          ],
           "forbids": []
         },
         {
           "path": "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md",
-          "requires": ["SR-005", "SR-017", "in-progress-planning"],
+          "requires": [
+            "SR-005",
+            "SR-017",
+            "complete-planning"
+          ],
           "forbids": []
         },
         {
           "path": "docs/implementation/IMPLEMENTATION_HANDOFF.md",
-          "requires": ["P-1140F"],
+          "requires": [
+            "P-1140F"
+          ],
           "forbids": []
         },
         {
           "path": "AGENTS.md",
-          "requires": ["P-1140F", "in-progress-planning", "SR-005", "SR-017", "semantic-findings-v1.json"],
+          "requires": [
+            "P-1140F",
+            "complete-planning",
+            "SR-005",
+            "SR-017",
+            "semantic-findings-v1.json"
+          ],
           "forbids": []
         }
       ]
@@ -123,7 +178,12 @@
       "documents": [
         {
           "path": "docs/project/STATUS.md",
-          "requires": ["P-1104", "authorized-open", "gate-authorization-v1.json", "not waived"],
+          "requires": [
+            "P-1104",
+            "authorized-open",
+            "gate-authorization-v1.json",
+            "not waived"
+          ],
           "forbids": [
             "implementation remains unauthorized",
             "P-1104 remains blocked",
@@ -132,22 +192,46 @@
         },
         {
           "path": "docs/planning/TASK_CATALOG.md",
-          "requires": ["P-1104", "authorized-open", "gate-authorization-v1.json"],
-          "forbids": ["| P-1104 | Enter implementation phase | blocked-approval |"]
+          "requires": [
+            "P-1104",
+            "authorized-open",
+            "gate-authorization-v1.json"
+          ],
+          "forbids": [
+            "| P-1104 | Enter implementation phase | blocked-approval |"
+          ]
         },
         {
           "path": "docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md",
-          "requires": ["P-1104: authorized-open", "gate-authorization-v1.json"],
-          "forbids": ["P-1104: blocked", "product implementation: unauthorized"]
+          "requires": [
+            "P-1104: authorized-open",
+            "gate-authorization-v1.json"
+          ],
+          "forbids": [
+            "P-1104: blocked",
+            "product implementation: unauthorized"
+          ]
         },
         {
           "path": "docs/implementation/IMPLEMENTATION_HANDOFF.md",
-          "requires": ["P-1104", "authorized-open", "gate-authorization-v1.json"],
-          "forbids": ["inactive while P-1140F is open", "P-1104 remains blocked"]
+          "requires": [
+            "P-1104",
+            "authorized-open",
+            "gate-authorization-v1.json"
+          ],
+          "forbids": [
+            "inactive while P-1140F is open",
+            "P-1104 remains blocked"
+          ]
         },
         {
           "path": "AGENTS.md",
-          "requires": ["P-1104", "authorized-open", "gate-authorization-v1.json", "not waived"],
+          "requires": [
+            "P-1104",
+            "authorized-open",
+            "gate-authorization-v1.json",
+            "not waived"
+          ],
           "forbids": [
             "P-1104 remains blocked",
             "product implementation remains unauthorized",

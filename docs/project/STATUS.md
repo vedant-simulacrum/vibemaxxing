@@ -60,7 +60,7 @@ Exact titles, owners, conflicts, repair tasks, evidence and review state live on
 ## Planning gates
 
 - **P-1140A through P-1140E:** complete within stated planning/structural scope; not implementation evidence.
-- **P-1140F:** `in-progress-planning`; semantic closure is not achieved.
+- **P-1140F:** `complete-planning`; all thirteen semantic findings are closed on reviewed head `46bf2fa47963261d48fa80a6980de85d80cfaad8` under D-635. Closure criterion 8 asks for *independent* review of that head and this closure does not meet it: the review was performed under delegated owner authority by the same agent that performed the repairs, which is limitation 1 of the verdict. The owner accepted that knowingly. Closed means the recorded contradictions are gone from the planning contracts, not that anything is implemented.
 - **P-1104:** `authorized-open`; opened by owner decision on 2026-08-05 under GitHub issue 44. The stated preconditions — zero active P0/P1 findings and one exact reviewed head with a passing verdict — were not met at authorization and are not met now. The stated reasoning is that the open findings are contradictions between documents whose closure is largely unfalsifiable without running code, and that most become testable once behaviour exists. The findings stay open, stay tracked, and are not waived. The authoritative record is `conformance/p1140f/gate-authorization-v1.json`.
 - **P-1105:** `blocked-launch-evidence`; requires an implemented system and executable evidence on every advertised profile.
 - **P-1131:** `blocked-launch-evidence`; requires real adapters and non-expired exact-tuple certifications.
