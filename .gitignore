@@ -19,3 +19,9 @@ apps/api/api
 __pycache__/
 artifacts/evals/
 artifacts/repository/issue-plan.json
+
+# A bare entry as well as `**/.venv/`: the trailing slash matches directories only,
+# so an absolute-path `.venv` symlink created for a git worktree was not ignored and
+# was committed to main in 46bf2fa. Checking main out then replaced a real virtualenv
+# with a symlink to itself.
+.venv
