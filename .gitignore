@@ -19,3 +19,9 @@ apps/api/api
 __pycache__/
 artifacts/evals/
 artifacts/repository/issue-plan.json
+
+.design-sync/
+ds-bundle/
+.ds-sync/
+packages/ui/.dts/
+packages/ui/index.d.ts

@@ -6,16 +6,19 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://vibemaxxing.dev"),
   title: "vibemaxxing — the competitive ledger",
   description: "Public competition. Private transcripts. Compare AI-agent activity without exposing your work.",
-  icons: { icon: "/brand/favicon.svg" },
+  // D-637 deleted the brand and the governed asset library, including the public
+  // brand directory this block pointed an icon and a social card at. The entries
+  // are removed rather than repointed: no replacement mark exists and no path is
+  // reserved for one.
   openGraph: {
     title: "vibemaxxing — the competitive ledger",
     description: "Burn more. Rank higher.",
-    images: ["/brand/social-card.svg"],
   },
 };
 
+// themeColor came from the deleted brand palette and is removed with it. colorScheme
+// is a rendering hint rather than a brand value, so it stays.
 export const viewport: Viewport = {
-  themeColor: "#f4f2ed",
   colorScheme: "light",
 };
 

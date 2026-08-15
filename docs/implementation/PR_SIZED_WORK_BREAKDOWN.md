@@ -78,7 +78,7 @@ Units: 265. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 411 assertions across 76 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 407 assertions across 76 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 4.
 
@@ -1084,7 +1084,7 @@ Evidence: contains 1 scripts/repository/validate_p1140e_contracts.py :: generate
 Exit: each of the six defect classes is injected against the validator that owns it and observed to fail, the clean tree passes, and the summary line still says the check is structural and that runtime evidence is absent.
 
 ### PF-036 — P-1140F exact-head review
-Files: `conformance/p1140f/review-target-v1.json`, `conformance/p1140f/semantic-findings-v1.json`, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`, `conformance/p1140f/gate-authorization-v1.json`, `conformance/p1140f/gate-authorization-v1.schema.json`, `conformance/planning/decisions-v1.json`, `assets/ui/references/manifest.json`, `docs/project/STATUS.md`, `docs/project/PROJECT.md`, `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`, `scripts/repository/validate_p1140f_authority.py`, `tests/ci/test_validate_p1140f_authority.py`
+Files: `conformance/p1140f/review-target-v1.json`, `conformance/p1140f/semantic-findings-v1.json`, `conformance/p1140f/REPAIR_HEAD_REVIEW.md`, `conformance/p1140f/gate-authorization-v1.json`, `conformance/p1140f/gate-authorization-v1.schema.json`, `conformance/planning/decisions-v1.json`, `docs/project/STATUS.md`, `docs/project/PROJECT.md`, `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`, `scripts/repository/validate_p1140f_authority.py`, `tests/ci/test_validate_p1140f_authority.py`. One entry is retired rather than edited away: this unit also touched the UI reference manifest, which D-637 deleted with the rest of the visual library. It is named here without a path, because a resolvable path to a file that no longer exists is a broken reference and pretending the unit never touched it is a false record.
 Acceptance: mechanical part: `review-target-v1.json` pins a commit that `git cat-file -e` resolves, every one of SR-005..SR-017 carries a closure verdict, and `python3 scripts/repository/validate_p1140f_authority.py` exits 0 with zero open findings at any severity. The review judgement itself is not mechanizable and must not be presented as though the validator produced it, and the record says by whom it was made and under what authority.
 Depends: PF-001, PF-002, PF-003, PF-004, PF-005, PF-006, PF-007, PF-008, PF-009, PF-010, PF-011, PF-012, PF-013, PF-014, PF-015, PF-016, PF-017, PF-018, PF-019, PF-020, PF-021, PF-022, PF-023, PF-024, PF-025, PF-026, PF-027, PF-028, PF-029, PF-030, PF-031, PF-032, PF-033, PF-034, PF-035, PF-070, PF-071, PF-072, PF-073, PF-074
 Repair: P-1140F-5
@@ -1111,7 +1111,9 @@ Evidence: absent conformance/p1140f/semantic-findings-v1.json :: "state": "repai
 
 **The two registry digests are a recorded claim, not a machine-derived fact.** Nothing computes or verifies `finding_registry_sha256` or `artifact_registry_sha256`; the schema checks only that they are sixty-four hex characters. They were computed from the two files at the reviewed commit and a reader can reproduce them with `git show <commit>:<path> | shasum -a 256`. The same is true of `validation_run`, which is the planning-checks run number on that exact commit and is named in the record so it can be opened.
 
-**The storyboard promotion, and why these captures are of this head.** D-610 recorded that relabelling the public figure moved pixels in the governed baselines and that an agent does not promote captures. The owner has promoted them. The SHA-256 values come from storyboard-visuals run 31592533820, and no file under `assets/`, `packages/ui/` or `apps/web/` changed between that run's head and the reviewed head, which is what makes them captures of the head under review rather than of an older one. Nine viewports moved — public-profile, rival-comparison and board-standings across desktop, tablet and mobile. `friends` and `activity-and-notifications` matched their reviewed captures exactly and were not touched. D-610 is spent.
+**The storyboard promotion, and why these captures are of this head.** D-610 recorded that relabelling the public figure moved pixels in the governed baselines and that an agent does not promote captures. The owner has promoted them. The SHA-256 values come from the storyboard-visuals workflow run 31592533820, and no file under the asset library, the component package or the web application changed between that run's head and the reviewed head, which is what makes them captures of the head under review rather than of an older one. Nine viewports moved — public-profile, rival-comparison and board-standings across desktop, tablet and mobile. `friends` and `activity-and-notifications` matched their reviewed captures exactly and were not touched. D-610 is spent.
+
+**What survives of that promotion, read after D-636 and D-637.** Nothing that it promoted still exists. The component package, the asset library, the committed render baselines and the workflow that produced the captures were all deleted; the two directories and the workflow are named above without paths for that reason. The promotion was a real act on a real head and is left standing as a record of what the owner decided in 2026; it is not a claim that any capture, baseline or renderer is present in this tree now, and no unit may cite it as one. D-636 records that this also makes the storyboard-baseline promotion question left open under D-300 moot rather than pending.
 
 **What this unit does not do.** It does not flip any gate: `gate-authorization-v1.json` still records P-1140F as `in-progress-planning`, and gates are opened and closed by the owner alone. It does not write its own closure evidence into SR-016, because a unit cannot cite its own merge commit; that citation and the removal of the two interval reasons it justifies land in the unit that follows. It does not make any finding true by closing it — three of SR-016's four artifacts are recorded as needing no change rather than repaired by a unit serving it, and the reasons are there to be read rather than to be counted.
 
@@ -1299,21 +1301,21 @@ Evidence: exists packages/schemas/disclosure-projection-v1.schema.json
 
 **Half landed in `963f6f6` under D-226; the rest under D-393.** `evidence_class` crosses the boundary on `PublicProfile`, `RankEntry`, `AccountProfile` and `ClaimRecord` with the three values D-143 fixed. The projection this unit's second clause names is `packages/schemas/disclosure-projection-v1.json`, which classifies every property of seven API schemas by audience; the file was previously named as `evidence-disclosure-v1.schema.json` and is renamed here because it governs privacy disclosure as well as evidence. `validate_planning_artifacts.py` resolves every field against the OpenAPI document. The unit was once recorded as `landed` on the strength of the first clause alone and `validate_work_unit_status.py` refused it, which is the check doing the job it was added for; what makes the status correct now is that both clauses are observable.
 
-The defect as found: the string did not appear anywhere in the OpenAPI document, so the product's central differentiator was unrepresentable in its own API, and four competing vocabularies existed for the concept — `packages/ui` used `Hardened|Standard|Imported`, `crates/vibeproof-core` used a five-value scale, `evidence-profile-policy-v1.json` used `profile_id` values, and the API had none.
+The defect as found: the string did not appear anywhere in the OpenAPI document, so the product's central differentiator was unrepresentable in its own API, and four competing vocabularies existed for the concept — the component package used `Hardened|Standard|Imported`, `crates/vibeproof-core` used a five-value scale, `evidence-profile-policy-v1.json` used `profile_id` values, and the API had none. One of those four vocabularies has since been deleted outright under D-636; the reconciliation this unit performed on the API side is unaffected, and the component package is named here without a path because it is gone.
 
 ### PF-047 — Expand profile and rank entry schemas to the rendered product
 Files: `packages/schemas/openapi-v1.yaml`, `docs/product/SOCIAL_INTEGRITY_AND_UX_CONTRACT.md`
-Acceptance: every field rendered by `packages/ui/src/concepts/product-storyboards.tsx` and `packages/ui/src/patterns/product-system.tsx` resolves to an API field; no storyboard depends on a value the API cannot return.
+Acceptance: `credited_token_burn` and the rendered profile and rank-entry fields resolve in `packages/schemas/openapi-v1.yaml`. The other half of this unit's acceptance is retired: it required every field rendered by the two storyboard and pattern modules to resolve to an API field, and both modules were deleted under D-636. They are named here without paths, and the assertion is recorded as retired rather than restated, because there is no surface left to run it against and none is planned.
 Depends: PF-046
 Est: 6-8
 Status: landed
 Evidence: contains 1 packages/schemas/openapi-v1.yaml :: credited_token_burn
-Evidence: absent packages/ui/src/concepts/product-storyboards.tsx :: Verified competitor
-Evidence: absent packages/ui/src/concepts/product-storyboards.tsx :: All sources verified
 
-**Landed in `963f6f6` under D-227 and D-228.** `RankEntry` lost `score` and gained `credited_token_burn` and the rendered fields, and the four banned claim strings in `packages/ui/src/concepts/product-storyboards.tsx` were replaced rather than softened.
+**Landed in `963f6f6` under D-227 and D-228.** `RankEntry` lost `score` and gained `credited_token_burn` and the rendered fields, and the four banned claim strings in the storyboard module were replaced rather than softened. That work happened and the API half of it is still in the tree; the module it also edited is not.
 
-The defect as found: `PublicProfile` had 4 fields and `RankEntry` had 7, both `additionalProperties: false`, while the finished design system rendered avatars, evidence badges, rank movement, sparklines and board standings that no operation could supply.
+**Two `Evidence:` lines were removed here, and removing them is the point.** This unit asserted `absent … :: Verified competitor` and `absent … :: All sources verified` against the storyboard module. Both assertions still returned true after D-636 deleted the whole component package — not because the banned claim strings had been replaced, which is what the unit did, but because the file they were checked in had ceased to exist. An assertion that a directory's removal satisfies is proving nothing, and this repository refuses evidence of that shape whatever its verdict. They are deleted rather than repointed: no surviving file renders those strings, so there is nothing to repoint them at.
+
+The defect as found: `PublicProfile` had 4 fields and `RankEntry` had 7, both `additionalProperties: false`, while the design system of the time rendered avatars, evidence badges, rank movement, sparklines and board standings that no operation could supply. The schema expansion outlived the renderer.
 
 ### PF-048 — Author the indexing and partitioning plan
 Files: `packages/schemas/planning-schema.sql`, `docs/architecture/LEADERBOARD_STORAGE_AND_RANKING.md`, `scripts/repository/validate_planning_artifacts.py`, `tests/ci/test_index_coverage.py`
@@ -1488,18 +1490,18 @@ No document explains how the system works end to end. Understanding it currently
 This is the single highest-value change for anyone, human or agent, encountering the repository for the first time. It does not replace any normative contract; it gives them a spine.
 
 ### PF-059 — Merge duplicated UI and design documentation
-Files: `docs/style-guide/COMPONENT_INVENTORY.md`, `docs/style-guide/COMPONENT_STANDARD.md`, `docs/style-guide/README.md`, `docs/style-guide/UI_ARCHITECTURE.md`, `docs/style-guide/UI_FOUNDATIONS.md`, `docs/style-guide/BRAND.md`, `docs/project/DOCUMENTATION.md`
-Acceptance: one owner per concept; no two files in `docs/style-guide/` describe the same component surface; `DOCUMENTATION.md` names the surviving owner for each.
+Files: `docs/project/DOCUMENTATION.md`. Six further entries are retired: this unit merged the component inventory, the component standard, the style-guide readme, the UI architecture document, the UI foundations document and the brand document into one owner apiece, and D-636 and D-637 between them deleted every one of those six. They are named here without paths, because the merge is history and the files are not in the tree.
+Acceptance: retired. It required that no two files in the deleted style-guide directory describe the same component surface, and there is no such directory, no such file and no successor path. The surviving mechanical part is that `docs/project/DOCUMENTATION.md` names one owner for every topic it lists, which `python3 scripts/repository/doctor.py` enforces and which the evidence below runs.
 Depends: none
 Est: 6-8
 Status: landed
-Evidence: missing docs/style-guide/COMPONENTS.md
-Evidence: exists docs/style-guide/UI_ARCHITECTURE.md
 Evidence: validator scripts/repository/doctor.py
 
-Three files described components (`COMPONENTS.md`, `COMPONENT_INVENTORY.md`, `COMPONENT_STANDARD.md`) and three described design foundations (`design/design.md`, `design/UI_FOUNDATIONS.md`, `style-guide/README.md`); the first and fourth of those have since been merged into their surviving owners. `docs/architecture/ARCHITECTURE.md` and the former `docs/style-guide/ARCHITECTURE.md` shared a filename while describing unrelated scopes, which made every reference to "ARCHITECTURE.md" ambiguous until the latter was renamed to `docs/style-guide/UI_ARCHITECTURE.md`.
+**Two `Evidence:` lines were removed here.** One asserted that a merged-away components document was `missing`; after D-637 that passes for a reason the unit never established, since its whole directory is gone and every name in it would satisfy the same assertion. The other asserted that the renamed UI architecture document `exists`, and it now fails outright. Neither is repaired by repointing: nothing owns components, tokens, screen composition, brand, palette, type scale or voice in this repository, and inventing a path for one of them would be inventing a document nobody has designed. What remains is the one assertion whose subject survives.
 
-Merge unique content into one owner per concept, repair references, and delete or clearly mark the duplicates, per the rule already stated in `DOCUMENTATION.md`.
+**The merge itself stands as history.** Three files described components and three described design foundations; the duplicates were folded into one owner per concept and the references were repaired. Separately, the architecture document under the style guide shared a filename with `docs/architecture/ARCHITECTURE.md` while describing an unrelated scope, which made every bare reference to "ARCHITECTURE.md" ambiguous until the style-guide one was renamed. That ambiguity is now moot in the bluntest possible way: only one of the two files is left, and it is the architecture document under `docs/architecture/`.
+
+**What this unit does not license.** Under D-637 the absence of a brand and visual-language owner is the accepted state and is not a defect for a validator to repair. This unit's record may not be read as a reservation of any deleted filename, and a deleted file recovered from `design-system-pre-purge` is not authority for anything.
 
 ### PF-060 — Collapse single-purpose documentation directories
 Files: `docs/protocol/`, `docs/qa/`, `docs/evals/`, `docs/design/`, `docs/project/DOCUMENTATION.md`, `README.md`, `AGENTS.md`
@@ -3187,11 +3189,13 @@ Est: 10-14
 Status: not-started
 
 ### W-006 Evidence, source, privacy and outbound disclosure UX
-Files: `apps/web/components/evidence-badge.tsx` (new), `packages/ui/src/patterns/product-system.tsx`, `packages/ui/src/concepts/product-storyboards.tsx`
-Acceptance: the three published `evidence_class` values render with the labels D-143 fixes and an exhaustive switch fails to compile if a fourth appears; `grep -rniE 'verified|attested' apps/web packages/ui` returns nothing, so no surface can present a self-report as a provider confirmation.
+Files: `apps/web/components/evidence-badge.tsx` (new)
+Acceptance: the three published `evidence_class` values render with the labels D-143 fixes and an exhaustive switch fails to compile if a fourth appears; `grep -rniE 'verified|attested' apps/web` returns nothing, so no surface can present a self-report as a provider confirmation.
 Depends: W-001, V-010, R-008
 Est: 10-14
 Status: not-started
+
+**This unit cannot be attempted as it was written.** It named two modules in the component package as files it would edit, and D-636 deleted that package in full. They are not repointed at anything, because D-637 records that nothing replaces the deleted design and that no successor path is reserved; naming one here would be a reference to a module nobody has designed. What is left of the unit is the part that lives in the web application, and that part is not startable either until a component surface exists to render a badge into. The unit stays `not-started` and its scope stays honest about being smaller than it was.
 
 ### W-007 Device, lineage, fork, platform and update UX
 Files: `apps/web/app/devices/page.tsx` (new), `apps/web/e2e/devices.spec.ts` (new)
@@ -3215,11 +3219,13 @@ Est: 10-14
 Status: not-started
 
 ### W-010 Accessibility, responsive and exceptional-state matrix
-Files: `apps/web/e2e/accessibility.spec.ts` (new), `scripts/ui/check-ui-system.mjs`, `packages/ui/src/concepts/product-state-matrix.stories.tsx`
+Files: `apps/web/e2e/accessibility.spec.ts` (new)
 Acceptance: `npm run test:a11y` exits 0 with zero axe violations at the three recorded breakpoints; a matrix test asserts every screen has a rendered loading, empty, error and unauthorized state and fails on a missing cell.
 Depends: W-002, W-003, W-004, W-005, W-006, W-007, W-008, W-009
 Est: 12-16
 Status: not-started
+
+**Two of the three files this unit named are gone and are not replaced.** The UI system checker under `scripts/` was deleted with the design it checked, and the state-matrix story lived in the deleted component package. Neither is repointed: under D-637 there is no successor path for components, tokens or screen composition, and the accessibility and state-matrix work this unit describes cannot be attempted until something exists to render the states it would assert. That is a real blocker on top of the eight dependencies below, and it is recorded here rather than absorbed into them, because the dependencies are units that can be worked and this one is an absence that no unit in this file is scheduled to fill.
 
 The prose range `W-002 through W-009` is expanded because `Depends:` admits unit IDs only. This unit was an orphan; `X-011` now depends on it, which is what makes the hosted web product gate launch.
 

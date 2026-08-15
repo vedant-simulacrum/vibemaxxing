@@ -14,10 +14,9 @@ comes to claim coverage it does not have:
   a hole in the matrix rather than an absence of work.
 
 The node lane is the reason uncovered exists. It reported not_applicable because
-the repository root has no package.json, which is true and irrelevant: apps/web,
-packages/ui and scripts/brand are npm workspaces with lockfiles that no workflow has
-ever built, and the web home page has never rendered. The green not_applicable is
-why nobody noticed.
+the repository root has no package.json, which is true and irrelevant: apps/web is an
+npm workspace with a lockfile that no workflow has ever built, and the web home page
+has never rendered. The green not_applicable is why nobody noticed.
 
 A hole is recorded rather than hidden. scripts/ci/coverage-baseline-v1.json pins the
 outcome every lane produced, and this matrix fails only when coverage gets *worse*
@@ -81,41 +80,95 @@ def node_workspaces(root: Path) -> list[str]:
 def planned_checks(root: Path) -> list[Check]:
     runner = root / "scripts" / "ci" / "run_evals.py"
     checks = [
-        Check("evaluator-unit", "pending", [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py", "-v"]),
-        Check("evaluator-registry", "pending", [sys.executable, str(runner), "--validate-registry"]),
-        Check("evaluator-all-suites", "pending", [sys.executable, str(runner), "--list-suites"]),
+        Check(
+            "evaluator-unit",
+            "pending",
+            [
+                sys.executable,
+                "-m",
+                "unittest",
+                "discover",
+                "-s",
+                "tests",
+                "-p",
+                "test_*.py",
+                "-v",
+            ],
+        ),
+        Check(
+            "evaluator-registry",
+            "pending",
+            [sys.executable, str(runner), "--validate-registry"],
+        ),
+        Check(
+            "evaluator-all-suites",
+            "pending",
+            [sys.executable, str(runner), "--list-suites"],
+        ),
     ]
     go_module = root / "apps" / "api" / "go.mod"
     if go_module.is_file():
-        checks.extend([
-            Check("go-test", "pending", ["go", "test", "./..."]),
-            Check("go-vet", "pending", ["go", "vet", "./..."]),
-            Check("go-build", "pending", ["go", "build", "./..."]),
-        ])
+        checks.extend(
+            [
+                Check("go-test", "pending", ["go", "test", "./..."]),
+                Check("go-vet", "pending", ["go", "vet", "./..."]),
+                Check("go-build", "pending", ["go", "build", "./..."]),
+            ]
+        )
     else:
-        checks.append(Check("go", "not_applicable", None, note="no apps/api/go.mod exists"))
+        checks.append(
+            Check("go", "not_applicable", None, note="no apps/api/go.mod exists")
+        )
     if (root / "Cargo.toml").is_file():
-        checks.extend([
-            Check("rust-fmt", "pending", ["cargo", "fmt", "--all", "--check"]),
-            Check("rust-clippy", "pending", ["cargo", "clippy", "--workspace", "--all-targets", "--all-features", "--", "-D", "warnings"]),
-            Check("rust-test", "pending", ["cargo", "test", "--workspace", "--all-features"]),
-        ])
+        checks.extend(
+            [
+                Check("rust-fmt", "pending", ["cargo", "fmt", "--all", "--check"]),
+                Check(
+                    "rust-clippy",
+                    "pending",
+                    [
+                        "cargo",
+                        "clippy",
+                        "--workspace",
+                        "--all-targets",
+                        "--all-features",
+                        "--",
+                        "-D",
+                        "warnings",
+                    ],
+                ),
+                Check(
+                    "rust-test",
+                    "pending",
+                    ["cargo", "test", "--workspace", "--all-features"],
+                ),
+            ]
+        )
     else:
-        checks.append(Check("rust", "not_applicable", None, note="no root Cargo.toml exists"))
+        checks.append(
+            Check("rust", "not_applicable", None, note="no root Cargo.toml exists")
+        )
     checks.append(planned_node_check(root))
     return checks
 
 
-# `apps/web` depends on `packages/ui` through a `file:` link, and npm will not
-# install the link target's own dependencies transitively. Installing `apps/web`
-# first leaves `lucide-react` unresolvable, so the order here is load-bearing
-# rather than cosmetic.
-NODE_WORKSPACE_ORDER = (
-    "packages/ui",
-    "apps/web",
-    "scripts/brand",
-    "scripts/ui/playwright-runtime",
-)
+# The order was load-bearing while `apps/web` reached the UI package through a
+# `file:` link that npm does not install transitively. D-636 deleted that package,
+# so no surviving workspace links to another and the remaining rank is a stable
+# listing order rather than a dependency constraint. `apps/web` still declares the
+# deleted link and will not install: D-636 retains those route files deliberately,
+# as the only remaining record of which product screens exist, and the lane is
+# expected to fail there until a replacement component system lands. Restore the
+# constraint, and this comment with it, when one does.
+#
+# The rank held two more entries. `scripts/brand` was deleted with the brand asset
+# check under D-637. `scripts/ui/playwright-runtime` was never reachable at all:
+# `node_workspaces` globs one level below `apps/`, `packages/` and `scripts/`, and
+# that workspace sits two levels down, so its rank has bound nothing since it was
+# written. Both are removed rather than left in place, because a rank entry naming a
+# workspace nothing discovers is silently inert, which is how a stale entry survives
+# every review. `apps/web` is the only npm workspace this lane finds today.
+NODE_WORKSPACE_ORDER = ("apps/web",)
 
 
 def ordered_node_workspaces(root: Path) -> list[str]:
@@ -164,7 +217,9 @@ def run_check(check: Check, root: Path) -> None:
                     check=False,
                 ).returncode
                 if check.returncode != 0:
-                    check.note = f"{workspace}: {' '.join(command)} exited {check.returncode}"
+                    check.note = (
+                        f"{workspace}: {' '.join(command)} exited {check.returncode}"
+                    )
                     break
             if check.returncode != 0:
                 break
@@ -173,8 +228,16 @@ def run_check(check: Check, root: Path) -> None:
             check.note = f"built {len(covered)} workspace(s) in dependency order: {', '.join(covered)}"
     else:
         assert check.command is not None
-        working_directory = root / "apps" / "api" if check.name.startswith("go-") else root
-        check.returncode = subprocess.run(check.command, cwd=working_directory, capture_output=True, text=True, check=False).returncode
+        working_directory = (
+            root / "apps" / "api" if check.name.startswith("go-") else root
+        )
+        check.returncode = subprocess.run(
+            check.command,
+            cwd=working_directory,
+            capture_output=True,
+            text=True,
+            check=False,
+        ).returncode
     check.status = "pass" if check.returncode == 0 else "fail"
 
 
@@ -186,12 +249,21 @@ def run_all_suites(check: Check, root: Path) -> None:
     check greener, because a suite that executes nothing cannot fail.
     """
     assert check.command is not None
-    listed = subprocess.run(check.command, cwd=root, capture_output=True, text=True, check=False)
+    listed = subprocess.run(
+        check.command, cwd=root, capture_output=True, text=True, check=False
+    )
     executed, skipped, failed = 0, 0, 0
     returncodes = [listed.returncode]
     for suite in listed.stdout.splitlines():
-        command = [sys.executable, str(root / "scripts" / "ci" / "run_evals.py"), "--suite", suite]
-        completed = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False)
+        command = [
+            sys.executable,
+            str(root / "scripts" / "ci" / "run_evals.py"),
+            "--suite",
+            suite,
+        ]
+        completed = subprocess.run(
+            command, cwd=root, capture_output=True, text=True, check=False
+        )
         returncodes.append(completed.returncode)
         status = suite_result_status(completed.stdout)
         if status == "not_applicable":
@@ -200,7 +272,9 @@ def run_all_suites(check: Check, root: Path) -> None:
             executed += 1
         else:
             failed += 1
-    check.returncode = next((returncode for returncode in returncodes if returncode != 0), 0)
+    check.returncode = next(
+        (returncode for returncode in returncodes if returncode != 0), 0
+    )
     check.detail = {"executed": executed, "not_applicable": skipped, "failed": failed}
     if check.returncode != 0 or failed:
         check.status = "fail"
@@ -235,7 +309,9 @@ def load_coverage_baseline(path: Path) -> dict[str, str]:
     except OSError as error:
         raise ValueError(f"unreadable coverage baseline {path}: {error}") from error
     except json.JSONDecodeError as error:
-        raise ValueError(f"invalid JSON coverage baseline {path}: {error.msg}") from error
+        raise ValueError(
+            f"invalid JSON coverage baseline {path}: {error.msg}"
+        ) from error
     if not isinstance(document, dict) or document.get("schema_version") != 1:
         raise ValueError("coverage baseline must declare schema_version 1")
     recorded = document.get("lanes")
@@ -246,12 +322,20 @@ def load_coverage_baseline(path: Path) -> dict[str, str]:
         raise ValueError("coverage baseline justifications must be an object")
     for lane, outcome in recorded.items():
         if not isinstance(outcome, str) or outcome not in RECORDABLE:
-            raise ValueError(f"coverage baseline records an unrecordable outcome for {lane}: {outcome!r}")
+            raise ValueError(
+                f"coverage baseline records an unrecordable outcome for {lane}: {outcome!r}"
+            )
         if outcome == "pass":
             continue
         justification = justifications.get(lane)
-        if not isinstance(justification, dict) or not justification.get("reference") or not justification.get("note"):
-            raise ValueError(f"coverage baseline records {lane} as {outcome} without a justification naming a reference and a note")
+        if (
+            not isinstance(justification, dict)
+            or not justification.get("reference")
+            or not justification.get("note")
+        ):
+            raise ValueError(
+                f"coverage baseline records {lane} as {outcome} without a justification naming a reference and a note"
+            )
     return recorded
 
 
@@ -270,17 +354,25 @@ def coverage_regressions(checks: list[Check], recorded: dict[str, str]) -> list[
     failures: list[str] = []
     observed = {check.name: check.status for check in checks}
     for lane in sorted(set(recorded) - set(observed)):
-        failures.append(f"lane {lane} is recorded in the coverage baseline but the matrix no longer plans it; removing a lane is a coverage regression")
+        failures.append(
+            f"lane {lane} is recorded in the coverage baseline but the matrix no longer plans it; removing a lane is a coverage regression"
+        )
     for lane in sorted(set(observed) - set(recorded)):
-        failures.append(f"lane {lane} is not recorded in the coverage baseline; record its outcome there so a later regression has something to regress against")
+        failures.append(
+            f"lane {lane} is not recorded in the coverage baseline; record its outcome there so a later regression has something to regress against"
+        )
     for lane in sorted(set(observed) & set(recorded)):
         status = observed[lane]
         if status == "fail":
-            failures.append(f"lane {lane} failed; a failing lane is never a recordable outcome and cannot be baselined away")
+            failures.append(
+                f"lane {lane} failed; a failing lane is never a recordable outcome and cannot be baselined away"
+            )
         elif status not in RECORDABLE:
             failures.append(f"lane {lane} produced an unrecognised outcome: {status!r}")
         elif OUTCOME_ORDER.index(status) < OUTCOME_ORDER.index(recorded[lane]):
-            failures.append(f"lane {lane} regressed from {recorded[lane]} to {status}; a worse outcome requires an explicit edit to the recorded coverage baseline")
+            failures.append(
+                f"lane {lane} regressed from {recorded[lane]} to {status}; a worse outcome requires an explicit edit to the recorded coverage baseline"
+            )
     return failures
 
 
@@ -312,7 +404,8 @@ def summarise(checks: list[Check]) -> dict[str, object]:
                     ("detail", check.detail),
                     ("note", check.note),
                 )
-                if key in {"name", "status", "command", "returncode"} or value is not None
+                if key in {"name", "status", "command", "returncode"}
+                or value is not None
             }
             for check in checks
         ],
@@ -324,7 +417,9 @@ def summarise(checks: list[Check]) -> dict[str, object]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--baseline", type=Path, default=BASELINE, help="recorded coverage ceiling")
+    parser.add_argument(
+        "--baseline", type=Path, default=BASELINE, help="recorded coverage ceiling"
+    )
     arguments = parser.parse_args(argv)
 
     checks = planned_checks(ROOT)
@@ -342,7 +437,11 @@ def main(argv: list[str] | None = None) -> int:
 
     failures = coverage_regressions(checks, recorded)
     improved = improved_lanes(checks, recorded)
-    summary["baseline"] = {"recorded": recorded, "regressions": failures, "improved": improved}
+    summary["baseline"] = {
+        "recorded": recorded,
+        "regressions": failures,
+        "improved": improved,
+    }
     print(json.dumps(summary, indent=2))
 
     if failures:
@@ -352,10 +451,17 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     executed = sum(1 for check in checks if check.status == "pass")
-    print(f"verification matrix: PASS ({len(checks)} lanes, {executed} fully executed, {len(checks) - executed} at their recorded ceiling)")
+    print(
+        f"verification matrix: PASS ({len(checks)} lanes, {executed} fully executed, {len(checks) - executed} at their recorded ceiling)"
+    )
     if improved:
-        print("coverage baseline may be tightened; these lanes now beat their record: " + ", ".join(improved))
-    print("claim_scope=recorded-coverage-only; a lane at its recorded ceiling executed no more than it did when the ceiling was written")
+        print(
+            "coverage baseline may be tightened; these lanes now beat their record: "
+            + ", ".join(improved)
+        )
+    print(
+        "claim_scope=recorded-coverage-only; a lane at its recorded ceiling executed no more than it did when the ceiling was written"
+    )
     return 0
 
 

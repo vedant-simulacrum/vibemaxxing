@@ -172,9 +172,9 @@ jobs:
       - name: Run the validator unit tests
         run: python3 -m unittest discover -s tests
       # Green at HEAD, and green only because the holes are written down. The node lane
-      # reports `uncovered` rather than `not_applicable` — apps/web, packages/ui and
-      # scripts/brand are npm workspaces with lockfiles that no workflow has ever built,
-      # and apps/web has never built at all (issue 52) — and the eval lane reports
+      # reports `uncovered` rather than `not_applicable` — apps/web is an npm workspace
+      # with a lockfile that no workflow has ever built, and has never built at all
+      # (issue 52) — and the eval lane reports
       # `partial`. Both outcomes are recorded in scripts/ci/coverage-baseline-v1.json,
       # so this step fails when coverage gets worse than the record, not because it is
       # already imperfect. Do not silence a new hole by editing that file without a

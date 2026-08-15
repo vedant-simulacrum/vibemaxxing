@@ -1274,7 +1274,7 @@
       "id": "D-228",
       "implementation_bearing": true,
       "normative_owner": "Evidence vocabulary under D-008 and ADR-020",
-      "implementation_owner": "packages/ui/src/concepts/product-storyboards.tsx",
+      "implementation_owner": "the storyboard module in the deleted component package (removed under D-636)",
       "machine_or_state_ownership": "Copy strings only, no component logic or styling",
       "platform_scope": "Web",
       "required_executable_evidence": "Banned-phrase scan over packages/ui returning no match for the four strings"
@@ -2556,6 +2556,24 @@
       "id": "D-635",
       "implementation_bearing": false,
       "reason": "closes the P-1140F gate at complete-planning on a pinned reviewed head over one criterion knowingly accepted rather than met; governs the planning record and authorizes no behaviour"
+    },
+    {
+      "id": "D-636",
+      "implementation_bearing": true,
+      "normative_owner": "Owner decision; brand keeps the brand document (deleted under D-637), components have no owner until a replacement declares one",
+      "implementation_owner": "Component system rebuild (packages/ui successor); brand and assets/ unaffected",
+      "machine_or_state_ownership": "No component package and no component authority; brand identity and the governed visual library retained; apps/web routes retained and non-building",
+      "platform_scope": "Web",
+      "required_executable_evidence": "doctor.py green with the deleted component paths absent from every authority table and cross-reference check, and with BRAND.md, ASSET_SYSTEM.md and assets/ still declared; apps/web build failure attributable only to the removed package"
+    },
+    {
+      "id": "D-637",
+      "implementation_bearing": true,
+      "normative_owner": "None. No document owns brand, visual language, components, tokens or screen composition",
+      "implementation_owner": "Unassigned until a replacement is designed from first principles",
+      "machine_or_state_ownership": "No visual library, no brand document, no component package, no asset checker; web routes retained and non-building",
+      "platform_scope": "Web",
+      "required_executable_evidence": "doctor.py green with no design, brand or asset path present in any authority table, workflow or cross-reference check"
     }
   ]
 }

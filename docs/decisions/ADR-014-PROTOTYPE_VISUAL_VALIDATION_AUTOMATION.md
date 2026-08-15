@@ -2,7 +2,11 @@
 
 Status: accepted
 Date: 2026-07-23
-Decision: D-069
+Decision: D-069, D-636, D-637
+
+**The subject of this ADR no longer exists.** D-636 deleted the UI package and the component half of the style-guide documents, so there is no Storybook prototype to validate and no locked reference to drift against. D-637 then deleted the remaining style-guide documents, the governed asset library and the brand tooling, which removes the second half of this ADR's subject: there are no governed assets to check drift against and no UI-specific scripts to run. Every path named in the allowed scope below is gone, and none is repointed, because no replacement exists to repoint it at.
+
+The decision is not reversed and is not rewritten: it classifies what this kind of automation may and may not be taken for, and that classification is what a replacement would be read against. The automation it permits is dormant until a replacement design system exists. Nothing here authorizes rebuilding the workflow ahead of one, and this ADR is superseded rather than reversed when a replacement declares its own normative owner.
 
 ## Context
 

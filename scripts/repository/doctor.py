@@ -85,7 +85,6 @@ REQUIRED = [
     "conformance/p1140f/gate-authorization-v1.json",
     "scripts/repository/validate_p1140f_authority.py",
     ".github/workflows/planning-checks.yml",
-    ".github/workflows/storyboard-visuals.yml",
 ]
 
 # These thirteen were real files that competed with the authorities they duplicated,
@@ -435,7 +434,6 @@ def evaluate_phase(root: Path) -> tuple[list[str], str]:
     return errors, summary
 
 
-
 # docs/project/DOCUMENTATION.md locates the single normative owner for every topic.
 # A document that appears in the tree and not in that map owns nothing and says so to
 # nobody; a second roadmap is exactly that shape. These two directories are covered as
@@ -503,28 +501,13 @@ def main() -> None:
         phase_errors, summary = evaluate_phase(ROOT)
         errors.extend(phase_errors)
 
-        storyboard = (ROOT / ".github/workflows/storyboard-visuals.yml").read_text(
-            encoding="utf-8"
-        )
-        if re.search(r"(?m)^\s*push:\s*$", storyboard):
-            errors.append("storyboard workflow must not run on push under ADR-014")
-        if "apps/web/**" in storyboard:
-            errors.append(
-                "storyboard workflow must not include apps/web/** under ADR-014"
-            )
-        if "${{ secrets." in storyboard:
-            errors.append("storyboard workflow must not access secrets under ADR-014")
-        for marker in [
-            "contents: read",
-            "persist-credentials: false",
-            "VIBEMAXXING_FIXTURE_POLICY: synthetic-only",
-            "--bind 127.0.0.1",
-            "VIBEMAXXING_ARTIFACT_MATURITY: runnable-prototype",
-        ]:
-            if marker not in storyboard:
-                errors.append(
-                    f"storyboard workflow is missing ADR-014 marker: {marker}"
-                )
+    # The ADR-014 storyboard-workflow conformance block that stood here read the
+    # storyboard-visuals workflow and checked five markers against it. D-636 deleted
+    # the component system, so there is no Storybook to build and the workflow went
+    # with it; a check whose subject does not exist is deleted rather than stubbed.
+    # ADR-014 itself survives and still classifies what this kind of automation may
+    # be taken for, so restore this block alongside the workflow when a replacement
+    # component system declares its own normative owner.
 
     if errors:
         print("Repository doctor: FAIL", file=sys.stderr)

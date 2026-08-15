@@ -6,10 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "ui:storybook": "npm --prefix ../../packages/ui run storybook",
-    "ui:storybook:build": "npm --prefix ../../packages/ui run storybook:build",
-    "ui:check": "node ../../scripts/ui/check-ui-system.mjs"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@vibemaxxing/ui": "file:../../packages/ui",

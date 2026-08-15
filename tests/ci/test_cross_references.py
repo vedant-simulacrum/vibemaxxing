@@ -438,7 +438,7 @@ class CrossReferenceValidatorTests(unittest.TestCase):
         self.assertTrue(in_scope("conformance/p1140f/REPAIR_HEAD_REVIEW.md"))
         self.assertTrue(in_scope("README.md"))
         self.assertFalse(in_scope("apps/web/app/page.tsx"))
-        self.assertFalse(in_scope("assets/brand/logo.svg"))
+        self.assertFalse(in_scope("crates/vibeproof-core/src/lib.rs"))
         self.assertFalse(in_scope("Cargo.toml"))
 
     def test_only_the_two_pattern_holding_files_are_excluded(self) -> None:

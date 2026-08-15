@@ -4370,7 +4370,7 @@ components:
           type: integer
           minimum: 0
           maximum: 8
-          description: Index into the repository-owned avatar library in assets/ui/fixtures. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
+          description: Index into a repository-owned avatar library. D-637 deleted that library along with the rest of the visual system and no replacement has been designed, so this index currently resolves to nothing and no path is reserved for one. The bound is kept rather than widened or removed, because a small fixed range is what makes the field non-identifying. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
         evidence_class:
           enum:
             - hardened
@@ -4487,7 +4487,7 @@ components:
           type: integer
           minimum: 0
           maximum: 8
-          description: Index into the repository-owned avatar library in assets/ui/fixtures. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
+          description: Index into a repository-owned avatar library. D-637 deleted that library along with the rest of the visual system and no replacement has been designed, so this index currently resolves to nothing and no path is reserved for one. The bound is kept rather than widened or removed, because a small fixed range is what makes the field non-identifying. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
         ranked_state:
           enum:
             - unverified
@@ -4563,7 +4563,7 @@ components:
           type: integer
           minimum: 0
           maximum: 8
-          description: Index into the repository-owned avatar library in assets/ui/fixtures. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
+          description: Index into a repository-owned avatar library. D-637 deleted that library along with the rest of the visual system and no replacement has been designed, so this index currently resolves to nothing and no path is reserved for one. The bound is kept rather than widened or removed, because a small fixed range is what makes the field non-identifying. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
         ranked_state:
           enum:
             - unverified
@@ -4606,7 +4606,7 @@ components:
           type: integer
           minimum: 0
           maximum: 8
-          description: Index into the repository-owned avatar library in assets/ui/fixtures. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
+          description: Index into a repository-owned avatar library. D-637 deleted that library along with the rest of the visual system and no replacement has been designed, so this index currently resolves to nothing and no path is reserved for one. The bound is kept rather than widened or removed, because a small fixed range is what makes the field non-identifying. The product accepts no uploaded image, so no participant-supplied media crosses the boundary.
         visibility:
           enum:
             - public

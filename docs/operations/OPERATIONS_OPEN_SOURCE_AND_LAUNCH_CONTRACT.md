@@ -116,11 +116,11 @@ Release requirements include:
 
 During planning, read-only checks may validate documentation, schemas, registries, references, governance and deterministic generators without executing or deploying the product. `scripts/repository/doctor.py` and `.github/workflows/planning-checks.yml` are allowed by D-034.
 
-ADR-014 permits `.github/workflows/storyboard-visuals.yml` only as prototype/design-system validation:
+ADR-014 permits a storyboard-visuals workflow only as prototype/design-system validation. D-636 deleted the component system it validated and the workflow with it, and D-637 deleted the brand and the governed asset library that the same clause scoped its triggers to, so nothing currently runs under this clause and nothing it names still exists; it governs a replacement rather than anything present:
 
 - synthetic fixtures only;
 - read-only repository permissions;
-- scoped UI/asset/style-guide pull requests or manual dispatch;
+- pull requests scoped to whatever a replacement design system declares as its own paths, or manual dispatch;
 - no production secrets or services;
 - no daemon, collector, protocol, server, database, installer, security or anti-cheat evaluation;
 - short-lived artifacts labelled as runnable-prototype review evidence.

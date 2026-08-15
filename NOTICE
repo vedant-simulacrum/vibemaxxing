@@ -10,15 +10,16 @@ separately from those licences.
 libvips, via the @img/sharp-libvips-* prebuilt binaries
 ================================================================================
 
-The build and asset tooling depends on `sharp`, which is Apache-2.0, and `sharp`
-depends on prebuilt libvips binaries published as `@img/sharp-libvips-*`. Those
-binaries are licensed LGPL-3.0-or-later. Four further platform packages —
+The web build depends on `sharp`, which is Apache-2.0, and `sharp` depends on
+prebuilt libvips binaries published as `@img/sharp-libvips-*`. Those binaries are
+licensed LGPL-3.0-or-later. Four further platform packages —
 `@img/sharp-wasm32`, `@img/sharp-win32-arm64`, `@img/sharp-win32-ia32` and
 `@img/sharp-win32-x64` — are published under combined terms that include
 LGPL-3.0-or-later.
 
-Fourteen such packages are pinned across `apps/web/package-lock.json` and
-`scripts/brand/package-lock.json`. They are:
+Fourteen such packages are pinned in `apps/web/package-lock.json`. A second
+lockfile carried the same fourteen until D-637 deleted the brand tooling and the
+workspace that held it. They are:
 
   @img/sharp-libvips-darwin-arm64      1.3.2    LGPL-3.0-or-later
   @img/sharp-libvips-darwin-x64        1.3.2    LGPL-3.0-or-later

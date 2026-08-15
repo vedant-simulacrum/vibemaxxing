@@ -130,7 +130,9 @@ Do not add Kubernetes, Kafka, GraphQL, service mesh, workflow engines, vector da
 
 Commit only reviewed source, contracts, schemas, synthetic fixtures, governed assets, reproducible baselines, and explicitly classified generated metadata that satisfy `docs/planning/ARTIFACT_POLICY.md`.
 
-Keep agent sessions, prompts, transcripts, private repository material, credentials, machine-specific settings, caches, generated builds, dependencies, and transient captures outside Git. `assets/` is the canonical repository-owned visual library. `artifacts/` is non-authoritative unless explicitly classified.
+Keep agent sessions, prompts, transcripts, private repository material, credentials, machine-specific settings, caches, generated builds, dependencies, and transient captures outside Git. `artifacts/` is non-authoritative unless explicitly classified.
+
+There is no design in this repository. `packages/ui`, `docs/style-guide/`, `assets/` and `scripts/brand/` were deleted under D-636 and D-637 — the component system, the brand document, the wordmark and marks, the provider icons, the people fixtures and the asset checker. No path owns brand, visual language, components, tokens or screen composition, no successor path is reserved, and none may be assumed. Do not restore any of it from history to satisfy a reference — repair the reference. A replacement is to be designed from first principles and will declare its own owner in `docs/project/DOCUMENTATION.md` before anything may cite it.
 
 ## Work and documentation discipline
 

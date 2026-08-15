@@ -136,7 +136,7 @@ They are ordered `uncovered` < `not_applicable` < `partial` < `pass`. `scripts/c
 
 A lane sitting at its recorded outcome does not fail the build, so a hole the repository has knowingly accepted stays visible without holding a required check red. Improving a lane never fails either, and the matrix prints which lanes now beat their record. `fail` is not a recordable outcome, so a genuinely broken lane can never be baselined into silence. A missing or malformed baseline exits 2.
 
-Every lane recorded as anything other than `pass` must carry a justification naming a reference and a note, so a recorded hole is always attributable to a decision somebody can go and read. Two are recorded today: `evaluator-all-suites` is `partial` because 24 of 27 suites execute nothing, and `node` is `uncovered` because no root `package.json` exists while `apps/web`, `packages/ui` and `scripts/brand` are npm workspaces with lockfiles that nothing builds.
+Every lane recorded as anything other than `pass` must carry a justification naming a reference and a note, so a recorded hole is always attributable to a decision somebody can go and read. Two are recorded today: `evaluator-all-suites` is `partial` because 24 of 27 suites execute nothing, and `node` is `uncovered` because no root `package.json` exists while `apps/web` is an npm workspace with a lockfile that nothing builds. That list held three workspaces once: D-636 deleted the UI package and D-637 deleted the brand-script workspace. The lane's outcome does not improve, because a workspace disappearing is not a lane gaining a runner.
 
 ## Performance and efficiency suite
 

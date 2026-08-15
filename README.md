@@ -22,7 +22,7 @@ What exists today:
 |---|---|
 | Specification | ~34,000 lines — JSON Schema, CDDL, OpenAPI, SQL, protobuf, contracts |
 | Executable code | ~4,400 lines |
-| Running product | **None.** A `GET /healthz`, a fixture-driven Storybook/Next.js prototype, a Rust CBOR codec, and Python planning validators |
+| Running product | **None.** A `GET /healthz`, a Rust CBOR codec, and Python planning validators. The Next.js web app no longer builds: D-636 deleted the component system its routes import |
 
 There is no daemon, adapter, collector, OAuth, database, or API yet, and opening the gate did not change that. `docs/project/STATUS.md` is the authority on what is and is not implemented, and it is deliberately blunt about it.
 
@@ -69,19 +69,19 @@ docs/
   implementation/ the work breakdown — every unit specified, status checked
   engineering/    engineering system, performance and power budgets
   verification/   acceptance gates, evaluation and benchmark protocol
-  style-guide/    brand, UI foundations, component registry and rules
   research/       primary evidence waves — README.md is the only entrypoint
   history/        superseded reports, retained as evidence, NOT authority
 
 packages/schemas/ the real contract surface — OpenAPI, SQL, CDDL, JSON Schema
 conformance/      registries and fixtures; empty certifications are not evidence
 crates/           Rust seeds (protocol core; other crates are placeholders)
-apps/             Go API skeleton, Next.js web prototype
-packages/ui/      design system and storyboards — fixture-driven
+apps/             Go API skeleton, Next.js web prototype (does not build)
 scripts/          read-only repository and planning validators
 ```
 
 `docs/implementation/REPOSITORY_LAYOUT.md` distinguishes paths that exist from paths that are planned. Check it before assuming a directory is real.
+
+D-636 deleted the component system and its written rules — the UI package and fifteen of the seventeen style-guide documents, 71 files in all. D-637 then withdrew the carve-out that decision had made for brand: the remaining two style-guide documents, the whole governed asset library, the brand asset check and the brand copies under the web application's public directory were deleted too, 119 files more. Nothing in this repository is authority for brand identity, visual language, components, tokens, screen composition or the asset library. No replacement has been designed, and no path is reserved for one. The `apps/web` routes that imported the deleted package are kept deliberately, and do not build, because they are the only remaining record of which product screens exist. The tag `design-system-pre-purge` preserves every file deleted by both decisions.
 
 ## Binding rules
 

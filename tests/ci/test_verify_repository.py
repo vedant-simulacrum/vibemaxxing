@@ -63,23 +63,31 @@ class VerifyRepositoryTests(unittest.TestCase):
         # the reason the lane could not run.
         self.assertEqual(statuses["node"], "pending")
 
-    def test_workspaces_build_in_dependency_order(self) -> None:
-        """`packages/ui` must precede `apps/web`, and the order is load-bearing.
+    def test_ranked_workspaces_precede_unranked_ones(self) -> None:
+        """The rank list decides install order; anything unranked follows it.
 
-        `apps/web` reaches `packages/ui` through a `file:` link, and npm does
-        not install a link target's own dependencies transitively. Installing
-        `apps/web` first leaves `lucide-react` unresolvable, so an ordering
-        that looks cosmetic decides whether the lane can run at all.
+        This asserted that the deleted UI package preceded `apps/web`, because
+        `apps/web` reached it through a `file:` link that npm does not install
+        transitively. D-636 deleted that package, so the constraint has no
+        subject any more and the claim is not restated against a path that is
+        gone. The ranking mechanism it depended on is still live and is
+        exercised here directly.
+
+        It is exercised against a synthetic workspace set rather than the real
+        tree. The previous version patched the rank with a real directory, and
+        when D-637 deleted that directory the test failed for a reason that had
+        nothing to do with ordering. Only one npm workspace exists today, so a
+        tree-derived version of this test could not distinguish `ranked first`
+        from `the only one` at all.
         """
-        ordered = self.verifier.ordered_node_workspaces(ROOT)
+        discovered = ["zeta", "apps/web", "alpha"]
+        with (
+            patch.object(self.verifier, "NODE_WORKSPACE_ORDER", ("apps/web",)),
+            patch.object(self.verifier, "node_workspaces", return_value=discovered),
+        ):
+            ordered = self.verifier.ordered_node_workspaces(ROOT)
 
-        self.assertIn("packages/ui", ordered)
-        self.assertIn("apps/web", ordered)
-        self.assertLess(
-            ordered.index("packages/ui"),
-            ordered.index("apps/web"),
-            "packages/ui must be installed before apps/web",
-        )
+        self.assertEqual(ordered, ["apps/web", "alpha", "zeta"])
 
     def test_every_discovered_workspace_is_ordered_none_dropped(self) -> None:
         """A workspace missing from the rank list is still built, not skipped.
