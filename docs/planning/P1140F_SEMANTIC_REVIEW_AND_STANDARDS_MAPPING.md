@@ -1,6 +1,6 @@
 # P-1140F Semantic Review and Standards Mapping
 
-Status: `in-progress-planning`
+Status: `complete-planning` — closed under D-635 on reviewed head `46bf2fa47963261d48fa80a6980de85d80cfaad8`, with the PASS-WITH-EXCEPTIONS verdict and its three limitations in `conformance/p1140f/review-target-v1.json`
 Updated: 2026-08-05
 Review base: `41ecb77856991ee033afcfe52d24eb42cd6ecb47`
 Evidence maturity: repository and standards audit; not runtime proof, certification, implementation authorization, or launch evidence

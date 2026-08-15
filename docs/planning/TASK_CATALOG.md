@@ -48,7 +48,7 @@ P-1140E proves structural repository consistency only. It does not prove semanti
 
 ### P-1140F — semantic review and standards mapping
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Canonical prose record: `docs/planning/P1140F_SEMANTIC_REVIEW_AND_STANDARDS_MAPPING.md`.
 
@@ -62,7 +62,7 @@ P-1140F's 13 clusters, SR-005 through SR-017, are all closed on the reviewed hea
 
 #### P-1140F-1 — re-establish protocol and repository authority
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Scope:
 
@@ -77,7 +77,7 @@ Blocks: all later P-1140F tasks.
 
 #### P-1140F-2 — identity, OAuth, lineage, replay, and recovery
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140F-1.
 
@@ -91,7 +91,7 @@ Scope:
 
 #### P-1140F-3 — local trust boundary, adapters, source evidence, and accounting inputs
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140F-2.
 
@@ -106,7 +106,7 @@ Scope:
 
 #### P-1140F-4 — server product state and privacy projection
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140F-2 and P-1140F-3.
 
@@ -120,7 +120,7 @@ Scope:
 
 #### P-1140F-5 — release trust and exact-head semantic closure
 
-Status: `in-progress-planning`
+Status: `complete-planning`
 
 Dependencies: P-1140F-1 through P-1140F-4.
 
@@ -147,7 +147,9 @@ P-1140F becomes `complete-planning` only when:
 7. `review-target-v1.json` binds one exact repaired commit, validation run and passing independent semantic verdict.
 8. The user separately authorizes P-1104.
 
-Criterion 8 was satisfied on 2026-08-05, out of the intended order: P-1104 was opened while criteria 1 and 7 were unmet. That ordering inversion is recorded, not corrected. Criteria 1 through 7 still bind P-1140F, and P-1140F remains `in-progress-planning`.
+P-1140F is `complete-planning` under D-635 on reviewed head `46bf2fa47963261d48fa80a6980de85d80cfaad8`. Criteria 1 through 6 are met and machine-checked. Criterion 8 was satisfied on 2026-08-05, out of the intended order: P-1104 was opened while criteria 1 and 7 were unmet, and that ordering inversion is recorded, not corrected.
+
+**Criterion 7 is met in its mechanical half and not in its judgement half, and the gate was closed anyway.** `review-target-v1.json` binds one exact repaired commit, one validation run and a passing verdict; what it does not bind is an *independent* one. The review was performed under delegated owner authority by the same agent that performed the repairs, which is limitation 1 of the verdict and the limb of SR-016 that performing the review cannot close. The owner accepted that knowingly rather than met it, and `conformance/p1140f/gate-authorization-v1.json` records `preconditions_met: false` for exactly this reason. A later independent reviewer has the pinned head, both registry digests and the validating run recorded so they can reproduce what was reviewed rather than take this catalog's word for it.
 
 ## Implementation and launch tasks
 

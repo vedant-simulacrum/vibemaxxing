@@ -2551,6 +2551,11 @@
       "id": "D-634",
       "implementation_bearing": false,
       "reason": "returns a finding to repair-in-progress and records why four named artifacts needed no change; governs the planning record"
+    },
+    {
+      "id": "D-635",
+      "implementation_bearing": false,
+      "reason": "closes the P-1140F gate at complete-planning on a pinned reviewed head over one criterion knowingly accepted rather than met; governs the planning record and authorizes no behaviour"
     }
   ]
 }
