@@ -117,7 +117,14 @@ BINDINGS: tuple[Binding, ...] = (
         ),
         api=("PublicProfile.ranked_state", "AccountProfile.ranked_state"),
         internal_states=("investigating", "consolidating", "appealed", "reversed"),
-        note="No ranked_identities table exists in the planning migration yet.",
+        # The note here read "No ranked_identities table exists in the planning
+        # migration yet" while `sql=` on this same binding named `ranked_identities.state`
+        # and planning-schema.sql defines the table. It is the same defect as the three
+        # `never persisted server-side` reasons and it is not caught by `DENIAL_PHRASES`,
+        # because the sentence denies the axis in wording nothing else uses and a table
+        # of one-off spellings is a table that stops being read.
+        note="Investigating, consolidating, appealed and reversed are integrity-private "
+        "under D-381; the participant reads the effect and not the sanction.",
         sql=("ranked_identities.state",),
     ),
     Binding(
@@ -338,7 +345,9 @@ BINDINGS: tuple[Binding, ...] = (
             "stopped",
             "uninstalled",
         ),
-        note="Local-only; never persisted server-side and never exposed by the API.",
+        note=(
+            "Device-local in operation and server-persisted as a record: service_instances, privileged_supervisor_instances and shell_sessions exist in planning-schema.sql and the registry keeps transaction_boundary device-local. No API enum publishes the lifecycle, which is the absence recorded here. The reason previously read 'never persisted server-side', which stopped being true in 8baad9a, the commit that added the sql binding beside it and left the sentence alone."
+        ),
         sql=("service_instances.state",),
     ),
     Binding(
@@ -353,7 +362,9 @@ BINDINGS: tuple[Binding, ...] = (
             "removing",
             "removed",
         ),
-        note="Local-only; never persisted server-side and never exposed by the API.",
+        note=(
+            "Device-local in operation and server-persisted as a record: service_instances, privileged_supervisor_instances and shell_sessions exist in planning-schema.sql and the registry keeps transaction_boundary device-local. No API enum publishes the lifecycle, which is the absence recorded here. The reason previously read 'never persisted server-side', which stopped being true in 8baad9a, the commit that added the sql binding beside it and left the sentence alone."
+        ),
         sql=("privileged_supervisor_instances.state",),
     ),
     Binding(
@@ -369,7 +380,9 @@ BINDINGS: tuple[Binding, ...] = (
             "exiting",
             "crashed",
         ),
-        note="Local-only; never persisted server-side and never exposed by the API.",
+        note=(
+            "Device-local in operation and server-persisted as a record: service_instances, privileged_supervisor_instances and shell_sessions exist in planning-schema.sql and the registry keeps transaction_boundary device-local. No API enum publishes the lifecycle, which is the absence recorded here. The reason previously read 'never persisted server-side', which stopped being true in 8baad9a, the commit that added the sql binding beside it and left the sentence alone."
+        ),
         sql=("shell_sessions.state",),
     ),
     Binding(
@@ -916,15 +929,21 @@ RECORDED_ABSENCES: dict[tuple[str, str], str] = {
     (
         "daemon-lifecycle",
         "api",
-    ): "Local-only; never persisted server-side and never exposed by the API.",
+    ): (
+        "Device-local in operation and server-persisted as a record: service_instances, privileged_supervisor_instances and shell_sessions exist in planning-schema.sql and the registry keeps transaction_boundary device-local. No API enum publishes the lifecycle, which is the absence recorded here. The reason previously read 'never persisted server-side', which stopped being true in 8baad9a, the commit that added the sql binding beside it and left the sentence alone."
+    ),
     (
         "privileged-supervisor",
         "api",
-    ): "Local-only; never persisted server-side and never exposed by the API.",
+    ): (
+        "Device-local in operation and server-persisted as a record: service_instances, privileged_supervisor_instances and shell_sessions exist in planning-schema.sql and the registry keeps transaction_boundary device-local. No API enum publishes the lifecycle, which is the absence recorded here. The reason previously read 'never persisted server-side', which stopped being true in 8baad9a, the commit that added the sql binding beside it and left the sentence alone."
+    ),
     (
         "interactive-shell",
         "api",
-    ): "Local-only; never persisted server-side and never exposed by the API.",
+    ): (
+        "Device-local in operation and server-persisted as a record: service_instances, privileged_supervisor_instances and shell_sessions exist in planning-schema.sql and the registry keeps transaction_boundary device-local. No API enum publishes the lifecycle, which is the absence recorded here. The reason previously read 'never persisted server-side', which stopped being true in 8baad9a, the commit that added the sql binding beside it and left the sentence alone."
+    ),
     (
         "local-collection",
         "api",
@@ -946,6 +965,46 @@ RECORDED_ABSENCES: dict[tuple[str, str], str] = {
         "api",
     ): "Local-only; never persisted server-side and never exposed by the API.",
 }
+
+# A recorded reason is prose, and prose can deny what the table beside it populates.
+# Three entries -- `daemon-lifecycle/api`, `privileged-supervisor/api` and
+# `interactive-shell/api` -- read "never persisted server-side" while their own
+# `Binding` carried a populated `sql=` naming `service_instances`,
+# `privileged_supervisor_instances` and `shell_sessions`, every one of which
+# `planning-schema.sql` defines. They were false from the commit that added the binding
+# beside them and stayed green for every run after it, because `check_absence_reasons`
+# compares a reason's *presence* and its *document copy* and never its *claims*.
+#
+# This is a phrase table, not a reader of English. It catches exactly one class: a fixed
+# sentence that denies an axis, sitting beside an axis that is populated. It cannot tell
+# whether a reason is true, whether it explains the right thing, or whether it is the
+# reason anyone actually acted on, so a green run here is not evidence that any recorded
+# reason is correct -- only that none of them makes one of these particular claims
+# against its own table. Keeping the table short and literal is deliberate: a scanner
+# that tried to infer denial would produce failures nobody could act on, and the
+# defect it exists for is a stock sentence copied between entries.
+#
+# `where` names the half of the persistence contract a phrase denies, and it carries the
+# distinction the three false entries turned on: "never persisted server-side" is *true*
+# of the five `local-*` aggregates, whose `sql=` names tables in `local-store-v1.sql`,
+# and false of the three above, whose tables are in `planning-schema.sql`. A phrase
+# scoped `any` denies persistence outright and is refuted by either half.
+DENIAL_PHRASES: tuple[tuple[str, str, str], ...] = (
+    ("never persisted server-side", "sql", "server"),
+    ("not persisted server-side", "sql", "server"),
+    ("never stored server-side", "sql", "server"),
+    ("the server never stores", "sql", "server"),
+    ("never persisted", "sql", "any"),
+    ("never stored", "sql", "any"),
+    ("has no persistence", "sql", "any"),
+    ("never exposed by the api", "api", "any"),
+    ("not exposed by the api", "api", "any"),
+    ("no api enum", "api", "any"),
+    ("publishes no state enum", "api", "any"),
+)
+
+QUOTES = "'\"`"
+
 
 # A state column that is neither bound to an aggregate nor a declared sub-entity
 # vocabulary must still be accounted for, or extending the persistence check to the
@@ -1214,6 +1273,94 @@ def check_absence_reasons(report: Report, contract_text: str) -> None:
             f"{key[0]}: the contract's recorded reason for its absent {key[1]} binding "
             "differs from the validator's",
         )
+
+
+def denial_claims(text: str) -> list[tuple[str, str, str]]:
+    """Every denial phrase this text asserts, as `(phrase, axis, where)`.
+
+    Longest phrase first, and a shorter phrase falling inside a longer one's span is
+    skipped rather than reported: "never persisted server-side" denies only the server
+    half, and reading the "never persisted" inside it as an unqualified denial would
+    fail every device-half aggregate on a sentence that is true of it.
+
+    A phrase in quotation marks is a mention, not a claim. The three reasons this check
+    exists for now quote the sentence they used to make, in order to record that it was
+    false and when it stopped being true; a scanner that could not tell a quoted
+    correction from the claim it corrects would fail exactly the repair it wants.
+    """
+    lowered = text.lower()
+    claimed: list[tuple[int, int]] = []
+    found: list[tuple[str, str, str]] = []
+    for phrase, axis, where in sorted(DENIAL_PHRASES, key=lambda entry: -len(entry[0])):
+        start = lowered.find(phrase)
+        while start != -1:
+            end = start + len(phrase)
+            if not any(
+                start < taken_end and taken < end for taken, taken_end in claimed
+            ):
+                claimed.append((start, end))
+                before = lowered[start - 1] if start else ""
+                after = lowered[end] if end < len(lowered) else ""
+                quoted = bool(before) and before in QUOTES and after in QUOTES
+                if not quoted:
+                    found.append((phrase, axis, where))
+            start = lowered.find(phrase, start + 1)
+    return found
+
+
+def check_denial_phrases(report: Report) -> None:
+    """An absence reason may not deny an axis its own binding populates.
+
+    `check_absence_reasons` asks whether a reason exists and whether the contract
+    document holds the same words. Neither question can be answered wrongly by a reason
+    that is simply untrue, which is how "never persisted server-side" survived beside a
+    `sql=` naming a table in `planning-schema.sql` across every run since the binding
+    was added. See `DENIAL_PHRASES` for what this does and does not claim to catch.
+    """
+    server_tables = set(table_bodies(SQL_PATH.read_text(encoding="utf-8")))
+    bindings = {binding.aggregate: binding for binding in BINDINGS}
+
+    def populated(binding: Binding, axis: str, where: str) -> tuple[str, ...]:
+        if axis == "api":
+            return binding.api
+        columns = binding.sql
+        if where == "server":
+            columns = tuple(
+                column for column in columns if column.split(".", 1)[0] in server_tables
+            )
+        return columns
+
+    # Both places a reason is written. `Binding.note` is checked for the same reason
+    # `RECORDED_ABSENCES` is: the three false sentences were in both, copied verbatim,
+    # and a guard that read only the absence table would have repaired half of it.
+    sources: list[tuple[str, str, str]] = [
+        (aggregate, f"the recorded reason for its absent {axis} binding", reason)
+        for (aggregate, axis), reason in sorted(RECORDED_ABSENCES.items())
+    ]
+    sources.extend(
+        (binding.aggregate, "its binding note", binding.note)
+        for binding in BINDINGS
+        if binding.note
+    )
+
+    for aggregate, description, text in sources:
+        binding = bindings.get(aggregate)
+        if binding is None:
+            # `check_absence_reasons` already reports a reason for an unknown aggregate.
+            continue
+        for phrase, axis, where in denial_claims(text):
+            occupants = populated(binding, axis, where)
+            half = (
+                " in planning-schema.sql" if axis == "sql" and where == "server" else ""
+            )
+            report.check(
+                not occupants,
+                f"{aggregate}: {description} claims {phrase!r}, which denies the "
+                f"{axis} axis, and that axis is populated by "
+                f"{sorted(occupants)}{half}. A reason that denies what the binding "
+                "beside it declares was false from the commit that added the binding, "
+                "and until now nothing compared the sentence to the table",
+            )
 
 
 def validate(report: Report) -> None:
@@ -1765,6 +1912,7 @@ def main() -> int:
         check_concurrency_model(report)
         check_transition_guards(report)
         check_absence_reasons(report, CONTRACT_PATH.read_text(encoding="utf-8"))
+        check_denial_phrases(report)
     except Failure as failure:
         print(f"state vocabulary validation: FAIL\n- {failure}", file=sys.stderr)
         return 1

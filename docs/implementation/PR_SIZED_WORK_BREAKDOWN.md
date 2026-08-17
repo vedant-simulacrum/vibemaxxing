@@ -68,17 +68,17 @@ Ordering principle: each specification is paired with the artifact or code that 
 
 <!-- generated: work-unit-status -->
 
-Units: 265. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
+Units: 266. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `Status:`.
 
 | Status | Units |
 |---|---|
 | `not-started` | 180 |
 | `in-progress` | 3 |
-| `landed` | 76 |
+| `landed` | 77 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 411 assertions across 76 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 419 assertions across 77 units, all run by `validate_work_unit_status.py` on every check.
 
 Startable now — not done, and every dependency done: 4.
 
@@ -90,7 +90,7 @@ Derived from `Depends:`, not written down, so it cannot go stale. Wave 1 is what
 
 Every P-1140F repair unit has landed.
 
-Statuses additionally checkable against artifact presence: 200 of 265. The other 65 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
+Statuses additionally checkable against artifact presence: 200 of 266. The other 66 declare no new file in `Files:`, so that check can neither confirm nor refute them and does not claim to.
 
 <!-- end generated: work-unit-status -->
 
@@ -1856,6 +1856,37 @@ Evidence: absent packages/schemas/adapter-manifest.schema.json :: "source_versio
 **A check that cannot fail at this head, recorded rather than deleted.** The containment rule — that an enumerated tuple names only what the manifest declares — has four branches, and all four are exercised by drift tests that inject `candidate` tuples. Against the committed content it is vacuous, because the only committed manifest is `uncertified` and enumerates nothing. The honest fix is a committed manifest that certifies something, and nothing in this repository may certify anything. It is stated here rather than counted as coverage. A negative example fixture was also considered and refused: `EXAMPLE_NEGATIVE_GAPS` names `adapter-manifest` as its only entry, and adding one would have emptied that map and forced the deletion of the test that fails when a declared gap no longer exists — weakening a check to add another.
 
 **What this unit does not do.** It does not close SR-009; the finding's state and review verdict are the owner's, and this unit cannot cite its own merge commit. It does not repair `lifecycle`, still a six-value enum in the same file bound to no registered machine, for the reason PF-071 gave: `UNIVERSAL_AGENT_COMPATIBILITY.md`'s five-stage adapter lifecycle has no machine to reconcile against, and inventing one is not a binding repair. It does not touch the accounting-input and certification-evidence half of SR-009. And it certifies nothing: a schema that can express an exact tuple is not a certified tuple, and every state this repository can reach is still `candidate` or `uncertified`.
+
+### PF-075 — Repair what an independent review of the pinned head found
+Files: `evals/suites/suites.yaml`, `docs/verification/EVAL_SYSTEM.md`, `conformance/p1140f/semantic-findings-v1.json`, `conformance/p1140f/review-target-v1.json`, `conformance/planning/decisions-v1.json`, `docs/architecture/AUTHORITATIVE_STATE_AND_PLATFORM_CONTRACT.md`, `scripts/repository/validate_finding_artifact_coverage.py`, `scripts/repository/validate_repair_task_binding.py`, `scripts/repository/validate_state_vocabularies.py`, `tests/ci/test_repair_task_binding.py`, `tests/ci/test_state_vocabularies.py`
+Acceptance: `evals/suites/suites.yaml#ranking-accounting` carries a `scope_note` naming the five of its six required cases that do not execute, and `docs/verification/EVAL_SYSTEM.md` marks the same five, so the registry and the document agree about the gap rather than one implying coverage the other denies; `validate_finding_artifact_coverage.py` fails a recorded reason for an artifact named with a `#fragment` when the reason never says that fragment; `validate_repair_task_binding.py` fails a settled finding that does not cite a landed unit declaring `Serves:` for it, and prints citation completeness beside the landed count; `validate_state_vocabularies.py` fails a recorded absence reason or binding note that denies an axis its own binding populates, distinguishing a server-scoped denial from a device-half one so the five genuinely local aggregates still pass; and each of those three checks fails on an injected drift with the exact message the test names.
+Depends: PF-036, PF-072, PF-073, PF-074
+Est: 8-12
+Status: landed
+Evidence: validator scripts/repository/validate_finding_artifact_coverage.py
+Evidence: validator scripts/repository/validate_repair_task_binding.py
+Evidence: validator scripts/repository/validate_state_vocabularies.py
+Evidence: unittest tests.ci.test_repair_task_binding
+Evidence: unittest tests.ci.test_state_vocabularies
+Evidence: contains 1 evals/suites/suites.yaml :: Named for a conformance it does not execute
+Evidence: contains 1 docs/verification/EVAL_SYSTEM.md :: One of the six executes
+Evidence: absent scripts/repository/validate_state_vocabularies.py :: note="Local-only; never persisted server-side and never exposed by the API.",
+
+**Why this unit declares no `Serves:`, and what carries the attribution instead.** It was first written as `Serves: SR-016`, and the two rules then in force refused it from both sides: a settled finding must cite every landed unit serving it, and a finding may only close once every unit serving it has landed. Together they say a new unit cannot serve an already-closed finding, which is right. Adding a repair to a closed finding either means the closure was wrong and the finding should reopen, or the work is not that finding's repair. Here it is the second: SR-016's artifact is repaired by this unit, and the record of why sits in D-637, which names the review, what it found and what was corrected. Declaring `Serves:` would have been the neater line and would have made the repository fail the rule this unit introduces - the first evidence that the rule works is that it caught its own author.
+
+**Every defect in this unit was found by a reviewer who did not write the thing reviewed.** Three read-only reviews ran against the pinned head with no access to the reasoning that produced it and instructions to refute rather than confirm. They found five defects that every validator in this repository had passed. That is the argument for the review, and it is also the answer to what limitation 1 costs: the mechanical criteria were green throughout.
+
+**A closure reason that described a different suite.** SR-016 excused `evals/suites/suites.yaml#ranking-accounting` with a reason saying the suite-name limb was resolved because the file now carries `shadow-codec-parity` with an explicit exploratory ceiling. That is a different suite. The reason never said `ranking-accounting`, and `ranking-accounting` still had exactly the defect the finding names: `EVAL_SYSTEM.md` declared six required cases and one runs, the single `imported-exclusion-and-dedupe` fixture, so a suite named for a ranking conformance executed nothing that ranks. The suite now states which five do not run and forbids itself as ranking-conformance, aggregation evidence, a launch gate or a support claim, and the document marks the same five. The name is kept, because the suite is where those cases belong once something implements them — the silence about their absence was the defect, not the ambition.
+
+**And the check that would have caught it.** An artifact named with a `#fragment` is excused for that fragment, not for the file. A reason that never says the fragment is describing something else in the same file. The coverage validator now requires the fragment to appear in its own reason, which failed immediately on the SR-016 entry and on `evidence-profile-policy-v1.json#dimensions`, whose reason was substantively right and still never said `dimensions`.
+
+**Three findings closed without citing a unit that served them.** SR-007 closed without citing PF-073, while retaining a sentence saying the receipt divergence was still open — PF-073 had closed it seventy-five minutes earlier. SR-009 closed without citing PF-074, which is the reviewed head itself. `validate_repair_task_binding.py` required every cited unit to serve the finding and to have landed, and never the converse, so a landed unit declaring `Serves:` could be absent from the record and the finding read as fully evidenced. The converse check now exists, keyed on settled findings so a citation may still land in the PR after the repair, and it immediately found a third instance nobody had looked for: SR-009 had never cited PF-016 either. The summary prints citation completeness beside the landed count, because `4/4` landed with three cited printed as `4/4`.
+
+**A reason that denied what its own binding declared.** `daemon-lifecycle`, `privileged-supervisor` and `interactive-shell` each recorded their absent API binding with "never persisted server-side", while the same `Binding` named `service_instances`, `privileged_supervisor_instances` and `shell_sessions` and `planning-schema.sql` defines all three. The sentence was false from `8baad9a`, the commit that added the sql binding directly beneath it and left the prose alone, and it sat in both the validator and the contract document because it had been copied verbatim. A recorded absence may now not deny an axis its own binding populates, with server-scoped denials distinguished from device-half ones so the five aggregates whose tables live only in `local-store-v1.sql` still pass on the same sentence. `ranked-identity-eligibility` carried the same rot in a spelling the table cannot catch — "No `ranked_identities` table exists in the planning migration yet", against a table `8baad9a` created — and is repaired by hand with that limit recorded.
+
+**Two decisions that could not close for reasons unrelated to their subject.** D-012 required fuzz evidence while the phase rules bar activating fuzz workflows, so it was unclosable by construction rather than merely open; its fuzz criterion is retained and P-1007 is named as its blocker, which makes the wait a schedule rather than a deadlock nobody owns. D-046 now records that PF-074's containment rule is vacuous at head for the same reason D-046 is open — nothing is certified — so certifying a tuple is what gives that check a subject.
+
+**What this unit does not do.** It does not re-pin the review. The reviewed head carries a tracked machine-local `.venv` symlink removed three commits later, and moving the pin to a commit nobody reviewed would be a larger claim than the one being corrected; it is disclosed as the fourth limitation instead, with the fifth recording that three findings closed on an incomplete record. It does not make the review independent — that limitation stands, and these repairs are the measure of what it was worth. And it does not claim the three new checks make the recorded reasons true: two of them catch a phrase class and a missing citation, which is narrower than the claims those reasons make.
 
 ## Implementation epics — specified, blocked until P-1104
 

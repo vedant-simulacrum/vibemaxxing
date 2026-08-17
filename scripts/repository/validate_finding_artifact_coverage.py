@@ -227,6 +227,20 @@ def main() -> int:
                 covered += 1
                 total_touched += 1
             elif artifact in excused:
+                # An artifact named with a `#fragment` is excused for that fragment, not
+                # for the file. A reason that never says the fragment is describing
+                # something else in the same file, and reads as a closure while the named
+                # thing is untouched. SR-016's `suites.yaml#ranking-accounting` was excused
+                # by a reason that discussed `shadow-codec-parity` and never once said
+                # `ranking-accounting`; it passed here because the file-level rule had
+                # nothing to compare the fragment against.
+                fragment = artifact.partition("#")[2]
+                require(
+                    not fragment or fragment in excused[artifact],
+                    f"{finding_id}: {artifact} is excused by a reason that never names "
+                    f"{fragment!r}. A reason for a fragment has to be about that fragment; "
+                    "one that describes a neighbour in the same file closes nothing",
+                )
                 explained += 1
                 total_explained += 1
             else:

@@ -24,9 +24,12 @@ This derives step state instead:
 - a step's recorded `Status:` may not claim completion while it owns an unlanded unit
   or an unclosed finding;
 - every `closure_evidence` entry names a unit that serves that finding, that has
-  landed, at a commit rather than a branch.
+  landed, at a commit rather than a branch;
+- and, once a finding says the repair is finished, every landed unit that declares it
+  serves that finding is cited by it.
 
-The last two rules are the point. The rest exist so they cannot be satisfied vacuously.
+The last three rules are the point. The rest exist so they cannot be satisfied
+vacuously.
 """
 
 from __future__ import annotations
@@ -257,6 +260,7 @@ def main() -> int:
     # the repair is correct.
     unchecked_shas = 0
     evidence_entries = 0
+    cited: dict[str, set[str]] = defaultdict(set)
     for row in findings:
         finding_id = row["finding_id"]
         for entry in row["closure_evidence"]:
@@ -269,6 +273,7 @@ def main() -> int:
                 "and a bare claim resolves to nothing, so neither can be checked",
             )
             unit, sha = match.group("unit"), match.group("sha")
+            cited[finding_id].add(unit)
             require(
                 unit in served[finding_id],
                 f"{finding_id} cites {unit} as closure evidence, but {unit} does not "
@@ -294,6 +299,48 @@ def main() -> int:
             )
             if resolved is None:
                 unchecked_shas += 1
+
+    # The converse, and the direction that was missing. Everything above reads
+    # `closure_evidence` outwards: each entry must name a unit that serves the finding
+    # and has landed. Nothing read it inwards. A unit could declare `Serves: SR-0NN`,
+    # record `Status: landed`, and appear nowhere in that finding's evidence, and the
+    # finding still read as fully evidenced on the entries it happened to carry. SR-007
+    # closed without citing PF-073 and SR-009 closed without citing PF-074 exactly that
+    # way: both units landed, both declared the finding they served, neither was cited,
+    # and each was found by hand after the record already said the repair was done.
+    #
+    # Why this is asked only of a settled finding. A unit lands in the commit that
+    # repairs the artifact. Its evidence entry is a narrative claim about what that
+    # repair achieved, and writing the claim in the same commit means writing it before
+    # anyone has reviewed the unit it describes. So there is a legitimate interval —
+    # unit landed, citation still to be written — and `open` and `repair-in-progress`
+    # are the states that mean the finding is inside it. Requiring citation in every
+    # state would fail the repository at the moment a repair merges and would push the
+    # claim ahead of the review that justifies it, which is the wrong trade for a rule
+    # whose whole purpose is to stop unearned claims.
+    #
+    # `repaired-pending-review` and `closed` assert the interval is over. A finding in
+    # either has said nothing further is pending, so a landed unit missing from its own
+    # finding's evidence is either evidence nobody wrote or work the finding is silently
+    # not accounting for, and neither survives a state that claims the repair is done.
+    for row in findings:
+        if row["state"] not in SETTLED_STATES:
+            continue
+        finding_id = row["finding_id"]
+        uncited = [
+            identifier
+            for identifier in sorted(served[finding_id])
+            if (field(series[identifier], "Status") or "").strip("`") == "landed"
+            and identifier not in cited[finding_id]
+        ]
+        require(
+            not uncited,
+            f"{finding_id} is {row['state']!r} and its closure evidence does not cite "
+            f"{uncited}, each of which declares it serves {finding_id} and records "
+            "Status: 'landed'. A finding that says the repair is finished while a "
+            "landed repair of its own is absent from the record reads as fully "
+            "evidenced on the evidence it did name",
+        )
 
     # A finding may only close once every unit serving it has landed. Closure evidence
     # is not the same as closure: a partially repaired finding may carry evidence and
@@ -337,11 +384,16 @@ def main() -> int:
         )
 
     print("repair-task binding: pass")
+    # Landed-over-served said how much of a finding's work is done and nothing about
+    # whether the finding's own record names it. Those are different numbers, and the
+    # gap between them is where SR-007 and SR-009 sat: 4/4 landed, three cited, and the
+    # printed line looked complete. The third figure is the one a reader needs.
     print(
-        "findings="
+        "findings(landed/served,cited)="
         + " ".join(
             f"{row['finding_id']}:{sum(1 for u in served[row['finding_id']] if (field(series[u], 'Status') or '').strip('`') == 'landed')}"
             f"/{len(served[row['finding_id']])}"
+            f",{len(cited[row['finding_id']])}"
             for row in findings
         )
     )

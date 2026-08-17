@@ -125,12 +125,12 @@ An absence is not a defect. Not stating one is: an aggregate whose binding was n
 | `board-membership` | `api` | Membership is exposed as presence in a board's member list, not as a state value. |
 | `claim-record` | `machine` | Claims are immutable facts; the registry indexes mutable concepts. |
 | `claim-record` | `sql` | Append-only; the state is derived from later records, never stored. |
-| `daemon-lifecycle` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `daemon-lifecycle` | `api` | Device-local in operation and server-persisted as a record: service_instances, privileged_supervisor_instances and shell_sessions exist in planning-schema.sql and the registry keeps transaction_boundary device-local. No API enum publishes the lifecycle, which is the absence recorded here. The reason previously read 'never persisted server-side', which stopped being true in 8baad9a, the commit that added the sql binding beside it and left the sentence alone. |
 | `device-authorization-grant` | `machine` | Open: mutable, but the OAuth flow owns its transitions and they are unspecified. |
 | `friendship` | `api` | The API exposes the edge, not the machine; the viewer's own side is derived. |
 | `idempotency-ledger` | `api` | Replay is observed through the replayed response, never as a state value. |
 | `identity-investigation` | `api` | Integrity-private under D-381; a public state value would publish the sanction. |
-| `interactive-shell` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `interactive-shell` | `api` | Device-local in operation and server-persisted as a record: service_instances, privileged_supervisor_instances and shell_sessions exist in planning-schema.sql and the registry keeps transaction_boundary device-local. No API enum publishes the lifecycle, which is the absence recorded here. The reason previously read 'never persisted server-side', which stopped being true in 8baad9a, the commit that added the sql binding beside it and left the sentence alone. |
 | `invite-code` | `api` | Private-beta admission under D-180. The invitee is told whether it worked, not its state. |
 | `lineage-fork-case` | `api` | D-072 fork and clone resolution under D-383; quarantine is read through evidence class. |
 | `local-auth` | `api` | Local-only; never persisted server-side and never exposed by the API. |
@@ -142,7 +142,7 @@ An absence is not a defect. Not stating one is: an aggregate whose binding was n
 | `native-session-family` | `api` | Families are server-internal; a client sees only its own session member. |
 | `oauth-transaction` | `api` | OAuthCompletion.state echoes the terminal value only; see TRANSIENT_API_ENUMS. |
 | `presence-lease` | `api` | PresenceLease.availability is a declared coarser projection; see PROJECTIONS. |
-| `privileged-supervisor` | `api` | Local-only; never persisted server-side and never exposed by the API. |
+| `privileged-supervisor` | `api` | Device-local in operation and server-persisted as a record: service_instances, privileged_supervisor_instances and shell_sessions exist in planning-schema.sql and the registry keeps transaction_boundary device-local. No API enum publishes the lifecycle, which is the absence recorded here. The reason previously read 'never persisted server-side', which stopped being true in 8baad9a, the commit that added the sql binding beside it and left the sentence alone. |
 | `period` | `api` | A client reads a period's standing, never its lifecycle; the finalization boundary is server-side and no operation exposes it. |
 | `ranking-projection` | `api` | Generation build state is operational; a client sees a sealed generation or none. |
 | `recovery-case` | `api` | Account recovery under D-380. No operation exposes the case. |

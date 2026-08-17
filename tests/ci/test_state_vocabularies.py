@@ -560,3 +560,219 @@ class RecordedAbsenceCoverageTests(ValidatorFixture, unittest.TestCase):
             "bound to no aggregate and declares no local vocabulary: local_meta.state",
             output,
         )
+
+
+class DenialPhraseTests(StateVocabularyMixin, unittest.TestCase):
+    """A recorded reason may not deny an axis its own binding populates.
+
+    `check_absence_reasons` asks whether a reason exists and whether the contract
+    document holds the same words. A reason that is simply untrue answers both
+    correctly, which is how `daemon-lifecycle/api`, `privileged-supervisor/api` and
+    `interactive-shell/api` read "never persisted server-side" while their own
+    `Binding` carried `service_instances.state`, `privileged_supervisor_instances.state`
+    and `shell_sessions.state` — three tables `planning-schema.sql` defines. They were
+    false from the commit that added the binding beside them, and every run since was
+    green.
+
+    These drive `check_denial_phrases` directly, in the style of
+    `RecordedAbsenceCoverageTests`, because the logic under test is the comparison and
+    not the file parsing. The last case runs `main()` instead, so that a check wired
+    nowhere cannot pass the rest of them.
+    """
+
+    def denial_errors(self, absences=None, bindings=None) -> list[str]:
+        report = self.validator.Report()
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(
+                patch.object(self.validator, "SQL_PATH", self.copies["SQL_PATH"])
+            )
+            if absences is not None:
+                stack.enter_context(
+                    patch.object(self.validator, "RECORDED_ABSENCES", absences)
+                )
+            if bindings is not None:
+                stack.enter_context(patch.object(self.validator, "BINDINGS", bindings))
+            self.validator.check_denial_phrases(report)
+        return report.errors
+
+    def rebound(self, aggregate: str, **changes):
+        """The committed `BINDINGS` with one aggregate's fields replaced."""
+        import dataclasses
+
+        return tuple(
+            dataclasses.replace(binding, **changes)
+            if binding.aggregate == aggregate
+            else binding
+            for binding in self.validator.BINDINGS
+        )
+
+    # -- the repository as committed ---------------------------------------------------
+
+    def test_the_committed_reasons_make_no_refuted_claim(self) -> None:
+        self.assertEqual(self.denial_errors(), [])
+
+    def test_the_three_repaired_reasons_still_quote_the_false_sentence(self) -> None:
+        """Guards the case below from passing because the phrase simply left the file.
+
+        The repaired reasons keep the sentence they used to make, in quotation marks,
+        so the record says what was false and when it stopped being true. If a later
+        edit dropped the quotation the quoted-mention case would pass vacuously.
+        """
+        for aggregate in (
+            "daemon-lifecycle",
+            "privileged-supervisor",
+            "interactive-shell",
+        ):
+            reason = self.validator.RECORDED_ABSENCES[(aggregate, "api")]
+            self.assertIn("'never persisted server-side'", reason, aggregate)
+
+    def test_a_quoted_correction_is_not_a_claim(self) -> None:
+        self.assertEqual(
+            self.validator.denial_claims(
+                "The reason previously read 'never persisted server-side', which "
+                "stopped being true when the table landed."
+            ),
+            [],
+        )
+
+    def test_unquoting_the_same_sentence_fails(self) -> None:
+        """The exact prior state of the three entries, restored one quote at a time."""
+        absences = dict(self.validator.RECORDED_ABSENCES)
+        absences[("daemon-lifecycle", "api")] = (
+            "Local-only; never persisted server-side and never exposed by the API."
+        )
+
+        errors = self.denial_errors(absences=absences)
+
+        self.assertTrue(
+            any(
+                "daemon-lifecycle: the recorded reason for its absent api binding "
+                "claims 'never persisted server-side', which denies the sql axis, and "
+                "that axis is populated by ['service_instances.state'] in "
+                "planning-schema.sql" in error
+                for error in errors
+            ),
+            errors,
+        )
+
+    # -- the two axes ------------------------------------------------------------------
+
+    def test_a_reason_denying_a_populated_server_sql_axis_fails(self) -> None:
+        """`oauth-transaction` binds `oauth_transactions.state` in the server schema."""
+        absences = dict(self.validator.RECORDED_ABSENCES)
+        absences[("oauth-transaction", "api")] = (
+            "Local-only; never persisted server-side."
+        )
+
+        errors = self.denial_errors(absences=absences)
+
+        self.assertTrue(
+            any(
+                "oauth-transaction: the recorded reason for its absent api binding "
+                "claims 'never persisted server-side', which denies the sql axis, and "
+                "that axis is populated by ['oauth_transactions.state'] in "
+                "planning-schema.sql" in error
+                for error in errors
+            ),
+            errors,
+        )
+
+    def test_the_same_reason_on_a_genuinely_empty_sql_axis_passes(self) -> None:
+        """`claim-record` binds no SQL column at all, so the sentence is true of it.
+
+        Without this case the failure above cannot be told apart from a rule that
+        rejects the phrase wherever it appears, which would make the table a banned-word
+        list rather than a comparison against ground truth.
+        """
+        absences = dict(self.validator.RECORDED_ABSENCES)
+        absences[("claim-record", "sql")] = (
+            "Append-only; never persisted server-side and never stored."
+        )
+
+        self.assertEqual(self.denial_errors(absences=absences), [])
+
+    def test_a_device_half_table_does_not_refute_a_server_side_denial(self) -> None:
+        """The distinction the three false entries turned on, asserted as committed.
+
+        The five `local-*` aggregates say "never persisted server-side" and populate
+        `sql=` with tables `local-store-v1.sql` defines. That is the device half, so the
+        sentence is true and must stay green — while the identical sentence beside a
+        `planning-schema.sql` table must not.
+        """
+        reason = self.validator.RECORDED_ABSENCES[("local-collection", "api")]
+        self.assertIn("never persisted server-side", reason)
+        binding = {entry.aggregate: entry for entry in self.validator.BINDINGS}[
+            "local-collection"
+        ]
+        self.assertEqual(binding.sql, ("local_collection_state.state",))
+
+        self.assertEqual(self.denial_errors(), [])
+
+    def test_an_api_denial_beside_a_populated_api_enum_fails(self) -> None:
+        """`session-member` publishes `Session.state`."""
+        bindings = self.rebound(
+            "session-member",
+            note="Member rows of a token family; never exposed by the API.",
+        )
+
+        errors = self.denial_errors(bindings=bindings)
+
+        self.assertTrue(
+            any(
+                "session-member: its binding note claims 'never exposed by the api', "
+                "which denies the api axis, and that axis is populated by "
+                "['Session.state']" in error
+                for error in errors
+            ),
+            errors,
+        )
+
+    def test_a_binding_note_is_scanned_and_not_only_an_absence_reason(self) -> None:
+        """The three false sentences lived in both tables, copied verbatim.
+
+        A guard reading `RECORDED_ABSENCES` alone would have repaired half of the
+        record and left the other half saying the opposite.
+        """
+        bindings = self.rebound(
+            "oauth-transaction", note="This aggregate is never persisted."
+        )
+
+        errors = self.denial_errors(bindings=bindings)
+
+        self.assertTrue(
+            any(
+                "oauth-transaction: its binding note claims 'never persisted', which "
+                "denies the sql axis, and that axis is populated by "
+                "['oauth_transactions.state']" in error
+                for error in errors
+            ),
+            errors,
+        )
+
+    def test_the_shorter_phrase_does_not_fire_inside_the_longer_one(self) -> None:
+        """ "never persisted" is a substring of "never persisted server-side".
+
+        Read as an unqualified denial it would refute every `local-*` aggregate on a
+        sentence that is true of it, so the scanner reports the longest phrase covering
+        a span and nothing inside it.
+        """
+        claims = self.validator.denial_claims(
+            "Local-only; never persisted server-side."
+        )
+
+        self.assertEqual(claims, [("never persisted server-side", "sql", "server")])
+
+    # -- wiring ------------------------------------------------------------------------
+
+    def test_the_check_runs_inside_main(self) -> None:
+        """A check nothing calls is the defect it exists to catch, in a new place."""
+        absences = dict(self.validator.RECORDED_ABSENCES)
+        absences[("oauth-transaction", "api")] = (
+            "Local-only; never persisted server-side."
+        )
+
+        with patch.object(self.validator, "RECORDED_ABSENCES", absences):
+            code, output = self.run_validator()
+
+        self.assertEqual(code, 1, output)
+        self.assertIn("which denies the sql axis", output)
