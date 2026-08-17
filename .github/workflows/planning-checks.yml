@@ -97,6 +97,21 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .node-version
+      # F-001. The runner image ships a Go, and it is not this repository's pin, so
+      # the comparison was failing on a version nobody chose. `--allow-uninstalled`
+      # does not cover it: the tool is present, just wrong. Reading the pin from the
+      # module file makes go.mod the input here exactly as .node-version is above,
+      # which is the difference between a comparison that is real and one that is
+      # skipped.
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: apps/api/go.mod
+      # F-001. rustup reads rust-toolchain.toml and installs the channel it names, so
+      # this needs no third-party action and no second copy of the version. Without it
+      # the runner's cargo is whatever the image shipped, which is the same mismatch
+      # go had.
+      - name: Install the Rust toolchain rust-toolchain.toml pins
+        run: rustup show
       - name: Install pinned planning validators
         run: python3 -m pip install --disable-pip-version-check -r requirements-planning.txt
       - name: Repository doctor
@@ -173,14 +188,12 @@ jobs:
       # `apps/web/package.json` carried five caret ranges and `apps/api/go.mod`
       # required a Go the repository did not have.
       #
-      # `--allow-uninstalled` here and not in `make validate`. The step above pins
-      # node from `.node-version`, so that comparison is real; cargo and go are
-      # whatever the runner image ships, which is not this repository's pin and is
-      # not something this workflow installs. Reporting those two as skips is the
-      # honest reading — and they are printed as SKIP lines and counted in the
-      # summary, so a run that compared one pin of three cannot be read as a run
-      # that compared three. Removing this flag requires pinning setup-go and the
-      # Rust toolchain to the manifests first, which is not this unit's scope.
+      # All three comparisons are real here. node comes from `.node-version`, go from
+      # `apps/api/go.mod` and cargo from `rust-toolchain.toml`, each read by the step
+      # that installs it, so no version is named twice. `--allow-uninstalled` is kept
+      # as a floor rather than a crutch: if a setup step is ever removed the run
+      # reports the pin as uncompared and counts it, instead of silently comparing
+      # two of three and printing a summary that reads like three.
       - name: Check toolchain pins against the manifests that own them
         run: python3 scripts/ci/check_toolchain_pins.py --allow-uninstalled
       # The dangle set is empty and tests/ci/test_cross_references.py pins it there, so

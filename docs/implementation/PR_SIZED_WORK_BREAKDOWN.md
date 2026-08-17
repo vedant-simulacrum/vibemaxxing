@@ -1912,7 +1912,7 @@ Acceptance: `python3 scripts/ci/check_toolchain_pins.py` exits 0 on the pinned t
 Depends: PF-036
 Est: 4-6
 Status: landed
-Evidence: validator scripts/ci/check_toolchain_pins.py
+Evidence: validator scripts/ci/check_toolchain_pins.py --declarations-only
 Evidence: unittest tests.ci.test_toolchain_pins
 Evidence: contains 1 apps/api/go.mod :: go 1.26.5
 Evidence: absent apps/web/package.json :: ^
@@ -1924,6 +1924,8 @@ Evidence: absent apps/web/package.json :: ^
 **The pin does not follow the machine.** The first attempt at this unit edited `apps/api/go.mod` from `1.26.5` down to `1.26.4` so the check would pass against the installed toolchain. That is the manifest chasing the environment, which is the opposite of pinning and the same shape as every defect the P-1140F program removed: making a signal green by moving the thing it measures. The pin was restored and the toolchain installed instead, which is the direction the dependency actually runs. The machine's mise configuration resolved `go` from `latest`, which is why it had drifted a patch below a repository that states its version.
 
 **Two tests were pinning values in order to prove rules about them.** Both broke when the pin was corrected. One replaced the literal `go 1.26.4` and could not find it; the other asserted a mismatch against a hardcoded `1.26.5` and, once that became the pin, passed while proving the opposite of its name. Both now read the pin from `apps/api/go.mod`, and the mismatch case derives a version that cannot equal it by construction.
+
+**The unit's evidence is about the repository; the workflow's step is about the machine.** `Evidence:` runs the check with `--declarations-only`, which compares the manifests against each other and reports all three installed comparisons as skips. A unit that asserted the byte-for-byte comparison would be asserting which toolchain the reader happens to have, and it failed in CI for exactly that reason before this line carried the flag. The comparison still runs unflagged in `make validate` and in `planning-checks.yml`, where the workflow now installs all three from the manifests that own them — node from `.node-version`, go from `apps/api/go.mod`, cargo from `rust-toolchain.toml` — so no version is named twice and the comparison there is real rather than skipped.
 
 **What this does not prove.** That the pinned releases exist upstream, are supported, are free of advisories, or that anything here builds. The validator says so in its own claim-scope line. It compares declarations to one machine.
 
