@@ -2556,6 +2556,11 @@
       "id": "D-635",
       "implementation_bearing": false,
       "reason": "closes the P-1140F gate at complete-planning on a pinned reviewed head over one criterion knowingly accepted rather than met; governs the planning record and authorizes no behaviour"
+    },
+    {
+      "id": "D-637",
+      "implementation_bearing": false,
+      "reason": "records a second review of the pinned head by agents that did not perform the repairs, and the repairs its findings required; governs the planning record"
     }
   ]
 }

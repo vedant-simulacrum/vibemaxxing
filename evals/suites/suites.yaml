@@ -26,6 +26,7 @@ suites:
   status: ready
   reason: ""
   authority_class: exploratory-prototype
+  scope_note: 'Named for a conformance it does not execute, which is the defect SR-016 cites this suite for. It runs one case, imported-exclusion-and-dedupe, over source precedence, host and environment duplicate observations, and historical-import exclusion. Five of the six required cases in docs/verification/EVAL_SYSTEM.md do not run here: token-category normalization, the Cash Burn estimate label, minute through lifetime aggregation, rank tie and movement determinism, and current-user rank correctness. Nothing ranks in this suite. Prohibited uses: ranking-conformance, aggregation-evidence, launch-gate, support-claim. The name is retained rather than changed because the suite is where those cases belong once something implements them; what was wrong was the silence about their absence, not the ambition.'
   evidence_ceiling: fixture-consistent
   command: ["python3", "scripts/ci/run_phase1_evidence.py", "--suite", "ranking-accounting", "--commit", "{commit}"]
   cases: ["imported-exclusion-and-dedupe"]

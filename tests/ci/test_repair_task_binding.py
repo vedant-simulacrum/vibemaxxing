@@ -8,7 +8,9 @@ unlanded or its findings open. Before the binding existed that claim was uncheck
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import shutil
 import sys
@@ -69,6 +71,13 @@ Est: 4
 Status: not-started
 """
 
+# A commit that exists in this repository: the one PF-001 actually landed at. The
+# fixture needs a resolvable sha because SR-005 is `closed` below, and a settled finding
+# must now cite every landed unit that serves it. In a shallow clone `commit_resolves`
+# answers None and the entry is reported unchecked rather than rejected, which is the
+# behaviour that check already had.
+PF_001_COMMIT = "0acaba7f25f228477908c2c4bc81a69609f4b682"
+
 FINDINGS = {
     "schema_version": 1,
     "program": "P-1140F",
@@ -77,7 +86,10 @@ FINDINGS = {
             "finding_id": "SR-005",
             "state": "closed",
             "repair_task": "P-1140F-1",
-            "closure_evidence": [],
+            "closure_evidence": [
+                f"PF-001 at {PF_001_COMMIT}: the unit that repairs this finding, cited "
+                "by it."
+            ],
         },
         {
             "finding_id": "SR-006",
@@ -503,6 +515,143 @@ Evidence: validator scripts/repository/validate_repair_task_binding.py
             self.run_validator()
 
         self.assertIn("PF-001 names no repair task", str(raised.exception))
+
+
+class CitationCompletenessTests(BindingFixture, unittest.TestCase):
+    """The converse of `ClosureEvidenceTests`, and the direction nothing checked.
+
+    Every rule in that class reads an evidence entry outwards: it must name a unit that
+    serves the finding and has landed. None of them reads a landed unit inwards, so a
+    unit could declare `Serves: SR-0NN`, record `Status: landed`, and be absent from
+    that finding's `closure_evidence` entirely. The finding then read as fully evidenced
+    on the entries it happened to carry, and the printed summary agreed with it.
+
+    That is not hypothetical: SR-007 closed without citing PF-073, SR-009 closed without
+    citing PF-074, and SR-009 closed without citing PF-016. Three separate reviews found
+    the first two by hand; the third was found by this rule on the run that added it.
+    """
+
+    #: A second landed unit serving SR-006, used to prove the failure names exactly the
+    #: units that are missing rather than every unit the finding has.
+    SECOND_UNIT = """
+### PF-070 — a second landed unit serving the same finding
+Files: `c.md`
+Acceptance: it works.
+Depends: none
+Repair: P-1140F-2
+Serves: SR-006
+Est: 4
+Status: landed
+Evidence: validator scripts/repository/validate_repair_task_binding.py
+"""
+
+    def settled_sr006(self, state: str, evidence: list[str]) -> dict:
+        """SR-006 settled in `state`, with PF-002 landed and `evidence` recorded."""
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][1]["state"] = state
+        findings["findings"][1]["closure_evidence"] = evidence
+        return findings
+
+    def test_a_landed_serving_unit_absent_from_a_settled_finding_fails(self) -> None:
+        """The exact defect. PF-001 is landed and serves SR-005, which is `closed`."""
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][0]["closure_evidence"] = []
+
+        self.write(CATALOG, BREAKDOWN, findings)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn(
+            "SR-005 is 'closed' and its closure evidence does not cite ['PF-001']",
+            str(raised.exception),
+        )
+
+    def test_the_same_unit_during_the_repair_interval_passes(self) -> None:
+        """The companion the failure above needs, and the reason for the state gate.
+
+        A unit lands in the commit that repairs the artifact; its evidence entry is a
+        narrative claim about that repair and legitimately lands in a later PR. Without
+        this case the failure above cannot be told apart from a rule that rejects every
+        uncited landed unit, which would fail the repository at the moment a repair
+        merges. Identical fixture, `repair-in-progress` instead of `closed`.
+        """
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][0]["state"] = "repair-in-progress"
+        findings["findings"][0]["closure_evidence"] = []
+
+        self.write(CATALOG, BREAKDOWN, findings)
+
+        self.assertEqual(self.run_validator(), 0)
+
+    def test_the_other_settled_state_is_checked_too(self) -> None:
+        """`repaired-pending-review` claims the repair is finished just as `closed` does."""
+        findings = json.loads(json.dumps(FINDINGS))
+        findings["findings"][0]["state"] = "repaired-pending-review"
+        findings["findings"][0]["closure_evidence"] = []
+
+        self.write(CATALOG, BREAKDOWN, findings)
+
+        with self.assertRaises(self.validator.Failure) as raised:
+            self.run_validator()
+
+        self.assertIn(
+            "SR-005 is 'repaired-pending-review' and its closure evidence does not "
+            "cite ['PF-001']",
+            str(raised.exception),
+        )
+
+    def test_only_the_uncited_units_are_named(self) -> None:
+        """SR-007 carried three good entries and one missing unit; the message must say
+
+        which. PF-002 and PF-070 both land and both serve SR-006; only PF-002 is cited.
+        """
+        breakdown = (
+            BREAKDOWN.replace(
+                "Serves: SR-006\nEst: 4\nStatus: not-started",
+                "Serves: SR-006\nEst: 4\nStatus: landed\nEvidence: validator x",
+            )
+            + self.SECOND_UNIT
+        )
+        findings = self.settled_sr006(
+            "closed", ["PF-002 at " + "a" * 40 + ": did a thing"]
+        )
+
+        self.write(CATALOG, breakdown, findings)
+
+        with patch.object(self.validator, "commit_resolves", lambda sha: True):
+            with self.assertRaises(self.validator.Failure) as raised:
+                self.run_validator()
+
+        message = str(raised.exception)
+        self.assertIn("does not cite ['PF-070']", message)
+        self.assertNotIn("PF-002'", message)
+
+    def test_an_unlanded_serving_unit_need_not_be_cited(self) -> None:
+        """The rule keys on `landed`, not on `serves`.
+
+        A unit that has not landed has repaired nothing yet, and requiring a settled
+        finding to cite it would demand evidence for work that does not exist — the
+        inverse of the mistake this validator already refuses in the other direction,
+        where a cited unit that has not landed is rejected.
+        """
+        breakdown = BREAKDOWN.replace("Status: not-started", "Status: in-progress")
+        findings = self.settled_sr006("repaired-pending-review", [])
+
+        self.write(CATALOG, breakdown, findings)
+
+        self.assertEqual(self.run_validator(), 0)
+
+    def test_the_summary_reports_citation_and_not_only_landing(self) -> None:
+        """4/4 landed with three cited printed as `4/4` and looked complete."""
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.assertEqual(self.run_validator(), 0)
+
+        output = stdout.getvalue()
+        self.assertIn("findings(landed/served,cited)=", output)
+        self.assertIn("SR-005:1/1,1", output)
+        self.assertIn("SR-006:0/1,0", output)
 
 
 if __name__ == "__main__":

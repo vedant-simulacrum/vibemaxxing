@@ -35,14 +35,21 @@ Required cases:
 
 ### `ranking-accounting`
 
-Required cases:
+Required cases. **One of the six executes.** The suite's `scope_note` in
+`evals/suites/suites.yaml` carries the same statement, so the registry and this document
+agree about the gap rather than one of them implying coverage the other denies. A required
+case that does not run is a specification of what the suite must cover before it may be
+cited for ranking, not a claim about what it covers now.
 
-- Token categories normalize deterministically.
-- Cash Burn is labelled and computed as an estimate.
-- Minute, daily, weekly, monthly, seasonal, yearly and lifetime aggregation agree with reference fixtures.
-- Rank ties and movement are deterministic.
-- Current-user rank is returned correctly.
-- Host/environment duplicate observations do not double-count.
+- Token categories normalize deterministically. — **not executed**
+- Cash Burn is labelled and computed as an estimate. — **not executed**
+- Minute, daily, weekly, monthly, seasonal, yearly and lifetime aggregation agree with reference fixtures. — **not executed**
+- Rank ties and movement are deterministic. — **not executed**
+- Current-user rank is returned correctly. — **not executed**
+- Host/environment duplicate observations do not double-count. — executed by `imported-exclusion-and-dedupe`.
+
+Nothing in this suite ranks anything. Until that changes it may not be cited as
+ranking-conformance, aggregation evidence, a launch gate, or a support claim.
 
 ### `frontend-quality`
 
