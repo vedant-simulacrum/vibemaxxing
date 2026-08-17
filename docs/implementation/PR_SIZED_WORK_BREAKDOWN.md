@@ -72,17 +72,17 @@ Units: 266. Every one carries `Files:`, `Acceptance:`, `Depends:`, `Est:` and `S
 
 | Status | Units |
 |---|---|
-| `not-started` | 180 |
+| `not-started` | 179 |
 | `in-progress` | 3 |
-| `landed` | 77 |
+| `landed` | 78 |
 | `unverifiable` | 0 |
 | `superseded-by` | 6 |
 
-Every `landed` unit is backed by executable evidence: 419 assertions across 77 units, all run by `validate_work_unit_status.py` on every check.
+Every `landed` unit is backed by executable evidence: 423 assertions across 78 units, all run by `validate_work_unit_status.py` on every check.
 
-Startable now — not done, and every dependency done: 4.
+Startable now — not done, and every dependency done: 6.
 
-`F-001`, `OS-001`, `OS-003`, `OS-009`.
+`F-002`, `F-003`, `L-001`, `OS-001`, `OS-003`, `OS-009`.
 
 ### P-1140F repair schedule
 
@@ -1907,11 +1907,27 @@ These units bind to normative owners that already exist rather than restating th
 ## Epic F — Reproducible foundation
 
 ### F-001 Toolchain and lockfile pins
-Files: `rust-toolchain.toml`, `.node-version`, `Cargo.toml`, `apps/api/go.mod`, `apps/web/package.json`, `scripts/ci/check_toolchain_pins.py` (new)
-Acceptance: `python3 scripts/ci/check_toolchain_pins.py` exits 0 on the pinned tree and non-zero when any manifest names a range, a caret or `latest`; the installed `cargo`, `go` and `node` versions equal the pinned strings byte-for-byte.
+Files: `rust-toolchain.toml`, `.node-version`, `Cargo.toml`, `apps/api/go.mod`, `apps/web/package.json`, `scripts/ci/check_toolchain_pins.py` (new), `tests/ci/test_toolchain_pins.py` (new), `Makefile`, `.github/workflows/planning-checks.yml`
+Acceptance: `python3 scripts/ci/check_toolchain_pins.py` exits 0 on the pinned tree and non-zero when any manifest names a range, a caret or `latest`; the installed `cargo`, `go` and `node` versions equal the pinned strings byte-for-byte, and a tool that is not installed is reported as an uncompared pin rather than passing silently.
 Depends: PF-036
 Est: 4-6
-Status: not-started
+Status: landed
+Evidence: validator scripts/ci/check_toolchain_pins.py --declarations-only
+Evidence: unittest tests.ci.test_toolchain_pins
+Evidence: contains 1 apps/api/go.mod :: go 1.26.5
+Evidence: absent apps/web/package.json :: ^
+
+**Five pins are read, not restated.** The check reads `rust-toolchain.toml`'s channel, `.node-version`, `Cargo.toml`'s `rust-version`, the `go` directive in `apps/api/go.mod` and `apps/web/package.json`'s `engines`, then compares each against the installed tool. A check that compared one hardcoded list against another would agree with itself forever. Eleven npm specifiers moved from carets to exact versions, and `package.json` gained the `engines.node` pin that `.node-version` already carried.
+
+**A tool that is absent is an uncompared pin, never a pass.** `--allow-uninstalled` changes the exit code and still prints the skip and the ran/skipped counts, because this repository's rule is that an absence must be visible rather than silent.
+
+**The pin does not follow the machine.** The first attempt at this unit edited `apps/api/go.mod` from `1.26.5` down to `1.26.4` so the check would pass against the installed toolchain. That is the manifest chasing the environment, which is the opposite of pinning and the same shape as every defect the P-1140F program removed: making a signal green by moving the thing it measures. The pin was restored and the toolchain installed instead, which is the direction the dependency actually runs. The machine's mise configuration resolved `go` from `latest`, which is why it had drifted a patch below a repository that states its version.
+
+**Two tests were pinning values in order to prove rules about them.** Both broke when the pin was corrected. One replaced the literal `go 1.26.4` and could not find it; the other asserted a mismatch against a hardcoded `1.26.5` and, once that became the pin, passed while proving the opposite of its name. Both now read the pin from `apps/api/go.mod`, and the mismatch case derives a version that cannot equal it by construction.
+
+**The unit's evidence is about the repository; the workflow's step is about the machine.** `Evidence:` runs the check with `--declarations-only`, which compares the manifests against each other and reports all three installed comparisons as skips. A unit that asserted the byte-for-byte comparison would be asserting which toolchain the reader happens to have, and it failed in CI for exactly that reason before this line carried the flag. The comparison still runs unflagged in `make validate` and in `planning-checks.yml`, where the workflow now installs all three from the manifests that own them — node from `.node-version`, go from `apps/api/go.mod`, cargo from `rust-toolchain.toml` — so no version is named twice and the comparison there is real rather than skipped.
+
+**What this does not prove.** That the pinned releases exist upstream, are supported, are free of advisories, or that anything here builds. The validator says so in its own claim-scope line. It compares declarations to one machine.
 
 ### F-002 Workspace initialization and package boundaries
 Files: `Cargo.toml`, `crates/vibeproof-core/Cargo.toml`, `crates/vibeproof-adapters/Cargo.toml` (new), `crates/vibeproof-collector/Cargo.toml` (new), `crates/vibeproof-sync/Cargo.toml` (new), `crates/vibemaxxing-daemon/Cargo.toml` (new), `crates/vibemaxxing-cli/Cargo.toml` (new)
@@ -2037,11 +2053,13 @@ Est: 12-16
 Status: not-started
 
 ### P-002 Rust deterministic CBOR encoder/decoder
-Files: `crates/vibeproof-core/src/cbor.rs` (new), `crates/vibeproof-core/tests/canonical_cbor.rs` (new), `conformance/vibeproof/v1/negative-vectors.json` (new)
-Acceptance: `cargo test -p vibeproof-core --test canonical_cbor` exits 0; encoder output matches every vector in `conformance/vibeproof/v1/exact-byte-vectors.json` byte-for-byte; the decoder rejects every negative vector with its recorded reason; a fixture encoded with the RFC 8949 Section 4.2.3 length-first ordering fails, which is what pins D-191.
+Files: `crates/vibeproof-core/src/cbor.rs` (new), `crates/vibeproof-core/tests/canonical_cbor.rs` (new), `conformance/vibeproof/v1/malformed-resource-corpus.json`
+Acceptance: `cargo test -p vibeproof-core --test canonical_cbor` exits 0; encoder output matches every vector in `conformance/vibeproof/v1/exact-byte-vectors.json` byte-for-byte; the decoder rejects every case in `conformance/vibeproof/v1/malformed-resource-corpus.json` with its recorded `reason_code`; a fixture encoded with the RFC 8949 Section 4.2.3 length-first ordering fails, which is what pins D-191.
 Depends: P-001
 Est: 12-16
 Status: not-started
+
+**The `Files:` line named a corpus that must not exist.** It declared a second negative corpus under `conformance/vibeproof/v1/` as new — the same `negative-vectors` filename PF-054 refused for the planning-side unit — and PF-054 had already made `conformance/vibeproof/v1/malformed-resource-corpus.json` the sole executable negative corpus. The name is written without a resolvable path here on purpose: this document is cross-reference checked, and a backticked path to a file that must never exist dangles. Creating the second file would have been a new owner for a vocabulary an existing artifact owns, which is the defect PF-054 closed; the acceptance now names the corpus that exists and the `reason_code` field its thirty-three cases actually carry.
 
 ### P-003 Rust COSE_Sign1 and Ed25519 profile
 Files: `crates/vibeproof-core/src/cose.rs` (new), `crates/vibeproof-core/tests/cose.rs` (new), `conformance/vibeproof/v1/exact-byte-vectors.json`

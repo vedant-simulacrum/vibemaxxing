@@ -90,9 +90,28 @@ jobs:
       # pinned here rather than inherited from whatever the runner image ships.
       # This is what stops `apps/web` regressing to a state where it does not
       # compile at all — which is where it sat, unnoticed, until issue 52.
+      # F-001. This read `node-version: 22`, which installs whatever 22.x published
+      # most recently — so the runner's node drifted from `.node-version` silently
+      # and the repository had no single answer to which node it targets. Reading
+      # the version file makes the pin the input rather than a second opinion.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22
+          node-version-file: .node-version
+      # F-001. The runner image ships a Go, and it is not this repository's pin, so
+      # the comparison was failing on a version nobody chose. `--allow-uninstalled`
+      # does not cover it: the tool is present, just wrong. Reading the pin from the
+      # module file makes go.mod the input here exactly as .node-version is above,
+      # which is the difference between a comparison that is real and one that is
+      # skipped.
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: apps/api/go.mod
+      # F-001. rustup reads rust-toolchain.toml and installs the channel it names, so
+      # this needs no third-party action and no second copy of the version. Without it
+      # the runner's cargo is whatever the image shipped, which is the same mismatch
+      # go had.
+      - name: Install the Rust toolchain rust-toolchain.toml pins
+        run: rustup show
       - name: Install pinned planning validators
         run: python3 -m pip install --disable-pip-version-check -r requirements-planning.txt
       - name: Repository doctor
@@ -165,6 +184,18 @@ jobs:
         run: python3 scripts/repository/validate_load_scenarios.py
       - name: Validate the evaluation registry
         run: python3 scripts/ci/run_evals.py --validate-registry
+      # F-001. Five manifests pin the toolchain and nothing read any of them, so
+      # `apps/web/package.json` carried five caret ranges and `apps/api/go.mod`
+      # required a Go the repository did not have.
+      #
+      # All three comparisons are real here. node comes from `.node-version`, go from
+      # `apps/api/go.mod` and cargo from `rust-toolchain.toml`, each read by the step
+      # that installs it, so no version is named twice. `--allow-uninstalled` is kept
+      # as a floor rather than a crutch: if a setup step is ever removed the run
+      # reports the pin as uncompared and counts it, instead of silently comparing
+      # two of three and printing a summary that reads like three.
+      - name: Check toolchain pins against the manifests that own them
+        run: python3 scripts/ci/check_toolchain_pins.py --allow-uninstalled
       # The dangle set is empty and tests/ci/test_cross_references.py pins it there, so
       # a new dangling reference fails this step rather than joining a tolerated list.
       - name: Resolve every repository cross-reference
