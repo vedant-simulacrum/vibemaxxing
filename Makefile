@@ -41,6 +41,12 @@ validate: $(VENV_PY) ## Run the planning validator suite
 	$(VENV_PY) scripts/repository/validate_planning_artifacts.py --allow-no-postgres
 	$(VENV_PY) scripts/ci/run_evals.py --validate-registry
 	@echo ""
+	@echo "F-001. Every toolchain pin is read from the manifest that owns it and"
+	@echo "compared with what is installed here. A tool you do not have is reported"
+	@echo "as a skip and fails; that is an absence of evidence, not a pass. Pass"
+	@echo "--allow-uninstalled only when you are saying so out loud."
+	$(VENV_PY) scripts/ci/check_toolchain_pins.py
+	@echo ""
 	@echo "The cross-reference dangle set is pinned at empty. Any dangling reference"
 	@echo "this reports is a defect introduced by the change under test."
 	$(VENV_PY) scripts/repository/validate_cross_references.py
