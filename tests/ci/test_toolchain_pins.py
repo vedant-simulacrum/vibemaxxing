@@ -367,7 +367,9 @@ class UninstalledToolchainTest(ToolchainPinsMixin, unittest.TestCase):
     """An absent toolchain is an absence of evidence, never a pass."""
 
     def test_an_uninstalled_tool_is_a_defect_by_default(self) -> None:
-        code, output = self.run_check(argv=[], installed_go=lambda: None)
+        code, output = self.run_check(
+            argv=[], **{**PINNED_PROBES, "installed_go": lambda: None}
+        )
         self.assertNotEqual(code, 0)
         self.assertIn(
             f"uncompared pin: go is not installed, so the pin `{GO_PIN}` from "
@@ -378,7 +380,8 @@ class UninstalledToolchainTest(ToolchainPinsMixin, unittest.TestCase):
     def test_an_uninstalled_tool_is_reported_even_when_allowed(self) -> None:
         """The flag changes the exit code and never hides the skip."""
         code, output = self.run_check(
-            argv=["--allow-uninstalled"], installed_go=lambda: None
+            argv=["--allow-uninstalled"],
+            **{**PINNED_PROBES, "installed_go": lambda: None},
         )
         self.assertEqual(code, 0, output)
         self.assertIn("SKIP go:", output)
