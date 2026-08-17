@@ -477,6 +477,7 @@ def compare_installed(
     skips: list[str],
     pins: list[tuple[str, str | None, str | None, str]],
     allow_uninstalled: bool,
+    declarations_only: bool = False,
 ) -> int:
     """Compare each installed version with its pin, byte-for-byte.
 
@@ -486,6 +487,15 @@ def compare_installed(
     """
     ran = 0
     for tool, pinned, found, source in pins:
+        if declarations_only:
+            # The caller is checking the repository, not this machine. Every
+            # comparison is skipped and every skip is still printed and counted, so
+            # a declarations-only run can never be mistaken for one that compared.
+            skips.append(
+                f"SKIP {tool}: --declarations-only, so the pin `{pinned}` from "
+                f"{source} was not compared against this machine"
+            )
+            continue
         if pinned is None:
             # The pin itself failed to parse and is already a defect above. There
             # is nothing to compare against, and reporting a second failure for the
@@ -523,6 +533,27 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
     parser.add_argument(
+
+        "--declarations-only",
+
+        action="store_true",
+
+        help=(
+
+            "Check the manifests against each other and skip every installed-version "
+
+            "comparison. For callers that are testing the repository rather than the "
+
+            "machine: a unit test asserting the tree is well pinned must not also "
+
+            "assert which toolchain the runner happens to ship. Every skipped "
+
+            "comparison is still printed and counted."
+
+        ),
+
+    )
+    parser.add_argument(
         "--allow-uninstalled",
         action="store_true",
         help=(
@@ -552,6 +583,7 @@ def main(argv: list[str] | None = None) -> int:
             ("node", node_pin, installed_node(), ".node-version"),
         ],
         arguments.allow_uninstalled,
+        arguments.declarations_only,
     )
 
     for skip in skips:
@@ -578,12 +610,21 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print(f"toolchain pins: pass ({summary})")
-    print(
-        "claim_scope=declared-pins-and-installed-versions-only; "
-        "an exact pin means the manifests name one release and this machine has it, "
-        "not that the release exists upstream, is supported, is free of advisories, "
-        "or that anything here builds"
-    )
+    if arguments.declarations_only:
+        # The unqualified sentence claims this machine has the pinned releases,
+        # which is exactly what this mode did not check.
+        print(
+            "claim_scope=declared-pins-only; the manifests name one release each and "
+            "agree with one another, and nothing here was compared against an "
+            "installed toolchain"
+        )
+    else:
+        print(
+            "claim_scope=declared-pins-and-installed-versions-only; "
+            "an exact pin means the manifests name one release and this machine has it, "
+            "not that the release exists upstream, is supported, is free of advisories, "
+            "or that anything here builds"
+        )
     return 0
 
 

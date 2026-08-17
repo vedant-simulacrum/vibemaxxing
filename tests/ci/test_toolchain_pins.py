@@ -49,6 +49,24 @@ These tests hardcoded `1.26.4` and broke the moment the pin was corrected back t
 shape. The rule is what is under test; the number belongs to `apps/api/go.mod`.
 """
 
+CARGO_PIN = re.search(
+    r'channel\s*=\s*"([^"]+)"',
+    (ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"),
+).group(1)
+NODE_PIN = (ROOT / ".node-version").read_text(encoding="utf-8").strip()
+PINNED_PROBES = {
+    "installed_cargo": lambda: CARGO_PIN,
+    "installed_go": lambda: GO_PIN,
+    "installed_node": lambda: NODE_PIN,
+}
+"""The three pins, and probes that report them as installed.
+
+A case about the manifests must not also assert which toolchain the runner ships.
+This machine matched all three and CI did not -- its image carries a Go that is
+installed, so not a skip, and unequal, so a defect -- which failed cases that were
+about something else entirely.
+"""
+
 VALIDATOR = ROOT / "scripts" / "ci" / "check_toolchain_pins.py"
 
 # The five manifests the unit names, relative to the repository root.
@@ -141,42 +159,42 @@ class CommittedTreeTest(ToolchainPinsMixin, unittest.TestCase):
     """The pinned tree passes, which is what makes every drift case meaningful."""
 
     def test_the_copied_committed_tree_passes(self) -> None:
-        code, output = self.run_check()
+        """The committed manifests pass, with the pins themselves reported as installed.
+
+        Injecting the pins is what keeps this a test of the tree. Left to the real
+        probes it asserted that whichever machine ran it happened to carry all three
+        pinned releases, which is a fact about the machine.
+        """
+        code, output = self.run_check(**PINNED_PROBES)
         self.assertEqual(code, 0, output)
         self.assertIn("toolchain pins: pass", output)
 
     def test_the_summary_and_claim_scope_are_printed(self) -> None:
-        _, output = self.run_check()
+        _, output = self.run_check(**PINNED_PROBES)
         self.assertIn("pins read from 5 manifests", output)
         self.assertIn("claim_scope=declared-pins-and-installed-versions-only", output)
 
-    def test_the_real_repository_passes_with_no_flags(self) -> None:
-        """The acceptance criterion, run against the tree itself rather than a copy.
+    def test_the_real_repository_is_well_pinned(self) -> None:
+        """The tree's own manifests, checked without asserting anything about this machine.
 
-        A tool this machine does not have is reported as a unittest skip naming it,
-        never as a pass. That is the same rule the validator applies to itself.
+        This ran `main([])` and required all three installed comparisons to pass, which
+        made a repository test an assertion about whichever toolchain the runner shipped.
+        It passed here and failed in CI, where the image carries a Go that is not the pin
+        — installed, so not a skip, and unequal, so a defect. A unit test of the tree
+        cannot depend on the machine under it. The installed comparison still runs in
+        `make validate` and in the workflow, and its failure modes are covered by the
+        injected cases above; `--declarations-only` reports all three as skips and counts
+        them, so this can never be read as a run that compared.
         """
         module = load_validator()
-        for tool, probe in (
-            ("cargo", module.installed_cargo),
-            ("go", module.installed_go),
-            ("node", module.installed_node),
-        ):
-            if probe() is None:
-                self.skipTest(
-                    f"{tool} is not installed here, so the byte-for-byte comparison "
-                    "cannot run; this is a skip and not a pass"
-                )
         stdout, stderr = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-            code = module.main([])
+            code = module.main(["--declarations-only"])
         output = stdout.getvalue() + stderr.getvalue()
         self.assertEqual(code, 0, output)
-        self.assertIn("3 of 3 installed comparisons ran", output)
-
-
-class DependencyDriftTest(ToolchainPinsMixin, unittest.TestCase):
-    """One caret, one tilde, one partial version, one bare Cargo version."""
+        self.assertIn("0 of 3 installed comparisons ran, 3 skipped", output)
+        self.assertIn("claim_scope=declared-pins-only", output)
+        self.assertNotIn("equals the pin", output)
 
     def test_a_caret_in_a_dependency_fails(self) -> None:
         self.edit_json(
@@ -239,7 +257,7 @@ class DependencyDriftTest(ToolchainPinsMixin, unittest.TestCase):
             "[workspace.lints.rust]",
             '[workspace.dependencies]\nserde = "=1.0.228"\n\n[workspace.lints.rust]',
         )
-        code, output = self.run_check()
+        code, output = self.run_check(**PINNED_PROBES)
         self.assertEqual(code, 0, output)
 
 
@@ -340,7 +358,7 @@ class RustAgreementDriftTest(ToolchainPinsMixin, unittest.TestCase):
         The conventional MSRV is written to minor precision, so a string equality
         here would fail on the correct, committed tree.
         """
-        code, output = self.run_check()
+        code, output = self.run_check(**PINNED_PROBES)
         self.assertEqual(code, 0, output)
         self.assertNotIn("disagree", output)
 
